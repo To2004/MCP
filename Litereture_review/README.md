@@ -14,6 +14,7 @@ This folder contains the complete literature review for the MCP Security thesis 
 
 | Document | Description |
 |----------|-------------|
+| [concepts_and_papers_summary.md](concepts_and_papers_summary.md) | Comprehensive educational document covering MCP concepts, attacks, defenses, risk scoring, datasets, and how it all connects to the thesis |
 | [meeting_pitch_practical.md](meeting_pitch_practical.md) | Lab meeting pitch document for MCP-RSS with full implementation plan, architecture, code examples, and Lenovo justification |
 | [thesis_research_plan.md](thesis_research_plan.md) | Detailed thesis research plan with methodology, phases, and literature references |
 | [alternative_thesis_direction.md](alternative_thesis_direction.md) | Backup thesis direction (implicit poisoning detection via semantic drift) |
