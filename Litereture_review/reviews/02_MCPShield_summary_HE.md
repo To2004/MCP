@@ -34,6 +34,46 @@
 
 ---
 
+## 📊 Figure 1: ארכיטקטורת MCPShield — תמונת המערכת המלאה
+
+![MCPShield Architecture Overview](figures/fig1_mcpshield_architecture.png)
+
+**הסבר התרשים (Figure 1 מהמאמר):**
+
+התרשים מחולק לשני חלקים:
+
+**צד שמאל — "Exposed to Infeasible Environments" (ללא הגנה):**
+- הסוכן (Agent) מתחבר לשרת MCP לא מהימן (Untrusted MCP Server)
+- השרת חושף כלים: חלקם בטוחים (Safe Tools), חלקם זמינים (Available Tools), וחלקם מזיקים (Harmful Tools)
+- ה-metadata של הכלים (Name, Description, Schema) כולו **Unreliable** — אי אפשר לסמוך עליו
+- הסוכן לא מסוגל להבדיל בין כלים טובים לרעים → **Unable to distinguish availability**
+- התוצאה: פעולות לא מורשות (Unauthorized actions), דליפת מידע (Data Breach), נזק למערכת (System Damage)
+
+**צד ימין — "Effective Defense with MCPShield" (עם הגנה):**
+שלושת שלבי ההגנה מוצגים מלמעלה למטה:
+
+1. **Pre-Invocation: Security Cognitive Probing** —
+   - MCPShield שולח Test Cases לשרת
+   - כל כלי (Tool_1 עד Tool_n) נבדק עם Usage Logs
+   - תיאורי הכלים (Tools Description) ותיאורי השרת (Servers Description) נבדקים
+   - שרתים עם חוסר-התאמה (Misaligned MCP Servers) נדחים ←
+
+2. **Execution: Isolated Projection** —
+   - Sandbox Virtual Environment עם Constrained Environment
+   - Isolated Projection + Recording Kernel Traces
+   - בקשות יוצאות (Outbound Request) נתפסות (Capture)
+   - רק שרתים בטוחים (Safety MCP Servers) ממשיכים לרוץ
+
+3. **Post-Invocation: Periodic Reasoning** —
+   - בקשות יוצאות (Outbound Request) מנותחות
+   - Behavior Tampering ו-Misalignment Behavior מזוהים
+   - **Temporal Security Cognition**: השוואה בין גרסה V.0.n לגרסה V.0.n+1
+   - חריגים בספירת קריאות שונות (Exceptions at different call counts) מסומנים
+   - כלים מזיקים נשלחים ל-Harmful Tools Trace Repository
+   - עדכון סיכון (Risk Update) נשלח ל-Community Cloud לשיתוף קהילתי
+
+---
+
 ## 2. הפורמליזציה המתמטית — איך הם מודלים את הבעיה
 
 ### 2.1 מודל האינטראקציה בין סוכן לכלי
@@ -329,6 +369,24 @@ pre_result_max_chars = 0    ← 0 = אין הגבלה על אורך התוצאה
 pre_deny_ratio = 0.5        ← אחוז הדחייה שמעליו חוסמים
 ```
 
+### 📋 Appendix A.1: ה-Prompt Templates של Stage 1 (מתוך המאמר)
+
+![Stage 1 Prompt Templates](figures/appendix_stage1_prompts.png)
+
+**הסבר:**
+הדמות מראה את ה-prompts המדויקים ש-MCPShield שולח ל-LLM בשלב 1:
+
+- **Stage-1: Build Mock** (כתום) — ה-system prompt שמבקש מה-LLM לייצר mock invocations.
+  הוא מקבל `tool` (metadata של הכלי) ו-`mock_count` (כמה mocks לייצר).
+  הפלט: JSON עם `tool_name` ו-`mocks`.
+
+- **Stage-1: Build Evaluation** (כתום) — ה-system prompt שמבקש מה-LLM לשפוט את התוצאות.
+  הוא מקבל `manifest` (metadata של כל השרת) ו-`mock_results` (תוצאות ה-mocks).
+  הפלט: JSON עם `trusted` (boolean), `reason`, ו-`flags`.
+
+**שימו לב:** כל ה-prompts מחזירים **JSON-only** — זה מונע prompt injection בתוך ה-shield עצמו
+ומאפשר parsing דטרמיניסטי של התוצאות.
+
 ---
 
 ### 3.2 שלב 2: Isolated Projection — הפרטים המלאים
@@ -447,6 +505,24 @@ else:
 אם Stage 1 כבר זיהה 100% מהתקפות (קורה ב-DemonAgent וב-Adaptive Attack),
 אז Stage 2 לא רץ בכלל → **חוסך עלות!**
 
+### 📋 Appendix A.2: ה-Prompt Templates של Stage 2 (מתוך המאמר)
+
+![Stage 2 Prompt Templates](figures/appendix_stage2_prompts.png)
+
+**הסבר:**
+
+- **Stage-2: Build Guarded Projection** (ירוק) — LLM מחליט אילו domains מותרים.
+  קלט: `server_id`, `tool_name`, `arguments`, `execution_events`.
+  פלט: JSON עם `allowed_domains` (רשימת strings).
+
+- **Stage-2: Build Execution Event Capture and Analysis** (ירוק) — LLM מנתח אירועי ריצה.
+  קלט: `server_id`, `tool_name`, `arguments`, `execution_events`.
+  פלט: JSON עם `trusted` (boolean), `reason`, `flags`.
+
+**עיצוב חשוב — הפרדה בין policy enforcement ל-semantic suspicion:**
+Stage 2 מפריד בין חסימה קשיחה (hard blocking — חריגה מ-scope) לבין
+חשד סמנטי (LLM judgment — פעולות חשודות בתוך ה-scope).
+
 ---
 
 ### 3.3 שלב 3: Periodic Reasoning — הפרטים המלאים
@@ -542,6 +618,30 @@ MCPShield מציע גם מנגנון שיתוף:
 4. סטיות מה-community baseline מהוות ראיה נוספת לזדוניות
 ```
 
+### 📋 Appendix A.3: ה-Prompt Template של Stage 3 (מתוך המאמר)
+
+![Stage 3 Prompt Template](figures/appendix_stage3_prompt.png)
+
+**הסבר:**
+
+- **Stage-3: Build Periodic Reasoning** (כחול) — LLM מעריך drift התנהגותי.
+  הפרומפט מדגיש: "Changes alone are not malicious" — שינוי בפני עצמו לא מסוכן.
+  רק כשהתנהגות **סותרת** את תיאורי הכלים או מראה side effects מסוכנים, נותנים ציון גבוה.
+
+  **סולם Drift Score (1-5 Likert):**
+  - 1 = אין שינוי משמעותי
+  - 2 = שינויים קטנים, לא מסוכנים
+  - 3 = שינויים בינוניים, דורשים תשומת לב
+  - 4 = שינויים משמעותיים שסותרים metadata → **מעל threshold → חסימה!**
+  - 5 = drift קריטי, התנהגות זדונית ברורה
+
+  **Whitelisted Signals (סט סגור!):**
+  `manifest_change`, `tool_count_change`, `new_domain`, `new_ip_connect`,
+  `output_shift`, `error_spike`, `file_write`, `process_spawn`,
+  `file_read_sensitive`, `api_key_request`, `output_instruction`
+
+  → הסט הסגור מאפשר **השוואה בין משתמשים** ושיתוף קהילתי.
+
 #### ברירות המחדל של Stage 3:
 
 ```
@@ -558,18 +658,34 @@ post_include_output = true   ← האם לכלול את הפלט בבדיקת dr
 
 ### 4.1 שיעור הגנה (Table 1)
 
-| מצב | שיעור הגנה ממוצע |
-|-----|-----------------|
-| **ללא הגנה** (w/o) | **10.05%** |
-| **עם MCPShield** (Ave) | **95.30%** |
+![Table 1 - Robustness Results](figures/table1_robustness.png)
 
-**נבדקו:**
-- 6 סוגי התקפות שונים (76 שרתי MCP זדוניים)
-- 6 מודלי LLM שונים (GPT-4o-mini, Gemini-3-Flash, Kimi-K2, Deepseek V3.2, Minimax-M2, Qwen3-235B)
+**הסבר הטבלה:**
+
+הטבלה מציגה את שיעור ההגנה (1 - ASR, כלומר כמה התקפות **נחסמו**) עבור 6 סוגי התקפות × 6 מודלים.
+
+- **w/o** = ללא הגנה (baseline) — בדרך כלל 0-30%, כלומר **רוב ההתקפות מצליחות**
+- **Ave** = ממוצע עם MCPShield — קופץ ל-72-100% בכל הקטגוריות
+- **Min/Max** = טווח הביצועים על פני 5 הרצות חוזרות
+
+**תובנות מפתח:**
+- ללא הגנה: ממוצע **10.05%** = הסוכנים כמעט חסרי הגנה
+- עם MCPShield: ממוצע **95.30%** = שיפור דרמטי
+- **Kimi-K2 ו-Deepseek V3.2** מגיעים ל-100% על רוב ההתקפות
+- **Rug Pull Attack** הכי קשה — גם עם MCPShield יש שונות גבוהה (80-100%)
+- **MCP-Artifact** מעניין: גם ה-w/o גבוה יחסית (30%) כי חלק מההתקפות גסות
 
 ### 4.2 תרומת כל שלב (Table 3 — Ablation)
 
-**זה הטבלה הכי חשובה במאמר — היא מראה מה כל שלב תופס:**
+![Table 3 - Stage Comparison](figures/table3_stage_comparison.png)
+
+**הסבר הטבלה — זו הטבלה הכי חשובה במאמר:**
+
+הטבלה מראה את **שיעור הזיהוי של כל שלב בנפרד** (PRE → EXEC → POST).
+סימן ✓ = שיעור זיהוי מעל 90%.
+
+**איך לקרוא:** כל שורה = סוג התקפה. כל עמודה = מודל. כל תא מחולק ל-3 שלבים.
+אם PRE = 100% ✓ ו-EXEC = 0%, זה אומר ש-Stage 1 תפס הכל ו-Stage 2 לא היה צריך לרוץ.
 
 | סוג התקפה | Stage 1 (PRE) | Stage 2 (EXEC) | Stage 3 (POST) | הסבר |
 |-----------|:---:|:---:|:---:|------|
@@ -580,10 +696,17 @@ post_include_output = true   ← האם לכלול את הפלט בבדיקת dr
 | MCP-Artifact | 70-100% ✅ | 0-20% | 0% | output poisoning → Stage 1 מוביל |
 | **Rug Pull** | **2-55%** | **1-58%** | **17-27%** ✅ | **drift attack → רק Stage 3 תופס!** |
 
-**תובנה מפתח:** Rug Pull הוא הסוג היחיד שבו Stage 3 מוסיף ערך משמעותי.
-בכל שאר ההתקפות, Stage 1 (probing) תופס את הרוב.
+**תובנות מפתח:**
+- **Stage 1 (PRE) הוא הכוכב** — תופס את הרוב ב-5 מתוך 6 סוגי התקפות
+- **Stage 2 (EXEC) משלים** — קריטי כש-Stage 1 לא מספיק (Adaptive Attack, DemonAgent)
+- **Stage 3 (POST) ייחודי ל-Rug Pull** — הסוג היחיד שבו drift detection מוסיף ערך
+- **Conditional design עובד:** אם Stage 1 תפס 100%, אין צורך ב-Stage 2+3 → חיסכון
 
 ### 4.3 False Positives — לא חוסמים שרתים טובים (Table 2)
+
+![Table 2 - Benign Server Preservation](figures/table2_benign_preservation.png)
+
+**הסבר:** הטבלה מראה כמה אחוז מהשרתים ה**טובים** נחסמו בטעות (false positive).
 
 | מודל | ממוצע | מינימום | מקסימום |
 |------|-------|---------|---------|
@@ -594,27 +717,68 @@ post_include_output = true   ← האם לכלול את הפלט בבדיקת dr
 
 → מודלים חזקים (GPT-4o, Gemini) שומרים על false positive rate נמוך מאוד.
 → Deepseek יותר "פרנואידי" — חוסם יותר מדי שרתים טובים.
+→ **חשוב לתזה שלך:** בציון 1-10 רציף, FP rate אמור להיות נמוך יותר
+  כי במקום לחסום (binary), נותנים ציון בינוני שהמפעיל יכול להחליט עליו.
 
-### 4.4 עלות Overhead
+### 4.4 Figure 5: אפקטיביות ההגנה לאורך מחזור החיים (Drift Attack)
 
-**Stage 2 (Isolated Projection) — Table 4+5:**
+![Figure 5 - Defense Effectiveness Under Drift](figures/fig5_defense_effectiveness.png)
 
-| | זמן ריצה (שניות) | טוקנים |
-|--|---|---|
-| ללא הגנה (w/o) | 1.27-12.68 | 245-6779 |
-| עם Stage 2 (Ave) | 1.22-9.61 | 148-517 |
+**הסבר התרשים:**
 
-→ ההוספה מינורית! לפעמים Stage 2 אפילו **מהיר יותר** כי חוסם פעולות מיותרות.
+התרשים מראה את **אפקטיביות ההגנה נגד Rug Pull (Drift Attack)** כשמדליקים שלבים בהדרגה:
 
-**Stage 3 (Periodic Reasoning) — Table 6:**
+- **ירוק בהיר (למטה)** = PRE בלבד (Stage 1) → ~30% הגנה ממוצעת
+- **ירוק כהה (אמצע)** = PRE + EXEC (Stage 1+2) → ~80% הגנה ממוצעת
+- **צהוב (למעלה)** = TOTAL = PRE + EXEC + POST (כל 3 השלבים) → ~95% הגנה
 
-| מודל | טוקנים (ממוצע) | זמן (שניות, ממוצע) | יחס ל-baseline |
-|------|---------------|------|------|
-| Deepseek V3.2 | 2,580 | 5.87 | 0.56× tokens |
-| Gemini-3-Flash | 1,220 | 2.89 | 0.76× tokens |
-| GPT-4o-mini | 5,723 | 1.34 | 0.30× tokens |
+**הנקודה הקריטית:** הקו המקווקו "Average TOTAL" **תמיד מעל** "Average PRE+EXEC",
+שתמיד מעל "Average PRE". כל שלב מוסיף שכבת הגנה נוספת.
 
-→ Stage 3 רץ כל K=3 קריאות, לא כל קריאה → העלות מתחלקת.
+**זה רלוונטי ל-Rug Pull בלבד** — בהתקפות אחרות Stage 1 מספיק.
+ב-Rug Pull, בלי Stage 3 (periodic reasoning), מפספסים 15-20% מההתקפות.
+
+### 4.5 Figure 3: עלות Runtime
+
+![Figure 3 - Runtime Overhead](figures/fig3_runtime_overhead.png)
+
+**הסבר התרשים:**
+
+כל גרף מראה את **הזמן המצטבר (cumulative latency)** עבור מודל אחד.
+ציר X = מספר האינטראקציות (בסקאלה לוגריתמית), ציר Y = זמן בשניות.
+
+- **Server*1** = אינטראקציה בודדת
+- **Server*10** = 10 אינטראקציות
+- **Server*100** = 100 אינטראקציות
+
+הקווים הצבעוניים מייצגים benchmark suites שונים.
+
+**תובנה:** העלות גדלה **ליניארית** עם מספר האינטראקציות (לא אקספוננציאלית).
+ההוספה של MCPShield היא ~1-5 שניות לאינטראקציה — סביר לרוב השימושים.
+
+### 4.6 Figure 4: עלות Tokens
+
+![Figure 4 - Token Usage](figures/fig4_token_usage.png)
+
+**הסבר התרשים:**
+
+כל גרף מראה את **צריכת הטוקנים** עבור מודל אחד, בחלוקה לפי benchmark suite.
+ציר X = סוג ה-benchmark (α=MCPSecBench, β=MCPSafetyBench, γ=DemonAgent, δ=Adaptive, ε=MCPTox).
+ציר Y = טוקנים (סקאלה לוגריתמית).
+
+**תובנות:**
+- **Server*1 (עיגול)** = עלות גבוהה יחסית — כי ה-probing הוא חד-פעמי
+- **Server*100 (ריבוע)** = העלות **מתפרסת** על 100 קריאות → העלות per-call יורדת
+- **MCPSafetyBench (β)** צורך הכי הרבה טוקנים — כי יש בו הכי הרבה שרתים (18)
+- בממוצע, MCPShield מוסיף 10x-100x טוקנים מעל ה-baseline, אבל **רק בפעם הראשונה**
+
+### 4.7 סיכום עלות Overhead
+
+| שלב | מתי רץ | עלות זמן | עלות טוקנים | הערה |
+|-----|--------|----------|-------------|------|
+| Stage 1 | פעם אחת לשרת | 1-10 שניות | 10x-100x baseline | **חד-פעמי** — amortized |
+| Stage 2 | כל קריאה (conditional) | 1-5 שניות | ~1x baseline | רק אם Stage 1 לא חסם |
+| Stage 3 | כל K=3 קריאות | 1-8 שניות | 0.3x-0.9x baseline | **מתפרס** — amortized |
 
 ---
 
