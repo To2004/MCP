@@ -14,6 +14,12 @@ This folder contains AI-generated review deliverables that synthesize findings f
 | `benchmarks_review.xlsx` | Spreadsheet version with structured benchmark information |
 | `02_MCPShield_summary_HE.md` | Hebrew deep-dive summary of MCPShield paper with metaphors, code, and diagrams |
 
+## Subfolders
+
+| Folder | Description |
+|--------|-------------|
+| `paper_summaries/` | Detailed Hebrew summaries of individual papers with technical analysis and thesis relevance |
+
 ## How to Use
 
 - Read the `.md` files for quick reference — they are plain-text readable
