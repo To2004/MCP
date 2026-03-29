@@ -7,6 +7,7 @@ This folder contains comprehensive Hebrew-language summaries of individual resea
 | File | Paper | Key Topics |
 |------|-------|------------|
 | `02_MCPShield_summary_HE.md` | MCPShield (Zhou et al., 2026) | Server-side cognitive security, lifecycle defense, trust calibration |
+| `07_Description_to_Score_summary_HE.md` | From Description to Score (Jafarikhah et al., 2026) | LLM-based CVSS scoring, vulnerability quantification, meta-classifiers |
 | `09_Breaking_the_Protocol_summary_HE.md` | Breaking the Protocol (Maloyan & Namiot, 2026) | Protocol-level vulnerabilities, capability attestation, PROTOAMP benchmark |
 
 ## Summary Format
