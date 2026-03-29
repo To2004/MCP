@@ -12,6 +12,7 @@ This folder contains AI-generated review deliverables that synthesize findings f
 | `benchmarks_review.md` | Markdown review of benchmarks and evaluation frameworks |
 | `benchmarks_review.docx` | Word document version of the benchmarks review |
 | `benchmarks_review.xlsx` | Spreadsheet version with structured benchmark information |
+| `02_MCPShield_summary_HE.md` | Hebrew deep-dive summary of MCPShield paper with metaphors, code, and diagrams |
 
 ## How to Use
 
