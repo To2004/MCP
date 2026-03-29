@@ -395,6 +395,72 @@ pre_deny_ratio = 0.5        ← אחוז הדחייה שמעליו חוסמים
 
 **הרעיון:** במקום לתת לשרת לרוץ חופשי, מריצים אותו ב-sandbox ומקליטים **כל דבר**.
 
+#### ⚠️ מגבלה קריטית: עובד רק על self-hosted!
+
+MCPShield **מודה** במאמר (עמוד 4, Threat Model):
+
+> *"We focus on **self-hosted deployments** in which the agent connects
+> to servers **locally**, while the adversary controls the server-side code."*
+
+ובעמוד 4 (Post-invocation):
+
+> *"τ_t is realized on the tool-side runtime; it is **not exposed by the
+> protocol by default**, but can be made observable via explicit auditing
+> or tracing, which is **typically feasible in self-hosted deployments**."*
+
+**מה זה אומר בפועל:**
+
+```
+✅ עובד — Self-hosted (השרת רץ אצלך על המכונה):
+┌──────────────────────────────────────────────┐
+│              המחשב שלך (localhost)            │
+│                                               │
+│  ┌────────┐      ┌──────────────────────┐    │
+│  │ Agent  │ ───→ │ 🔒 SANDBOX           │    │
+│  │        │      │  ┌────────────────┐  │    │
+│  │        │ ←─── │  │ MCP Server     │  │    │
+│  │        │  y_t │  │ (רץ מקומית)    │  │    │
+│  └────────┘      │  └────────────────┘  │    │
+│                  │  📝 trace_mode=py    │    │
+│                  │  📝 כל system call   │    │
+│                  │     מוקלט! → E_t     │    │
+│                  └──────────────────────┘    │
+│                   ✅ רואים את τ_t!           │
+└──────────────────────────────────────────────┘
+
+❌ לא עובד — Remote (השרת רץ בענן/מרוחק):
+┌───────────┐         internet         ┌──────────────┐
+│ Agent     │ ───────────────────────→  │ MCP Server   │
+│ (אצלך)   │                           │ (בענן)       │
+│           │ ←───────────────────────  │ τ_t = ???    │
+└───────────┘     y_t (תגובה בלבד)     └──────────────┘
+                                        ❌ אין גישה
+                                           ל-τ_t!
+```
+
+**MCPShield עוטף** את שרת ה-MCP המקומי ב-sandbox שעושה Python-level tracing.
+ה-sandbox מיירט כל system call: קריאת קובץ, חיבור רשת, הרצת תהליך.
+זה אפשרי **רק** כשהקוד של השרת רץ על המכונה שלך.
+
+**בסעיף Limitations (עמוד 8) הם מודים:**
+> *"Future directions include **strengthening support for remote settings**"*
+
+כלומר — הם יודעים שזו מגבלה ולא פתרו אותה.
+
+#### למה דווקא בתזה שלך (בדיקת סוכן) אין את הבעיה הזו
+
+```
+MCPShield: בודק שרת → צריך לראות τ_t → צריך sandbox → עובד רק local
+התזה שלך:  בודק סוכן → הסוכן רץ אצלך! → רואה הכל! → עובד תמיד ✅
+```
+
+כשאתה בודק **סוכן** (ולא שרת), אתה לא צריך sandbox בכלל, כי:
+- כל tool call שהסוכן עושה עובר **דרכך** (אתה ה-MCP host)
+- אתה רואה: אילו כלים הוא ביקש, עם אילו פרמטרים, ומה עשה עם התגובה
+- הסוכן **חייב לבקש הכל בגלוי** דרך פרוטוקול MCP — אין לו פעולות נסתרות
+
+**זה יתרון מבני של הכיוון שלך מול MCPShield.**
+
 #### שלב 2א: Guarded Projection — הגדרת גבולות מותרים
 
 **לפני** שהכלי רץ, LLM מחליט אילו domains מותר לו לגשת:
