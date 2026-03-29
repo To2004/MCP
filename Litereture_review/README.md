@@ -10,6 +10,14 @@ This folder contains the complete literature review for the MCP Security thesis 
 4. **reviews/** — Read the generated analysis documents (datasets and benchmarks reviews)
 5. **scripts/** — Automation tools used to organize papers and generate reviews
 
+## Key Documents
+
+| Document | Description |
+|----------|-------------|
+| [meeting_pitch_practical.md](meeting_pitch_practical.md) | Lab meeting pitch document for MCP-RSS with full implementation plan, architecture, code examples, and Lenovo justification |
+| [thesis_research_plan.md](thesis_research_plan.md) | Detailed thesis research plan with methodology, phases, and literature references |
+| [alternative_thesis_direction.md](alternative_thesis_direction.md) | Backup thesis direction (implicit poisoning detection via semantic drift) |
+
 ## Folder Structure
 
 | Folder | Description |
