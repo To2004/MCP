@@ -2,21 +2,65 @@
 
 ## What Is MCP Security?
 
-MCP Security is a Python project focused on evaluating and ranking the severity
-of AI agents that request access to Model Context Protocol (MCP) servers. The
-goal is to build a risk scoring system that analyzes agent access requests and
-classifies them by severity level, helping determine whether an agent should be
-allowed, restricted, or denied access to MCP resources. The project is designed
-to be clean, modular, and testable, and can be used standalone or integrated
-into larger workflows.
+MCP Security is a risk modeling framework specifically designed for MCP (Model
+Context Protocol) servers and tools used by AI agents in enterprise
+environments.
+
+Existing risk frameworks (like CVSS) were built for static software and
+human-driven workflows. They don't account for the unique risks introduced by
+autonomous AI agents that dynamically invoke tools, reuse context, and trigger
+real-world actions. This project fills that gap.
+
+## What the Framework Does
+
+The framework produces a risk score for MCP tool interactions that incorporates
+factors such as:
+
+- **Agent autonomy level** — how independently the agent operates
+- **Tool privilege scope and side effects** — what the tool can access or modify
+- **Context persistence and reuse** — whether sensitive context carries across
+  calls
+- **Trust boundaries** — boundaries between agents and servers
+- **Execution frequency and criticality** — how often and how critically the
+  tool is invoked
+- **Downstream blast radius** — how far damage can propagate from a single
+  interaction
+
+## Static vs. Dynamic Scoring
+
+The score can be computed in two modes:
+
+- **Static** — evaluated at design time, based on the tool's general properties
+  (e.g., "file_write is inherently riskier than file_read")
+- **Dynamic** — evaluated at runtime, based on the specific request/input. Two
+  agents calling the same tool with different inputs may receive different risk
+  scores (e.g., `rm -rf /` vs. `ls /tmp`)
+
+## Key Design Decisions
+
+- The framework is **not anomaly detection** — it does not flag deviations from
+  known-good behavior. It defines what *makes* an interaction risky based on
+  concrete factors.
+- **Open question:** how much access to agent logs and request context is
+  available at runtime, as this directly affects the richness of the dynamic
+  score.
+
+## Deliverables
+
+- A threat model for MCP tool interactions
+- A formal risk scoring model
+- A proof-of-concept implementation
+- An evaluation against representative MCP deployment scenarios
 
 ## Guiding Principles
 
-- **Modular** — each tool is a self-contained module with a clear public API
+- **Modular** — each component is a self-contained module with a clear public
+  API
 - **Testable** — all logic has corresponding tests; no untestable code
 - **Readable** — code is written for humans first, optimized second
 - **Minimal dependencies** — only add what is truly needed
-- **Security-first** — the tools we build enforce good security practices, and so does our own code
+- **Security-first** — the tools we build enforce good security practices, and
+  so does our own code
 
 ## Tech Stack
 

@@ -6,11 +6,15 @@ For detailed documentation, see the [docs/](docs/) folder
 
 ## Project Overview
 
-MCP Security is a Python project focused on evaluating and ranking the severity
-of AI agents that request access to Model Context Protocol (MCP) servers.
-The goal is to build a risk scoring system that analyzes agent access requests
-and classifies them by severity level, helping determine whether an agent
-should be allowed, restricted, or denied access to MCP resources.
+MCP Security is a risk modeling framework for MCP (Model Context Protocol)
+servers and tools used by AI agents in enterprise environments. Unlike
+traditional frameworks (e.g., CVSS) built for static software, this project
+accounts for the unique risks of autonomous AI agents — dynamic tool
+invocation, context reuse, trust boundaries, and downstream blast radius.
+
+The framework produces risk scores in two modes:
+- **Static** — evaluated at design time based on a tool's general properties
+- **Dynamic** — evaluated at runtime based on the specific request/input
 
 See [docs/project/overview.md](docs/project/overview.md) for full details.
 
