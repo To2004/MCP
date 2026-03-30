@@ -19,6 +19,7 @@ This folder contains AI-generated review deliverables that synthesize findings f
 | Folder | Description |
 |--------|-------------|
 | `paper_summaries/` | Detailed Hebrew summaries of individual papers with technical analysis and thesis relevance |
+| `benchmark_md/` | Individual benchmark analysis files with data structure, risk dimensions, and usefulness verdicts for 1-10 risk scoring |
 
 ## How to Use
 
