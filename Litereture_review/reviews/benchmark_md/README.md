@@ -3,12 +3,12 @@
 Analysis of 74 benchmarks and datasets from the MCP security literature, evaluating which ones
 can feed into a **multi-dimensional 1-10 risk scoring system** for MCP tool/agent access.
 
-23 entries were selected as relevant. 52 were skipped. Each analysis file covers data structure,
+18 entries were selected as relevant. 56 were skipped. Each analysis file covers data structure,
 proposed risk dimensions, quality notes, and a usefulness verdict.
 
 ---
 
-## Analyzed Benchmarks (23)
+## Analyzed Benchmarks (18)
 
 ### Tier 1 — MCP-Specific, Directly Usable
 
@@ -37,16 +37,6 @@ proposed risk dimensions, quality notes, and a usefulness verdict.
 | 16 | [16_asb.md](16_asb.md) | ASB (Agent Security Bench) | Zhang et al., 2025 | 6 attack prompt types |
 | 17 | [17_miniscope.md](17_miniscope.md) | MiniScope Permissions | Zhu et al., 2025 | 10 apps, permission hierarchies |
 | 18 | [18_indirect_pi_attack.md](18_indirect_pi_attack.md) | Indirect PI Attack Dataset | Rall et al., 2025 | 1,068 instances, 28 models |
-| 24 | [24_toolsword.md](24_toolsword.md) | ToolSword | Ye et al., ACL 2024 | 470 samples, 6 scenarios, 3 stages |
-
-### Tier 3 — Scoring Frameworks and Dimension Models
-
-| # | File | Benchmark | Source | Samples |
-|---|------|-----------|--------|---------|
-| 19 | [19_decodingtrust.md](19_decodingtrust.md) | DecodingTrust | Wang et al., 2023 | 8 dimensions, multi-benchmark |
-| 20 | [20_trustllm.md](20_trustllm.md) | TrustLLM | Huang et al., 2024 | 6 dimensions, 30+ datasets |
-| 21 | [21_trust_paradox.md](21_trust_paradox.md) | Trust Paradox Scenarios | Xu et al., 2025 | 19 scenarios, 5 capability tiers |
-| 22 | [22_synthetic_pi.md](22_synthetic_pi.md) | Synthetic PI Dataset | Gosmar et al., 2025 | 500 prompts, 10 categories |
 
 ---
 
@@ -61,6 +51,7 @@ proposed risk dimensions, quality notes, and a usefulness verdict.
 | **Ecosystem stats only** | MCP Server Registry (1,899 repos), MCP Empirical (1,899 repos), MCP API Usage (2,117 repos), MCP Ecosystem (8,401 projects), Top-296 MCP Servers | Ecosystem census data — useful for context but lack risk labels or scoring structure |
 | **Too small / qualitative** | Malicious MCP (4 servers), Damn Vulnerable MCP (10 servers), Log-To-Leak, MCPSafetyScanner Test, MCP-ITP test scenarios | Useful for smoke testing but too small or qualitative for training/calibrating a risk scorer |
 | **Covered by included** | RAS-Eval, EICU-AC, Mind2Web-SC, AgentDojo defense variants | Risk structures already captured by more complete included entries |
+| **Non-MCP scoring frameworks** | DecodingTrust, TrustLLM, Trust Paradox, Synthetic PI, ToolSword, SafeToolBench | General LLM trustworthiness or tool-safety frameworks not specific to MCP — methodology insights absorbed into v3 dimensions |
 
 ---
 
@@ -78,11 +69,11 @@ benchmarks, not forced onto them.
 | **Risk Type** | Categorical → 1-10 | Which of 10 MCP-specific risk categories applies | MCIP-Bench (#1), R-Judge (#12) | 10 risk types each mapped to severity weight based on potential impact |
 | **Tool Toxicity** | 1-10 | How poisoned/manipulated a tool description is | MCPTox (#4), MCP-ITP (#10) | Combine paradigm difficulty (explicit=3, implicit-func=6, implicit-param=8) with detection rate |
 | **Data Exposure** | 1-10 | Risk of data leakage through tool access | MCP Server Database (#7), InjecAgent (#14) | EIT/PAT/NAT classification weighted by exploit chain probability (27.2% of servers expose combos) |
-| **Trust Calibration** | 1-10 | Agent capability vs actual trustworthiness gap | Trust Paradox (#21), DecodingTrust (#19) | TCI metric (0.72-0.89) inverted and scaled; higher capability = higher scrutiny needed |
-| **Trustworthiness** | 1-10 | Multi-dimensional agent/model trustworthiness | DecodingTrust (#19), TrustLLM (#20) | Composite of 6-8 sub-dimensions (toxicity, robustness, privacy, ethics, fairness, safety) |
+| **Trust Calibration** | 1-10 | Agent capability vs actual trustworthiness gap | MCP-SafetyBench (#6), R-Judge (#12) | Behavioral drift across multi-turn interactions; higher capability = higher scrutiny needed |
+| **Trustworthiness** | 1-10 | Multi-dimensional agent/model trustworthiness | MCP-SafetyBench (#6), ASB (#16) | Composite of safety sub-dimensions derived from MCP-specific evaluation |
 | **Protocol Amplification** | 1-10 | How much MCP architecture amplifies attack success | MCPSecBench (#5), Component PoC (#8) | Scale +23-41% amplification factor; protocol features present = higher score |
 | **Permission Scope** | 1-10 | Over-privilege level of requested permissions | MiniScope (#17), MCP Server Dataset 67K (#9) | Ratio of requested permissions to minimum needed; 17 avg permissions/server as baseline |
-| **Injection Resilience** | 1-10 | Resistance to prompt injection variations | AgentDojo (#13), Indirect PI (#18), Synthetic PI (#22) | Inverse of ASR across variation types; 12 obfuscation techniques as coverage check |
+| **Injection Resilience** | 1-10 | Resistance to prompt injection variations | AgentDojo (#13), Indirect PI (#18) | Inverse of ASR across variation types; 12 obfuscation techniques as coverage check |
 | **Input Manipulation** | 1-10 | Sophistication of prompt-level attacks | ASB (#16), Meta Tool-Use PI (#15) | 6 attack types + 7 injection techniques scored by evasion sophistication |
 
 ### Current v3 Server-Defense Dimensions (refined from the 11 above)
