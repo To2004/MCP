@@ -65,6 +65,8 @@ proposed risk dimensions, quality notes, and a usefulness verdict.
 
 ## Unified Risk Dimensions Across All Benchmarks
 
+### Original 11 Benchmark-Derived Dimensions
+
 These are the risk dimensions that the analyzed data **actually supports** — derived from what's in the
 benchmarks, not forced onto them.
 
@@ -82,19 +84,36 @@ benchmarks, not forced onto them.
 | **Injection Resilience** | 1-10 | Resistance to prompt injection variations | AgentDojo (#13), Indirect PI (#18), Synthetic PI (#22) | Inverse of ASR across variation types; 12 obfuscation techniques as coverage check |
 | **Input Manipulation** | 1-10 | Sophistication of prompt-level attacks | ASB (#16), Meta Tool-Use PI (#15) | 6 attack types + 7 injection techniques scored by evasion sophistication |
 
+### Current v3 Server-Defense Dimensions (refined from the 11 above)
+
+The original 11 were refined through three iterations (11→8→7→6) to align with the project's
+server-defense framing: **"protects MCP servers from malicious or risky agent behavior."**
+Every dimension must answer: **"How does this agent threaten MY server?"**
+
+| # | Dimension | Scale | Server's Question | Absorbs | Grade |
+|---|-----------|-------|------------------|---------|-------|
+| 1 | **Agent Action Severity** | 1-10 | How dangerous is this request to my resources? | Attack Type + Severity + Surface + Protocol Amp | A |
+| 2 | **Permission Overreach** | 1-10 | Is the agent requesting more access than needed? | Permission Scope | B+ |
+| 3 | **Data Exfiltration Risk** | 1-10 | How much of my sensitive data is at risk? | Data Exposure (session-aware) | A |
+| 4 | **Cross-Tool Escalation** | 1-10 | Is this session showing escalating threat patterns? | Trust Calibration temporal data | B+ |
+| 5 | **Agent Compromise Indicator** | 1-10 | Is this agent acting under hostile influence? | Tool Toxicity + Injection Resilience + Input Manipulation (**reframed**) | A |
+| 6 | **Resource Consumption Risk** | 1-10 | Is this agent abusing my server resources? | NEW (rule-based) | D |
+| Mod | **Agent Trust Modifier** | 0.7-1.4× | How much should I trust this agent? | Trustworthiness + Trust Calibration | A |
+
+Full specification: [`dimension_refinement_v3_server_defense.md`](../dimension_refinement_v3_server_defense.md)
+
 ---
 
 ## How to Use This Analysis
 
-1. **Pick your risk dimensions** — The table above shows 11 dimensions. Not all are needed; start with
-   the ones your data supports best (Attack Surface, Attack Severity, Risk Type, Tool Toxicity are
-   the strongest).
+1. **Use the v3 dimensions** — The table above shows both the original 11 and the refined 6+1.
+   Use the v3 set for implementation — every dimension is server-defense aligned.
 
 2. **Get training data** — MCIP Guardian (#2, 13,830 samples) and MCP-AttackBench (#3, 70,448 samples)
-   are the largest labeled datasets for training a risk classifier.
+   are the largest labeled datasets for training the Agent Action Severity classifier.
 
 3. **Adopt scoring methodology** — CVSS v3.1 (#11) is the proven multi-dimensional scoring template.
-   Adapt its 8-metric structure for MCP-specific dimensions.
+   Adapt its formula for MCP-specific dimensions.
 
 4. **Evaluate your scorer** — AgentDojo (#13), MCPSecBench (#5), and MCPTox (#4) are the standard
    evaluation benchmarks. Include them for credibility.
