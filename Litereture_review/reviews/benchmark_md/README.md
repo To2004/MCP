@@ -6,6 +6,10 @@ can feed into a **multi-dimensional 1-10 risk scoring system** for MCP tool/agen
 18 entries were selected as relevant. 56 were skipped. Each analysis file covers data structure,
 proposed risk dimensions, quality notes, and a usefulness verdict.
 
+This folder now also includes a small set of **internet-sourced emerging additions** verified on
+**2026-03-30**. These are separated from the original 18 because they were added after the main
+literature sweep and are not all mature enough to count as core benchmark evidence.
+
 ---
 
 ## Analyzed Benchmarks (18)
@@ -37,6 +41,28 @@ proposed risk dimensions, quality notes, and a usefulness verdict.
 | 16 | [16_asb.md](16_asb.md) | ASB (Agent Security Bench) | Zhang et al., 2025 | 6 attack prompt types |
 | 17 | [17_miniscope.md](17_miniscope.md) | MiniScope Permissions | Zhu et al., 2025 | 10 apps, permission hierarchies |
 | 18 | [18_indirect_pi_attack.md](18_indirect_pi_attack.md) | Indirect PI Attack Dataset | Rall et al., 2025 | 1,068 instances, 28 models |
+
+---
+
+## Internet-Sourced Emerging Additions (4)
+
+These were added from primary web sources after the original review pass. They are useful, but they
+should be treated as **supplementary evidence** rather than the backbone of the scoring system.
+
+| # | File | Resource | Type | Why it matters |
+|---|------|----------|------|----------------|
+| 19 | [19_mcpshield.md](19_mcpshield.md) | MCPShield | Defense benchmark | Recent arXiv benchmark framing 6 attack scenarios across 6 agentic LLMs; strong lifecycle-defense relevance |
+| 20 | [20_dvmcp.md](20_dvmcp.md) | Damn Vulnerable MCP Server (DVMCP) | Practical benchmark / lab | 10 runnable attack challenges focused on MCP exploitation, including code execution and remote access |
+| 21 | [21_audit_db.md](21_audit_db.md) | audit-db | Structured audit corpus | Community schema for reproducible MCP server audits with manifests, findings, and severity indexes |
+| 22 | [22_vulnerability_db.md](22_vulnerability_db.md) | vulnerability-db | Vulnerability intelligence feed | OSV-style MCP advisory repository useful for deployment-time risk enrichment |
+
+### How To Treat These Additions
+
+- **MCPShield** is the strongest new academic addition.
+- **DVMCP** is best for demos, smoke tests, and attack walkthroughs, not training.
+- **audit-db** and **vulnerability-db** are best treated as future-facing structured evidence feeds.
+- These additions do **not** overturn the original ranking that MCP-AttackBench, MCPSecBench, MCPTox,
+  MCP Server Database, and MCP Server Dataset 67K are the main pillars of the scoring framework.
 
 ---
 
@@ -130,3 +156,7 @@ Each analysis file follows this template:
 - [../benchmarks_review.md](../benchmarks_review.md) — Full 24-benchmark literature review
 - [../datasets_review.md](../datasets_review.md) — Full 50-dataset literature review
 - [../paper_summaries/](../paper_summaries/) — Detailed paper summaries (Hebrew)
+- [../client_server_attack_dimension_framework.md](../client_server_attack_dimension_framework.md) — Client→Server Attack Dimension Framework (6 dims + modifier derived from 12 attack benchmarks)
+- [../dimension_refinement_v3_server_defense.md](../dimension_refinement_v3_server_defense.md) — Server-Defense Dimension Refinement v3 (6 dims + modifier)
+- [../benchmark_dimension_set_server_attack.md](../benchmark_dimension_set_server_attack.md) — Benchmark-Backed Server-Attack Dimension Set (5 dims + modifier)
+- [../benchmark_refinement_server_attack_columns.md](../benchmark_refinement_server_attack_columns.md) — Server-Attack Signal Extraction (column-level detail from 7 core benchmarks)
