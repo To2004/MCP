@@ -21,6 +21,7 @@ what each one contains, and what risk signals we can extract.
 
 These datasets were built specifically for MCP protocol security.
 
+
 | # | Dataset | Source Paper | Rows | Key Columns Available |
 |---|---------|-------------|------|----------------------|
 | 01 | **MCIP-Bench** | Jing et al. 2025 | 2,218 | `dialogue_turns` (list), `safety_label` (binary), `risk_category` (11 classes), `function_calls` (JSON with arguments), `source_dataset` |
@@ -417,22 +418,151 @@ Agent: Claude
 
 ---
 
-## 9. What Comes Next
+## 9. Dimension Evolution: v2 → v3 (Server-Defense Reframe)
+
+### 9.1 Why v2 Needed Revision
+
+The project description was clarified to: **"protects MCP servers from malicious or risky agent
+behavior."** When v2's 7 dimensions were tested against this framing, 2 pointed the wrong direction:
+
+| v2 Dimension | Problem |
+|-------------|---------|
+| Dim 1: Tool Integrity | Protects the **agent** from poisoned tools — not the server from the agent |
+| Dim 5: Injection Exposure | Protects the **agent** from injection — not the server from the agent |
+
+### 9.2 The v3 Dimension Set (6 + 1 Modifier)
+
+Every dimension now answers: **"How does this agent threaten MY server?"**
+
+| # | Dimension | Server's Question | Absorbs from v2 | Grade |
+|---|-----------|------------------|-----------------|-------|
+| 1 | **Agent Action Severity** | How dangerous is this request to my resources? | v2 Dim 2 (Request Sensitivity) + v2 Dim 6 (Blast Radius) | A (118K+) |
+| 2 | **Permission Overreach** | Is the agent requesting more access than needed? | v2 Dim 3 (unchanged) | B+ (67K+) |
+| 3 | **Data Exfiltration Risk** | How much of my sensitive data is at risk? | v2 Dim 4 (Data Exposure, refocused) | A (80K+) |
+| 4 | **Cross-Tool Escalation** | Is this session showing escalating threats? | v2 Dim 7 (kept) | B+ (6 sources) |
+| 5 | **Agent Compromise Indicator** | Is this agent acting under hostile influence? | v2 Dim 1 (Tool Integrity) + v2 Dim 5 (Injection Exposure) — **reframed** | A (9 sources) |
+| 6 | **Resource Consumption Risk** | Is this agent abusing my server resources? | **NEW** — no v2 equivalent | D (rule-based) |
+| Mod | **Agent Trust Modifier** | How much should I trust this agent? | v2 Modifier (reframed) | A (28+ models) |
+
+### 9.3 The Key Reframe: Agent Compromise Indicator
+
+v2 had Tool Integrity (protecting agent from poisoned tools) and Injection Exposure (protecting
+agent from injection) as separate dimensions. v3 combines and inverts them:
+
+> **A compromised agent is the server's problem.** Whether the agent was poisoned by a tool
+> description, manipulated by prompt injection, or steered by adversarial input — the SERVER
+> bears the consequences when it sends harmful requests.
+
+The same data (MCPTox, MCP-ITP, AgentDojo, Indirect PI, etc.) is used, but the interpretation
+flips from "protecting the agent" to "a vulnerable agent is a dangerous agent."
+
+### 9.4 Updated Column Mappings (v3)
+
+#### Dim 1: Agent Action Severity
+| Dataset | Columns | How |
+|---------|---------|-----|
+| MCIP-Bench (01) | `risk_category`, `function_calls` (JSON) | Labeled request-level risk |
+| MCIP Guardian (02) | `risk_category` (11 classes), `class_label` | Primary training set |
+| MCP-AttackBench (03) | `binary_label`, `attack_family`, `cascade_stage` | Largest attack/benign pool |
+| MCPSecBench (05) | `attack_type` (17), `attack_surface` (4), `asr_per_trial` | Severity + surface mapping |
+| MCP-SafetyBench (06) | `domain`, `attack_type`, `asr` | Domain severity weighting |
+| NVD/CVSS (11) | `description`, `cvss_base_score`, 8 sub-metrics | Scoring formula template |
+| R-Judge (12) | `risk_type`, `risk_scenario`, `safety_label` | Multi-turn risk scenarios |
+| Component PoC (08) | `protocol_amplification` (%) | MCP-specific damage multiplier |
+
+#### Dim 5: Agent Compromise Indicator
+| Dataset | Columns | How |
+|---------|---------|-----|
+| MCPTox (04) | `tool_description_poisoned`, `attack_paradigm`, `asr_per_model` | Poisoning exposure + model vulnerability |
+| MCP-ITP (10) | `poisoned_description`, `steering_words`, `detection_by_defense` | Implicit poisoning detection (84.2% ASR) |
+| AgentDojo (13) | `injection_task`, `defense_baseline`, `asr` | Defense effectiveness baseline |
+| Indirect PI (18) | `obfuscation_type` (12), `model_vulnerability_rate` | 12 evasion techniques, 28 models |
+| Synthetic PI (22) | `attack_category` (10), `tivs` | Composite injection scoring |
+| Meta Tool-Use PI (15) | `injection_technique` (7), `threat_category` (8) | Technique taxonomy |
+| InjecAgent (14) | `attacker_tools` (62), `harm_type` | Tool as injection vector |
+| ASB (16) | `attack_prompt_type` (6) | Input-level attack classification |
+| Component PoC (08) | `scanner_detection` (3.3%) | Evasion baseline |
+
+### 9.5 Updated Scoring Pipeline (v3)
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        Agent sends tools/call                           │
+└─────────────────────────────────┬────────────────────────────────────────┘
+                                  ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          MCP-RSS PROXY                                  │
+│                                                                         │
+│  STATIC:    Dim 2: Permission Overreach (schema, cached per tool)       │
+│  DYNAMIC:   Dim 1: Agent Action Severity (metadata + args)             │
+│             Dim 3: Data Exfiltration Risk (args + session)             │
+│             Dim 5: Agent Compromise Indicator (all signals)            │
+│  TEMPORAL:  Dim 4: Cross-Tool Escalation (session history)             │
+│             Dim 6: Resource Consumption Risk (session metrics)          │
+│             Agent Trust Modifier (agent identity)                      │
+│                                                                         │
+│  → Base Score (1-10) × Modifier (0.7-1.4) = Final Score               │
+│  → 1-3: AUTO-ALLOW | 4-6: LOG | 7-8: HUMAN APPROVAL | 9-10: DENY     │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 9.6 Updated JSON Output (v3)
+
+```json
+{
+  "risk_score": 8.5,
+  "risk_level": "HIGH",
+  "dimensions": {
+    "agent_action_severity": 9,
+    "permission_overreach": 7,
+    "data_exfiltration_risk": 8,
+    "cross_tool_escalation": 6,
+    "agent_compromise_indicator": 5,
+    "resource_consumption_risk": 2
+  },
+  "agent_trust_modifier": 1.2,
+  "base_score_before_modifier": 7.1,
+  "justification": "Agent requesting filesystem_write to /etc/passwd (action_severity=9). Unrestricted path access beyond task needs (permission_overreach=7). Previous db.query accessed passwords — exfiltration vector (data_exfiltration=8). Escalating pattern: db_read → system file_write (escalation=6). GPT-4o has 61.8% MCPTox ASR (compromise=5, modifier=1.2).",
+  "recommendation": "REQUIRE HUMAN APPROVAL",
+  "confidence": 0.92
+}
+```
+
+### 9.7 Updated Data Grades (v3)
+
+| Dimension | Datasets | Total Rows | Grade |
+|-----------|----------|------------|-------|
+| Dim 1: Agent Action Severity | 8 | 118K+ | **A** |
+| Dim 2: Permission Overreach | 4 | 67K+ | **B+** |
+| Dim 3: Data Exfiltration Risk | 4 | 80K+ | **A** |
+| Dim 4: Cross-Tool Escalation | 6 | varied | **B+** |
+| Dim 5: Agent Compromise Indicator | 9 | 6K+ | **A** |
+| Dim 6: Resource Consumption Risk | 3 | metadata | **D** |
+| Agent Trust Modifier | 6 | 60+ sub-datasets | **A** |
+
+---
+
+## 10. What Comes Next
 
 1. **Formalize the scoring formula** — Define weights for each dimension and the combination
    function (weighted average, geometric mean, or CVSS-style nonlinear formula).
 
-2. **Build the static scorer** — Implement Dim 1 (Tool Integrity) and Dim 3 (Permission Overreach)
-   using rule-based pattern matching. These can be cached per tool.
+2. **Build the static scorer** — Implement Dim 2 (Permission Overreach) using rule-based scope
+   comparison. This can be cached per tool.
 
 3. **Train the request classifier** — Use MCIP Guardian (13,830 samples) + MCP-AttackBench
-   (70,448 samples) to train Dim 2 (Request Sensitivity).
+   (70,448 samples) to train Dim 1 (Agent Action Severity).
 
-4. **Implement session tracking** — Build the session history store for Dim 7
-   (Cross-Tool Escalation).
+4. **Implement session tracking** — Build the session history store for Dim 4
+   (Cross-Tool Escalation) and Dim 6 (Resource Consumption Risk).
 
-5. **Create evaluation dataset** — ~500 MCP tool invocations manually scored 1-10 by annotators
+5. **Build the compromise detector** — Implement Dim 5 (Agent Compromise Indicator) using
+   MCP-ITP steering word detection + injection pattern matching from Indirect PI/Meta Tool-Use PI.
+
+6. **Create evaluation dataset** — ~500 MCP tool invocations manually scored 1-10 by annotators
    for ground-truth validation.
 
-6. **Benchmark against existing systems** — Compare MCP-RSS detection rate vs MCPShield (95.3%),
+7. **Benchmark against existing systems** — Compare MCP-RSS detection rate vs MCPShield (95.3%),
    MCP-Guard (95.4% F1), and mcp-scan (3.3%).
+
+Full v3 specification: see `dimension_refinement_v3_server_defense.md`.
