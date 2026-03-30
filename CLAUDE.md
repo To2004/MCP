@@ -6,15 +6,18 @@ For detailed documentation, see the [docs/](docs/) folder
 
 ## Project Overview
 
-MCP Security is a defense-oriented risk scoring framework that protects
-MCP (Model Context Protocol) servers from malicious or risky agent behavior.
-Unlike traditional risk frameworks built for static software and human-driven
-workflows, this project addresses the unique threats posed by autonomous AI
-agents — dynamic tool invocation, context reuse, trust boundary violations,
-and downstream blast radius.
+MCP Security is a defense-oriented risk scoring framework where the
+**MCP server is the protected asset** and **AI agents are the threat source**.
+The framework scores incoming agent requests to determine how risky they are
+to the server, enabling the server to gate, throttle, or deny dangerous
+interactions before they execute.
 
-The framework evaluates agents accessing MCP servers and produces risk scores
-in two modes:
+Unlike traditional risk frameworks built for static software and human-driven
+workflows, this project addresses threats unique to autonomous agents —
+dynamic tool invocation, context reuse, trust boundary violations, and
+downstream blast radius.
+
+Risk scores are produced in two modes:
 - **Static** — evaluated at design time based on a tool's general properties
 - **Dynamic** — evaluated at runtime based on the specific agent request/input
 
