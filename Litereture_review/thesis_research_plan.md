@@ -94,7 +94,11 @@ Inspired by MCP-Guard's cascaded approach (pattern→neural→LLM) and MCPShield
 
 ### Proposed MCP Risk Base Metrics (answering RQ2)
 
-Adapted from CVSS v3.1 base metrics, informed by the literature:
+Adapted from CVSS v3.1 base metrics, informed by the literature. Refined through three iterations
+(v1→v2→v3) to align with the server-defense framing: every dimension must answer **"How does this
+agent threaten the server?"** See `dimension_refinement_v3_server_defense.md` for full specification.
+
+#### Original 8 CVSS-Inspired Metrics (initial proposal)
 
 | MCP Metric | Inspired By | What It Measures |
 |---|---|---|
@@ -107,7 +111,25 @@ Adapted from CVSS v3.1 base metrics, informed by the literature:
 | **Combination Risk** | Mind Your Server (Zhao et al.) | Does this tool + other session tools create dangerous combinations? |
 | **Description Integrity** | MCP-ITP (Li et al.) | Does the tool description show signs of implicit poisoning? |
 
-Each metric scored 0-3 (None/Low/Medium/High), weighted and combined into the 1-10 composite score using a formula inspired by CVSS base score calculation.
+#### Current v3 Server-Defense Dimensions (6 + 1 modifier)
+
+The 8 metrics above were refined into 6 server-defense dimensions + 1 modifier. Key changes:
+- Access Scope + Action Reversibility + Data Sensitivity → absorbed into **Agent Action Severity**
+- Tool Provenance + Description Integrity → absorbed into **Agent Compromise Indicator** (reframed: compromised agent = threat to server)
+- Agent Trust → **Agent Trust Modifier** (demoted: agent properties ≠ request risk)
+- NEW: **Resource Consumption Risk** (DoS/resource abuse — not in original proposal)
+
+| # | v3 Dimension | Maps to Original Metric | Server's Question | Scale |
+|---|---|---|---|---|
+| 1 | **Agent Action Severity** | Access Scope + Action Reversibility + Data Sensitivity | How dangerous is this request to my resources? | 1-10 |
+| 2 | **Permission Overreach** | Privilege Level | Is the agent requesting more access than needed? | 1-10 |
+| 3 | **Data Exfiltration Risk** | Data Sensitivity (refocused on theft) | How much of my sensitive data is at risk? | 1-10 |
+| 4 | **Cross-Tool Escalation** | Combination Risk | Is this session showing escalating threat patterns? | 1-10 |
+| 5 | **Agent Compromise Indicator** | Tool Provenance + Description Integrity (reframed) | Is this agent acting under hostile influence? | 1-10 |
+| 6 | **Resource Consumption Risk** | *(new — no original equivalent)* | Is this agent abusing my server resources? | 1-10 |
+| Mod | **Agent Trust Modifier** | Agent Trust | How much should I trust this agent? | 0.7-1.4× |
+
+Each dimension scored 1-10, weighted and combined into the composite score. The modifier adjusts the base score to produce the final risk score using a formula inspired by CVSS base score calculation.
 
 ### What Data to Use
 
