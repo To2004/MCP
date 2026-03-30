@@ -18,6 +18,14 @@ Individual benchmark analysis files for MCP security datasets and evaluation fra
 | `10_mcp_itp_implicit_poisoning.md` | MCP-ITP Implicit Poisoning Data | Li et al., 2026 | 548 test cases x 12 models |
 | `11_nvd_cvss.md` | NVD/CVE Database + CVSS v3.1 | Jafarikhah et al., 2026 | 31,000+ CVEs |
 | `12_r_judge.md` | R-Judge Records | Yuan et al., 2024 | 569 multi-turn records |
+| `13_agentdojo.md` | AgentDojo | Various | Varies |
+| `14_injecagent.md` | InjecAgent | Various | Varies |
+| `15_meta_tool_use_pi.md` | Meta Tool-Use PI | Various | Varies |
+| `16_asb.md` | ASB | Various | Varies |
+| `19_decodingtrust.md` | DecodingTrust Dataset | Wang et al., 2023 | Multi-benchmark aggregate (8 dimensions) |
+| `20_trustllm.md` | TrustLLM Benchmark Datasets | Huang et al., 2024 | 30+ datasets (6 dimensions, 18 subcategories) |
+| `21_trust_paradox.md` | Trust Paradox Evaluation Scenarios | Xu et al., 2025 | 19 scenarios x 4 LLM backends |
+| `22_synthetic_pi.md` | Synthetic PI Dataset | Gosmar et al., 2025 | 500 prompts (10 attack categories) |
 
 ## Structure of Each File
 
