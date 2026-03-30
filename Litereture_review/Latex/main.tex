@@ -1,0 +1,147 @@
+\documentclass[12pt]{article}
+
+% ---------------------------------------------------------
+% Packages (minimal and stable)
+% ---------------------------------------------------------
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{times}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\onehalfspacing
+\pagestyle{plain}
+
+% ---------------------------------------------------------
+% Begin Document
+% ---------------------------------------------------------
+\begin{document}
+
+% ---------------------------------------------------------
+% TITLE PAGE
+% ---------------------------------------------------------
+\begin{titlepage}
+\centering
+
+\vspace*{1cm}
+
+\includegraphics[width=3cm]{bgu.png}\\[0.8cm]
+
+{\large Ben-Gurion University of the Negev}\\
+{\large Faculty of Engineering Sciences}\\
+{\large Department of Information Systems Engineering}
+
+\vspace{2cm}
+
+{\Large \textbf{Thesis Proposal – End of Semester}}\\[0.8cm]
+{\Large \textbf{Dynamic Risk Scoring for AI Agent Access\\via the Model Context Protocol}}
+
+\vspace{0.2cm}
+
+\begin{flushleft}
+\textbf{Submitted by}\\[0.2cm]
+Tomer Ovadya\\
+Department of Information Systems Engineering\\
+Ben-Gurion University of the Negev\\
+E-mail: ovadyat@post.bgu.ac.il
+\end{flushleft}
+
+\vspace{0.2cm}
+
+\begin{flushleft}
+\textbf{Supervisor}\\[0.2cm]
+Dr. Asaf Shabtai\\
+Department of Information Systems Engineering\\
+Ben-Gurion University of the Negev
+\end{flushleft}
+
+
+
+\end{titlepage}
+
+% ---------------------------------------------------------
+% ABSTRACT
+% ---------------------------------------------------------
+
+\begin{abstract}
+The Model Context Protocol (MCP) enables AI agents to connect to third-party tool servers, creating a rapidly growing ecosystem of over 67{,}000 servers across six public registries. Current MCP security mechanisms rely on binary allow/deny decisions that treat all tool invocations identically, regardless of the actual risk posed by a specific request in a specific operational context. This work proposes a dynamic risk scoring framework for MCP agent access that produces a graduated 1--10 severity score for each tool invocation request, inspired by the CVSS vulnerability scoring methodology. We survey the MCP security landscape including attack taxonomies, tool poisoning techniques, defense frameworks, and access control mechanisms, and identify the absence of graduated, context-aware risk quantification as a critical gap. Building on evidence that LLMs can score vulnerability descriptions and that multi-signal aggregation improves detection over single-signal approaches, we outline a multi-stage scoring pipeline that combines static tool metadata analysis, contextual enrichment from session behavior and ecosystem baselines, and LLM-based risk judgment. The proposed system aims to enable nuanced security decisions---auto-allow, log, escalate, or auto-deny---based on quantified risk rather than binary classification.
+\end{abstract}
+% ---------------------------------------------------------
+% RELATED WORK
+% ---------------------------------------------------------
+\section{Background and Related Work}
+
+This chapter surveys six complementary research areas that together reveal a critical gap in MCP security: while the ecosystem faces sophisticated attacks and has begun developing defenses and access controls, no existing work produces a graduated, dynamic risk score for MCP tool invocations. Current security decisions are binary---allow or deny---ignoring the spectrum of risk between clearly safe and clearly dangerous requests. We trace the MCP architecture and ecosystem, then review attack taxonomies, tool poisoning techniques, defense frameworks, access control mechanisms, and risk scoring approaches, before positioning this work.
+
+\subsection{MCP Architecture and Ecosystem Overview}
+The Model Context Protocol (MCP), introduced by Anthropic in late 2024, standardizes how AI agents connect to external tool servers through a host-client-server architecture. Hou et al.\ provide the first systematic analysis of the MCP ecosystem, cataloging the protocol’s components and identifying four attacker types (malicious server developer, compromised client, network adversary, and supply-chain attacker) that give rise to 16 distinct threat scenarios with proof-of-concept demonstrations \cite{hou2025mcp_landscape}. Critically, MCP’s design assumes that tool metadata---name, description, and input schema---is trustworthy, yet servers are contributed by untrusted third parties with no mandatory security review.
+
+Li and Gao quantify the ecosystem’s scale through an empirical analysis of 67{,}057 MCP servers across six public registries, encompassing 44{,}499 tools \cite{li2025understanding_mcp}. Their study uncovers credential leakage (personal access tokens and API keys exposed in server configurations), server hijacking vulnerabilities in over 111 instances, and widespread tool-name confusion through affix squatting. A combined qualitative analysis of four major MCP hosts (Cursor, Windsurf, Claude Desktop, and Cline) reveals that hosts differ substantially in how they handle server trust, with none implementing graduated risk assessment. Together, these studies establish that MCP’s open ecosystem is growing rapidly, that its trust model is fundamentally permissive, and that the scale of potential exposure demands automated, graduated risk quantification rather than manual auditing.
+
+\subsection{Attack Taxonomies and Threat Models for MCP}
+Multiple independent efforts have developed threat taxonomies for the MCP attack surface. Ferrag et al.\ present an end-to-end threat model spanning over 30 attack techniques organized across four domains---input manipulation, model exploitation, system compromise, and protocol abuse---covering not only MCP but also related agent protocols such as A2A, ANP, and ACP \cite{ferrag2025prompt_to_protocol}. Their evidence-driven analysis of over 150 sources, including 12 real CVEs from 2025, provides the most comprehensive enumeration of how adversaries can subvert agent-tool interactions.
+
+Zhao et al.\ focus specifically on malicious MCP servers, identifying 12 distinct attack categories across six server components including tool shadowing (a malicious tool overrides a legitimate one), rug-pull attacks (server behavior changes after trust is established), and cross-server data exfiltration \cite{zhao2025when_mcp_servers_attack}. Their work demonstrates that a single malicious server in a multi-server environment can compromise the entire agent’s behavior without the user’s awareness.
+
+Maloyan and Namiot analyze three architectural vulnerabilities in the MCP specification itself: the absence of server identity verification (servers self-assert capabilities with no external validation), unauthenticated sampling requests (servers can inject prompts into the host LLM), and the lack of isolation between co-installed servers \cite{maloyan2026breaking_protocol}. These are not implementation bugs but fundamental protocol design weaknesses. Their analysis shows that MCP amplifies prompt injection success rates by 23--41\% compared to non-MCP baselines. Together, these taxonomies define the space of attacks that any risk scoring system must cover, spanning multiple layers and multiple phases of the tool invocation lifecycle.
+
+\subsection{Tool Poisoning and Parasitic Attacks}
+Tool poisoning---the manipulation of tool metadata to steer agent behavior---has emerged as the most effective class of MCP attacks. Wang et al.\ introduce MCPTox, a benchmark spanning 45 real-world MCP servers and 353 tools, evaluating three poisoning paradigms: explicit function hijacking, implicit behavioral steering, and cross-server poisoning chains \cite{wang2025mcptox}. Their results show a 72.8\% overall attack success rate for explicit poisoning across multiple LLM backends (GPT-4o: 61.8\%, Claude: 34.3\%), establishing that current agents are broadly vulnerable to description-based manipulation.
+
+Li et al.\ demonstrate that implicit poisoning is far more dangerous: their MCP-ITP framework generates poisoned tool descriptions that achieve an 84.2\% attack success rate while evading detection by existing security tools at a rate of only 0.3\% \cite{li2026mcp_itp}. The key insight is that implicitly poisoned tools are never directly invoked---instead, their metadata causes the agent to misuse other legitimate tools, making the attack invisible to invocation-level monitoring.
+
+Zhao et al.\ introduce parasitic toolchain attacks, where no single tool is malicious in isolation but dangerous behavior emerges from tool combinations \cite{zhao2025mind_your_server}. Their analysis identifies 472 External Ingestion Tools, 391 Privacy Access Tools, and 180 Network Access Tools across the MCP ecosystem, with 27.2\% of servers exposing exploitable combinations and a 90\% real-world attack success rate. This demonstrates that tool risk cannot be assessed in isolation but must account for inter-tool interactions within a session.
+
+Wang et al.\ approach detection from the agent’s internal perspective with MindGuard, which inspects the LLM’s decision-making process to detect when metadata poisoning influences tool selection \cite{wang2026mindguard}. Their work on code/data confusion---where the LLM treats untrusted metadata as implicit code---highlights that risk signals may need to incorporate agent-internal behavioral indicators, not only external metadata features.
+
+\subsection{Defense Frameworks and Runtime Guardrails}
+Several defense frameworks have been proposed to mitigate MCP security risks, ranging from adaptive trust calibration to multi-agent guardrails. Zhou et al.\ introduce MCPShield, a three-stage framework comprising pre-connection probing (testing server behavior with benign and adversarial inputs), runtime monitoring (tracking behavioral consistency during a session), and post-session trust updating \cite{zhou2026mcpshield}. MCPShield achieves a 95.30\% detection rate across 17 attack types in their MCPSecBench benchmark, but outputs a binary trusted/untrusted decision rather than a graduated risk score.
+
+Xing et al.\ propose MCP-Guard, a defense-in-depth architecture that cascades three detection stages: fast static pattern matching ($<$2ms, catching approximately 38.9\% of threats), a fine-tuned neural classifier ($\sim$55ms), and LLM-based arbitration invoked only for ambiguous cases \cite{xing2026mcp_guard}. This cascaded design achieves an F1 score of 95.4\% with a 2.04$\times$ speedup over monolithic LLM-only defenses, demonstrating that multi-stage pipelines can balance detection accuracy with computational efficiency.
+
+At the prompt level, Gosmar et al.\ propose a multi-agent NLP framework that classifies prompt injection attacks into 10 categories and applies collaborative agent verification to identify injected instructions before they reach tool invocation \cite{gosmar2025prompt_injection}. Mou et al.\ introduce ToolSafe, which operates at the individual tool-call level with proactive feedback loops that allow the agent to self-correct when a risky invocation is detected, rather than outright blocking \cite{mou2026toolsafe}. Xiang et al.\ take a different architectural approach with GuardAgent, deploying a separate guard agent that generates and executes code-based enforcement policies, decoupling security reasoning from task execution entirely \cite{xiang2025guardagent}.
+
+All five frameworks produce binary or categorical security decisions (safe/unsafe, allow/block). None outputs a numeric risk score that would enable graduated response policies---auto-allow, log-and-monitor, escalate-to-human, or auto-deny---based on quantified risk, which is the core gap this work addresses.
+
+\subsection{Access Control and Privilege Management for AI Agents}
+A complementary line of research addresses constraining what agents are permitted to do. Shi et al.\ introduce Progent, a programmable privilege control system that allows developers to specify fine-grained, composable access policies at the tool-call level \cite{shi2025progent}. Progent reduces attack success rates from 41.2\% to 2.2\% but introduces utility costs, as overly restrictive policies prevent legitimate tool use. Critically, Progent’s policies are static and predefined---they do not adapt based on the runtime context or the specific risk level of individual requests.
+
+Buhler et al.\ propose AgentBound, the first framework treating access control as a first-class primitive in MCP through two mechanisms: AgentManifest (a declarative specification of required permissions) and AgentBox (a runtime enforcement layer constraining server behavior to declared permissions) \cite{buhler2025agentbound}. Their analysis reveals that MCP servers currently run with full user-level permissions on the host system, creating an attack surface far broader than any individual tool requires.
+
+Wu et al.\ address the specific problem of automating data access permissions for AI agents, proposing a Permission Assistant that learns user preferences through interaction to generate minimal-privilege policies from natural language task descriptions \cite{wu2025automating_data_access}. All three works enforce binary access boundaries (allowed or denied) and do not quantify the degree of risk associated with a permitted action. A graduated scoring approach would complement access control by informing policy decisions with risk-proportionate evidence.
+
+\subsection{Risk Scoring, Trust Management, and Vulnerability Prioritization}
+The question of how to quantify security risk numerically rather than categorically has been studied extensively in vulnerability management but remains unexplored for MCP. Jafarikhah et al.\ demonstrate that LLMs can predict CVSS base metric scores from vulnerability descriptions alone, achieving approximately 79\% accuracy with a two-shot prompting strategy \cite{jafarikhah2026description_to_score}. Their work establishes that text-based risk scoring is feasible: given a textual description of what a component does and what can go wrong, an LLM can produce a structured, multi-dimensional severity assessment. This finding is directly relevant to MCP tool descriptions, which share structural similarity with CVE descriptions---both describe functionality, access scope, and potential impact in natural language.
+
+Raza et al.\ survey Trust, Risk, and Security Management (TRiSM) for agentic AI systems, analyzing 180 papers from 2022--2025 and identifying risk quantification as one of six core governance pillars \cite{raza2025trism}. Their taxonomy highlights that multi-agent systems require risk signals that are dynamic (updated as behavior is observed), contextual (sensitive to the operational environment), and composable (aggregatable across multiple agents and tools). However, the survey identifies no existing system that produces such signals for MCP specifically. Together, these works provide the methodological foundation---LLM-based scoring from text descriptions and a governance framework demanding graduated risk quantification---but leave the application to MCP tool invocations as an open problem.
+
+\subsection{Positioning of This Work}
+Taken together, prior work establishes that the MCP ecosystem is large and growing with minimal security oversight \cite{hou2025mcp_landscape,li2025understanding_mcp}, that the attack surface spans tool poisoning, protocol exploits, and parasitic toolchain compositions \cite{ferrag2025prompt_to_protocol,wang2025mcptox,li2026mcp_itp,zhao2025mind_your_server}, that defense frameworks and access control mechanisms produce binary allow/deny decisions \cite{zhou2026mcpshield,xing2026mcp_guard,shi2025progent,buhler2025agentbound}, and that LLM-based risk scoring from textual descriptions is feasible but has not been applied to MCP \cite{jafarikhah2026description_to_score,raza2025trism}. The critical gap is the absence of a graduated, dynamic risk scoring system that quantifies how dangerous a specific MCP tool invocation is in a specific operational context, rather than classifying it as safe or unsafe.
+
+This work addresses this gap by proposing a dynamic risk scoring framework for MCP agent access that produces a 1--10 severity score per tool invocation request, analogous to how CVSS scores quantify software vulnerability severity.
+
+\paragraph{Contributions.}
+\begin{itemize}
+    \item A formal risk taxonomy defining the base metrics for MCP tool invocation risk, adapted from the CVSS scoring methodology to the MCP domain.
+    \item A multi-stage scoring pipeline that combines static tool metadata analysis, contextual enrichment from session behavior and ecosystem baselines, and LLM-based risk judgment to produce graduated 1--10 risk scores.
+    \item An evaluation against existing binary defense baselines demonstrating that graduated scoring enables more nuanced and effective security decisions.
+\end{itemize}
+
+% ---------------------------------------------------------
+% METHODOLOGY
+% ---------------------------------------------------------
+\section{Methodology}
+\label{sec:methodology}
+
+% TODO: Methodology content to be added.
+
+
+
+% ---------------------------------------------------------
+% References
+% ---------------------------------------------------------
+\newpage
+\bibliographystyle{plain} % or ieeetr, alpha, acm, etc.
+\bibliography{bib}        % loads bib.bib
+\end{document}
