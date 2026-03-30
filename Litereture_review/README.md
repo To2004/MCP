@@ -19,6 +19,8 @@ This folder contains the complete literature review for the MCP Security thesis 
 | [thesis_research_plan.md](thesis_research_plan.md) | Detailed thesis research plan with methodology, phases, and literature references |
 | [alternative_thesis_direction.md](alternative_thesis_direction.md) | Backup thesis direction (implicit poisoning detection via semantic drift) |
 | [dimension_refinement_analysis.md](dimension_refinement_analysis.md) | Data-grounded refinement of risk dimensions: 11 benchmark dimensions → 8 final scoring dimensions with row counts, merge rationale, and 1-10 scale specs |
+| [dimension_refinement_v2_agent_boundary.md](dimension_refinement_v2_agent_boundary.md) | **v2 refocus:** 8 ecosystem dimensions → 7 agent-boundary dimensions + 1 modifier, centered on "is THIS call by THIS agent safe RIGHT NOW?" |
+| [final_report_datasets_dimensions_idea.md](final_report_datasets_dimensions_idea.md) | **Final report:** All 22 datasets with extractable columns, v1→v2 dimension transformation, scoring pipeline, and the MCP-RSS thesis idea |
 
 ## Folder Structure
 
