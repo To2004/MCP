@@ -2,14 +2,15 @@
 
 ## What Is MCP Security?
 
-MCP Security is a risk modeling framework specifically designed for MCP (Model
-Context Protocol) servers and tools used by AI agents in enterprise
-environments.
+MCP Security is a defense-oriented risk scoring framework that protects
+MCP (Model Context Protocol) servers from malicious or risky agent behavior
+in enterprise environments.
 
-Existing risk frameworks (like CVSS) were built for static software and
-human-driven workflows. They don't account for the unique risks introduced by
-autonomous AI agents that dynamically invoke tools, reuse context, and trigger
-real-world actions. This project fills that gap.
+Existing risk frameworks were built for static software and human-driven
+workflows. They don't account for the unique threats posed by autonomous AI
+agents that dynamically invoke tools, reuse context, and trigger real-world
+actions. This project fills that gap by scoring agents and defending the
+MCP server.
 
 ## What the Framework Does
 
