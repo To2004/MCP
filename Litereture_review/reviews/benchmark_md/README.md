@@ -12,6 +12,12 @@ Individual benchmark analysis files for MCP security datasets and evaluation fra
 | `04_mcptox.md` | MCPTox Dataset | Wang et al., 2025 | 1,312-1,497 test cases |
 | `05_mcpsecbench.md` | MCPSecBench Playground | Yang et al., 2025 | 17 attack types x 15 trials |
 | `06_mcp_safetybench.md` | MCP-SafetyBench | Zong et al., 2025 | 5 domains x 20 types x 13 models |
+| `07_mcp_server_database.md` | MCP Server Database | Zhao et al., 2025 | 1,360 servers / 12,230 tools |
+| `08_component_attack_poc.md` | Component-based Attack PoC Dataset | Zhao et al., 2025 | 132 servers (up to 1M+ configs) |
+| `09_mcp_server_dataset_67k.md` | MCP Server Dataset (67K) | Li & Gao, 2025 | 67,057 servers / 44,499 tools |
+| `10_mcp_itp_implicit_poisoning.md` | MCP-ITP Implicit Poisoning Data | Li et al., 2026 | 548 test cases x 12 models |
+| `11_nvd_cvss.md` | NVD/CVE Database + CVSS v3.1 | Jafarikhah et al., 2026 | 31,000+ CVEs |
+| `12_r_judge.md` | R-Judge Records | Yuan et al., 2024 | 569 multi-turn records |
 
 ## Structure of Each File
 
