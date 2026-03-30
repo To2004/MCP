@@ -3,12 +3,12 @@
 Analysis of 74 benchmarks and datasets from the MCP security literature, evaluating which ones
 can feed into a **multi-dimensional 1-10 risk scoring system** for MCP tool/agent access.
 
-22 entries were selected as relevant. 52 were skipped. Each analysis file covers data structure,
+23 entries were selected as relevant. 52 were skipped. Each analysis file covers data structure,
 proposed risk dimensions, quality notes, and a usefulness verdict.
 
 ---
 
-## Analyzed Benchmarks (22)
+## Analyzed Benchmarks (23)
 
 ### Tier 1 — MCP-Specific, Directly Usable
 
@@ -37,6 +37,7 @@ proposed risk dimensions, quality notes, and a usefulness verdict.
 | 16 | [16_asb.md](16_asb.md) | ASB (Agent Security Bench) | Zhang et al., 2025 | 6 attack prompt types |
 | 17 | [17_miniscope.md](17_miniscope.md) | MiniScope Permissions | Zhu et al., 2025 | 10 apps, permission hierarchies |
 | 18 | [18_indirect_pi_attack.md](18_indirect_pi_attack.md) | Indirect PI Attack Dataset | Rall et al., 2025 | 1,068 instances, 28 models |
+| 24 | [24_toolsword.md](24_toolsword.md) | ToolSword | Ye et al., ACL 2024 | 470 samples, 6 scenarios, 3 stages |
 
 ### Tier 3 — Scoring Frameworks and Dimension Models
 
