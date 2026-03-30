@@ -1,46 +1,121 @@
-# Benchmark Analysis Files
+# Benchmark Analysis for Multi-Dimensional MCP Risk Scoring
 
-Individual benchmark analysis files for MCP security datasets and evaluation frameworks. Each file follows a standardized structure covering source, format, data structure, proposed risk dimensions (for 1-10 scoring), data quality notes, and a usefulness verdict.
+Analysis of 74 benchmarks and datasets from the MCP security literature, evaluating which ones
+can feed into a **multi-dimensional 1-10 risk scoring system** for MCP tool/agent access.
 
-## Files
+22 entries were selected as relevant. 52 were skipped. Each analysis file covers data structure,
+proposed risk dimensions, quality notes, and a usefulness verdict.
 
-| File | Benchmark | Paper | Samples |
-|------|-----------|-------|---------|
-| `01_mcip_bench.md` | MCIP-Bench | Jing et al., 2025 | 2,218 instances |
-| `02_mcip_guardian_training.md` | MCIP Guardian Training Dataset | Jing et al., 2025 | 13,830 instances |
-| `03_mcp_attackbench.md` | MCP-AttackBench | Xing et al., 2025 | 70,448 samples |
-| `04_mcptox.md` | MCPTox Dataset | Wang et al., 2025 | 1,312-1,497 test cases |
-| `05_mcpsecbench.md` | MCPSecBench Playground | Yang et al., 2025 | 17 attack types x 15 trials |
-| `06_mcp_safetybench.md` | MCP-SafetyBench | Zong et al., 2025 | 5 domains x 20 types x 13 models |
-| `07_mcp_server_database.md` | MCP Server Database | Zhao et al., 2025 | 1,360 servers / 12,230 tools |
-| `08_component_attack_poc.md` | Component-based Attack PoC Dataset | Zhao et al., 2025 | 132 servers (up to 1M+ configs) |
-| `09_mcp_server_dataset_67k.md` | MCP Server Dataset (67K) | Li & Gao, 2025 | 67,057 servers / 44,499 tools |
-| `10_mcp_itp_implicit_poisoning.md` | MCP-ITP Implicit Poisoning Data | Li et al., 2026 | 548 test cases x 12 models |
-| `11_nvd_cvss.md` | NVD/CVE Database + CVSS v3.1 | Jafarikhah et al., 2026 | 31,000+ CVEs |
-| `12_r_judge.md` | R-Judge Records | Yuan et al., 2024 | 569 multi-turn records |
-| `13_agentdojo.md` | AgentDojo Task Suites | Debenedetti et al., 2024 | 97 user tasks + 629 injection tasks |
-| `14_injecagent.md` | InjecAgent Dataset | Zhan et al., 2024 | 1,054 test cases |
-| `15_meta_tool_use_pi.md` | Meta Tool-Use Agentic PI Benchmark | Chennabasappa et al., 2025 | 600 scenarios (300/300 split) |
-| `16_asb.md` | ASB (Agent Security Bench) | Zhang et al., 2025 | 6 attack types x tasks x defenses |
-| `17_miniscope.md` | MiniScope Synthetic Permission Dataset | Zhu et al., 2025 | 10 apps, 200 multi-method req/app |
-| `18_indirect_pi_attack.md` | Indirect PI Attack Dataset | Rall et al., 2025 | 1,068 instances (89 templates x 12 variations) |
-| `19_decodingtrust.md` | DecodingTrust Dataset | Wang et al., 2023 | Multi-benchmark aggregate (8 dimensions) |
-| `20_trustllm.md` | TrustLLM Benchmark Datasets | Huang et al., 2024 | 30+ datasets (6 dimensions, 18 subcategories) |
-| `21_trust_paradox.md` | Trust Paradox Evaluation Scenarios | Xu et al., 2025 | 19 scenarios x 4 LLM backends |
-| `22_synthetic_pi.md` | Synthetic PI Dataset | Gosmar et al., 2025 | 500 prompts (10 attack categories) |
+---
 
-## Structure of Each File
+## Analyzed Benchmarks (22)
 
-Each benchmark analysis follows this template:
+### Tier 1 — MCP-Specific, Directly Usable
 
-1. **Source** — paper title, authors, link, year
-2. **Format & Size** — sample count, data format, availability
-3. **Data Structure** — table of fields/columns with types, examples, and usability notes
-4. **Proposed Risk Dimensions** — how each benchmark's data maps to 1-10 risk scoring dimensions
-5. **Data Quality Notes** — limitations, missing values, inconsistencies
-6. **Usefulness Verdict** — practical assessment for multi-label risk scoring
+| # | File | Benchmark | Source | Samples |
+|---|------|-----------|--------|---------|
+| 1 | [01_mcip_bench.md](01_mcip_bench.md) | MCIP-Bench | Jing et al., 2025 | 2,218 instances, 10 risk types |
+| 2 | [02_mcip_guardian_training.md](02_mcip_guardian_training.md) | MCIP Guardian Training | Jing et al., 2025 | 13,830 instances, 11 categories |
+| 3 | [03_mcp_attackbench.md](03_mcp_attackbench.md) | MCP-AttackBench | Xing et al., 2025 | 70,448 samples, 3 attack families |
+| 4 | [04_mcptox.md](04_mcptox.md) | MCPTox Dataset | Wang et al., 2025 | 1,312-1,497 cases, 45 real servers |
+| 5 | [05_mcpsecbench.md](05_mcpsecbench.md) | MCPSecBench Playground | Yang et al., 2025 | 17 types x 4 surfaces |
+| 6 | [06_mcp_safetybench.md](06_mcp_safetybench.md) | MCP-SafetyBench | Zong et al., 2025 | 5 domains x 20 types x 13 models |
+| 7 | [07_mcp_server_database.md](07_mcp_server_database.md) | MCP Server Database | Zhao et al., 2025 | 1,360 servers, 12,230 tools |
+| 8 | [08_component_attack_poc.md](08_component_attack_poc.md) | Component-based Attack PoC | Zhao et al., 2025 | 132 servers, 12 categories |
+| 9 | [09_mcp_server_dataset_67k.md](09_mcp_server_dataset_67k.md) | MCP Server Dataset (67K) | Li & Gao, 2025 | 67,057 servers, 44,499 tools |
+| 10 | [10_mcp_itp_implicit_poisoning.md](10_mcp_itp_implicit_poisoning.md) | MCP-ITP Implicit Poisoning | Li et al., 2026 | 548 cases x 12 models |
 
-## Related
+### Tier 2 — Agent/Tool Security, Transferable to MCP
 
-- [../benchmarks_review.md](../benchmarks_review.md) — Consolidated benchmarks review
-- [../paper_summaries/](../paper_summaries/) — Detailed paper summaries
+| # | File | Benchmark | Source | Samples |
+|---|------|-----------|--------|---------|
+| 11 | [11_nvd_cvss.md](11_nvd_cvss.md) | NVD/CVE + CVSS v3.1 | Jafarikhah et al., 2026 | 31,000+ CVEs, 8 base metrics |
+| 12 | [12_r_judge.md](12_r_judge.md) | R-Judge Records | Yuan et al., 2024 | 569 records, 10 risk types |
+| 13 | [13_agentdojo.md](13_agentdojo.md) | AgentDojo Task Suites | Debenedetti et al., 2024 | 97 tasks + 629 injections |
+| 14 | [14_injecagent.md](14_injecagent.md) | InjecAgent Dataset | Zhan et al., 2024 | 1,054 test cases |
+| 15 | [15_meta_tool_use_pi.md](15_meta_tool_use_pi.md) | Meta Tool-Use PI Benchmark | Chennabasappa et al., 2025 | 600 scenarios (300/300) |
+| 16 | [16_asb.md](16_asb.md) | ASB (Agent Security Bench) | Zhang et al., 2025 | 6 attack prompt types |
+| 17 | [17_miniscope.md](17_miniscope.md) | MiniScope Permissions | Zhu et al., 2025 | 10 apps, permission hierarchies |
+| 18 | [18_indirect_pi_attack.md](18_indirect_pi_attack.md) | Indirect PI Attack Dataset | Rall et al., 2025 | 1,068 instances, 28 models |
+
+### Tier 3 — Scoring Frameworks and Dimension Models
+
+| # | File | Benchmark | Source | Samples |
+|---|------|-----------|--------|---------|
+| 19 | [19_decodingtrust.md](19_decodingtrust.md) | DecodingTrust | Wang et al., 2023 | 8 dimensions, multi-benchmark |
+| 20 | [20_trustllm.md](20_trustllm.md) | TrustLLM | Huang et al., 2024 | 6 dimensions, 30+ datasets |
+| 21 | [21_trust_paradox.md](21_trust_paradox.md) | Trust Paradox Scenarios | Xu et al., 2025 | 19 scenarios, 5 capability tiers |
+| 22 | [22_synthetic_pi.md](22_synthetic_pi.md) | Synthetic PI Dataset | Gosmar et al., 2025 | 500 prompts, 10 categories |
+
+---
+
+## Skipped Benchmarks & Datasets (52)
+
+| Category | Entries | Reason |
+|----------|---------|--------|
+| **Redundant with included** | ProtoAMP, AttestMCP, MCLIB, MCPShield Eval Suite, MCPSafetyScanner, MCP Attack Benchmark (Beyond Protocol) | Attack data or defense evaluation already captured by the datasets they draw from |
+| **Binary-only output** | AgentHarm, HarmBench, JailbreakBench, BIPIA | Measure attack success as yes/no — no multi-dimensional structure for graduated scoring |
+| **Utility benchmarks** | BFCL-v3, WebArena, AgentBench, HELM | Measure task completion and model capability, not risk — useful for evaluating utility cost of risk scoring but not as risk data sources |
+| **Too general / tangential** | ShareGPT, WildChat, glaive-function-calling-v2, ToolACE, ToolBench, MetaTool, CyberSecEval3, AlpacaFarm, CIAQA, CrAIBench, Anthropic Red-Teaming | General LLM data or niche domains without structured risk labels transferable to MCP scoring |
+| **Ecosystem stats only** | MCP Server Registry (1,899 repos), MCP Empirical (1,899 repos), MCP API Usage (2,117 repos), MCP Ecosystem (8,401 projects), Top-296 MCP Servers | Ecosystem census data — useful for context but lack risk labels or scoring structure |
+| **Too small / qualitative** | Malicious MCP (4 servers), Damn Vulnerable MCP (10 servers), Log-To-Leak, MCPSafetyScanner Test, MCP-ITP test scenarios | Useful for smoke testing but too small or qualitative for training/calibrating a risk scorer |
+| **Covered by included** | RAS-Eval, EICU-AC, Mind2Web-SC, AgentDojo defense variants | Risk structures already captured by more complete included entries |
+
+---
+
+## Unified Risk Dimensions Across All Benchmarks
+
+These are the risk dimensions that the analyzed data **actually supports** — derived from what's in the
+benchmarks, not forced onto them.
+
+| Dimension | Proposed Scale | Description | Primary Data Sources | How to Derive |
+|-----------|---------------|-------------|---------------------|---------------|
+| **Attack Surface** | 1-10 | Which layer is targeted (client/protocol/server/host) | MCPSecBench (#5), MCP-SafetyBench (#6) | Map 4 surfaces to severity tiers: protocol=10, server=7, client=5, host=4 (based on ASR) |
+| **Attack Severity** | 1-10 | How dangerous the attack is if successful | NVD/CVSS (#11), MCP-AttackBench (#3) | Adapt CVSS base score methodology; map 3 attack families to severity bands |
+| **Risk Type** | Categorical → 1-10 | Which of 10 MCP-specific risk categories applies | MCIP-Bench (#1), R-Judge (#12) | 10 risk types each mapped to severity weight based on potential impact |
+| **Tool Toxicity** | 1-10 | How poisoned/manipulated a tool description is | MCPTox (#4), MCP-ITP (#10) | Combine paradigm difficulty (explicit=3, implicit-func=6, implicit-param=8) with detection rate |
+| **Data Exposure** | 1-10 | Risk of data leakage through tool access | MCP Server Database (#7), InjecAgent (#14) | EIT/PAT/NAT classification weighted by exploit chain probability (27.2% of servers expose combos) |
+| **Trust Calibration** | 1-10 | Agent capability vs actual trustworthiness gap | Trust Paradox (#21), DecodingTrust (#19) | TCI metric (0.72-0.89) inverted and scaled; higher capability = higher scrutiny needed |
+| **Trustworthiness** | 1-10 | Multi-dimensional agent/model trustworthiness | DecodingTrust (#19), TrustLLM (#20) | Composite of 6-8 sub-dimensions (toxicity, robustness, privacy, ethics, fairness, safety) |
+| **Protocol Amplification** | 1-10 | How much MCP architecture amplifies attack success | MCPSecBench (#5), Component PoC (#8) | Scale +23-41% amplification factor; protocol features present = higher score |
+| **Permission Scope** | 1-10 | Over-privilege level of requested permissions | MiniScope (#17), MCP Server Dataset 67K (#9) | Ratio of requested permissions to minimum needed; 17 avg permissions/server as baseline |
+| **Injection Resilience** | 1-10 | Resistance to prompt injection variations | AgentDojo (#13), Indirect PI (#18), Synthetic PI (#22) | Inverse of ASR across variation types; 12 obfuscation techniques as coverage check |
+| **Input Manipulation** | 1-10 | Sophistication of prompt-level attacks | ASB (#16), Meta Tool-Use PI (#15) | 6 attack types + 7 injection techniques scored by evasion sophistication |
+
+---
+
+## How to Use This Analysis
+
+1. **Pick your risk dimensions** — The table above shows 11 dimensions. Not all are needed; start with
+   the ones your data supports best (Attack Surface, Attack Severity, Risk Type, Tool Toxicity are
+   the strongest).
+
+2. **Get training data** — MCIP Guardian (#2, 13,830 samples) and MCP-AttackBench (#3, 70,448 samples)
+   are the largest labeled datasets for training a risk classifier.
+
+3. **Adopt scoring methodology** — CVSS v3.1 (#11) is the proven multi-dimensional scoring template.
+   Adapt its 8-metric structure for MCP-specific dimensions.
+
+4. **Evaluate your scorer** — AgentDojo (#13), MCPSecBench (#5), and MCPTox (#4) are the standard
+   evaluation benchmarks. Include them for credibility.
+
+5. **Calibrate base rates** — MCP Server Dataset 67K (#9) and MCP Server Database (#7) provide
+   ecosystem-scale statistics for setting risk priors.
+
+---
+
+## File Structure
+
+Each analysis file follows this template:
+1. **Source** — paper, authors, link, year
+2. **Format & Size** — sample count, format, availability
+3. **Data Structure** — field-by-field breakdown with types, examples, usability
+4. **Proposed Risk Dimensions** — how the data maps to 1-10 scoring with derivation logic
+5. **Data Quality Notes** — limitations, missing values, caveats
+6. **Usefulness Verdict** — practical assessment for multi-dimensional risk scoring
+
+## Related Files
+
+- [../benchmarks_review.md](../benchmarks_review.md) — Full 24-benchmark literature review
+- [../datasets_review.md](../datasets_review.md) — Full 50-dataset literature review
+- [../paper_summaries/](../paper_summaries/) — Detailed paper summaries (Hebrew)
