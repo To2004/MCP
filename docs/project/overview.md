@@ -14,6 +14,20 @@ pose to MCP servers — agents that dynamically invoke tools, reuse context,
 and trigger real-world actions. This project fills that gap by placing the
 server's safety first.
 
+## Threat Model
+
+> **The server is always the victim; the agent is always the threat.**
+
+All attacks in this project flow **client → server**: a malicious or
+compromised AI agent (or the user behind it) sends harmful requests through
+the MCP protocol to damage, exfiltrate from, or disrupt the server and its
+resources.
+
+The inverse scenario — a malicious server attacking the agent (e.g., tool
+poisoning that tricks the agent) — is **out of scope**. When tool poisoning
+is discussed, it is only to the extent that a poisoned agent subsequently
+becomes a threat *to the server*.
+
 ## What the Framework Does
 
 The framework produces a risk score for MCP tool interactions that incorporates

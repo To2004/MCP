@@ -10,7 +10,9 @@ MCP Security is a defense-oriented risk scoring framework where the
 **MCP server is the protected asset** and **AI agents are the threat source**.
 The framework scores incoming agent requests to determine how risky they are
 to the server, enabling the server to gate, throttle, or deny dangerous
-interactions before they execute.
+interactions before they execute. Attacks flow **client → server**: the agent
+is the threat source, the server is the victim. The inverse direction
+(malicious server attacking the agent) is out of scope.
 
 Unlike traditional risk frameworks built for static software and human-driven
 workflows, this project addresses threats unique to autonomous agents —

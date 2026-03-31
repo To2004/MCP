@@ -2,6 +2,8 @@
 
 This folder contains the complete literature review for the MCP Security thesis project, which builds a **dynamic 1-10 risk scoring system** for evaluating AI agent access to Model Context Protocol (MCP) servers.
 
+> **Threat model scope:** The **MCP server is the protected asset** (the victim). All reviewed benchmarks, datasets, and attack taxonomies are evaluated from the perspective of **client → server** attacks — how a malicious or compromised agent can harm the server. The inverse direction (malicious server attacking the agent) is noted where relevant but is **out of scope** for this project.
+
 ## Start Here
 
 1. **Excels/** — Begin with the Excel spreadsheets to see the full paper catalog, relevance scores, and comparison matrices

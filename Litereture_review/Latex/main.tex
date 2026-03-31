@@ -68,6 +68,24 @@ Ben-Gurion University of the Negev
 The Model Context Protocol (MCP) enables AI agents to connect to third-party tool servers, creating a rapidly growing ecosystem of over 67{,}000 servers across six public registries. Current MCP security mechanisms rely on binary allow/deny decisions that treat all tool invocations identically, regardless of the actual risk posed by a specific request in a specific operational context. This work proposes a dynamic risk scoring framework for MCP agent access that produces a graduated 1--10 severity score for each tool invocation request, inspired by the CVSS vulnerability scoring methodology. We survey the MCP security landscape including attack taxonomies, tool poisoning techniques, defense frameworks, and access control mechanisms, and identify the absence of graduated, context-aware risk quantification as a critical gap. Building on evidence that LLMs can score vulnerability descriptions and that multi-signal aggregation improves detection over single-signal approaches, we outline a multi-stage scoring pipeline that combines static tool metadata analysis, contextual enrichment from session behavior and ecosystem baselines, and LLM-based risk judgment. The proposed system aims to enable nuanced security decisions---auto-allow, log, escalate, or auto-deny---based on quantified risk rather than binary classification.
 \end{abstract}
 % ---------------------------------------------------------
+% THREAT MODEL
+% ---------------------------------------------------------
+\subsection*{Threat Model}
+
+Throughout this work, the \textbf{MCP server is the protected asset} (the victim).
+The attacker is a malicious or compromised AI agent---or the human user behind it---that
+sends harmful requests through the MCP protocol to damage, exfiltrate from, or disrupt
+the server and the resources it manages. All attacks flow in the
+\textbf{client$\rightarrow$server} direction: the agent is the threat source, the server
+is the target.
+
+We do \textbf{not} address the inverse scenario in which a malicious server attacks the
+agent (e.g., tool poisoning that tricks the agent into harmful behavior). That is a
+complementary but distinct research direction. When tool poisoning is discussed in this
+work, it is only to the extent that a poisoned agent subsequently becomes a threat
+\emph{to the server}.
+
+% ---------------------------------------------------------
 % RELATED WORK
 % ---------------------------------------------------------
 \section{Background and Related Work}
