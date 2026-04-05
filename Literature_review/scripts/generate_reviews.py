@@ -9,8 +9,7 @@ import datetime
 from pathlib import Path
 
 from docx import Document
-from docx.shared import Inches, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -737,7 +736,7 @@ def generate_datasets_markdown() -> str:
         "# Datasets Review — MCP Security Literature",
         "",
         f"> Comprehensive review of **{len(DATASETS)} datasets** extracted from 82 papers",
-        f"> across the MCP Security literature review.  ",
+        "> across the MCP Security literature review.  ",
         f"> Generated: {TODAY}",
         "",
         "---",
@@ -776,7 +775,7 @@ def generate_benchmarks_markdown() -> str:
         "# Benchmarks Review — MCP Security Literature",
         "",
         f"> Comprehensive review of **{len(BENCHMARKS)} benchmarks** extracted from 82 papers",
-        f"> across the MCP Security literature review.  ",
+        "> across the MCP Security literature review.  ",
         f"> Generated: {TODAY}",
         "",
         "---",
