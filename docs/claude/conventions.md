@@ -25,7 +25,7 @@ Use this structure:
 
 - Match existing patterns in the file being edited
 - Use the same import style as surrounding code
-- Follow the [Style Guide](../standards/style-guide.md) for naming and formatting
+- Follow the [Style and Naming](../standards/style-and-naming.md) guide
 - Don't introduce new patterns unless the existing ones are insufficient
 
 ## When Suggesting Changes

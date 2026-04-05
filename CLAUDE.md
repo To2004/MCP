@@ -54,7 +54,7 @@ Full command reference: [docs/development/commands.md](docs/development/commands
 - Do not add unnecessary dependencies
 - Line length: 100 (enforced by Ruff)
 
-Details: [docs/standards/style-guide.md](docs/standards/style-guide.md)
+Details: [docs/standards/style-and-naming.md](docs/standards/style-and-naming.md)
 
 ## Workflow Rules (MUST follow)
 

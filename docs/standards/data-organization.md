@@ -144,4 +144,4 @@ Create a new topic folder or score bucket only when:
 
 - Harvard RDM: separate original files from working copies
 - Reproducible Data Science: generated artifacts go in their own folders
-- See [folder-layout.md](folder-layout.md) for top-level structure
+- See [project-layout.md](project-layout.md) for top-level structure

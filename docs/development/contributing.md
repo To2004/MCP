@@ -4,13 +4,13 @@
 
 1. Read the [Project Overview](../project/overview.md)
 2. Follow the [Setup Guide](setup.md)
-3. Review the [Style Guide](../standards/style-guide.md)
+3. Review [Style and Naming](../standards/style-and-naming.md)
 
 ## Making Changes
 
 1. Check for existing issues or discussions before starting
 2. Create a feature branch from `main`
-3. Write code following the [Style Guide](../standards/style-guide.md)
+3. Write code following [Style and Naming](../standards/style-and-naming.md)
 4. Add tests for new functionality (see [Adding Tests](../guides/adding-tests.md))
 5. Run the full test suite and linter
 6. Open a PR with a clear description
