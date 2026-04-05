@@ -6,9 +6,9 @@ This folder contains the complete literature review for the MCP Security thesis 
 
 ## Start Here
 
-1. **Excels/** — Begin with the Excel spreadsheets to see the full paper catalog, relevance scores, and comparison matrices
-2. **PDF/Top_20/** — Read the 20 most important papers in ranked order
-3. **PDF/** — Browse all papers by category and relevance score
+1. **excels/** — Begin with the Excel spreadsheets to see the full paper catalog, relevance scores, and comparison matrices
+2. **pdf/Top_20/** — Read the 20 most important papers in ranked order
+3. **pdf/** — Browse all papers by category and relevance score
 4. **reviews/** — Read the generated analysis documents (datasets and benchmarks reviews)
 5. **scripts/** — Automation tools used to organize papers and generate reviews
 
@@ -28,15 +28,15 @@ This folder contains the complete literature review for the MCP Security thesis 
 
 | Folder | Description |
 |--------|-------------|
-| [Excels/](Excels/) | Excel spreadsheets tracking all papers, scores, and comparison matrices |
-| [PDF/](PDF/) | Full paper PDFs organized by category (1-7) and relevance score |
+| [excels/](excels/) | Excel spreadsheets tracking all papers, scores, and comparison matrices |
+| [pdf/](pdf/) | Full paper PDFs organized by category (1-7) and relevance score |
 | [reviews/](reviews/) | Generated review deliverables (datasets and benchmarks analysis) |
 | [scripts/](scripts/) | Python scripts for paper organization and review generation |
 
 ## How Everything Relates
 
-- **Excels** are the master tracking system — they list every paper with metadata, relevance scores (1-10), and cross-reference matrices
-- **PDFs** are the actual papers, organized into 7 categories matching the Excel catalog. Each category has score subfolders (Score_04 to Score_10). The **Top_20/** folder duplicates the highest-ranked papers for quick access
+- **excels/** is the master tracking system — it lists every paper with metadata, relevance scores (1-10), and cross-reference matrices
+- **pdf/** contains the actual papers, organized into 7 categories matching the Excel catalog. Each category has score subfolders (Score_04 to Score_10). The **Top_20/** folder duplicates the highest-ranked papers for quick access
 - **reviews/** contain AI-generated analysis documents that synthesize findings from the papers, focusing on datasets and benchmarks
 - **scripts/** contain the Python tools that automated the organization of PDFs into category/score folders and generated the review documents
 

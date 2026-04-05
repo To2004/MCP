@@ -30,6 +30,6 @@ This folder contains AI-generated review deliverables that synthesize findings f
 
 ## Related Folders
 
-- [Excels/](../Excels/) — Master paper tracking spreadsheets that these reviews are derived from
-- [PDF/](../PDF/) — The source papers analyzed in these reviews
+- [excels/](../excels/) — Master paper tracking spreadsheets that these reviews are derived from
+- [pdf/](../pdf/) — The source papers analyzed in these reviews
 - [scripts/](../scripts/) — The `generate_reviews.py` script that produced these files

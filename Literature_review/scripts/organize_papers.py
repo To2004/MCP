@@ -25,8 +25,8 @@ import requests
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).parent
-EXCEL_PATH = BASE_DIR / "Excels" / "mcp_combined_papers_2.xlsx"
-PDF_DIR = BASE_DIR / "PDF"
+EXCEL_PATH = BASE_DIR / "excels" / "mcp_combined_papers_2.xlsx"
+PDF_DIR = BASE_DIR / "pdf"
 
 CATEGORY_FOLDERS = {
     1: "1_MCP_Security",

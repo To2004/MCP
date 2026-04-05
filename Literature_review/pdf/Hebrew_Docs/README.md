@@ -12,5 +12,5 @@ This folder contains Hebrew-language HTML documents related to the MCP literatur
 ## Navigation
 
 - These are supplementary reference materials in Hebrew
-- For the main English literature review, see the [PDF/](../) parent folder
-- For the master paper catalog, see [Excels/](../../Excels/)
+- For the main English literature review, see the [pdf/](../) parent folder
+- For the master paper catalog, see [excels/](../../excels/)

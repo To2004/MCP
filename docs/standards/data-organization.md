@@ -18,7 +18,7 @@ This document defines how research data and artifacts are organized in
 
 ```
 Literature_review/
-├── PDF/                       # Raw source papers (immutable)
+├── pdf/                       # Raw source papers (immutable)
 │   ├── 1_MCP_Security/
 │   │   ├── Score_10/          # Grouped by relevance score
 │   │   ├── Score_09/
@@ -36,11 +36,10 @@ Literature_review/
 │   │   └── ...
 │   ├── benchmark_md/
 │   └── figures/
-├── Benchmark/                 # Benchmark dataset reviews
-│   ├── benchmark_md/
+├── benchmark/                 # Benchmark dataset reviews
 │   └── review/
-├── Excels/                    # Tracking spreadsheets
-├── Latex/                     # Thesis LaTeX sources
+├── excels/                    # Tracking spreadsheets
+├── latex/                     # Thesis LaTeX sources
 └── scripts/                   # Processing scripts
 ```
 
@@ -48,10 +47,10 @@ Literature_review/
 
 | Type | Location | Mutable? | Git status |
 |------|----------|----------|------------|
-| Source PDFs | `Literature_review/PDF/` | No — never edit | Committed |
+| Source PDFs | `Literature_review/pdf/` | No — never edit | Committed |
 | Paper summaries | `Literature_review/reviews/paper_summaries/` | Yes — updated as notes grow | Committed |
 | Figures | `Literature_review/reviews/figures/` | Yes — regenerated from scripts | Committed |
-| Tracking sheets | `Literature_review/Excels/` | Yes | Committed |
+| Tracking sheets | `Literature_review/excels/` | Yes | Committed |
 | Processing scripts | `Literature_review/scripts/` | Yes | Committed |
 
 **Rule:** if a file can be regenerated from raw inputs + scripts, document
@@ -59,7 +58,7 @@ how in the folder's README.
 
 ## Topic Numbering
 
-Folders under `PDF/` use `N_TopicName` pattern:
+Folders under `pdf/` use `N_TopicName` pattern:
 
 | Number | Topic |
 |--------|-------|
@@ -80,7 +79,7 @@ Inside each topic folder, papers are grouped by relevance score:
 - `Score_10/` — highest relevance
 - `Score_09/`, `Score_08/`, ... down to `Score_00/`
 - Score is assigned during literature review (see
-  `Literature_review/Excels/`)
+  `Literature_review/excels/`)
 
 Each score folder has its own README listing papers in that bucket.
 

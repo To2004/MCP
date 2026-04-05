@@ -43,4 +43,4 @@ Each summary follows a consistent structure:
 ## Related Folders
 
 - [../](../) — Parent reviews folder with benchmark and dataset reviews
-- [../../PDF/Top_20/](../../PDF/Top_20/) — Source PDF papers
+- [../../pdf/Top_20/](../../pdf/Top_20/) — Source PDF papers

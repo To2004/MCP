@@ -520,7 +520,7 @@ CIA Triad — Attacks on the MCP Server
 
 ## Part 3 — Additional Attacks from Full Literature Survey (62 PDF Papers)
 
-The following attacks were identified by reading the full 62-paper literature corpus (PDF/) but were not covered in the original 22 benchmark reviews. All remain **agent→server** direction (server is victim).
+The following attacks were identified by reading the full 62-paper literature corpus (pdf/) but were not covered in the original 22 benchmark reviews. All remain **agent→server** direction (server is victim).
 
 ---
 
@@ -811,4 +811,4 @@ CIA Triad — Updated Attacks on the MCP Server (35 attacks total)
 
 ---
 
-*Part 3–4 extended from 62 PDF papers in the full literature survey (PDF/). See `PDF/README.md` for paper index.*
+*Part 3–4 extended from 62 PDF papers in the full literature survey (pdf/). See `pdf/README.md` for paper index.*
