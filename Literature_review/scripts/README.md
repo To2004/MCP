@@ -11,7 +11,7 @@ This folder contains Python scripts used to organize the literature review and g
 
 ## How to Use
 
-Run scripts from the `Litereture_review/` root using `uv run`:
+Run scripts from the `Literature_review/` root using `uv run`:
 
 ```bash
 uv run python scripts/organize_papers.py

@@ -1,7 +1,7 @@
 # Data Organization
 
 This document defines how research data and artifacts are organized in
-`Litereture_review/` and related locations. The guiding principle:
+`Literature_review/` and related locations. The guiding principle:
 **separate raw from processed, and document relationships**.
 
 ## Core Principles
@@ -14,10 +14,10 @@ This document defines how research data and artifacts are organized in
 4. **Name files so they sort meaningfully.** Numeric prefixes enforce
    reading order.
 
-## `Litereture_review/` Structure
+## `Literature_review/` Structure
 
 ```
-Litereture_review/
+Literature_review/
 ├── PDF/                       # Raw source papers (immutable)
 │   ├── 1_MCP_Security/
 │   │   ├── Score_10/          # Grouped by relevance score
@@ -48,11 +48,11 @@ Litereture_review/
 
 | Type | Location | Mutable? | Git status |
 |------|----------|----------|------------|
-| Source PDFs | `Litereture_review/PDF/` | No — never edit | Committed |
-| Paper summaries | `Litereture_review/reviews/paper_summaries/` | Yes — updated as notes grow | Committed |
-| Figures | `Litereture_review/reviews/figures/` | Yes — regenerated from scripts | Committed |
-| Tracking sheets | `Litereture_review/Excels/` | Yes | Committed |
-| Processing scripts | `Litereture_review/scripts/` | Yes | Committed |
+| Source PDFs | `Literature_review/PDF/` | No — never edit | Committed |
+| Paper summaries | `Literature_review/reviews/paper_summaries/` | Yes — updated as notes grow | Committed |
+| Figures | `Literature_review/reviews/figures/` | Yes — regenerated from scripts | Committed |
+| Tracking sheets | `Literature_review/Excels/` | Yes | Committed |
+| Processing scripts | `Literature_review/scripts/` | Yes | Committed |
 
 **Rule:** if a file can be regenerated from raw inputs + scripts, document
 how in the folder's README.
@@ -80,7 +80,7 @@ Inside each topic folder, papers are grouped by relevance score:
 - `Score_10/` — highest relevance
 - `Score_09/`, `Score_08/`, ... down to `Score_00/`
 - Score is assigned during literature review (see
-  `Litereture_review/Excels/`)
+  `Literature_review/Excels/`)
 
 Each score folder has its own README listing papers in that bucket.
 
@@ -97,7 +97,7 @@ The numeric prefix matches the paper's ID in the tracking spreadsheet.
 
 ## Figures and Generated Images
 
-All figures go in `Litereture_review/reviews/figures/` with:
+All figures go in `Literature_review/reviews/figures/` with:
 
 - Descriptive filename: `risk_score_distribution_2026.png`
 - A README entry listing each figure and how it was generated

@@ -1,4 +1,4 @@
-# MCP Server Threat Taxonomy
+c# MCP Server Threat Taxonomy
 
 > **Perspective:** You built a legitimate MCP server. What can people (or agents) do to hurt you?
 >

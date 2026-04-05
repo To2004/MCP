@@ -29,7 +29,7 @@ HEADING = "Calibri Light"
 BODY = "Calibri"
 
 TEMPLATE = Path(r"C:/Users/user/Downloads/Tomerovadya (2).pptx")
-OUTPUT = Path(r"C:/Users/user/Documents/GitHub/MCP/Litereture_review/TomerOvadya.pptx")
+OUTPUT = Path(r"C:/Users/user/Documents/GitHub/MCP/Literature_review/TomerOvadya.pptx")
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────

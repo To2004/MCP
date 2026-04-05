@@ -10,7 +10,7 @@ MCP/
 ├── src/mcp_security/      # Application code (src layout)
 ├── tests/                 # Tests (mirrors src/ structure)
 ├── docs/                  # Project documentation
-├── Litereture_review/     # Research: PDFs, summaries, benchmarks
+├── Literature_review/     # Research: PDFs, summaries, benchmarks
 ├── mcp_learning_lab/      # Experiments and learning notes
 ├── .claude/               # Claude Code commands and settings
 ├── pyproject.toml         # Package config
@@ -26,7 +26,7 @@ MCP/
 | `src/mcp_security/` | Shipping code | Tests, scratch scripts, data |
 | `tests/` | `test_*.py` mirroring src/ | Fixtures >1MB |
 | `docs/` | Markdown by category | Generated artifacts, data |
-| `Litereture_review/` | Research inputs | Runnable package code |
+| `Literature_review/` | Research inputs | Runnable package code |
 | `mcp_learning_lab/` | Experiments | Production code |
 | `.claude/` | Commands, local settings | Secrets (use `.env`) |
 
