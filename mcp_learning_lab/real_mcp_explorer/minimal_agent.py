@@ -7,9 +7,7 @@ Run with: uv run python mcp_learning_lab/real_mcp_explorer/minimal_agent.py
 """
 
 import asyncio
-import json
 import os
-import sys
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
