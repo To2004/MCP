@@ -44,7 +44,7 @@ def match(
     for tool in tools:
         for template in templates:
             keywords = template.get("match_rules", {}).get("tool_name_contains", [])
-            if "*" in keywords or any(kw in tool.name.lower() for kw in keywords):
+            if "*" in keywords or any(kw.lower() in tool.name.lower() for kw in keywords):
                 matches.append((tool, template))
     return matches
 

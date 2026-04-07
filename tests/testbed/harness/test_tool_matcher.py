@@ -113,6 +113,20 @@ def test_match_is_case_insensitive() -> None:
     assert len(result) == 1
 
 
+def test_keyword_case_insensitive() -> None:
+    """Keywords in match_rules should be case-insensitive."""
+    tools = [make_tool("read_file")]
+    templates = [
+        {
+            "id": "path_traversal",
+            "category": "C2",
+            "match_rules": {"tool_name_contains": ["READ", "FILE"]},
+        },
+    ]
+    result = match(tools, templates)
+    assert len(result) == 1
+
+
 def test_empty_tools_returns_empty() -> None:
     """An empty tool list produces no matches regardless of templates."""
     templates = [
