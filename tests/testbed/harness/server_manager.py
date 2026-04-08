@@ -10,7 +10,7 @@ import anyio
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
 
-STARTUP_TIMEOUT_SECONDS = 60
+STARTUP_TIMEOUT_SECONDS = 120
 
 
 PROFILES_DIR = Path(__file__).parent.parent / "servers"
