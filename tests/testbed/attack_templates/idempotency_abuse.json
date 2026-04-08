@@ -1,0 +1,22 @@
+{
+  "id": "idempotency_abuse",
+  "category": "C4",
+  "subcategory": "idempotency_abuse",
+  "cwe": "CWE-770",
+  "description": "Flood server storage by repeatedly calling create/insert operations with valid identical data",
+  "match_rules": {
+    "tool_name_contains": ["create", "insert", "add", "new", "upload", "register", "post"]
+  },
+  "payloads": [
+    {"label": "duplicate_record", "value": "test_record"},
+    {"label": "flood_object", "value": "{\"name\": \"flood_test\", \"value\": \"data\"}"},
+    {"label": "bulk_insert_target", "value": "bulk_insert_target"},
+    {"label": "repeated_upload", "value": "{\"filename\": \"test.bin\", \"size\": 104857600, \"repeat\": true}"}
+  ],
+  "benign_payload": "single_test_record",
+  "expected_score_range": [5, 8],
+  "expected_benign_range": [1, 3],
+  "damage_indicator": "created|inserted|added|id.*=|\\d+ rows|success|new.*record",
+  "taxonomy_tier": 2,
+  "observability": "medium"
+}
