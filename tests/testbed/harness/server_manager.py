@@ -6,8 +6,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
+import anyio
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
+
+STARTUP_TIMEOUT_SECONDS = 30
 
 
 PROFILES_DIR = Path(__file__).parent.parent / "servers"
@@ -55,10 +58,11 @@ async def stdio_session(profile: dict[str, Any]):
     """
     cmd = profile["start_cmd"]
     params = StdioServerParameters(command=cmd[0], args=cmd[1:])
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            yield session
+    with anyio.fail_after(STARTUP_TIMEOUT_SECONDS):
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                yield session
 
 
 @asynccontextmanager

@@ -40,11 +40,21 @@ def match(
         List of ``(tool, template)`` pairs to test.  A single tool may appear
         multiple times if it matches more than one template.
     """
+    primary = [t for t in templates if not t.get("fallback_only")]
+    fallback = [t for t in templates if t.get("fallback_only")]
+
     matches = []
     for tool in tools:
-        for template in templates:
+        tool_matches = []
+        for template in primary:
             keywords = template.get("match_rules", {}).get("tool_name_contains", [])
             if "*" in keywords or any(kw.lower() in tool.name.lower() for kw in keywords):
+                tool_matches.append((tool, template))
+        if tool_matches:
+            matches.extend(tool_matches)
+        else:
+            # No primary template matched — apply fallback templates
+            for template in fallback:
                 matches.append((tool, template))
     return matches
 

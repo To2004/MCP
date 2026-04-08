@@ -1,0 +1,26 @@
+{
+  "id": "wildcard_fallback",
+  "category": "C1",
+  "subcategory": "generic_injection",
+  "cwe": "CWE-20",
+  "cvss_reference": null,
+  "description": "Catch-all fallback: tries common injection payloads on every tool that matched no other template. Used for unknown servers where tool names do not match keyword rules.",
+  "match_rules": {
+    "tool_name_contains": ["*"]
+  },
+  "fallback_only": true,
+  "payloads": [
+    {"label": "path_traversal",    "value": "../../etc/passwd"},
+    {"label": "cmd_inject_unix",   "value": "; whoami"},
+    {"label": "cmd_inject_win",    "value": "& whoami"},
+    {"label": "sql_tautology",     "value": "' OR '1'='1"},
+    {"label": "ssrf_loopback",     "value": "http://127.0.0.1/"},
+    {"label": "null_byte",         "value": "safe\u0000../../etc/passwd"}
+  ],
+  "benign_payload": "hello",
+  "expected_score_range": [4, 9],
+  "expected_benign_range": [1, 4],
+  "damage_indicator": "root:|daemon:|whoami|Administrator|PATH=|USERPROFILE|uid=",
+  "taxonomy_tier": 2,
+  "observability": "low"
+}

@@ -14,7 +14,7 @@ from typing import Any
 import requests
 
 from tests.testbed.harness.scorer_bridge import score
-from tests.testbed.harness.server_manager import load_profile, server_session
+from tests.testbed.harness.server_manager import install_server, load_profile, server_session
 from tests.testbed.harness.tool_matcher import load_templates, match
 
 
@@ -324,6 +324,7 @@ async def run_server(
         List of result dicts from every template run against the server.
     """
     profile = load_profile(server_name)
+    install_server(profile)
     templates = load_templates()
     if template_filter:
         templates = [t for t in templates if t["id"] == template_filter]
