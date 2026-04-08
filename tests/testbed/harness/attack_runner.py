@@ -430,6 +430,11 @@ def main() -> None:
     parser.add_argument("--mode", choices=["attack", "eval"], default="attack")
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument(
+        "--scenarios",
+        action="store_true",
+        help="Also run multi-step scenarios from attack_scenarios/",
+    )
     args = parser.parse_args()
 
     if args.all:
@@ -443,6 +448,12 @@ def main() -> None:
         results = asyncio.run(run_server(server_name, args.mode, args.trials, args.template))
         print_results(results)
         all_results.extend(results)
+
+        if args.scenarios:
+            from tests.testbed.harness.scenario_runner import run_server_scenarios  # noqa: E402
+            scenario_results = asyncio.run(run_server_scenarios(server_name, args.mode))
+            print_results(scenario_results)
+            all_results.extend(scenario_results)
 
     saved_path = save_results(
         all_results,
