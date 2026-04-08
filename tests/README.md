@@ -36,3 +36,17 @@ uv run pytest -x           # stop on first failure
 
 See [docs/standards/testing-guide.md](../docs/standards/testing-guide.md)
 for naming conventions, what to test, and fixture patterns.
+
+## Attack Testbed
+
+The `testbed/` subdirectory is an attack harness for empirical security evaluation.
+It is independent of the regular unit tests and runs against real MCP servers.
+
+See [testbed/README.md](testbed/README.md) for full documentation.
+
+Quick run:
+
+```bash
+uv run python -m tests.testbed.harness.attack_runner --server filesystem --mode attack
+uv run python -m tests.testbed.harness.attack_runner --all --scenarios --mode eval
+```
