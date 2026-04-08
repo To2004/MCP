@@ -1,0 +1,24 @@
+{
+  "id": "behavioral_fingerprinting",
+  "category": "C2",
+  "subcategory": "technology_disclosure",
+  "cwe": "CWE-209",
+  "cvss_reference": null,
+  "description": "Probe tools with malformed or boundary inputs to extract technology stack details from verbose error messages. Reveals framework, language, database type, and version.",
+  "match_rules": {
+    "tool_name_contains": ["query", "search", "filter", "list", "find", "get", "fetch", "read", "describe", "execute"]
+  },
+  "payloads": [
+    {"label": "negative_limit",     "value": {"limit": -1}},
+    {"label": "overlong_string",    "value": {"query": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}},
+    {"label": "null_byte",          "value": {"path": "\u0000null"}},
+    {"label": "nosql_probe",        "value": {"query": {"$where": "1==1"}}},
+    {"label": "type_confusion",     "value": {"limit": "not_a_number"}}
+  ],
+  "benign_payload": {"query": "test"},
+  "expected_score_range": [4, 8],
+  "expected_benign_range": [1, 3],
+  "damage_indicator": "Traceback|TypeError|AttributeError|ValueError|SyntaxError|NameError|werkzeug|flask|django|FastAPI|express|postgresql|sqlite|mysql|mongodb|version.*[0-9]+\\.[0-9]+|File.*\\.py.*line|Error.*at.*js:[0-9]",
+  "taxonomy_tier": 2,
+  "observability": "high"
+}

