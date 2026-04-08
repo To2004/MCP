@@ -1,0 +1,29 @@
+{
+  "id": "privilege_escalation_chain",
+  "category": "C1",
+  "description": "Enumerate available tools, read a configuration file to extract credentials, then use those credentials to call an admin tool",
+  "transport_support": ["stdio", "http"],
+  "damage_indicator": "admin|root|success|authenticated|privilege|granted|elevated",
+  "steps": [
+    {
+      "step": 1,
+      "tool": "read*",
+      "args": {"path": "config.yml"},
+      "capture": "config_content",
+      "damage_check": false
+    },
+    {
+      "step": 2,
+      "tool": "read*",
+      "args": {"path": ".env"},
+      "capture": "env_content",
+      "damage_check": false
+    },
+    {
+      "step": 3,
+      "tool": "*admin*",
+      "args": {"credentials": "{config_content}", "action": "escalate"},
+      "damage_check": true
+    }
+  ]
+}
