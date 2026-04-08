@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import re
+import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,9 +14,14 @@ from typing import Any
 
 import requests
 
-from tests.testbed.harness.scorer_bridge import score
-from tests.testbed.harness.server_manager import install_server, load_profile, server_session
-from tests.testbed.harness.tool_matcher import load_templates, match
+# Ensure project root is on sys.path when the script is run directly
+_project_root = Path(__file__).resolve().parent.parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+from tests.testbed.harness.scorer_bridge import score  # noqa: E402
+from tests.testbed.harness.server_manager import install_server, load_profile, server_session  # noqa: E402
+from tests.testbed.harness.tool_matcher import load_templates, match  # noqa: E402
 
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
@@ -355,12 +361,12 @@ def format_result(result: dict[str, Any]) -> str:
     Returns:
         A formatted string such as::
 
-            [C2/path_traversal] read_file("../../etc/passwd") → DAMAGE ✓  score: N/A
+            [C2/path_traversal] read_file("../../etc/passwd") -> DAMAGE [+]  score: N/A
     """
     if result["payload_type"] == "benign":
-        damage_str = "[benign] safe ✓"
+        damage_str = "[benign] safe [ok]"
     elif result["damage_detected"]:
-        damage_str = "DAMAGE ✓"
+        damage_str = "DAMAGE [+]"
     else:
         damage_str = "no damage"
 
@@ -369,7 +375,7 @@ def format_result(result: dict[str, Any]) -> str:
 
     return (
         f"[{result['category']}/{result['template_id']}] "
-        f"{result['tool']}({result['payload_label']!r}) → {damage_str}  {score_str}"
+        f"{result['tool']}({result['payload_label']!r}) -> {damage_str}  {score_str}"
     )
 
 

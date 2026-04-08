@@ -57,7 +57,7 @@ def per_server_table(results: list[dict[str, Any]]) -> str:
         sections.append("| Template | Tool | Payload | Damage | Error |")
         sections.append("|---|---|---|---|---|")
         for r in rows[:30]:  # cap to avoid huge tables
-            dmg = "✓ YES" if r.get("damage_detected") else "✗ no"
+            dmg = "[DAMAGE]" if r.get("damage_detected") else "no"
             err = (r.get("error") or "")[:40]
             snip = r.get("response_snippet", "")[:60].replace("\n", " ")
             sections.append(
@@ -75,7 +75,7 @@ def notable_findings(results: list[dict[str, Any]]) -> str:
     for i, r in enumerate(hits[:5], 1):
         lines.append(
             f"{i}. **{r.get('server')} / {r.get('template_id')}** — "
-            f"`{r.get('tool')}({r.get('payload_label')})` → "
+            f"`{r.get('tool')}({r.get('payload_label')})` -> "
             f"`{r.get('response_snippet', '')[:100]}`"
         )
     return "\n".join(lines) if len(lines) > 1 else "_No damage confirmed yet — run attacks first._"
@@ -133,7 +133,7 @@ def generate(output_path: Path | None = None) -> Path:
     if output_path is None:
         ts_file = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
         output_path = RESULTS_DIR / f"report_{ts_file}.md"
-    output_path.write_text(content)
+    output_path.write_text(content, encoding="utf-8")
     print(f"Report written to: {output_path}")
     return output_path
 

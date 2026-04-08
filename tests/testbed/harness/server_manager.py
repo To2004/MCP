@@ -58,11 +58,11 @@ async def stdio_session(profile: dict[str, Any]):
     """
     cmd = profile["start_cmd"]
     params = StdioServerParameters(command=cmd[0], args=cmd[1:])
-    with anyio.fail_after(STARTUP_TIMEOUT_SECONDS):
-        async with stdio_client(params) as (read, write):
-            async with ClientSession(read, write) as session:
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            with anyio.fail_after(STARTUP_TIMEOUT_SECONDS):
                 await session.initialize()
-                yield session
+            yield session
 
 
 @asynccontextmanager
