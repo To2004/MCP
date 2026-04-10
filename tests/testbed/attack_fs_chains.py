@@ -60,6 +60,44 @@ VICTIMS = {"328": VICTIM_328, "729": VICTIM_729}
 SERVERS = {"328": FS_328, "729": FS_729}
 
 
+# ---------------------------------------------------------------------------
+# WSL shell helpers — all fixture planting happens inside WSL because the
+# servers run there and Windows can't create Unix symlinks / hardlinks / FIFOs.
+# ---------------------------------------------------------------------------
+
+def wsl_bash(script: str, check: bool = True, timeout: int = 30) -> subprocess.CompletedProcess:
+    """Run a bash script inside WSL and return the CompletedProcess."""
+    return subprocess.run(
+        ["wsl", "bash", "-lc", script],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=timeout,
+    )
+
+
+def wsl_python(script: str, check: bool = True, timeout: int = 30) -> subprocess.CompletedProcess:
+    """Run a python3 one-liner inside WSL. Use for operations that need raw
+    bytes in filenames (null byte, non-UTF8) that bash cannot express."""
+    return subprocess.run(
+        ["wsl", "python3", "-c", script],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=timeout,
+    )
+
+
+def wsl_file_exists(path: str) -> bool:
+    cp = wsl_bash(f"test -e {path!r} && echo yes || echo no", check=False)
+    return cp.stdout.strip() == "yes"
+
+
+def wsl_read_file(path: str) -> str:
+    cp = wsl_bash(f"cat {path!r}", check=False)
+    return cp.stdout
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
