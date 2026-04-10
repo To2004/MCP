@@ -1281,9 +1281,85 @@ def write_excel(
     print(f"\nSaved: {XLSX_OUT}")
 
 
+# ---------------------------------------------------------------------------
+# Audit log + cleanup
+# ---------------------------------------------------------------------------
+
+def write_jsonl(all_results: list[StepResult]) -> None:
+    with JSONL_OUT.open("w", encoding="utf-8") as f:
+        for r in all_results:
+            f.write(json.dumps({
+                "chain_id": r.chain_id,
+                "step_num": r.step_num,
+                "tool": r.tool,
+                "label": r.label,
+                "path_repr": r.path_repr,
+                "pinned_response": r.pinned_response,
+                "pinned_elapsed_ms": r.pinned_elapsed_ms,
+                "latest_response": r.latest_response,
+                "latest_elapsed_ms": r.latest_elapsed_ms,
+                "severity": r.severity,
+                "reason": r.reason,
+                "is_regression": r.is_regression,
+            }, default=repr) + "\n")
+
+
+def final_cleanup() -> None:
+    """Best-effort: remove all sandbox and victim dirs created by this run."""
+    parts = []
+    for v in SANDBOXES:
+        s = SANDBOXES[v]
+        parts.append(f"rm -rf {s!r} {VICTIMS[v]!r} {s}_evil {s}_indirect")
+    script = " && ".join(parts)
+    try:
+        wsl_bash(script, check=False, timeout=15)
+    except Exception as exc:
+        print(f"[cleanup warning] {exc}")
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
+    t0 = time.monotonic()
+    try:
+        print("=" * 60)
+        print("FS MCP Attack Chains Campaign")
+        print("=" * 60)
+
+        write_source_notes()
+        print(f"[Phase 0] wrote {NOTES_OUT.name}")
+
+        recon_results = run_recon_phase()
+        primitive_results = run_primitives_phase()
+        chain_results = run_chains_phase(CHAINS)
+
+        all_results = recon_results + primitive_results + chain_results
+
+        write_excel(recon_results, primitive_results, chain_results)
+        write_jsonl(all_results)
+
+        totals: dict[str, int] = {}
+        for r in all_results:
+            totals[r.severity] = totals.get(r.severity, 0) + 1
+        print("\n" + "=" * 60)
+        print(f"Completed in {time.monotonic() - t0:.1f}s")
+        print(f"Total steps: {len(all_results)}")
+        for sev in SEVERITY_ORDER:
+            print(f"  {sev:>8}: {totals.get(sev, 0)}")
+
+        # Highlight confirmed hits
+        hits = [r for r in all_results if r.severity in ("CRITICAL", "HIGH")]
+        if hits:
+            print(f"\n{len(hits)} critical/high hits:")
+            for r in hits[:20]:
+                affected = []
+                if CANARY in r.pinned_response or "root:x:" in r.pinned_response:
+                    affected.append("PINNED")
+                if CANARY in r.latest_response or "root:x:" in r.latest_response:
+                    affected.append("LATEST")
+                aff = "/".join(affected) if affected else "—"
+                print(f"  [{r.severity}] [{aff}] {r.chain_id}.{r.step_num} {r.label[:60]}")
+    finally:
+        final_cleanup()
 
 
 if __name__ == "__main__":
