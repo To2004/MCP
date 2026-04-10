@@ -98,6 +98,31 @@ def wsl_read_file(path: str) -> str:
     return cp.stdout
 
 
+# ---------------------------------------------------------------------------
+# Fixture builder — wipe and rebuild per-version sandbox state.
+# ---------------------------------------------------------------------------
+
+def wipe_and_recreate(version: str) -> None:
+    """Reset sandbox + victim dir for one version to a clean baseline."""
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    script = f"""
+        set -e
+        rm -rf {sandbox!r} {victim!r} {sandbox}_evil {sandbox}_indirect
+        mkdir -p {sandbox!r} {victim!r}
+        printf '%s' {CANARY_FILE_CONTENT!r} > {victim!r}/passwd_canary
+        echo 'hello from the sandbox' > {sandbox!r}/readme.txt
+        mkdir -p {sandbox!r}/subdir
+        echo 'nested file' > {sandbox!r}/subdir/nested.txt
+    """
+    wsl_bash(script)
+
+
+def wipe_all() -> None:
+    for v in SANDBOXES:
+        wipe_and_recreate(v)
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
