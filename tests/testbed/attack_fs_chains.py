@@ -1013,6 +1013,274 @@ def run_chains_phase(chains: list[Chain]) -> list[StepResult]:
     return all_results
 
 
+# ---------------------------------------------------------------------------
+# Excel writer — 8 sheets with severity fills.
+# ---------------------------------------------------------------------------
+
+SEVERITY_FILL = {
+    "CRITICAL": "FFB3B3",  # red
+    "HIGH":     "FFD9B3",  # orange
+    "MEDIUM":   "FFF2CC",  # yellow
+    "LOW":      "CFE2F3",  # blue
+    "INFO":     "FFFFFF",
+}
+SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
+
+
+def _severity_rank(sev: str) -> int:
+    return SEVERITY_ORDER.index(sev) if sev in SEVERITY_ORDER else len(SEVERITY_ORDER)
+
+
+def _write_header(ws, headers: list[str]) -> None:
+    from openpyxl.styles import Alignment, Font, PatternFill
+    hdr_fill = PatternFill("solid", fgColor="0D1117")
+    hdr_font = Font(bold=True, color="FFFFFF", size=10)
+    for col, h in enumerate(headers, 1):
+        c = ws.cell(1, col, h)
+        c.fill = hdr_fill
+        c.font = hdr_font
+        c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.row_dimensions[1].height = 28
+
+
+def _apply_severity(ws, row_idx: int, sev_col: int, severity: str, max_col: int) -> None:
+    from openpyxl.styles import PatternFill, Font
+    fill = PatternFill("solid", fgColor=SEVERITY_FILL.get(severity, "FFFFFF"))
+    for col in range(1, max_col + 1):
+        ws.cell(row_idx, col).fill = fill
+    if severity in ("CRITICAL", "HIGH"):
+        ws.cell(row_idx, sev_col).font = Font(bold=True)
+
+
+def _col_letter(idx: int) -> str:
+    """1 -> A, 2 -> B, ..., 27 -> AA."""
+    s = ""
+    while idx:
+        idx, rem = divmod(idx - 1, 26)
+        s = chr(65 + rem) + s
+    return s
+
+
+def _set_widths(ws, widths: list[int]) -> None:
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[_col_letter(i)].width = w
+
+
+def _sheet_summary(wb, by_chain: dict[str, list[StepResult]]) -> None:
+    ws = wb.create_sheet("01_Summary", 0)
+    headers = ["chain_id", "chain_name", "hypothesis", "result",
+               "severity", "verdict", "steps", "hits"]
+    _write_header(ws, headers)
+    lookup = {c.chain_id: c for c in CHAINS}
+    row = 2
+    for cid, steps in by_chain.items():
+        chain = lookup.get(cid)
+        if not chain:
+            continue
+        hits = [s for s in steps if s.severity in ("CRITICAL", "HIGH", "MEDIUM")]
+        top_sev = min((s.severity for s in steps), key=_severity_rank, default="INFO")
+        if any(s.severity in ("CRITICAL", "HIGH") for s in steps):
+            result = "FAIL"
+        elif hits:
+            result = "PARTIAL"
+        else:
+            result = "PASS"
+        verdict_parts = sorted({s.reason for s in hits if s.reason})[:3]
+        verdict = "; ".join(verdict_parts) or "no bug found"
+        for col, v in enumerate(
+            [cid, chain.name, chain.hypothesis, result, top_sev, verdict,
+             len(steps), len(hits)], 1
+        ):
+            ws.cell(row, col, v)
+        _apply_severity(ws, row, 5, top_sev, len(headers))
+        ws.row_dimensions[row].height = 40
+        row += 1
+    _set_widths(ws, [8, 28, 55, 10, 12, 55, 8, 8])
+    ws.freeze_panes = "A2"
+
+
+def _sheet_source(wb) -> None:
+    ws = wb.create_sheet("02_Source_Analysis")
+    headers = ["version", "function", "code_snippet", "gap_identified", "attack_idea"]
+    _write_header(ws, headers)
+    from openpyxl.styles import Alignment
+    for row, entry in enumerate(SOURCE_NOTES, 2):
+        ws.cell(row, 1, entry["version"])
+        ws.cell(row, 2, entry["function"])
+        ws.cell(row, 3, truncate(entry["snippet"], 800))
+        ws.cell(row, 4, entry["gap_identified"])
+        ws.cell(row, 5, entry["attack_idea"])
+        for col in range(1, len(headers) + 1):
+            ws.cell(row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.row_dimensions[row].height = 140
+    _set_widths(ws, [14, 36, 80, 60, 40])
+    ws.freeze_panes = "A2"
+
+
+def _sheet_steps(wb, title: str, results: list[StepResult]) -> None:
+    from openpyxl.styles import Alignment
+    ws = wb.create_sheet(title)
+    headers = ["id", "tool", "input", "pinned_output", "pinned_ms",
+               "latest_output", "latest_ms", "severity", "reason",
+               "regression", "label"]
+    _write_header(ws, headers)
+    for row, r in enumerate(results, 2):
+        ws.cell(row, 1, f"{r.chain_id}.{r.step_num}")
+        ws.cell(row, 2, r.tool)
+        ws.cell(row, 3, truncate(r.path_repr, 300))
+        ws.cell(row, 4, truncate(r.pinned_response, 800))
+        ws.cell(row, 5, r.pinned_elapsed_ms)
+        ws.cell(row, 6, truncate(r.latest_response, 800))
+        ws.cell(row, 7, r.latest_elapsed_ms)
+        ws.cell(row, 8, r.severity)
+        ws.cell(row, 9, r.reason)
+        ws.cell(row, 10, "YES" if r.is_regression else "")
+        ws.cell(row, 11, r.label)
+        for col in range(1, len(headers) + 1):
+            ws.cell(row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.row_dimensions[row].height = 90
+        _apply_severity(ws, row, 8, r.severity, len(headers))
+    _set_widths(ws, [10, 14, 42, 70, 10, 70, 10, 12, 42, 12, 40])
+    ws.freeze_panes = "A2"
+
+
+def _sheet_diff(wb, all_results: list[StepResult]) -> None:
+    from openpyxl.styles import Alignment
+    ws = wb.create_sheet("06_Diff")
+    headers = ["id", "input", "pinned_behavior", "latest_behavior",
+               "diff_type", "severity"]
+    _write_header(ws, headers)
+
+    def classify(text: str) -> str:
+        low = text.lower()
+        if any(k in low for k in ("access denied", "outside allowed",
+                                  "error:", "tool error", "timeout")):
+            return "blocked/error"
+        return "content returned"
+
+    row = 2
+    for r in all_results:
+        if not r.is_regression:
+            continue
+        pb = classify(r.pinned_response)
+        lb = classify(r.latest_response)
+        if pb == "blocked/error" and lb == "content returned":
+            diff_type = "new_allow_in_latest (regression)"
+        elif pb == "content returned" and lb == "blocked/error":
+            diff_type = "new_block_in_latest (fix)"
+        else:
+            diff_type = "error_text_change"
+        ws.cell(row, 1, f"{r.chain_id}.{r.step_num}")
+        ws.cell(row, 2, truncate(r.path_repr, 200))
+        ws.cell(row, 3, truncate(r.pinned_response, 400))
+        ws.cell(row, 4, truncate(r.latest_response, 400))
+        ws.cell(row, 5, diff_type)
+        ws.cell(row, 6, r.severity)
+        for col in range(1, len(headers) + 1):
+            ws.cell(row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.row_dimensions[row].height = 80
+        _apply_severity(ws, row, 6, r.severity, len(headers))
+        row += 1
+    _set_widths(ws, [10, 44, 60, 60, 32, 12])
+    ws.freeze_panes = "A2"
+
+
+def _sheet_pocs(wb, all_results: list[StepResult]) -> None:
+    from openpyxl.styles import Alignment
+    ws = wb.create_sheet("07_PoCs")
+    headers = ["poc_id", "chain_id", "version_affected", "tool",
+               "input", "pinned_output", "latest_output", "severity", "reason"]
+    _write_header(ws, headers)
+
+    def leaks(text: str) -> bool:
+        return (CANARY in text or "root:x:" in text or "BEGIN OPENSSH" in text
+                or "ssh-rsa " in text)
+
+    row = 2
+    idx = 1
+    for r in all_results:
+        if r.severity not in ("CRITICAL", "HIGH"):
+            continue
+        affected: list[str] = []
+        if leaks(r.pinned_response):
+            affected.append("v2025.3.28")
+        if leaks(r.latest_response):
+            affected.append("v2025.7.29")
+        affected_str = ", ".join(affected) or "both (generic)"
+        ws.cell(row, 1, f"POC-{idx:02d}")
+        ws.cell(row, 2, r.chain_id)
+        ws.cell(row, 3, affected_str)
+        ws.cell(row, 4, r.tool)
+        ws.cell(row, 5, truncate(r.path_repr, 200))
+        ws.cell(row, 6, truncate(r.pinned_response, 500))
+        ws.cell(row, 7, truncate(r.latest_response, 500))
+        ws.cell(row, 8, r.severity)
+        ws.cell(row, 9, r.reason)
+        for col in range(1, len(headers) + 1):
+            ws.cell(row, col).alignment = Alignment(wrap_text=True, vertical="top")
+        ws.row_dimensions[row].height = 110
+        _apply_severity(ws, row, 8, r.severity, len(headers))
+        row += 1
+        idx += 1
+    _set_widths(ws, [10, 10, 24, 14, 40, 55, 55, 12, 44])
+    ws.freeze_panes = "A2"
+
+
+def _sheet_raw(wb, all_results: list[StepResult]) -> None:
+    ws = wb.create_sheet("08_Raw")
+    headers = ["chain_id", "step", "tool", "label", "pre_setup", "path_repr",
+               "pinned_response", "pinned_ms", "latest_response", "latest_ms",
+               "severity", "reason", "regression"]
+    _write_header(ws, headers)
+    for row, r in enumerate(all_results, 2):
+        ws.cell(row, 1, r.chain_id)
+        ws.cell(row, 2, r.step_num)
+        ws.cell(row, 3, r.tool)
+        ws.cell(row, 4, r.label)
+        ws.cell(row, 5, r.pre_setup)
+        ws.cell(row, 6, r.path_repr)
+        ws.cell(row, 7, truncate(r.pinned_response, 2000))
+        ws.cell(row, 8, r.pinned_elapsed_ms)
+        ws.cell(row, 9, truncate(r.latest_response, 2000))
+        ws.cell(row, 10, r.latest_elapsed_ms)
+        ws.cell(row, 11, r.severity)
+        ws.cell(row, 12, r.reason)
+        ws.cell(row, 13, "YES" if r.is_regression else "")
+    _set_widths(ws, [8, 6, 14, 38, 36, 40, 60, 10, 60, 10, 12, 40, 12])
+    ws.freeze_panes = "A2"
+
+
+def write_excel(
+    recon: list[StepResult],
+    primitives: list[StepResult],
+    chain_results: list[StepResult],
+) -> None:
+    import openpyxl
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    by_chain: dict[str, list[StepResult]] = {}
+    for r in chain_results:
+        by_chain.setdefault(r.chain_id, []).append(r)
+    # Preserve chain definition order
+    ordered: dict[str, list[StepResult]] = {}
+    for c in CHAINS:
+        if c.chain_id in by_chain:
+            ordered[c.chain_id] = by_chain[c.chain_id]
+
+    _sheet_summary(wb, ordered)
+    _sheet_source(wb)
+    _sheet_steps(wb, "03_Recon", recon)
+    _sheet_steps(wb, "04_Primitives", primitives)
+    _sheet_steps(wb, "05_Chain_Steps", chain_results)
+    _sheet_diff(wb, recon + primitives + chain_results)
+    _sheet_pocs(wb, recon + primitives + chain_results)
+    _sheet_raw(wb, recon + primitives + chain_results)
+
+    wb.save(XLSX_OUT)
+    print(f"\nSaved: {XLSX_OUT}")
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
