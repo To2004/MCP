@@ -123,6 +123,92 @@ def wipe_all() -> None:
         wipe_and_recreate(v)
 
 
+# ---------------------------------------------------------------------------
+# Pure helpers — text cleaning, truncation, and hit classification.
+# ---------------------------------------------------------------------------
+
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_ABS_PATH_RE = re.compile(r"(?:/[a-zA-Z0-9_.+-]+){2,}")
+_SECRET_MARKERS = ("AWS_SECRET", "API_KEY", "PASSWORD=", "SECRET_KEY")
+
+
+def clean_text(text: str) -> str:
+    return _CTRL_RE.sub(lambda m: f"<0x{ord(m.group()):02x}>", text)
+
+
+def truncate(text: str, limit: int = 600) -> str:
+    text = clean_text(text)
+    if len(text) <= limit:
+        return text
+    return text[:limit] + f"\n[...{len(text)} chars total]"
+
+
+def _is_regression(pinned: str, latest: str) -> bool:
+    """True if the two versions behaved meaningfully differently."""
+    def is_block(text: str) -> bool:
+        low = text.lower()
+        return any(k in low for k in (
+            "access denied", "outside allowed", "not allowed",
+            "forbidden", "error:", "tool error",
+        ))
+
+    p_blocked = is_block(pinned)
+    l_blocked = is_block(latest)
+    if p_blocked != l_blocked:
+        return True
+    if not p_blocked and not l_blocked:
+        p2 = re.sub(r"\s+", " ", pinned.strip().lower())
+        l2 = re.sub(r"\s+", " ", latest.strip().lower())
+        return p2 != l2
+    return False
+
+
+def classify_hit(
+    input_path: Any,
+    pinned: str,
+    latest: str,
+    pinned_elapsed_ms: int,
+    latest_elapsed_ms: int,
+) -> tuple[str, str, bool]:
+    """Return (severity, reason, is_regression)."""
+    regression = _is_regression(pinned, latest)
+    combined = f"{pinned}\n{latest}"
+
+    # CRITICAL — leaks dominate
+    if CANARY in combined:
+        return "CRITICAL", f"canary string '{CANARY}' leaked — real sandbox escape", regression
+    if re.search(r"\broot:x:", combined):
+        return "CRITICAL", "/etc/passwd marker 'root:x:' in response", regression
+    if "BEGIN OPENSSH" in combined or "BEGIN RSA" in combined or "ssh-rsa " in combined:
+        return "CRITICAL", "SSH key material in response", regression
+    if any(m in combined for m in _SECRET_MARKERS):
+        return "CRITICAL", "credential marker in response", regression
+
+    # HIGH — crashes, timeouts, oversized
+    if pinned_elapsed_ms >= REQUEST_TIMEOUT_SEC * 1000 or latest_elapsed_ms >= REQUEST_TIMEOUT_SEC * 1000:
+        return "HIGH", "request timeout / hang (>= 15s)", regression
+    if len(pinned) >= DOS_SIZE_THRESHOLD or len(latest) >= DOS_SIZE_THRESHOLD:
+        mb = max(len(pinned), len(latest)) / (1024 * 1024)
+        return "HIGH", f"oversized response ({mb:.1f} MB) — DoS candidate", regression
+    if "Traceback" in combined or "UnhandledPromiseRejection" in combined or "\n    at Object." in combined:
+        return "HIGH", "stack trace in response (unhandled error)", regression
+
+    # MEDIUM — info leak
+    input_str = str(input_path) if input_path is not None else ""
+    for match in _ABS_PATH_RE.findall(combined):
+        if not match or match in input_str:
+            continue
+        if "node_modules" in match:
+            return "MEDIUM", f"internal path leaked: {match[:80]}", regression
+        if match.startswith(("/home/", "/root/", "/Users/")):
+            return "MEDIUM", f"host path leaked: {match[:80]}", regression
+
+    if regression:
+        return "LOW", "behavioral divergence between versions", True
+
+    return "INFO", "no hit", False
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
