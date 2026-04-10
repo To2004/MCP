@@ -209,6 +209,131 @@ def classify_hit(
     return "INFO", "no hit", False
 
 
+# ---------------------------------------------------------------------------
+# Data structures
+# ---------------------------------------------------------------------------
+
+@dataclass
+class StepCall:
+    """One tool call to make. Populated by chain definitions."""
+    chain_id: str
+    step_num: int
+    pre_setup: str
+    tool: str
+    path: Any
+    extra_args: dict[str, Any] = field(default_factory=dict)
+    label: str = ""
+
+
+@dataclass
+class StepResult:
+    chain_id: str
+    step_num: int
+    tool: str
+    path_repr: str
+    label: str
+    pre_setup: str
+    pinned_response: str
+    pinned_elapsed_ms: int
+    latest_response: str
+    latest_elapsed_ms: int
+    severity: str = "INFO"
+    reason: str = ""
+    is_regression: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Per-version path templating.
+# ---------------------------------------------------------------------------
+
+def render_path(value: Any, version: str) -> Any:
+    """Resolve {SANDBOX} / {VICTIM} placeholders for one version.
+    Non-string values pass through unchanged (type-confusion probes)."""
+    if not isinstance(value, str):
+        return value
+    return value.replace("{SANDBOX}", SANDBOXES[version]).replace("{VICTIM}", VICTIMS[version])
+
+
+# ---------------------------------------------------------------------------
+# MCP client — spawns one stdio server per version per call batch.
+# ---------------------------------------------------------------------------
+
+async def _call_batch(version: str, calls: list[StepCall]) -> list[tuple[str, int]]:
+    """Run calls against one version's server. Returns (response_text, elapsed_ms)."""
+    from mcp import ClientSession
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+    import anyio
+
+    params = StdioServerParameters(
+        command="wsl",
+        args=["node", SERVERS[version], SANDBOXES[version]],
+    )
+    out: list[tuple[str, int]] = []
+
+    async def one(session: ClientSession, call: StepCall) -> tuple[str, int]:
+        t0 = time.monotonic()
+        try:
+            args: dict[str, Any] = {"path": render_path(call.path, version)}
+            for k, v in call.extra_args.items():
+                args[k] = render_path(v, version)
+            with anyio.fail_after(REQUEST_TIMEOUT_SEC):
+                resp = await session.call_tool(call.tool, args)
+            parts = [b.text for b in (resp.content or []) if hasattr(b, "text")]
+            text = "\n".join(parts) or "(empty response)"
+        except TimeoutError:
+            text = f"TIMEOUT after {REQUEST_TIMEOUT_SEC}s"
+        except Exception as exc:
+            text = f"TOOL ERROR: {type(exc).__name__}: {exc}"
+        elapsed_ms = int((time.monotonic() - t0) * 1000)
+        if len(text) > MAX_RESPONSE_BYTES:
+            text = text[:MAX_RESPONSE_BYTES] + f"\n[TRUNCATED — original {len(text)} bytes]"
+        return text, elapsed_ms
+
+    try:
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                with anyio.fail_after(SERVER_INIT_TIMEOUT_SEC):
+                    await session.initialize()
+                for call in calls:
+                    out.append(await one(session, call))
+                    print(".", end="", flush=True)
+    except Exception as exc:
+        remaining = len(calls) - len(out)
+        print(f"\n  [server {version} fatal] {exc}")
+        out.extend([(f"SERVER FAILED: {exc}", 0)] * remaining)
+
+    return out
+
+
+def run_calls_both_versions(calls: list[StepCall]) -> list[StepResult]:
+    """Run the same call list against both versions, pair, score."""
+    print(f"\n  v2025.3.28 ", end="", flush=True)
+    p = asyncio.run(_call_batch("328", calls))
+    print(f" done.\n  v2025.7.29 ", end="", flush=True)
+    l = asyncio.run(_call_batch("729", calls))
+    print(" done.")
+
+    results: list[StepResult] = []
+    for call, (pr, pe), (lr, le) in zip(calls, p, l):
+        sev, reason, regression = classify_hit(call.path, pr, lr, pe, le)
+        results.append(StepResult(
+            chain_id=call.chain_id,
+            step_num=call.step_num,
+            tool=call.tool,
+            path_repr=repr(call.path)[:300],
+            label=call.label,
+            pre_setup=call.pre_setup,
+            pinned_response=pr,
+            pinned_elapsed_ms=pe,
+            latest_response=lr,
+            latest_elapsed_ms=le,
+            severity=sev,
+            reason=reason,
+            is_regression=regression,
+        ))
+    return results
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
