@@ -334,6 +334,144 @@ def run_calls_both_versions(calls: list[StepCall]) -> list[StepResult]:
     return results
 
 
+# ---------------------------------------------------------------------------
+# Phase 0 — Source analysis. Hardcoded findings from reading both versions'
+# index.js files. Each entry names a function, shows a real snippet, and
+# identifies the gap that a chain below is aimed at.
+# ---------------------------------------------------------------------------
+
+SOURCE_NOTES: list[dict[str, str]] = [
+    {
+        "version": "v2025.3.28",
+        "function": "validatePath (line 52)",
+        "snippet": (
+            "const isAllowed = allowedDirectories.some(dir =>\n"
+            "    normalizedRequested.startsWith(dir));\n"
+            "if (!isAllowed) {\n"
+            "    throw new Error(`Access denied - path outside allowed directories: "
+            "${absolute} not in ${allowedDirectories.join(', ')}`);\n"
+            "}"
+        ),
+        "gap_identified": (
+            "Bare startsWith(dir) without a trailing slash. If allowed dir is "
+            "/tmp/mcp_attack_328 then /tmp/mcp_attack_328_evil/loot also matches "
+            "— classic prefix-confusion. Also, the full allow-list is echoed in "
+            "the error message (info leak)."
+        ),
+        "attack_idea": "C1 Prefix confusion — create sandbox_evil sibling and read through it.",
+    },
+    {
+        "version": "v2025.3.28",
+        "function": "validatePath (line 60) — symlink realpath check",
+        "snippet": (
+            "const realPath = await fs.realpath(absolute);\n"
+            "const normalizedReal = normalizePath(realPath);\n"
+            "const isRealPathAllowed = allowedDirectories.some(dir =>\n"
+            "    normalizedReal.startsWith(dir));\n"
+            "if (!isRealPathAllowed) {\n"
+            "    throw new Error('Access denied - symlink target outside allowed directories');\n"
+            "}"
+        ),
+        "gap_identified": (
+            "Same startsWith bug on the realpath. A symlink pointing to a sibling "
+            "dir /tmp/mcp_attack_328_evil/... will also pass. Hardlinks are "
+            "invisible to realpath by design — this check does nothing for them."
+        ),
+        "attack_idea": "C2/C8 — symlink to sibling via prefix, hardlink to external canary.",
+    },
+    {
+        "version": "v2025.3.28",
+        "function": "no null-byte or type check",
+        "snippet": (
+            "// validatePath goes straight from expandHome -> path.resolve -> normalize\n"
+            "// There is no explicit null-byte rejection before startsWith.\n"
+            "// Schema z.object({path: z.string()}) rejects non-strings upstream."
+        ),
+        "gap_identified": (
+            "Null bytes pass through the validator. Node fs.readFile will "
+            "typically throw ERR_INVALID_ARG_VALUE on \\x00, but the error text "
+            "may reveal host paths. Non-string paths are caught by zod — low "
+            "surface for type confusion."
+        ),
+        "attack_idea": "C12 null-byte probes; skip schema-layer type confusion on reads.",
+    },
+    {
+        "version": "v2025.7.29",
+        "function": "isPathWithinAllowedDirectories (path-validation.js)",
+        "snippet": (
+            "if (absolutePath.includes('\\x00')) return false;\n"
+            "let normalizedPath = path.resolve(path.normalize(absolutePath));\n"
+            "return allowedDirectories.some(dir => {\n"
+            "    const normalizedDir = path.resolve(path.normalize(dir));\n"
+            "    if (normalizedPath === normalizedDir) return true;\n"
+            "    if (normalizedDir === path.sep) return normalizedPath.startsWith(path.sep);\n"
+            "    return normalizedPath.startsWith(normalizedDir + path.sep);\n"
+            "});"
+        ),
+        "gap_identified": (
+            "Fix for CVE-53109/53110: trailing separator closes the prefix "
+            "confusion gap, explicit null-byte rejection, and path.normalize "
+            "before path.resolve handles ....// sequences. No Unicode "
+            "NFC/NFD normalization — JS string comparison != kernel inode lookup. "
+            "Nothing about hardlinks — realpath can't see them."
+        ),
+        "attack_idea": "C11 Unicode NFC/NFD; C8 Hardlink escape (main bet).",
+    },
+    {
+        "version": "v2025.7.29",
+        "function": "allowedDirectories startup (line 41)",
+        "snippet": (
+            "let allowedDirectories = await Promise.all(args.map(async (dir) => {\n"
+            "    const absolute = path.isAbsolute(dir) ? path.resolve(dir) : "
+            "path.resolve(process.cwd(), dir);\n"
+            "    try {\n"
+            "        const resolved = await fs.realpath(absolute);\n"
+            "        return normalizePath(resolved);\n"
+            "    } catch {\n"
+            "        return normalizePath(absolute);\n"
+            "    }\n"
+            "}));"
+        ),
+        "gap_identified": (
+            "Latest realpaths the allowed dir itself at startup — closes a class "
+            "of bugs where sandbox was a symlink. Pinned never did this, so if "
+            "sandbox is itself under a symlinked parent, pinned may compare "
+            "inconsistent paths."
+        ),
+        "attack_idea": "C7 Parent-dir symlink — only interesting on pinned.",
+    },
+    {
+        "version": "v2025.7.29",
+        "function": "validatePath (line 78-82)",
+        "snippet": (
+            "const realPath = await fs.realpath(absolute);\n"
+            "const normalizedReal = normalizePath(realPath);\n"
+            "if (!isPathWithinAllowedDirectories(normalizedReal, allowedDirectories)) {\n"
+            "    throw new Error(`Access denied - symlink target outside allowed "
+            "directories: ${realPath} not in ${allowedDirectories.join(', ')}`);\n"
+            "}"
+        ),
+        "gap_identified": (
+            "Classic check-use gap still exists: realpath() runs, then "
+            "fs.readFile() runs separately. Between the two, an attacker can "
+            "swap the path from a legitimate file to a symlink. Error message "
+            "still leaks the full realpath (info disclosure)."
+        ),
+        "attack_idea": "C9 TOCTOU race — tight loop swapping file<->symlink during reads.",
+    },
+]
+
+
+def write_source_notes() -> None:
+    lines = ["# Filesystem MCP Source Analysis\n\n"]
+    for e in SOURCE_NOTES:
+        lines.append(f"## {e['version']} — `{e['function']}`\n\n")
+        lines.append(f"```js\n{e['snippet']}\n```\n\n")
+        lines.append(f"**Gap:** {e['gap_identified']}\n\n")
+        lines.append(f"**Attack:** {e['attack_idea']}\n\n---\n\n")
+    NOTES_OUT.write_text("".join(lines), encoding="utf-8")
+
+
 def main() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     print("attack_fs_chains.py — scaffold OK (no phases implemented yet)")
