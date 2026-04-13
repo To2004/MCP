@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 import re
+import shutil
 import sys
 import time
 from datetime import UTC, datetime
@@ -26,6 +27,20 @@ from tests.testbed.harness.tool_matcher import load_templates, match  # noqa: E4
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 SERVERS_DIR = Path(__file__).parent.parent / "servers"
+SANDBOX_DIR = Path(__file__).parent.parent / "sandbox"
+
+
+def _clean_sandbox() -> None:
+    """Delete all contents of the testbed sandbox, keeping the directory itself."""
+    if not SANDBOX_DIR.exists():
+        return
+    for item in SANDBOX_DIR.iterdir():
+        if item.name == ".gitkeep":
+            continue
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
 
 
 def _check_damage(response_text: str, damage_indicator: str | None) -> bool:
@@ -461,6 +476,8 @@ def main() -> None:
         server_names[0] if len(server_names) == 1 else "all",
     )
     print(f"\nResults saved to: {saved_path}")
+    _clean_sandbox()
+    print("Sandbox cleaned.")
 
 
 if __name__ == "__main__":

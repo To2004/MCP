@@ -4,6 +4,28 @@ This file gives guidance to Claude Code when working in this repository.
 For detailed documentation, see the [docs/](docs/) folder
 ([index](docs/README.md)).
 
+## Threat Model Direction
+
+In this project, MCP SERVERS are the PROTECTED ASSET being attacked BY malicious agents/users.
+Never reverse this direction. When searching for papers, creating taxonomies, or editing docs,
+always frame as: 'defending/protecting servers FROM agents', NOT 'defending agents from servers'.
+
+## MCP-Specific Scope
+
+When asked for MCP-related items (benchmarks, attacks, papers), include ONLY MCP-specific results
+unless user explicitly requests broader coverage. Do not add non-MCP items as 'bonus' tiers.
+
+## General Behavior
+
+When the user asks a QUESTION, answer the question. Do NOT start installing packages, exploring
+codebases, or executing actions unless explicitly asked. If unsure whether the user wants
+explanation vs. implementation, ask first.
+
+## Quality Standards
+
+When cataloging, scanning, or collecting items (CVEs, papers, files), do a second verification
+pass before reporting done. State the count found and ask user to confirm before finalizing.
+
 ## Project Overview
 
 MCP Security is a defense-oriented risk scoring framework where the

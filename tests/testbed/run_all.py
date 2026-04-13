@@ -38,6 +38,20 @@ TESTBED = Path(__file__).parent
 SERVERS_DIR = TESTBED / "servers"
 DISABLED_DIR = SERVERS_DIR / "disabled"
 RESULTS_DIR = TESTBED / "results"
+SANDBOX_DIR = TESTBED / "sandbox"
+
+
+def _clean_sandbox() -> None:
+    """Delete all contents of the testbed sandbox, keeping the directory itself."""
+    if not SANDBOX_DIR.exists():
+        return
+    for item in SANDBOX_DIR.iterdir():
+        if item.name == ".gitkeep":
+            continue
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
 
 
 def _server_names() -> list[str]:
@@ -174,6 +188,9 @@ def main() -> None:
     print(f"  Results JSON     : {out_json}")
     print(f"  Report           : {report_path}")
     print(f"{'='*64}\n")
+
+    _clean_sandbox()
+    print("  Sandbox cleaned.")
 
 
 if __name__ == "__main__":
