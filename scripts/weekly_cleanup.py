@@ -130,6 +130,10 @@ def find_duplicates(root: Path) -> list[tuple[Path, Path]]:
             if entry.is_dir():
                 _walk(entry)
             elif entry.is_file():
+                # Skip empty files — they are always "equal" but are often
+                # structural placeholders (__init__.py, .gitkeep, etc.)
+                if entry.stat().st_size == 0:
+                    continue
                 try:
                     digest = _sha256(entry)
                 except OSError:

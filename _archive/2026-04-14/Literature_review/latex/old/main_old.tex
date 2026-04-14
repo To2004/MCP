@@ -1,0 +1,211 @@
+\documentclass[12pt]{article}
+
+% ---------------------------------------------------------
+% Packages (minimal and stable)
+% ---------------------------------------------------------
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{times}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\onehalfspacing
+\pagestyle{plain}
+
+% ---------------------------------------------------------
+% Begin Document
+% ---------------------------------------------------------
+\begin{document}
+
+% ---------------------------------------------------------
+% TITLE PAGE
+% ---------------------------------------------------------
+\begin{titlepage}
+\centering
+
+\vspace*{1cm}
+
+\includegraphics[width=3cm]{bgu.png}\\[0.8cm]
+
+{\large Ben-Gurion University of the Negev}\\
+{\large Faculty of Engineering Sciences}\\
+{\large Department of Information Systems Engineering}
+
+\vspace{2cm}
+
+{\Large \textbf{Thesis Proposal – End of Semester}}\\[0.8cm]
+{\Large \textbf{Context-Aware Prioritization of Kubernetes Misconfigurations}}
+
+\vspace{0.2cm}
+
+\begin{flushleft}
+\textbf{Submitted by}\\[0.2cm]
+Tomer Ovadya\\
+Department of Information Systems Engineering\\
+Ben-Gurion University of the Negev\\
+E-mail: ovadyat@post.bgu.ac.il
+\end{flushleft}
+
+\vspace{0.2cm}
+
+\begin{flushleft}
+\textbf{Supervisor}\\[0.2cm]
+Dr. Asaf Shabtai\\
+Department of Information Systems Engineering\\
+Ben-Gurion University of the Negev
+\end{flushleft}
+
+
+
+\end{titlepage}
+
+% ---------------------------------------------------------
+% ABSTRACT
+% ---------------------------------------------------------
+
+\begin{abstract}
+The goal of this research is to rank Kubernetes misconfigurations by their \emph{system-specific impact} in a concrete application deployment. Kubernetes misconfigurations are a major source of security risk in cloud-native systems. Existing mitigation and prioritization approaches rely primarily on static severity assessments that fail to capture runtime context, service dependencies, and system-level interactions. Prior research demonstrates that both Infrastructure-as-Code defects and Kubernetes configuration errors are widespread and structurally embedded in modern deployment pipelines. This work focuses on misconfiguration prioritization and surveys research on Kubernetes security, Infrastructure-as-Code analysis, and context-aware vulnerability prioritization, motivating approaches that integrate static analysis with runtime observability and dependency-aware reasoning. We propose a context-aware ranking framework that enriches scanner findings with runtime observability and dependency-graph signals, and evaluates agreement against expert reference rankings.
+\end{abstract}
+
+\end{abstract}
+% ---------------------------------------------------------
+% RELATED WORK
+% ---------------------------------------------------------
+\section{Background and Related Work}
+
+This chapter surveys six complementary research areas that motivate our approach and define its scope. In current practice, Kubernetes misconfigurations are typically prioritized using static scanner severities; this implies that the same misconfiguration is assigned the same priority across different applications, even when its real impact differs due to architecture, exposure, and runtime behavior. We first review evidence that Kubernetes security risk is frequently driven by misconfigurations, especially in networking, access control, and privilege management. We then connect this to broader Infrastructure-as-Code (IaC) research on recurring defect patterns and security smells, and to taxonomy-driven efforts that clarify what practitioners repeatedly get wrong. Next, we cover emerging LLM-based methods for analyzing Kubernetes configurations and the extent to which they incorporate operational signals. We also ground our prioritization goal in the vulnerability-management literature, where context-aware scoring highlights why static severity is often insufficient. Finally, we discuss resource importance in microservice graphs via centrality, since system impact depends on inter-service structure, not only on local configuration.
+
+\subsection{Kubernetes Misconfigurations and Security Risks}
+Prior research indicates that a substantial portion of Kubernetes security incidents originates from misconfigurations rather than classic software vulnerabilities, with recurring risk concentrated in networking, access control, and privilege management \cite{minna2021understanding,rahman2023security,shamim2020xi}. A key reason is that Kubernetes networking abstractions differ from traditional security assumptions: policies and connectivity are expressed indirectly through layered resources, which can create unexpected exposure when configurations are misunderstood \cite{minna2021understanding}. Empirical evidence further shows that such configuration defects are widespread and affect core Kubernetes resources, reinforcing the need to treat misconfiguration management as a first-class security problem \cite{zhang2025configurationdefectskubernetes}. This motivates using misconfigurations as the primary unit of analysis, but does not determine which ones are most urgent in a specific deployment.
+
+\subsection{Infrastructure-as-Code Defects and Security Smells}
+A complementary line of work in Infrastructure-as-Code (IaC) finds that defects and security-related issues are prevalent, recurring, and structural. Rahman et al. provide extensive empirical results spanning defect characterization, defect prediction, and systematic mapping studies \cite{rahman2018characteristics,rahman2018defect,rahman2019systematic}. Importantly, many of these issues are framed as security smells or defect patterns, capturing insecure practices that are broader than the operational misconfigurations typically surfaced by scanners \cite{rahman2019seven,rahman2020gang}. More recent work explores semantics-aware detection of such smells using program and language processing techniques \cite{war2025detection}, while quality-oriented frameworks for IaC remain primarily focused on static artifacts \cite{konala2025framework}. These results explain why insecure configuration practices recur, but they do not rank scanner findings by application-specific impact.
+
+\subsection{Kubernetes Misconfiguration Taxonomies}
+Taxonomy-driven efforts—such as \emph{The Seven Sins of Kubernetes} and \emph{The XI Commandments of Kubernetes Security}—together with Rahman’s empirical analyses, identify recurring insecure configuration practices and clarify what constitutes a misconfiguration \cite{rahman2019seven,shamim2020xi,rahman2018characteristics}. However, these works mainly define categories and patterns of insecure practice rather than offering a mechanism to prioritize misconfigurations based on their system impact under real operational conditions. As a result, they are informative for defining the space of issues, but they provide limited guidance for ranking findings in a live microservice deployment.
+
+\subsection{LLM-Based Kubernetes Misconfiguration Analysis}
+Recent studies have begun applying large language models (LLMs) to Kubernetes configuration analysis. GenKubeSec demonstrates LLM-based detection, localization, reasoning, and remediation of misconfigurations directly from manifests \cite{malul2024genkubesec}. KubeGuard integrates runtime logs with configuration files to support Kubernetes hardening decisions, illustrating the value of combining static and runtime signals \cite{cohen2025kubeguard}. These approaches show that rich reasoning over configuration (and sometimes logs) is feasible, but they do not operationalize a ranking objective that is explicitly tied to system-wide impact.
+
+\subsection{Context-Aware Vulnerability Prioritization}
+The vulnerability management literature consistently reports that static severity metrics alone are often insufficient for effective prioritization. Context-aware approaches—such as Non-Intrusive Context-Based Vulnerability Scoring \cite{zhuang2016non}, CAVP \cite{jung2022cavp}, and Fuzzyfortify \cite{hafiz2025fuzzyfortify}—emphasize the importance of environmental, temporal, and system-level context when estimating practical risk. These directions align with the taxonomy and open challenges summarized in a broad survey on vulnerability prioritization \cite{jiang2025survey}. In parallel, recent work has evaluated LLMs specifically for vulnerability triage and prioritization \cite{haddad2025prompting}. This body of work motivates context-enriched prioritization, but it does not directly address scanner-defined Kubernetes misconfigurations.
+
+\subsection{Resource Importance and Network Centrality}
+In microservice-based systems, resource importance is inherently tied to system-level interactions rather than to isolated component properties. Centrality-based analyses of dependency graphs provide a principled way to identify critical services and potential single points of failure \cite{bakhtin2025network,lerman2010centrality}. At the same time, evidence from studies of dynamic importance suggests that purely static structural measures may not fully capture real runtime criticality \cite{van2022dynamic}. This supports using graph-based importance as evidence for impact, while leaving open how to combine it with concrete misconfiguration findings.
+
+\subsection{Positioning of This Work}
+Taken together, prior work establishes that Kubernetes and IaC misconfigurations are widespread and structurally recurring \cite{rahman2018characteristics,rahman2018defect,rahman2019systematic}, that static-only analysis is often insufficient for security decision-making \cite{malul2024genkubesec,war2025detection}, that runtime context is not commonly used specifically for misconfiguration prioritization \cite{cohen2025kubeguard}, and that practical severity depends on contextual and system-level factors \cite{zhuang2016non,jiang2025survey,bakhtin2025network}. Building on these insights, this work focuses on scanner-defined operational misconfigurations, enriches them with runtime log analysis, and applies network-based notions of resource importance to rank misconfigurations by contextual system impact.
+
+\paragraph{Contributions.}
+\begin{itemize}
+    \item A ranking dataset of scanner-detected Kubernetes misconfigurations enriched with an application-specific context bundle (metadata, repository evidence, and runtime/system-structure signals).
+    \item Expert and LLM reference rankings collected via an AHP protocol for system-specific prioritization within each application.
+    \item A context-aware ranking agent and an evaluation against static and heuristic baselines using correlation, pairwise, and Top-$K$ agreement metrics.
+\end{itemize}
+
+% ---------------------------------------------------------
+% METHODOLOGY
+% ---------------------------------------------------------
+% ---------------------------------------------------------
+% METHODOLOGY
+% ---------------------------------------------------------
+\section{Methodology}
+\label{sec:methodology}
+
+The goal of this work is to prioritize Kubernetes misconfigurations (and related security findings) according to their \emph{system-specific impact} in a concrete application deployment, rather than relying on generic, context-free scanner severity. In current practice, scanner-defined severities implicitly assume that the same misconfiguration should be ranked similarly across different systems, even when architecture, exposure, and runtime behavior make its real impact substantially different. Figure~\ref{fig:method_overview} summarizes the evidence sources we combine to support system-aware prioritization.
+
+Our methodology consists of four main stages: (1) constructing a ranking dataset from real Kubernetes applications and enriching each finding with application, code, and runtime context; (2) collecting reference rankings from human experts and an LLM using an Analytic Hierarchy Process (AHP) protocol; (3) developing an automated ranking agent and aligning it to the expert/LLM reference behavior using a structured taxonomy and prompt engineering; and (4) evaluating agreement and comparing against static and heuristic baselines.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Screenshot 2026-02-15 124553.png}
+    \caption{Method overview: we augment scanner findings with system context derived from runtime logs (used for graph-based importance signals), vulnerability indicators (when available), documentation, and repository artifacts (source code and system stack). These evidence sources feed a system-aware severity ranking model. In our implementation, logs yield the runtime flow graph, manifests induce intended dependency edges, and graph features (e.g., degree, betweenness, and PageRank) quantify service importance for impact estimation.}
+    \label{fig:method_overview}
+    
+\end{figure}
+
+\subsection{Research Questions and Hypotheses}
+\label{subsec:rqs_hypotheses}
+
+\paragraph{Research Questions.}
+\begin{itemize}
+    \item \textbf{RQ1:} To what extent do LLM-based rankings deviate from scanner severity when system context is provided, and what prompt constraints are required to enforce context-driven reasoning?
+
+    \item \textbf{RQ2:} Does system context justify ranking the same scanner-detected misconfiguration differently across different applications?
+    \item \textbf{RQ3:} Can a context-aware automated ranking agent achieve higher agreement with expert reference rankings than static severity-based baselines?
+\end{itemize}
+
+\paragraph{Hypotheses.}
+\begin{itemize}
+    \item \textbf{H1:} LLM rankings will correlate strongly with static scanner severities unless the prompt explicitly enforces system-specific reasoning.
+    \item \textbf{H2:} The priority of the same misconfiguration will vary across applications when evaluated with system context (exposure, connectivity, and service criticality).
+    \item \textbf{H3:} A context-aware agent that integrates system-structure and runtime evidence will improve agreement with expert AHP rankings compared to static baselines.
+\end{itemize}
+
+\subsection{Stage 1: Constructing Ranking Instances from Real Applications}
+\label{subsec:stage1}
+
+We begin by selecting real-world microservice-based Kubernetes applications and collecting their deployment artifacts (e.g., manifests describing workloads, services, ingress, identities, RBAC, and networking policies). We run static security scanners on these artifacts to detect misconfigurations and produce an initial list of findings. Each finding is treated as a \emph{ranking instance} that must be prioritized relative to other findings within the \emph{same} application and deployment.
+
+Because static scanner output is often insufficient for prioritization, we enrich each ranking instance with additional context about the \emph{specific application} in which it appears. This enrichment includes:
+\begin{itemize}
+    \item \textbf{Kubernetes resource metadata:} resource kind, namespace, labels/annotations, and security-relevant fields (e.g., privilege settings, RBAC bindings, network policy presence).
+    \item \textbf{Application metadata and source-code context:} service role and functionality, externally exposed endpoints, ownership/module information, relevant configuration files, and code-level hints that help interpret exploitability and blast radius within the application.
+    \item \textbf{Vulnerability-related signals (when available):} component/image metadata and associated CVE indicators that connect configuration weaknesses to known vulnerable components.
+    \item \textbf{System-structure and runtime-derived context:} evidence describing how the affected service/resource is positioned inside the application's architecture and runtime behavior (described in Stage~2).
+\end{itemize}
+
+\paragraph{Dataset scope (high-level).}
+We construct the dataset from publicly available microservice-based Kubernetes applications obtained from GitHub. For each application, we collect manifests and execute the system to capture runtime network-flow evidence. We report dataset size in terms of the number of applications, the number of scanner findings (ranking instances), and the number of AHP pairwise comparisons collected per application, enabling replication and incremental expansion as additional applications are added.
+
+The outcome of this stage is a structured dataset in which each misconfiguration finding is accompanied by a context bundle that supports system-specific prioritization.
+
+\subsection{Stage 2: System Structure and Runtime Context via Graph Construction}
+\label{subsec:stage2}
+To capture system-level impact, we construct two complementary graphs that represent the intended architecture (from manifests) and the observed runtime interactions (from telemetry/logs). Prior work suggests that combining configuration with runtime evidence improves Kubernetes security reasoning.
+
+\paragraph{Manifest-derived dependency graph (intended structure).}
+We build a directed graph from manifests where nodes represent workloads/services and edges capture implied dependencies, such as Service-to-Workload selection, Ingress-to-Service routing, ServiceAccount/RBAC relations, and constraints induced by NetworkPolicy objects. This graph approximates intended coupling and privilege structure and supports structural importance signals (e.g., reachability and hub-like services).
+
+\paragraph{Runtime network-flow graph (observed interactions).}
+During controlled execution, we aggregate observed network flows into a directed interaction graph whose edges represent actual communications (optionally weighted by frequency/volume). This graph captures effective dependencies that may not be apparent from manifests and highlights operational gateways and high-impact hubs.
+
+\paragraph{Linking findings to system context.}
+Each finding is mapped to the relevant node(s) in both graphs when applicable, and we derive features that reflect application-specific blast radius and criticality (e.g., centrality, mediation of flows, and reachability). These features are included in the context bundle used for AHP ranking (Stage~3) and by the automated agent (Stage~4).
+
+
+\subsection{Stage 3: Reference Ranking Using AHP with Human Experts and an LLM}
+\label{subsec:stage3}
+
+To define a reference notion of ``what should be fixed first'' in a given application, we elicit prioritization judgments from both human experts and an LLM using an AHP-style protocol. Instead of requesting a single full ranking directly, we present pairs (or small subsets) of ranking instances and ask raters to decide which issue is more urgent to remediate and by what magnitude. We aggregate these pairwise judgments into a consistent priority ordering and relative weights.
+
+Importantly, the ranking task is explicitly framed as \emph{system-specific}: raters are instructed to rank findings according to their expected impact in the given application context (architecture, exposure, dependencies, and runtime evidence), rather than assigning generic severities. The resulting AHP-derived ordering serves as the reference ranking used to guide the automated agent and to evaluate agreement.We compute the AHP consistency ratio and re-collect comparisons when inconsistency exceeds a standard threshold. We aim for at least three expert raters per application and report inter-rater agreement alongside the aggregated reference ranking.
+
+
+\subsection{Stage 4: Automated Ranking Agent and Alignment to the Reference}
+\label{subsec:stage4}
+
+We develop an automated ranking agent that consumes the same structured ranking instances (scanner finding + enriched context) and outputs a priority score and ordering. The agent is guided by a taxonomy of misconfiguration categories (e.g., privilege escalation, identity/RBAC, network exposure, isolation violations, resource controls) and by explicit decision rules that integrate system structure and runtime evidence. We iteratively refine the agent through prompt engineering and calibrated examples so that its ranking behavior aligns with the AHP reference rankings produced by human experts and the LLM.
+
+\subsection{Evaluation}
+\label{subsec:evaluation}
+
+We evaluate the approach by measuring agreement between the agent-produced rankings and the AHP reference rankings, with emphasis on the top-ranked findings that would be remediated first in practice.
+
+\paragraph{Baselines.}
+We compare against baselines that reflect common practice and simple operational heuristics: (i) \textbf{static scanner severity} (prioritize strictly by scanner score/level); (ii) \textbf{exposure heuristic}, where \emph{externally reachable} means resources exposed via Ingress, Service type \texttt{LoadBalancer}/\texttt{NodePort}, a public IP, or observed inbound flows from outside the cluster; and (iii) \textbf{scanner consensus} (when multiple scanners are available, aggregate by majority vote over severity buckets or by averaging normalized severity scores across tools). These baselines isolate the contribution of system-structure and runtime context.
+
+
+\paragraph{Metrics.}
+We quantify ranking quality using (i) rank correlation with the AHP reference ordering (Spearman's $\rho$ and Kendall's $\tau$), (ii) \textbf{pairwise agreement} (the fraction of instance pairs whose relative order matches the reference), and (iii) \textbf{Top-$K$ agreement} (overlap/Jaccard on the top-$K$ findings). We report Top-$K$ for $K \in \{5,10\}$, since remediation typically focuses on a small set of highest-priority items. We report results per application and aggregate across applications to assess robustness.
+
+
+
+% ---------------------------------------------------------
+% References
+% ---------------------------------------------------------
+\newpage
+\bibliographystyle{plain} % or ieeetr, alpha, acm, etc.
+\bibliography{bib}        % loads bib.bib
+\end{document}
