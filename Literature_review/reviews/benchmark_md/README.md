@@ -66,6 +66,65 @@ should be treated as **supplementary evidence** rather than the backbone of the 
 
 ---
 
+## Added from ToolSafe Reference Scan (4)
+
+Added on **2026-04-14** after tracing the four agent-safety datasets cited by ToolSafe
+(Mou et al., 2026, arXiv 2601.10156) as its basis for the 2-dimensional unsafe-tool-invocation
+taxonomy (triggering cause × manifestation → MUR / PI / HT / BTRA). These are general-agent
+benchmarks, not MCP-specific — treat as supporting methodology/training evidence, not as
+core MCP coverage.
+
+| # | File | Benchmark | Source | Samples |
+|---|------|-----------|--------|---------|
+| 23 | [23_agentharm.md](23_agentharm.md) | AgentHarm | Andriushchenko et al., 2024 | 110 tasks (440 with augmentations), 104 tools, 11 harm categories |
+| 24 | [24_agent_safetybench.md](24_agent_safetybench.md) | Agent-SafetyBench | Zhang et al., 2024 | 2,000 test cases, 349 environments, 8 risk categories, 10 failure modes |
+| 25 | [25_agentalign.md](25_agentalign.md) | AgentAlign | Zhang et al., 2025 | 4,956 harmful + 9,783 benign instructions with paired variants |
+| 26 | [26_ts_bench.md](26_ts_bench.md) | TS-Bench (ToolSafe) | Mou et al., 2026 | ~7,188 labeled trajectories (AgentHarm-Traj 731, ASB-Traj 5,237, AgentDojo-Traj 1,220) |
+| 27 | [27_assebench.md](27_assebench.md) | ASSEBench (AgentAuditor) | Luo et al., 2025 | 2,293 annotated records, 29 scenarios, 15 risk types, dual strict/lenient labels |
+| 28 | [28_os_safe.md](28_os_safe.md) | OS-Safe (AGrail) | Luo et al., 2025 (ACL) | Step-level web/code execution annotations; task-specific vs. systemic risk split |
+| 29 | [29_shieldagent_bench.md](29_shieldagent_bench.md) | ShieldAgent-Bench | Chen et al., 2025 | 960 instructions + 3,110 unsafe trajectories across 6 web environments, 7 risk categories |
+
+### How To Treat These Additions
+
+- **TS-Bench (#26)** is the most directly relevant to the project: its 2×2 taxonomy
+  (MUR/PI × HT/BTRA) and three-way safety label (safe/controversial/unsafe) map cleanly
+  onto the project's static vs. dynamic modes and gate/throttle/deny tiering.
+- **Agent-SafetyBench (#24)** is the most directly usable of the three raw datasets —
+  its 8 risk categories and 10 failure modes feed the v3 Agent Action Severity and Agent
+  Compromise Indicator dimensions.
+- **AgentAlign (#25)** is the training-data asset (~15K instructions) with paired
+  benign/harmful variants; use for sequence-aware classifier fine-tuning.
+- **AgentHarm (#23)** was previously marked "skipped" as binary-only; re-included here
+  as a deny-always floor for calibration and as the raw source behind ToolSafe's
+  `AgentHarm-Traj` annotated split.
+- **ASSEBench (#27)** provides **dual strict/lenient labels** — the clearest signal
+  for calibrating the gate/throttle/deny middle band.
+- **OS-Safe (#28)** is the OS-primitive step-level complement to TS-Bench; strong for
+  MCP servers exposing filesystem or shell tools, weak on BTRA coverage.
+- **ShieldAgent-Bench (#29)** is the **policy-grounded** benchmark — every unsafe
+  label traces to a verifiable policy rule, making it the best source for training
+  explainable deny decisions and setting efficiency targets (ShieldAgent's 90.1%
+  recall, 64.7% fewer API queries, 58.2% lower latency).
+
+### Coverage Matrix Across the ToolSafe-Referenced Benchmarks
+
+Per the 2×2 taxonomy (triggering cause × manifestation) from the ToolSafe paper
+(Mou et al., 2026):
+
+| Benchmark | Annotation Level | Monitored Behavior | MUR | PI | HT | BTRA |
+|---|---|---|:---:|:---:|:---:|:---:|
+| R-Judge (#12) | Trajectory | tool calls | ✓ | ✓ | — | ✓ |
+| ASSEBench (#27) | Trajectory | tool calls | ✓ | ✓ | — | ✓ |
+| OS-Safe (#28) | Step | web / code execution | ✓ | ✓ | ✓ | — |
+| ShieldAgent-Bench (#29) | Step | web browsing | ✓ | ✓ | — | — |
+| TS-Bench (#26) | Step | tool calls | ✓ | ✓ | ✓ | ✓ |
+
+**Only TS-Bench covers all four patterns at step granularity.** For full coverage the
+project should combine TS-Bench (training + 2×2 completeness) with ShieldAgent-Bench
+(policy grounding) and OS-Safe (OS-primitive severity for filesystem/shell MCP tools).
+
+---
+
 ## Skipped Benchmarks & Datasets (52)
 
 | Category | Entries | Reason |

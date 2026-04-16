@@ -617,7 +617,7 @@
 | **Description** | Widely used open-source dataset for training models on function calling. Contains real function calling conversations released by Glaive AI. |
 | **Structure Details** | 112,960 instances total. Multi-turn function calling conversations. Used as source for both MCIP-Bench construction (200 gold instances) and MCIP Guardian training (2,000 sampled rows). Function pool of 10,633 function call pairs. |
 | **How the Paper Used It** | Primary source for constructing MCIP-Bench gold instances and MCIP Guardian training data. Provided realistic function calling patterns for safety evaluation. |
-| **How It Can Help My Project** | Large-scale function calling data directly relevant to training an MCP tool invocation risk classifier. The 112K+ instances provide diverse calling patterns for learning normal behavior baselines. The function pool enables training risk models on realistic tool interaction sequences. |
+| **How It Can Help My Project** | Most useful as the **safe/negative class** in a training set — showing what normal agent-tool interactions look like so our scorer learns the baseline before learning what deviation looks like. The 112K+ instances are large enough to sample from freely without exhausting the set. For **dynamic scoring**, the multi-turn dialogues provide realistic function-call sequences to train/calibrate the runtime scorer. For **static scoring**, the breadth of tool names, parameter types, and return value patterns helps define what a normal tool signature looks like versus a suspicious one. If we ever fine-tune a model for dynamic risk scoring, Glaive AI is the right raw material to inject attack variants into, producing labeled (safe, attack_type) pairs cheaply — exactly what MCIP did. Main limitation: no MCP-specific protocol framing and no attack payloads out of the box. |
 
 ---
 
@@ -631,7 +631,7 @@
 | **Description** | Function calling dataset used as a complementary data source for MCP security evaluation. Provides tool call samples for generalization validation and clean baseline comparison. |
 | **Structure Details** | 11,300 rows. Used by MCIP-Bench for supplementary evaluation (1,026 instances). Also used by MindGuard as part of a 12,000+ heterogeneous clean tool call validation set. |
 | **How the Paper Used It** | Used by MCIP for generalization validation on unseen risks. Used by MindGuard for TAE (Total Attention Energy) signal validation, confirming the signal can distinguish decision sources from non-sources. |
-| **How It Can Help My Project** | Provides clean/benign tool call baselines essential for training a risk scorer to distinguish normal from anomalous MCP tool invocations. The generalization validation demonstrates how to test risk scoring robustness across different data sources. |
+| **How It Can Help My Project** | Same safe/negative-class role as Glaive AI but with a different distribution — different tool domains, naming conventions, and call patterns. This makes it ideal as an **evaluation/generalization set** rather than training data: if our scorer was trained on Glaive-sourced data, ToolACE tells us whether it generalizes or is overfit to one source's style. The 1,026-instance MCIP-Bench subset (from ToolACE) is a ready-made held-out slice for exactly this test. Also used by MindGuard for TAE signal validation, which confirms the dataset is diverse enough to stress-test attention-based detection signals. Main limitation: same as Glaive — no MCP-specific framing and no attack payloads out of the box; too small (11,300 rows) to be a primary training source. |
 
 ---
 
@@ -754,9 +754,9 @@
 | Field | Details |
 |-------|---------|
 | **Direct Link** | https://huggingface.co/datasets/gorilla-llm/Berkeley-Function-Calling-Leaderboard |
-| **Description** | Benchmark for evaluating function calling capabilities of LLMs. Used to assess whether safety-oriented MCP designs affect practical function calling utility. |
-| **Structure Details** | Comprehensive function calling evaluation across multiple LLM models. Measures overall accuracy percentage. Available on both GitHub and HuggingFace. |
-| **How the Paper Used It** | Used as utility metric to evaluate the safety-utility tradeoff of MCIP Guardian — ensuring safety improvements don't degrade function calling capability. |
-| **How It Can Help My Project** | Essential for measuring whether MCP risk scoring introduces unacceptable utility degradation. A risk scorer that blocks too many legitimate calls is impractical. BFCL-v3 provides the utility measurement standard. |
+| **Description** | Benchmark from UC Berkeley for evaluating how accurately LLMs invoke functions/tools given natural language inputs. v3 extended earlier versions with multi-turn agentic scenarios, irrelevance detection (knowing when NOT to call a tool), a larger candidate function pool, and live REST API execution against real endpoints. |
+| **Structure Details** | Evaluation categories: (1) Simple — single call with correct args; (2) Parallel — multiple independent calls per turn; (3) Multiple — selecting from a large candidate function set; (4) Nested — chaining outputs across calls; (5) Multi-turn — stateful conversation over several turns; (6) REST/API — real HTTP execution with OpenAPI schemas; (7) Relevance — refusal when no tool fits. Available on GitHub (ShishirPatil/gorilla) and HuggingFace. |
+| **How the Paper Used It** | Used as a utility metric to evaluate the safety-utility tradeoff of MCIP Guardian — verifying that contextual integrity constraints do not degrade practical function-calling accuracy. |
+| **How It Can Help My Project** | Essential for measuring utility cost of MCP risk scoring: a scorer that blocks too many legitimate calls is impractical. Key categories for MCP relevance — multi-turn scenarios expose context reuse and trust boundary issues; irrelevance detection maps directly to agents making inappropriate or out-of-scope tool invocations; parallel call testing stresses blast-radius assessment. Not MCP-native (uses OpenAPI schemas), but is the closest public benchmark to the MCP agent threat surface. |
 
 ---

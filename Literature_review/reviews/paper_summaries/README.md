@@ -24,7 +24,7 @@ This folder contains comprehensive Hebrew-language summaries of individual resea
 | 16 | `16_Automating_Data_Access_Permissions_summary_HE.md` | Towards Automating Data Access Permissions in AI Agents | Data access control, permission automation |
 | 17 | `17_MCP_ITP_summary_HE.md` | MCP-ITP: Automated Framework for Implicit Tool Poisoning | Implicit tool poisoning, automated attack framework |
 | 18 | *(not available — paywall)* | Log-To-Leak | — |
-| 19 | `19_ToolSafe_summary_HE.md` | ToolSafe: Proactive Step-level Guardrail | Tool invocation safety, step-level guardrails, feedback |
+| 19 | `19_ToolSafe_summary_HE.md` / `19_ToolSafe_summary_EN.md` | ToolSafe: Proactive Step-level Guardrail | Tool invocation safety, step-level guardrails, feedback (Hebrew + English versions) |
 | 20 | `20_GuardAgent_summary_HE.md` | GuardAgent: Knowledge-Enabled Reasoning | Guard agent, knowledge-enabled reasoning, LLM safety |
 
 ## Summary Format

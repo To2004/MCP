@@ -15,6 +15,7 @@ Guides, standards, and references for working with the project.
 ## Quick Links
 
 - New to the project? Start with [Project Overview](project/overview.md) then [Setup](development/setup.md)
+- Research foundation? See [Annotated Bibliography](project/annotated-bibliography-mcp-security.md) (30 papers, also available as [PDF](project/annotated-bibliography-mcp-security.pdf))
 - Adding code? Read [Style and Naming](standards/style-and-naming.md) and [Testing Guide](standards/testing-guide.md)
 - Adding a new module? Follow [Adding a Module](guides/adding-a-module.md)
 
