@@ -1,6 +1,9 @@
+import asyncio
+from mcp_security.calendar_client import demo
+
+
 def main() -> None:
-    """Run the project entry point."""
-    print("MCP Security project is running.")
+    asyncio.run(demo())
 
 
 if __name__ == "__main__":
