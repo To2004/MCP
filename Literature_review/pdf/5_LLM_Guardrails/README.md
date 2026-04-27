@@ -1,14 +1,15 @@
-# 5. LLM Guardrails (2 papers)
+# 5. LLM Guardrails (4 papers)
 
-Guardrail systems and safety rails for LLM applications.
+Guardrail systems and safety rails for LLM applications. Papers are stored directly in this folder (no type subfolders).
 
-## Papers by Score
+## Papers
 
-### Score_07/ (1 paper)
-- **LlamaFirewall**: An Open Source Guardrail System for Building Secure AI Agents
-
-### Score_05/ (1 paper)
-- **NeMo Guardrails**: A Toolkit for Controllable and Safe LLM Applications with Programmable Rails
+| Paper | Authors | Year |
+|-------|---------|------|
+| **LlamaFirewall: An Open Source Guardrail System for Building Secure AI Agents** | Meta | 2025 |
+| **LLM Agents Should Employ Security Principles** | Zhang, K. et al. | 2025 |
+| **MI9: An Integrated Runtime Governance Framework for Agentic AI** | Wang, C.L. et al. | 2025 |
+| **NeMo Guardrails: A Toolkit for Controllable and Safe LLM Applications with Programmable Rails** | Rebedea, T. et al. | 2023 |
 
 ## Navigation
 

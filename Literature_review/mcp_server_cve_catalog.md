@@ -2,7 +2,7 @@
 
 Comprehensive catalog of publicly disclosed CVEs where **the MCP server is the victim** and the attack vector flows **client → server** (agent, malicious prompt, or network client as the threat source). This matches the thesis threat model: MCP server = protected asset, AI agent / MCP client = threat source. CVEs where a malicious server attacks the client/agent (the inverse direction) are explicitly excluded — see [§ Exclusions](#exclusions) for the list.
 
-This catalog complements [`mcp_server_attack_taxonomy_v2_agent_boundary.md`](mcp_server_attack_taxonomy_v2_agent_boundary.md) — the taxonomy maps attacks to risk-scoring dimensions, while this file is the raw CVE evidence inventory. Cutoff date: 2026-04-05.
+This catalog complements [`mcp_server_attack_taxonomy_v2_agent_boundary.md`](mcp_server_attack_taxonomy_v2_agent_boundary.md) — the taxonomy maps attacks to risk-scoring dimensions, while this file is the raw CVE evidence inventory. Cutoff date: 2026-04-23.
 
 ## Summary Table
 
@@ -50,8 +50,10 @@ This catalog complements [`mcp_server_attack_taxonomy_v2_agent_boundary.md`](mcp
 | 40 | CVE-2026-35394 | @mobilenext/mobile-mcp | Arbitrary Android Intent execution (mobile_open_url) | CWE-74 | — | 2026 |
 | 41 | GHSA-wvr4-3wq4-gpc5 | mcp-bridge | Unauthenticated RCE via /bridge endpoint | CWE-78/306 | — | 2026 |
 | 42 | GHSA-w2fm-25vw-vh7f | mcp-handler | Tool response leak across concurrent sessions (race) | CWE-362 | — | 2026 |
+| 43 | CVE-2026-39313 | mcp-framework | Resource exhaustion / DoS (unbounded POST body) | CWE-770 | 8.7 | 2026 |
+| 44 | CVE-2025-66335 | Apache Doris MCP Server | SQL injection (query context bypass) | CWE-89 | 5.3 | 2025 |
 
-**Totals:** 42 advisories (40 CVEs + 2 GHSAs without assigned CVE). By type: 12 Command Injection/RCE, 8 Path Traversal, 6 SSRF, 6 Auth/Authz Bypass, 2 SQL/KQL Injection, 2 Sandbox/Network Escape, 2 Data Leak/Session, 2 Protocol (CSRF/DNS-rebind), 1 Intent injection, 1 Session hijack. By year: 18 in 2025, 24 in 2026 (YTD through April 5).
+**Totals:** 44 advisories (42 CVEs + 2 GHSAs without assigned CVE). By type: 12 Command Injection/RCE, 8 Path Traversal, 6 SSRF, 6 Auth/Authz Bypass, 3 SQL/KQL Injection, 2 Sandbox/Network Escape, 2 Data Leak/Session, 2 Protocol (CSRF/DNS-rebind), 1 Intent injection, 1 Session hijack, 1 DoS/Resource Exhaustion. By year: 19 in 2025, 25 in 2026 (YTD through April 23).
 
 ## Detailed Entries
 
@@ -97,6 +99,14 @@ The `create_table` tool in `src/servers/database/server.js` embeds attacker-cont
 
 **CVE-2026-33980 — adx-mcp-server / Azure Data Explorer MCP (CVSS 8.3)**
 KQL injection in `get_table_schema`, `sample_table_data`, and `get_table_details` tools; `table_name` is interpolated via f-strings into KQL queries, letting a prompt-injected agent execute arbitrary Kusto queries against the cluster.
+
+**CVE-2025-66335 — Apache Doris MCP Server (CVSS 5.3)**
+Improper neutralization flaw in the query context handling of Apache Doris's MCP server (versions < 0.6.1) allows an agent to execute unintended SQL statements, bypassing query validation and access restrictions through the MCP query execution interface.
+
+### Denial of Service / Resource Exhaustion
+
+**CVE-2026-39313 — mcp-framework (CVSS 8.7)**
+`readRequestBody()` in the HTTP transport concatenates POST body chunks with no upper bound, ignoring the configured `maxMessageSize`. An unauthenticated remote attacker can crash the MCP server by sending an arbitrarily large POST to the `/mcp` endpoint, causing memory exhaustion on the host. Affects QuantGeekDev `mcp-framework` ≤ 0.2.21; fixed in 0.2.22.
 
 ### Path Traversal / Unauthorized File Access
 
@@ -208,7 +218,8 @@ The CVEs map to the v2 agent-boundary taxonomy dimensions ([reference](mcp_serve
 | 8.3 Protocol-Level Exploitation | 25536, 33252, 33946, 34742, mcp-handler |
 | 10.2 Session Abuse | 25536, 33946, mcp-handler |
 | 16.2 Multi-Tenant Data Leakage | 25536, 32211, mcp-handler |
-| **New — SQL/Query-Language Injection** | 5322, 33980 |
+| **New — SQL/Query-Language Injection** | 5322, 33980, 66335 |
+| **New — DoS / Resource Exhaustion** | 39313 |
 | **New — Auth Bypass** | 49596, 23744, 27124, 34953, 32211, 33032 |
 | **New — CSRF / Browser-Reachable Tools** | 33252, 34742, 59163 |
 | **New — Intent / Mobile-URI Injection** | 35394 |
@@ -228,8 +239,14 @@ These CVEs exist in the MCP ecosystem but flow **server → client** (malicious 
 | CVE-2026-21852 | Claude Code | MCP-server-approval bypass on client. |
 | CVE-2026-22785 | Orval MCP Client | Client-side code injection via OpenAPI `summary` fields. |
 | CVE-2026-23947 | Orval MCP Client | Client-side code injection via `x-enumDescriptions` fields. |
+| CVE-2026-30615 | Windsurf IDE (CVSS 8.0) | Attacker-controlled HTML processed by the IDE causes unauthorized modification of the local MCP config → auto-registers a malicious STDIO "server" (really a shell command) → RCE on the client host. Windsurf is the MCP client. Direction: external input → client. |
+| CVE-2026-30623 | LiteLLM (AI gateway) | Publicly-exposed UI accepts a malicious MCP STDIO configuration; the "server command" is executed as a shell process on the LiteLLM host. LiteLLM acts as MCP host/client here — the compromised asset is the framework runtime, not a legitimate MCP server. |
+| CVE-2025-65720 | GPT Researcher | Unauthenticated UI lets any visitor submit a malicious MCP configuration; the STDIO "server command" executes as a shell process on the GPT-Researcher host → reverse shell. Same class as CVE-2026-21518 (VS Code `mcp.json`) and CVE-2026-30615 (Windsurf) — client-side config injection. |
+| CVE-2026-40933 | Flowise (`flowise` / `flowise-components` ≤ 3.0.13, CVSS 9.9) | Authenticated attacker bypasses `validateCommandInjection` allowlist in the Custom MCP configuration UI (e.g., prefix `npx` with `-c <cmd>`) to inject arbitrary OS commands executed when Flowise spawns the STDIO "server." Flowise is acting as MCP host/client; the compromised asset is the Flowise runtime, not a legitimate MCP server. Same architectural class as CVE-2026-30623 (LiteLLM). |
 
 Reason for exclusion: the thesis models the agent as the threat source and the server as the protected asset. Protecting clients from malicious servers is the inverse problem and is handled by a different threat model (e.g. tool-description sanitization, client-side sandboxing).
+
+**Note on the Ox Security "MCP STDIO" family (April 2026):** CVE-2026-30615, CVE-2026-30623, and CVE-2025-65720 were disclosed together by Ox Security and framed as "systemic MCP vulnerabilities." Architecturally they are all **client-side** config-injection bugs: the MCP STDIO transport is abused as a shell-spawn primitive on the host that registers the server. Ox's framing ("agent-to-server compromise") conflicts with the thesis threat model — the "MCP server" in these CVEs is the attack payload, not the victim. Still useful as motivation: they demonstrate that even Anthropic-endorsed patterns leak command-execution capability across the client/server boundary, which is exactly what the thesis's static scorer should flag at design time for any tool that wraps STDIO-spawned subprocesses.
 
 ## Coverage Notes
 
@@ -268,3 +285,10 @@ Reason for exclusion: the thesis models the agent as the threat source and the s
 - [CVE-2026-33252 MCP Go SDK CSRF — CIRCL Vulnerability Lookup](https://vulnerability.circl.lu/vuln/cve-2026-33252)
 - [CVE-2026-5322 mcp-data-vis SQL Injection — ThreatInt](https://cve.threatint.eu/CVE/CVE-2026-5322)
 - [GitHub Advisory Database (MCP filter)](https://github.com/advisories?query=mcp+server&type=reviewed)
+- [Ox Security — "The Mother of All AI Supply Chains" (MCP STDIO family)](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/)
+- [CVE-2026-30615 Windsurf MCP config injection — NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-30615)
+- [The Register — "MCP design flaw puts 200k servers at risk" (April 16, 2026)](https://www.theregister.com/2026/04/16/anthropic_mcp_design_flaw/)
+- [CVE-2026-39313 mcp-framework DoS — NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-39313)
+- [CVE-2026-39313 mcp-framework DoS — GitLab Advisories](https://advisories.gitlab.com/npm/mcp-framework/CVE-2026-39313/)
+- [CVE-2025-66335 Apache Doris MCP SQL Injection — GitHub Advisory](https://github.com/advisories/GHSA-qhfq-gvvc-5q6q)
+- [CVE-2026-40933 Flowise MCP command injection — GitHub Advisory](https://github.com/advisories/GHSA-c9gw-hvqq-f33r)

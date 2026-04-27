@@ -1,7 +1,7 @@
 """organize_papers.py — Download, rename, and organize MCP Security literature review papers.
 
 Reads paper metadata from an Excel file, downloads PDFs from various academic sources,
-and organizes them into a nested folder structure (category ->relevance score) with a
+and organizes them into a nested folder structure (category -> type) with a
 dedicated Top 20 folder.
 
 Usage:
@@ -157,15 +157,63 @@ def is_valid_pdf(filepath: Path) -> bool:
         return False
 
 
+# Map of category_num -> ordered list of types to try (None = flat, no subfolder)
+CATEGORY_TYPES: dict[int, list[str] | None] = {
+    1: ["attacks", "defenses", "benchmarks", "surveys"],
+    2: ["measurements", "surveys"],
+    3: ["frameworks", "benchmarks"],
+    4: ["attacks", "defenses", "benchmarks", "surveys"],
+    5: None,  # flat — no subfolder
+    6: ["scoring", "detection"],
+}
+
+# Keywords that signal each type (checked against paper title, lowercase)
+TYPE_KEYWORDS: dict[str, list[str]] = {
+    "attacks": ["attack", "exploit", "poison", "trojan", "exfiltrat", "hijack", "parasit", "adversar", "malicious", "manipulation"],
+    "defenses": ["defense", "defend", "guard", "protect", "secure", "safeguard", "mitigat", "safety", "prevent", "shield"],
+    "benchmarks": ["benchmark", "evaluation", "dataset", "assessment", "playground", "testing"],
+    "surveys": ["survey", "landscape", "overview", "systematic", "comprehensive", "taxonomy", "review"],
+    "measurements": ["measurement", "study", "ecosystem", "empirical", "measure"],
+    "frameworks": ["framework", "privilege", "access control", "trust", "permission", "authorization", "vision for"],
+    "scoring": ["score", "scoring", "risk", "judge", "quantif"],
+    "detection": ["detection", "detect", "monitor", "trace", "sentinel", "anomaly", "behavioral"],
+}
+
+# Default type per category if no keyword matches
+CATEGORY_DEFAULT_TYPE: dict[int, str] = {
+    1: "surveys",
+    2: "surveys",
+    3: "frameworks",
+    4: "surveys",
+    6: "scoring",
+}
+
+
 def get_paper_folder(paper: dict) -> Path:
-    """Get the target folder path for a paper (category/Score_XX)."""
+    """Get the target folder path for a paper (category/type)."""
     if not paper["is_academic"]:
         return PDF_DIR / "7_Not_Academic"
     cat_num = paper["category_num"]
     cat_folder = CATEGORY_FOLDERS.get(cat_num, f"{cat_num}_Unknown")
-    score = paper["relevance_score"]
-    score_folder = f"Score_{score:02d}"
-    return PDF_DIR / cat_folder / score_folder
+
+    # Category 5 is flat — papers go directly into the category folder
+    allowed_types = CATEGORY_TYPES.get(cat_num)
+    if allowed_types is None:
+        return PDF_DIR / cat_folder
+
+    # Keyword-based type detection from the paper title
+    title_lower = paper["title"].lower()
+    type_folder = None
+    for paper_type in allowed_types:
+        if any(kw in title_lower for kw in TYPE_KEYWORDS[paper_type]):
+            type_folder = paper_type
+            break
+
+    # Fall back to category default if no keyword matched
+    if type_folder is None:
+        type_folder = CATEGORY_DEFAULT_TYPE.get(cat_num, "surveys")
+
+    return PDF_DIR / cat_folder / type_folder
 
 
 def get_paper_filename(paper: dict) -> str:
@@ -353,8 +401,8 @@ def add_unmatched_to_excel(
             "source_pdf": filename,
         }
 
-        # Set the folder path (category 7 with score folder)
-        cat_folder = "7_Unmatched"
+        # Set the folder path (category 8 unmatched with score folder)
+        cat_folder = "8_Unmatched"
         score_folder = "Score_00"
         paper["filepath"] = str(PDF_DIR / cat_folder / score_folder / paper["filename"])
 
@@ -378,7 +426,7 @@ def add_unmatched_to_excel(
 def create_folder_structure(
     pdf_dir: Path, papers: list[dict], logger: logging.Logger, dry_run: bool = False
 ) -> None:
-    """Create nested category ->score folders, Top_20, and 7_Not_Academic."""
+    """Create nested category -> type folders, Top_20, and 7_Not_Academic."""
     folders_to_create = set()
 
     # Top 20 folder
@@ -387,10 +435,10 @@ def create_folder_structure(
     # 7_Not_Academic
     folders_to_create.add(pdf_dir / "7_Not_Academic")
 
-    # 7_Unmatched / Score_00
-    folders_to_create.add(pdf_dir / "7_Unmatched" / "Score_00")
+    # 8_Unmatched / Score_00
+    folders_to_create.add(pdf_dir / "8_Unmatched" / "Score_00")
 
-    # Category ->Score folders based on actual paper data
+    # Category -> type folders based on actual paper data
     for paper in papers:
         if not paper["is_academic"]:
             continue
@@ -456,7 +504,7 @@ def organize_unmatched_pdfs(
     logger: logging.Logger,
     dry_run: bool = False,
 ) -> None:
-    """Copy unmatched PDFs to the 7_Unmatched folder."""
+    """Copy unmatched PDFs to the 8_Unmatched folder."""
     for paper in new_papers:
         source_name = paper.get("source_pdf")
         if not source_name:
@@ -467,7 +515,7 @@ def organize_unmatched_pdfs(
             logger.warning(f"Source file missing: {source_name}")
             continue
 
-        target_folder = pdf_dir / "7_Unmatched" / "Score_00"
+        target_folder = pdf_dir / "8_Unmatched" / "Score_00"
         target = target_folder / paper["filename"]
 
         if target.exists():
@@ -856,7 +904,7 @@ def main() -> None:
     # Step 5: Copy+rename matched existing PDFs to their target folders
     organize_existing_pdfs(papers, matched, PDF_DIR, logger, dry_run)
 
-    # Step 6: Copy unmatched PDFs to 7_Unmatched folder
+    # Step 6: Copy unmatched PDFs to 8_Unmatched folder
     organize_unmatched_pdfs(new_papers, PDF_DIR, logger, dry_run)
 
     # Step 7: Download all missing papers
