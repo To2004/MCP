@@ -1,17 +1,40 @@
 # Claude Code Conventions
 
-Rules for how Claude should format output, commits, and PRs in this project.
+Formatting, commit, and PR conventions for Claude Code in this repo.
 
-## Commit Messages
+## INSTRUCTIONS
 
-- Use imperative mood: "Add feature" not "Added feature"
-- Keep the first line under 72 characters
-- Add scope prefix when helpful: `scanner: add timeout config`
+### Code generation
+
+- Match existing patterns in the file being edited
+- Use the same import style as surrounding code
+- Follow the [Style and Naming](../standards/style-and-naming.md) guide
+- Don't introduce new patterns unless existing ones are insufficient
+
+### When suggesting changes
+
+- Explain **why**, not just **what**
+- Show the minimal change needed
+- If multiple approaches exist, briefly note the trade-offs
+- Don't over-engineer — simplest correct solution wins
+
+### File placement
+
+- Source files → `src/mcp_security/`
+- Test files → `tests/`
+- Documentation → `docs/`
+- Command prompts → `.claude/commands/`
+
+## OUTPUT FORMAT
+
+### Commit messages
+
+- Imperative mood: "Add feature" not "Added feature"
+- First line under 72 characters
+- Scope prefix when helpful: `scanner: add timeout config`
 - Reference issues when applicable
 
-## Pull Request Descriptions
-
-Use this structure:
+### Pull requests
 
 ```markdown
 ## Summary
@@ -20,25 +43,3 @@ Use this structure:
 ## Test Plan
 - [ ] How to verify the changes work
 ```
-
-## Code Generation Rules
-
-- Match existing patterns in the file being edited
-- Use the same import style as surrounding code
-- Follow the [Style and Naming](../standards/style-and-naming.md) guide
-- Don't introduce new patterns unless the existing ones are insufficient
-
-## When Suggesting Changes
-
-- Explain **why**, not just **what**
-- Show the minimal change needed
-- If multiple approaches exist, briefly note the trade-offs
-- Don't over-engineer — the simplest correct solution wins
-
-## File Organization
-
-When creating new files:
-- Source files go in `src/mcp_security/`
-- Test files go in `tests/`
-- Documentation goes in `docs/`
-- Command prompts go in `.claude/commands/`

@@ -69,16 +69,6 @@ The score can be computed in two modes:
 - A proof-of-concept implementation
 - An evaluation against representative MCP deployment scenarios
 
-## Guiding Principles
-
-- **Modular** — each component is a self-contained module with a clear public
-  API
-- **Testable** — all logic has corresponding tests; no untestable code
-- **Readable** — code is written for humans first, optimized second
-- **Minimal dependencies** — only add what is truly needed
-- **Security-first** — the tools we build enforce good security practices, and
-  so does our own code
-
 ## Tech Stack
 
 | Tool | Purpose |
@@ -88,16 +78,6 @@ The score can be computed in two modes:
 | pytest | Testing framework |
 | Ruff | Linting and formatting |
 
-## Repository Layout
-
-```
-src/mcp_security/     Main application code (installed as a package)
-tests/                Automated tests (mirrors src/ structure)
-docs/                 Documentation (you are here)
-.claude/commands/     Reusable Claude Code command prompts
-```
-
 ## Current Status
 
-The project is in early development. The package skeleton is in place with a
-stub entry point and a smoke test. See [Roadmap](roadmap.md) for what's planned.
+Early development — package skeleton, stub entry point, smoke test in place. See [Roadmap](roadmap.md).

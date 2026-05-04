@@ -1,134 +1,201 @@
 """
-50 varied MCP tool calls against the google-calendar-mcp proxy.
-Logs every call (tool, args, result/error, category) to calls.log.
+50 varied MCP tool calls against the Filesystem MCP proxy (no auth required).
+
+Backend: @modelcontextprotocol/server-filesystem
+No credentials needed — path-scoping is the only protection layer.
+
+Outputs:
+  calls.csv         — machine-readable row per call (raw data)
+  calls_report.txt  — human-readable formatted session report
 """
 
 import asyncio
-import json
-import logging
+import csv
 import time
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timezone
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 PROXY_URL = "http://localhost:8080/sse"
-LOG_FILE = "logs/proxy/calls.log"
+CSV_FILE = "logs/proxy/calls.csv"
+REPORT_FILE = "logs/proxy/calls_report.txt"
 
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format="%(asctime)s  %(message)s",
-    datefmt="%Y-%m-%dT%H:%M:%S",
-    filemode="w",
-)
-log = logging.getLogger("calls")
+ROOT = "C:/Users/user/Documents/GitHub/MCP"
 
 CALLS = [
     # ── VALID CALLS ────────────────────────────────────────────────────────────
-    ("VALID", "get-current-time",   {}),
-    ("VALID", "list-calendars",     {}),
-    ("VALID", "list-colors",        {}),
-    ("VALID", "get-current-time",   {}),
-    ("VALID", "list-calendars",     {}),
-    ("VALID", "manage-accounts",    {"action": "list"}),
-    ("VALID", "list-events",        {"calendarId": "primary", "maxResults": 5}),
-    ("VALID", "list-events",        {"calendarId": "primary", "timeMin": "2026-01-01T00:00:00Z", "timeMax": "2026-12-31T23:59:59Z"}),
-    ("VALID", "list-events",        {"calendarId": "primary", "maxResults": 1}),
-    ("VALID", "search-events",      {"query": "meeting", "calendarId": "primary"}),
-    ("VALID", "search-events",      {"query": "birthday", "calendarId": "primary"}),
-    ("VALID", "search-events",      {"query": "lunch",    "calendarId": "primary"}),
-    ("VALID", "get-freebusy",       {"timeMin": "2026-04-21T00:00:00Z", "timeMax": "2026-04-28T00:00:00Z", "calendars": [{"id": "primary"}]}),
-    ("VALID", "list-events",        {"calendarId": "primary", "maxResults": 10}),
-    ("VALID", "list-colors",        {}),
+    ("VALID", "list_allowed_directories",  {}),
+    ("VALID", "list_directory",            {"path": ROOT}),
+    ("VALID", "list_directory",            {"path": f"{ROOT}/src"}),
+    ("VALID", "list_directory_with_sizes", {"path": ROOT}),
+    ("VALID", "directory_tree",            {"path": f"{ROOT}/src"}),
+    ("VALID", "get_file_info",             {"path": f"{ROOT}/CLAUDE.md"}),
+    ("VALID", "get_file_info",             {"path": f"{ROOT}/pyproject.toml"}),
+    ("VALID", "read_file",                 {"path": f"{ROOT}/CLAUDE.md"}),
+    ("VALID", "read_text_file",            {"path": f"{ROOT}/pyproject.toml"}),
+    ("VALID", "read_multiple_files",       {"paths": [f"{ROOT}/CLAUDE.md", f"{ROOT}/pyproject.toml"]}),
+    ("VALID", "search_files",             {"path": ROOT, "pattern": "*.py"}),
+    ("VALID", "search_files",             {"path": ROOT, "pattern": "*.md"}),
+    ("VALID", "search_files",             {"path": f"{ROOT}/src", "pattern": "*.py"}),
+    ("VALID", "read_file",                {"path": f"{ROOT}/logs/proxy/calls.csv"}),
+    ("VALID", "list_directory",           {"path": f"{ROOT}/docs"}),
     # ── WRONG TOOL NAME ────────────────────────────────────────────────────────
-    ("BAD_TOOL", "non-existent-tool",      {}),
-    ("BAD_TOOL", "list_calendars",         {}),
-    ("BAD_TOOL", "ListCalendars",          {}),
-    ("BAD_TOOL", "get_current_time",       {}),
-    ("BAD_TOOL", "LISTEVENTS",             {}),
-    ("BAD_TOOL", "calendar-list",          {}),
-    ("BAD_TOOL", "events/list",            {}),
-    ("BAD_TOOL", "",                       {}),
-    ("BAD_TOOL", "delete_all_events",      {}),
-    ("BAD_TOOL", "admin-override",         {}),
+    ("BAD_TOOL", "non-existent-tool",     {}),
+    ("BAD_TOOL", "readFile",              {}),
+    ("BAD_TOOL", "read_File",             {}),
+    ("BAD_TOOL", "listDirectory",         {}),
+    ("BAD_TOOL", "list-directory",        {}),
+    ("BAD_TOOL", "delete_file",           {}),
+    ("BAD_TOOL", "execute_command",       {}),
+    ("BAD_TOOL", "",                      {}),
+    ("BAD_TOOL", "admin-override",        {}),
+    ("BAD_TOOL", "write-file",            {}),
     # ── MISSING / WRONG PARAMS ─────────────────────────────────────────────────
-    ("BAD_PARAMS", "search-events",        {}),
-    ("BAD_PARAMS", "get-event",            {}),
-    ("BAD_PARAMS", "list-events",          {"maxResults": "not-a-number"}),
-    ("BAD_PARAMS", "get-freebusy",         {"timeMin": "invalid-date"}),
-    ("BAD_PARAMS", "respond-to-event",     {"calendarId": "primary"}),
-    ("BAD_PARAMS", "update-event",         {}),
-    ("BAD_PARAMS", "delete-event",         {}),
-    ("BAD_PARAMS", "list-events",          {"calendarId": 12345}),
-    ("BAD_PARAMS", "get-freebusy",         {"calendars": "primary"}),
-    ("BAD_PARAMS", "create-event",         {"calendarId": "primary"}),
+    ("BAD_PARAMS", "read_file",           {}),
+    ("BAD_PARAMS", "list_directory",      {}),
+    ("BAD_PARAMS", "write_file",          {"path": f"{ROOT}/test.txt"}),
+    ("BAD_PARAMS", "get_file_info",       {}),
+    ("BAD_PARAMS", "search_files",        {"path": ROOT}),
+    ("BAD_PARAMS", "move_file",           {"source": f"{ROOT}/CLAUDE.md"}),
+    ("BAD_PARAMS", "read_multiple_files", {}),
+    ("BAD_PARAMS", "edit_file",           {"path": f"{ROOT}/CLAUDE.md"}),
+    ("BAD_PARAMS", "read_file",           {"path": 12345}),
+    ("BAD_PARAMS", "directory_tree",      {}),
     # ── EDGE CASES / ATTACK-LIKE ───────────────────────────────────────────────
-    ("EDGE", "search-events",      {"query": "' OR '1'='1", "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "<script>alert(1)</script>", "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "A" * 1000, "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "\x00\x01\x02", "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "שלום עולם", "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "🎉🚀💥", "calendarId": "primary"}),
-    ("EDGE", "create-event",       {"calendarId": "primary", "summary": "<img src=x onerror=alert(1)>", "start": {"dateTime": "2026-04-22T10:00:00"}, "end": {"dateTime": "2026-04-22T11:00:00"}}),
-    ("EDGE", "list-events",        {"calendarId": "../../etc/passwd", "maxResults": 1}),
-    ("EDGE", "search-events",      {"query": "DROP TABLE events;--", "calendarId": "primary"}),
-    ("EDGE", "list-events",        {"calendarId": "primary", "timeMin": "9999-12-31T00:00:00Z", "timeMax": "0001-01-01T00:00:00Z"}),
-    ("EDGE", "get-freebusy",       {"timeMin": "2026-04-21T00:00:00Z", "timeMax": "2026-04-28T00:00:00Z", "calendars": [{"id": "../../secret"}]}),
-    ("EDGE", "search-events",      {"query": "normal search", "calendarId": "primary", "extra_field": "injected"}),
-    ("EDGE", "create-event",       {"calendarId": "primary", "summary": "x" * 5000, "start": {"dateTime": "2026-04-22T10:00:00"}, "end": {"dateTime": "2026-04-22T11:00:00"}}),
-    ("EDGE", "search-events",      {"query": "${7*7}", "calendarId": "primary"}),
-    ("EDGE", "search-events",      {"query": "{{7*7}}", "calendarId": "primary"}),
+    ("EDGE", "read_file",                 {"path": "../../etc/passwd"}),
+    ("EDGE", "read_file",                 {"path": f"{ROOT}/../../../etc/passwd"}),
+    ("EDGE", "list_directory",            {"path": "C:/Windows/System32"}),
+    ("EDGE", "read_file",                 {"path": f"{ROOT}/\x00evil"}),
+    ("EDGE", "search_files",             {"path": ROOT, "pattern": "*"}),
+    ("EDGE", "read_file",                 {"path": f"{ROOT}/" + "../" * 20 + "etc/passwd"}),
+    ("EDGE", "get_file_info",             {"path": f"{ROOT}/%2e%2e%2fetc%2fpasswd"}),
+    ("EDGE", "list_directory",            {"path": f"{ROOT}/../../../../"}),
+    ("EDGE", "search_files",             {"path": ROOT, "pattern": "*.key"}),
+    ("EDGE", "read_file",                 {"path": "C:/Users/user/.ssh/id_rsa"}),
+    ("EDGE", "search_files",             {"path": ROOT, "pattern": "*.env"}),
+    ("EDGE", "read_file",                 {"path": f"{ROOT}/" + "A" * 1000}),
+    ("EDGE", "list_directory",            {"path": "\\\\localhost\\C$"}),
+    ("EDGE", "get_file_info",             {"path": f"{ROOT}/nonexistent_file_xyz.txt"}),
+    ("EDGE", "read_file",                 {"path": "CON"}),
 ]
 
 assert len(CALLS) == 50, f"Expected 50 calls, got {len(CALLS)}"
 
+CSV_HEADERS = ["timestamp", "index", "category", "status", "tool", "args_keys", "elapsed_s", "response_preview"]
 
-async def make_call(session: ClientSession, category: str, tool: str, args: dict, index: int) -> None:
+LINE = "─" * 100
+HEAVY = "═" * 100
+
+
+def _truncate(text: str, width: int) -> str:
+    return text if len(text) <= width else text[: width - 1] + "…"
+
+
+def write_report(results: list[dict], session_start: datetime) -> None:
+    """Write a human-readable session report to REPORT_FILE."""
+    totals: dict[str, dict[str, int]] = defaultdict(lambda: {"OK": 0, "ERROR": 0})
+    for r in results:
+        totals[r["category"]][r["status"]] += 1
+
+    with open(REPORT_FILE, "w", encoding="utf-8") as f:
+        # ── header ──────────────────────────────────────────────────────────────
+        f.write("MCP PROXY SESSION LOG\n")
+        f.write(f"Generated : {session_start.strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+        f.write(f"Proxy     : {PROXY_URL}\n")
+        f.write(f"Total     : {len(results)} calls\n")
+        f.write("\n" + HEAVY + "\n")
+        f.write(f" {'#':>3}  {'CATEGORY':<12} {'STATUS':<7} {'TOOL':<35} {'TIME':>7}  RESULT\n")
+        f.write(HEAVY + "\n")
+
+        # ── one line per call ────────────────────────────────────────────────────
+        for r in results:
+            preview = _truncate(r["response_preview"].replace("\n", " "), 60)
+            f.write(
+                f" {r['index']:>3}  {r['category']:<12} {r['status']:<7} "
+                f"{_truncate(r['tool'], 35):<35} {float(r['elapsed_s']):>6.3f}s  {preview}\n"
+            )
+
+        # ── summary ──────────────────────────────────────────────────────────────
+        f.write("\n" + HEAVY + "\n")
+        f.write("SUMMARY BY CATEGORY\n")
+        f.write(LINE + "\n")
+        for cat in ["VALID", "BAD_TOOL", "BAD_PARAMS", "EDGE"]:
+            counts = totals[cat]
+            total_cat = counts["OK"] + counts["ERROR"]
+            f.write(f"  {cat:<12}  {total_cat:>2} calls  |  OK: {counts['OK']:<3}  ERROR: {counts['ERROR']}\n")
+
+        all_ok = sum(v["OK"] for v in totals.values())
+        all_err = sum(v["ERROR"] for v in totals.values())
+        f.write(LINE + "\n")
+        f.write(f"  {'TOTAL':<12}  {len(results):>2} calls  |  OK: {all_ok:<3}  ERROR: {all_err}\n")
+
+
+async def make_call(
+    session: ClientSession,
+    writer: "csv.DictWriter",
+    results: list[dict],
+    category: str,
+    tool: str,
+    args: dict,
+    index: int,
+) -> None:
     start = time.monotonic()
-    status = "OK"
-    result_preview = ""
     try:
         result = await session.call_tool(tool, args)
         elapsed = time.monotonic() - start
         if result.content:
             raw = result.content[0].text if hasattr(result.content[0], "text") else str(result.content[0])
-            result_preview = raw[:120].replace("\n", " ")
+            response_preview = raw.replace("\n", " ").replace("\r", "")[:300]
         else:
-            result_preview = "(empty response)"
+            response_preview = "(empty response)"
         status = "OK"
     except Exception as exc:
         elapsed = time.monotonic() - start
-        result_preview = str(exc)[:120]
+        response_preview = str(exc).replace("\n", " ").replace("\r", "")
         status = "ERROR"
 
-    log.info(
-        f"[{index:02d}] [{category:<11}] [{status:<5}] tool={tool!r:40s} "
-        f"args_keys={list(args.keys())} elapsed={elapsed:.3f}s | {result_preview}"
-    )
+    row = {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S"),
+        "index": index,
+        "category": category,
+        "status": status,
+        "tool": tool,
+        "args_keys": str(list(args.keys())),
+        "elapsed_s": f"{elapsed:.3f}",
+        "response_preview": response_preview,
+    }
+    writer.writerow(row)
+    results.append(row)
     print(f"  [{index:02d}] {category:<11} {status:<5}  {tool}")
 
 
 async def run_all() -> None:
-    log.info("=" * 100)
-    log.info(f"SESSION START — {datetime.now().isoformat()} — {len(CALLS)} calls against {PROXY_URL}")
-    log.info("=" * 100)
-
+    session_start = datetime.now(timezone.utc)
     print(f"\nRunning {len(CALLS)} calls against {PROXY_URL}\n")
     print(f"  {'#':<4} {'CATEGORY':<11} {'STATUS':<6} TOOL")
     print("  " + "-" * 60)
 
-    async with sse_client(PROXY_URL) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            for i, (category, tool, args) in enumerate(CALLS, 1):
-                await make_call(session, category, tool, args, i)
-                await asyncio.sleep(0.3)
+    results: list[dict] = []
 
-    log.info("=" * 100)
-    log.info("SESSION END")
-    log.info("=" * 100)
-    print(f"\nDone. Full log at: logs/proxy/calls.log")
+    with open(CSV_FILE, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=CSV_HEADERS)
+        writer.writeheader()
+
+        async with sse_client(PROXY_URL) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                for i, (category, tool, args) in enumerate(CALLS, 1):
+                    await make_call(session, writer, results, category, tool, args, i)
+                    await asyncio.sleep(0.3)
+
+    write_report(results, session_start)
+
+    print(f"\nDone.")
+    print(f"  calls (raw) : {CSV_FILE}")
+    print(f"  calls (read): {REPORT_FILE}")
+    print(f"  wire log    : logs/proxy/wire.log  (written by mcp-proxy)")
 
 
 if __name__ == "__main__":

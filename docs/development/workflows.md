@@ -19,21 +19,7 @@
 
 ## Commit Messages
 
-Use clear, imperative-mood messages:
-
-```
-Add port scanner module
-Fix false positive in header check
-Update pytest to 8.1.0
-```
-
-Prefix with scope when helpful:
-
-```
-scanner: add timeout configuration
-tests: add integration tests for scanner
-docs: update setup instructions
-```
+See [conventions.md](../claude/conventions.md#commit-messages) for format rules.
 
 ## Before Pushing
 

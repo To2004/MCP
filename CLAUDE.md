@@ -1,99 +1,61 @@
 # CLAUDE.md
 
-This file gives guidance to Claude Code when working in this repository.
-For detailed documentation, see the [docs/](docs/) folder
-([index](docs/README.md)).
+Guidance for Claude Code in this repo. Detailed docs: [docs/](docs/README.md).
 
-## Threat Model Direction
+## INSTRUCTIONS
 
-In this project, MCP SERVERS are the PROTECTED ASSET being attacked BY malicious agents/users.
-Never reverse this direction. When searching for papers, creating taxonomies, or editing docs,
-always frame as: 'defending/protecting servers FROM agents', NOT 'defending agents from servers'.
+### Non-negotiable rules
 
-## MCP-Specific Scope
+- **Threat model direction**: MCP servers are the PROTECTED asset; agents are the THREAT. Never reverse. Frame as "defending servers FROM agents".
+- **MCP scope**: For MCP-related items (benchmarks, attacks, papers), return ONLY MCP-specific results. No "bonus" non-MCP tiers unless explicitly asked.
+- **Questions ≠ actions**: Answer questions directly. Don't install, explore, or execute unless asked. If unsure, ask.
+- **Verify before "done"**: For catalogs/scans (CVEs, papers, files), do a second pass and state the count before finalizing.
 
-When asked for MCP-related items (benchmarks, attacks, papers), include ONLY MCP-specific results
-unless user explicitly requests broader coverage. Do not add non-MCP items as 'bonus' tiers.
+### Coding rules
 
-## General Behavior
+- Descriptive names; small, focused functions
+- No hardcoded values — use constants or parameters
+- Docstrings on public functions; type hints everywhere
+- Tests for important logic
+- Line length 100 (Ruff-enforced)
+- Details: [docs/standards/style-and-naming.md](docs/standards/style-and-naming.md)
 
-When the user asks a QUESTION, answer the question. Do NOT start installing packages, exploring
-codebases, or executing actions unless explicitly asked. If unsure whether the user wants
-explanation vs. implementation, ask first.
+### Workflow rules
 
-## Quality Standards
+- Explain the plan before large multi-file changes
+- Run `uv run pytest` after edits
+- New features ship with tests — [guide](docs/guides/adding-tests.md)
+- Follow [security standards](docs/standards/security-standards.md)
 
-When cataloging, scanning, or collecting items (CVEs, papers, files), do a second verification
-pass before reporting done. State the count found and ask user to confirm before finalizing.
+## CONTEXT
 
-## Project Overview
+Defense-oriented risk-scoring framework. The **MCP server is the protected asset**; **AI agents are the threat source**. The framework scores incoming agent requests — **static** at design time (tool properties), **dynamic** at runtime (specific request/input) — so servers can gate, throttle, or deny risky calls before execution. Inverse direction (malicious server → agent) is out of scope.
 
-MCP Security is a defense-oriented risk scoring framework where the
-**MCP server is the protected asset** and **AI agents are the threat source**.
-The framework scores incoming agent requests to determine how risky they are
-to the server, enabling the server to gate, throttle, or deny dangerous
-interactions before they execute. Attacks flow **client → server**: the agent
-is the threat source, the server is the victim. The inverse direction
-(malicious server attacking the agent) is out of scope.
+Full details: [docs/project/overview.md](docs/project/overview.md).
 
-Unlike traditional risk frameworks built for static software and human-driven
-workflows, this project addresses threats unique to autonomous agents —
-dynamic tool invocation, context reuse, trust boundary violations, and
-downstream blast radius.
+### Layout
 
-Risk scores are produced in two modes:
-- **Static** — evaluated at design time based on a tool's general properties
-- **Dynamic** — evaluated at runtime based on the specific agent request/input
+- `src/mcp_security/` — application code
+- `tests/` — automated tests
+- `docs/` — documentation ([index](docs/README.md))
+- `.claude/commands/` — reusable Claude command prompts
 
-See [docs/project/overview.md](docs/project/overview.md) for full details.
-
-## Quick Reference
+## REFERENCE
 
 | Action | Command |
 |--------|---------|
-| Install dependencies | `uv sync` |
-| Run project | `uv run python -m mcp_security.main` |
-| Run tests | `uv run pytest` |
+| Install | `uv sync` |
+| Run | `uv run python -m mcp_security.main` |
+| Test | `uv run pytest` |
 | Lint | `uv run ruff check .` |
 | Format | `uv run ruff format .` |
 
-Full command reference: [docs/development/commands.md](docs/development/commands.md)
+Full command reference: [docs/development/commands.md](docs/development/commands.md).
 
-## Directory Structure
-
-- `src/mcp_security/` — main application code
-- `tests/` — automated tests
-- `docs/` — project documentation ([index](docs/README.md))
-- `.claude/commands/` — reusable Claude Code command prompts
-
-## Coding Rules (MUST follow)
-
-- Use descriptive names; keep functions small and focused
-- No hardcoded values — use constants or parameters
-- Add docstrings to public functions; use type hints
-- Prefer readability over clever code
-- Write tests for important logic
-- Do not add unnecessary dependencies
-- Line length: 100 (enforced by Ruff)
-
-Details: [docs/standards/style-and-naming.md](docs/standards/style-and-naming.md)
-
-## Workflow Rules (MUST follow)
-
-- Inspect the codebase and explain the plan before large changes
-- For non-trivial work, propose steps before editing many files
-- After making changes, run `uv run pytest`
-- When adding a feature, also add tests
-  ([guide](docs/guides/adding-tests.md))
-- Follow security standards:
-  [docs/standards/security-standards.md](docs/standards/security-standards.md)
-
-## Documentation Index
-
-| Section | Path | Description |
-|---------|------|-------------|
-| Project | [docs/project/](docs/project/) | Overview, architecture, roadmap |
-| Development | [docs/development/](docs/development/) | Setup, commands, workflows, contributing |
-| Standards | [docs/standards/](docs/standards/) | Style, testing, patterns, security |
-| Claude | [docs/claude/](docs/claude/) | Claude-specific guidance and commands |
-| Guides | [docs/guides/](docs/guides/) | Step-by-step how-tos |
+| Section | Path |
+|---------|------|
+| Project | [docs/project/](docs/project/) |
+| Development | [docs/development/](docs/development/) |
+| Standards | [docs/standards/](docs/standards/) |
+| Claude | [docs/claude/](docs/claude/) |
+| Guides | [docs/guides/](docs/guides/) |
