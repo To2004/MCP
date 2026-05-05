@@ -49,9 +49,14 @@ CSV_HEADERS = [
 
 # (category, persona, tool, args)
 CALLS: list[tuple[str, str, str, dict]] = [
-    # ── call 1: new user discovers the system ────────────────────────────────
-    ("DISCOVERY", "New User",         "list_allowed_directories", {}),
-    # ── valid calls (2-21) ───────────────────────────────────────────────────
+    # ── discovery: new user explores the system before doing anything ────────
+    ("DISCOVERY", "New User", "list_allowed_directories", {}),
+    ("DISCOVERY", "New User", "directory_tree",           {"path": str(SIM_ROOT)}),
+    ("DISCOVERY", "New User", "list_directory_with_sizes",{"path": str(SIM_ROOT)}),
+    ("DISCOVERY", "New User", "search_files",             {"path": str(SIM_ROOT), "pattern": "**/*"}),
+    ("DISCOVERY", "New User", "search_files",             {"path": str(SIM_ROOT), "pattern": "**/*.csv"}),
+    ("DISCOVERY", "New User", "get_file_info",            {"path": str(SIM_ROOT)}),
+    # ── valid calls ───────────────────────────────────────────────────────────
     ("VALID", "Alice (HR)",       "list_directory",            {"path": str(SIM_ROOT / "onboarding")}),
     ("VALID", "Alice (HR)",       "read_text_file",            {"path": str(SIM_ROOT / "onboarding" / "policies.pdf")}),
     ("VALID", "Alice (HR)",       "read_media_file",           {"path": str(SIM_ROOT / "onboarding" / "org_chart.png")}),
