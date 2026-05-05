@@ -121,15 +121,17 @@ def _start_mitmdump(
 ) -> subprocess.Popen:
     env = {**os.environ, "MITM_OUT": str(capture_path.resolve())}
     lf = open(log_path, "w", encoding="utf-8")
-    proc = subprocess.Popen(
-        ["uvx", "--from", "mitmproxy", "mitmdump",
-         "--mode", f"reverse:http://localhost:{upstream_port}",
-         "--listen-port", str(listen_port),
-         "-s", str(ADDON),
-         "--set", "stream_large_bodies=10m"],
-        stdout=lf, stderr=subprocess.STDOUT, env=env,
-    )
-    lf.close()
+    try:
+        proc = subprocess.Popen(
+            ["uvx", "--from", "mitmproxy", "mitmdump",
+             "--mode", f"reverse:http://localhost:{upstream_port}",
+             "--listen-port", str(listen_port),
+             "-s", str(ADDON),
+             "--set", "stream_large_bodies=10m"],
+            stdout=lf, stderr=subprocess.STDOUT, env=env,
+        )
+    finally:
+        lf.close()
     return proc
 
 
@@ -139,10 +141,6 @@ def _parse_result(resp: dict) -> tuple[str, int, str]:
     result = resp.get("result", {})
     if not isinstance(result, dict):
         return str(result), 0, ""
-    if result.get("isError"):
-        content = result.get("content", [])
-        text = "\n".join(c.get("text", "") for c in content if c.get("type") == "text")
-        return text, len(content), ""
     content = result.get("content", [])
     text = "\n".join(c.get("text", "") for c in content if c.get("type") == "text")
     return text, len(content), ""
@@ -171,6 +169,13 @@ def _extract_tools_list(flows: list[dict]) -> list[str]:
     return []
 
 
+def _safe_method(flow: dict) -> str:
+    try:
+        return json.loads(flow["req_body"]).get("method", "")
+    except Exception:
+        return ""
+
+
 def write_report(capture_path: Path) -> None:
     flows = [json.loads(l) for l in capture_path.read_text(encoding="utf-8").splitlines()]
 
@@ -178,6 +183,9 @@ def write_report(capture_path: Path) -> None:
         f for f in flows
         if _safe_method(f) == "tools/call"
     ]
+
+    if len(tool_flows) != len(CALLS):
+        print(f"  WARNING: expected {len(CALLS)} tool_calls in capture, got {len(tool_flows)}")
 
     rows: list[dict] = []
     for i, ((cat, persona, tool, args), flow) in enumerate(zip(CALLS, tool_flows), 1):
@@ -322,13 +330,6 @@ def write_report(capture_path: Path) -> None:
     print(f"  raw_log.txt    -> {raw_path}")
 
 
-def _safe_method(flow: dict) -> str:
-    try:
-        return json.loads(flow["req_body"]).get("method", "")
-    except Exception:
-        return ""
-
-
 async def _run_calls(url: str) -> None:
     async with streamablehttp_client(url) as (read, write, _):
         async with ClientSession(read, write) as session:
@@ -344,6 +345,9 @@ async def _run_calls(url: str) -> None:
 
 
 async def main() -> None:
+    assert Path("logs/proxy").exists(), (
+        "Run from repo root: uv run python logs/proxy/scripts/run_filesystem_sim.py"
+    )
     print(HEAVY)
     print("Corp Filesystem Simulation")
     print(HEAVY)
@@ -369,6 +373,7 @@ async def main() -> None:
     if not _wait(PROXY_PORT, 60):
         print("ERROR: mcp-proxy did not start")
         proxy_proc.terminate()
+        proxy_proc.wait()
         return
 
     capture = SESSION_OUT / "captured.jsonl"
@@ -376,8 +381,10 @@ async def main() -> None:
     mitm_proc = _start_mitmdump(PROXY_PORT, MITM_PORT, capture, SESSION_OUT / "mitmdump.log")
     if not _wait(MITM_PORT, 60):
         print("ERROR: mitmdump did not start")
-        proxy_proc.terminate()
         mitm_proc.terminate()
+        proxy_proc.terminate()
+        mitm_proc.wait()
+        proxy_proc.wait()
         return
 
     print(f"\n[3/3] Running {len(CALLS)} calls through http://localhost:{MITM_PORT}/mcp ...\n")
@@ -392,6 +399,11 @@ async def main() -> None:
 
     _clean_log(SESSION_OUT / "mitmdump.log")
     _clean_log(SESSION_OUT / "wire.log")
+
+    if not capture.exists() or capture.stat().st_size == 0:
+        print("ERROR: captured.jsonl is missing or empty — report not written")
+        return
+
     write_report(capture)
 
     print(f"\n{HEAVY}")
