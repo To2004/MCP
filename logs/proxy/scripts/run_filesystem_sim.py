@@ -36,7 +36,7 @@ MITM_PORT   = 9094
 REPO_ROOT   = Path(__file__).resolve().parent.parent.parent.parent
 SIM_ROOT    = REPO_ROOT / "demo" / "corp_filesystem_sim"
 ORIG_ROOT   = REPO_ROOT / "demo" / "corp_filesystem"
-SESSION_OUT = Path("logs/proxy/sessions/filesystem_sim")
+SESSION_OUT = REPO_ROOT / "logs" / "proxy" / "sessions" / "filesystem_sim"
 ADDON       = Path(__file__).parent.parent / "analysis" / "mitm_capture.py"
 
 HEAVY = "=" * 80
@@ -345,9 +345,6 @@ async def _run_calls(url: str) -> None:
 
 
 async def main() -> None:
-    assert Path("logs/proxy").exists(), (
-        "Run from repo root: uv run python logs/proxy/scripts/run_filesystem_sim.py"
-    )
     print(HEAVY)
     print("Corp Filesystem Simulation")
     print(HEAVY)
