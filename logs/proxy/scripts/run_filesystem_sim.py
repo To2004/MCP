@@ -33,7 +33,7 @@ from mcp.client.streamable_http import streamablehttp_client
 
 PROXY_PORT  = 8094
 MITM_PORT   = 9094
-REPO_ROOT   = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT   = Path(__file__).resolve().parent.parent.parent.parent
 SIM_ROOT    = REPO_ROOT / "demo" / "corp_filesystem_sim"
 ORIG_ROOT   = REPO_ROOT / "demo" / "corp_filesystem"
 SESSION_OUT = Path("logs/proxy/sessions/filesystem_sim")
