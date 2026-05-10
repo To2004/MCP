@@ -5,6 +5,7 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.slide import Slide
 from pptx.util import Inches, Pt
 
 # ---------------------------------------------------------------------------
@@ -37,7 +38,7 @@ def new_presentation() -> Presentation:
     return prs
 
 
-def add_slide(prs: Presentation):
+def add_slide(prs: Presentation) -> Slide:
     """Add a blank slide and paint the background."""
     blank = prs.slide_layouts[6]
     slide = prs.slides.add_slide(blank)
@@ -47,8 +48,20 @@ def add_slide(prs: Presentation):
     return slide
 
 
-def text_box(slide, left, top, width, height, text, size=Pt(18), bold=False,
-             color=WHITE, font=BODY_FONT, align=PP_ALIGN.LEFT, wrap=True):
+def text_box(
+    slide: Slide,
+    left,
+    top,
+    width,
+    height,
+    text,
+    size=Pt(18),
+    bold=False,
+    color=WHITE,
+    font=BODY_FONT,
+    align=PP_ALIGN.LEFT,
+    wrap=True,
+):
     """Add a text box and return the shape."""
     txb = slide.shapes.add_textbox(left, top, width, height)
     tf = txb.text_frame
@@ -64,7 +77,7 @@ def text_box(slide, left, top, width, height, text, size=Pt(18), bold=False,
     return txb
 
 
-def code_box(slide, left, top, width, height, code, fill=GRAY, text_color=WHITE):
+def code_box(slide: Slide, left, top, width, height, code, fill=GRAY, text_color=WHITE):
     """A monospace code block with a filled background rectangle."""
     shape = slide.shapes.add_shape(
         1,  # MSO_SHAPE_TYPE.RECTANGLE
@@ -85,7 +98,17 @@ def code_box(slide, left, top, width, height, code, fill=GRAY, text_color=WHITE)
     return shape
 
 
-def label_box(slide, left, top, width, height, text, fill=ACCENT, text_color=BG, size=Pt(14)):
+def label_box(
+    slide: Slide,
+    left,
+    top,
+    width,
+    height,
+    text,
+    fill=ACCENT,
+    text_color=BG,
+    size=Pt(14),
+):
     """Colored label / badge box."""
     shape = slide.shapes.add_shape(1, left, top, width, height)
     shape.fill.solid()
@@ -104,8 +127,8 @@ def label_box(slide, left, top, width, height, text, fill=ACCENT, text_color=BG,
     return shape
 
 
-def arrow(slide, x1, y1, x2, y2, color=ACCENT):
-    """Draw a horizontal straight connector arrow."""
+def arrow(slide: Slide, x1, y1, x2, y2, color=ACCENT):
+    """Draw a straight connector between two points."""
     connector = slide.shapes.add_connector(
         1,  # MSO_CONNECTOR_TYPE.STRAIGHT
         x1, y1, x2, y2,
@@ -115,7 +138,7 @@ def arrow(slide, x1, y1, x2, y2, color=ACCENT):
     return connector
 
 
-def slide_title(slide, title, subtitle=None):
+def slide_title(slide: Slide, title, subtitle=None) -> None:
     """Add a slide title (large) and optional subtitle."""
     text_box(slide, Inches(0.5), Inches(0.2), Inches(12.3), Inches(0.9),
              title, size=Pt(32), bold=True, color=ACCENT)
