@@ -11,11 +11,13 @@ startup — no escaping it.
 
 The server enforces one rule: every path must live inside the allowed root.
 
-- `../` traversal → `Error: Path outside allowed directory`
+- `../` traversal → `Access denied - path outside allowed directories: <path> not in <root>`
 - Absolute path outside root → same error
-- Empty path → `Error: Access denied`
+- Empty path → same error (resolves to the parent of the allowed root, which is outside it)
 
 No path gymnastics can break out. The server resolves symlinks and checks the real path.
+
+**Note:** All tool responses follow MCP's standard format: `{ "content": [{ "type": "text", "text": "..." }] }`. Examples below show the `text` value for clarity.
 
 ### Tool Categories
 
@@ -221,7 +223,7 @@ return inline decode errors.
 
 // Response
 {
-  "content": "=== sensitive/financials/payslips_q1.csv ===\nemployee_id,name,salary\n101,Alice,72000\n...\n\n=== projects/known_defects.csv ===\nid,title,severity\n1,Memory leak in auth,high\n..."
+  "text": "sensitive/financials/payslips_q1.csv:\nemployee_id,name,salary\n101,Alice,72000\n...\n\n---\nprojects/known_defects.csv:\nid,title,severity\n1,Memory leak in auth,high\n..."
 }
 ```
 
@@ -245,7 +247,7 @@ return inline decode errors.
 
 // Response — partial success, error inlined (does NOT fail the whole call)
 {
-  "content": "=== sensitive/financials/payslips_q1.csv ===\nemployee_id,...\n\n=== sensitive/security/private_key.pem ===\n-----BEGIN PRIVATE KEY-----\n...\n\n=== does_not_exist.txt ===\nError: ENOENT: no such file or directory"
+  "text": "sensitive/financials/payslips_q1.csv:\nemployee_id,...\n\n---\nsensitive/security/private_key.pem:\n-----BEGIN PRIVATE KEY-----\n...\n\n---\ndoes_not_exist.txt: Error - ENOENT: no such file or directory, open 'does_not_exist.txt'"
 }
 ```
 
@@ -466,9 +468,14 @@ returns a git-style diff of the changes.
 
 **Output:**
 ```
-[FILE] audit_log.txt    134 B
-[FILE] private_key.pem  110 B
+[FILE] audit_log.txt                   134 B
+[FILE] private_key.pem                 110 B
+
+Total: 2 files, 0 directories
+Combined size: 244 B
 ```
+
+The server always appends a summary footer showing total file count, directory count, and combined size of all files.
 
 **Good example:**
 
@@ -480,8 +487,8 @@ returns a git-style diff of the changes.
     "arguments": { "path": "sensitive/financials", "sortBy": "size" }
   }
 }
-// Response: files sorted largest first
-{ "content": "[FILE] payslips_q1.csv    74 B\n[FILE] budget_2026.xlsx   15 B\n" }
+// Response: files sorted largest first, with summary footer
+{ "text": "[FILE] payslips_q1.csv                      74 B\n[FILE] budget_2026.xlsx                     15 B\n\nTotal: 2 files, 0 directories\nCombined size: 89 B" }
 ```
 
 **Bad example:**
@@ -520,18 +527,21 @@ returns a git-style diff of the changes.
 **Output:**
 
 ```json
-{
-  "name": "sensitive",
-  "type": "directory",
-  "children": [
-    { "name": "contracts", "type": "directory", "children": [
-        { "name": "master_agreement.pdf", "type": "file" },
-        { "name": "nda_template.docx", "type": "file" }
-    ]},
-    ...
-  ]
-}
+[
+  {
+    "name": "contracts",
+    "type": "directory",
+    "children": [
+      { "name": "master_agreement.pdf", "type": "file" },
+      { "name": "nda_template.docx", "type": "file" }
+    ]
+  },
+  { "name": "financials", "type": "directory", "children": [...] },
+  { "name": "security", "type": "directory", "children": [...] }
+]
 ```
+
+The response is always a **JSON array** of top-level entries inside the requested path — not a root wrapper object.
 
 **Good example:**
 
@@ -566,7 +576,7 @@ returns a git-style diff of the changes.
 ```
 
 > **Edge cases**
-> - The output is a JSON string, not a pre-parsed object — you must parse it.
+> - The output is a JSON string encoding a **top-level array** of entries — not a root wrapper object.
 > - `excludePatterns` uses glob syntax: `*.log` matches in any directory, `logs/*` only in `logs/`.
 
 ---
@@ -624,14 +634,14 @@ full matching paths.
     "arguments": { "path": ".", "pattern": "*.csv" }
   }
 }
-// Response — EMPTY (no CSVs directly in the root; they're in subdirectories)
-{ "content": "" }
+// Response — "No matches found" (no CSVs directly in the root; they're in subdirectories)
+{ "text": "No matches found" }
 // Fix: use **/*.csv
 ```
 
 > **Edge cases**
 > - `*` is NOT recursive. This is the #1 beginner mistake.
-> - An empty result is not an error — it just means no files matched.
+> - An empty result returns the string `"No matches found"` — not an error and not an empty string.
 > - Patterns are case-sensitive on Linux/Mac, case-insensitive on Windows.
 
 ---
@@ -744,7 +754,8 @@ the directory already exists — it does nothing and returns success.
 
 ### `move_file`
 
-**What it does:** Moves or renames a file or directory. Fails if the destination already exists.
+**What it does:** Moves or renames a file or directory. Uses the OS `rename()` syscall directly —
+no explicit existence check on the destination.
 
 **Input:**
 
@@ -753,7 +764,7 @@ the directory already exists — it does nothing and returns success.
 | `source` | string | yes | Existing file/directory path |
 | `destination` | string | yes | Target path |
 
-**Output:** `{ "content": "Successfully moved <source> to <destination>" }`
+**Output:** `{ "text": "Successfully moved <source> to <destination>" }`
 
 **Good example:**
 
@@ -773,22 +784,25 @@ the directory already exists — it does nothing and returns success.
 **Bad example:**
 
 ```json
-// Destination already exists — move fails
+// Source file does not exist
 {
   "method": "tools/call",
   "params": {
     "name": "move_file",
     "arguments": {
-      "source": "source_code/core.c",
-      "destination": "source_code/build.exe"
+      "source": "source_code/missing.txt",
+      "destination": "source_code/feature_branch/missing.txt"
     }
   }
 }
 // Response
-{ "content": "Error: Destination already exists: source_code/build.exe" }
+{ "text": "ENOENT: no such file or directory, rename 'source_code/missing.txt' -> '...'" }
 ```
 
 > **Edge cases**
+> - **Destination behavior**: The server calls `fs.rename()` with no pre-check. On Linux/Mac, if the
+>   destination exists it is silently overwritten (POSIX rename semantics). On Windows, behavior may
+>   vary — do not rely on an error being raised when the destination exists.
 > - Annotations: `destructiveHint: false`, `idempotentHint: false` — not safe to retry blindly.
 > - There is no `copy_file` — if you need a copy, read + write.
 
@@ -848,9 +862,9 @@ search_files(path=".", pattern="**/*.csv") → ["sensitive/financials/payslips_q
 
 | Input | Result |
 |-------|--------|
-| `""` (empty string) | `Error: Access denied` |
-| `../etc/passwd` | `Error: Path outside allowed directory` |
-| `C:/Windows/win.ini` | `Error: Path outside allowed directory` |
+| `""` (empty string) | `Access denied - path outside allowed directories: <cwd> not in <root>` |
+| `../etc/passwd` | `Access denied - path outside allowed directories: <path> not in <root>` |
+| `C:/Windows/win.ini` | `Access denied - path outside allowed directories: C:\Windows\win.ini not in <root>` |
 | `./sensitive/` (trailing slash) | Works — trailing slash is stripped |
 | `sensitive` vs `./sensitive` | Both work — same path |
 
@@ -868,13 +882,23 @@ get_file_info("audit_log.txt")   // confirm it exists / check size
 
 ### `read_multiple_files` Partial Failure
 
-```json
+```
 // One bad path does NOT abort the batch
 read_multiple_files(["payslips.csv", "MISSING.txt", "audit_log.txt"])
-// → payslips.csv: OK content
-// → MISSING.txt:  Error: ENOENT
-// → audit_log.txt: OK content
-// All in one response string — check for "Error:" inline
+
+// Response text (files separated by \n---\n):
+// payslips.csv:
+// employee_id,month,gross,net
+// ...
+//
+// ---
+// MISSING.txt: Error - ENOENT: no such file or directory, open 'MISSING.txt'
+//
+// ---
+// audit_log.txt:
+// 2026-01-15 09:00 | LOGIN ...
+//
+// All in one string — check for ": Error -" inline to detect failures
 ```
 
 ### Tools That Don't Exist
