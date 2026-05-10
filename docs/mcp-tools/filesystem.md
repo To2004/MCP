@@ -17,7 +17,7 @@ The server enforces one rule: every path must live inside the allowed root.
 
 No path gymnastics can break out. The server resolves symlinks and checks the real path.
 
-**Note:** All tool responses follow MCP's standard format: `{ "content": [{ "type": "text", "text": "..." }] }`. Examples below show the `text` value for clarity.
+**Note on response format:** The actual MCP wire format wraps all text responses as `{ "content": [{ "type": "text", "text": "..." }] }`. For readability, examples in this document show the inner `text` value directly, abbreviated as `{ "text": "..." }`. Some older examples use `{ "content": "..." }` as the abbreviation — both refer to the same inner text value.
 
 ### Tool Categories
 

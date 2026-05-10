@@ -114,7 +114,7 @@ def label_box(
     size=Pt(14),
 ):
     """Colored label / badge box."""
-    shape = slide.shapes.add_shape(1, left, top, width, height)
+    shape = slide.shapes.add_shape(1, left, top, width, height)  # MSO_SHAPE_TYPE.RECTANGLE
     shape.fill.solid()
     shape.fill.fore_color.rgb = fill
     shape.line.color.rgb = fill
@@ -172,7 +172,7 @@ def slide_title(slide: Slide, title, subtitle=None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Slide stubs — replaced in Tasks 3, 4, 5
+# Slide functions
 # ---------------------------------------------------------------------------
 
 
@@ -327,7 +327,7 @@ def _slide_04_security_boundary(prs: Presentation) -> None:
         "Every path must live inside the allowed root — no exceptions",
     )
 
-    root_box = slide.shapes.add_shape(1, Inches(0.5), Inches(1.8), Inches(6.0), Inches(4.5))
+    root_box = slide.shapes.add_shape(1, Inches(0.5), Inches(1.8), Inches(6.0), Inches(4.5))  # MSO_SHAPE_TYPE.RECTANGLE
     root_box.fill.solid()
     root_box.fill.fore_color.rgb = RGBColor(0x1A, 0x2A, 0x1A)
     root_box.line.color.rgb = GREEN
