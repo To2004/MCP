@@ -151,10 +151,121 @@ def slide_title(slide: Slide, title, subtitle=None) -> None:
 # Slide stubs — replaced in Tasks 3, 4, 5
 # ---------------------------------------------------------------------------
 
-def _slide_01_title(prs): add_slide(prs)
-def _slide_02_what_is_mcp(prs): add_slide(prs)
-def _slide_03_request_response(prs): add_slide(prs)
-def _slide_04_security_boundary(prs): add_slide(prs)
+def _slide_01_title(prs: Presentation) -> None:
+    slide = add_slide(prs)
+    text_box(slide, Inches(1), Inches(2.2), Inches(11.3), Inches(1.5),
+             "MCP Filesystem Server", size=Pt(48), bold=True, color=ACCENT,
+             align=PP_ALIGN.CENTER)
+    text_box(slide, Inches(1), Inches(3.7), Inches(11.3), Inches(0.8),
+             "How It Works — Tool Reference & Teaching Guide",
+             size=Pt(24), color=WHITE, align=PP_ALIGN.CENTER)
+    text_box(slide, Inches(1), Inches(5.2), Inches(11.3), Inches(0.5),
+             "@modelcontextprotocol/server-filesystem  v1.27.0",
+             size=Pt(16), color=GRAY, align=PP_ALIGN.CENTER)
+
+
+def _slide_02_what_is_mcp(prs: Presentation) -> None:
+    slide = add_slide(prs)
+    slide_title(slide, "What is MCP?",
+                "Model Context Protocol — lets AI agents call tools on external servers")
+
+    boxes = [
+        (Inches(0.5),  "AI Agent",    ACCENT),
+        (Inches(3.5),  "JSON-RPC 2.0", YELLOW),
+        (Inches(6.5),  "MCP Server",   GREEN),
+        (Inches(9.5),  "Filesystem",   GRAY),
+    ]
+    for left, label, color in boxes:
+        label_box(slide, left, Inches(3.2), Inches(2.5), Inches(1.0),
+                  label, fill=color, text_color=BG, size=Pt(16))
+
+    for i in range(3):
+        x1 = Inches(0.5 + i * 3 + 2.5)
+        x2 = Inches(0.5 + (i + 1) * 3)
+        arrow(slide, x1, Inches(3.7), x2, Inches(3.7))
+
+    text_box(slide, Inches(0.5), Inches(4.5), Inches(12.3), Inches(1.2),
+             "An agent sends a JSON-RPC request naming a tool (e.g. read_text_file) with "
+             "parameters. The MCP server executes it and returns a result. "
+             "The filesystem server exposes 13 tools — all sandboxed to an allowed root.",
+             size=Pt(16), color=WHITE)
+
+
+def _slide_03_request_response(prs: Presentation) -> None:
+    slide = add_slide(prs)
+    slide_title(slide, "Request → Response Flow")
+
+    request_json = (
+        '{\n'
+        '  "jsonrpc": "2.0",\n'
+        '  "id": 1,\n'
+        '  "method": "tools/call",\n'
+        '  "params": {\n'
+        '    "name": "read_text_file",\n'
+        '    "arguments": {\n'
+        '      "path": "sensitive/security/audit_log.txt"\n'
+        '    }\n'
+        '  }\n'
+        '}'
+    )
+    response_json = (
+        '{\n'
+        '  "jsonrpc": "2.0",\n'
+        '  "id": 1,\n'
+        '  "result": {\n'
+        '    "content": [{\n'
+        '      "type": "text",\n'
+        '      "text": "2026-01-15 09:00 | LOGIN..."\n'
+        '    }]\n'
+        '  }\n'
+        '}'
+    )
+
+    text_box(slide, Inches(0.5), Inches(1.5), Inches(5.5), Inches(0.4),
+             "REQUEST", size=Pt(14), bold=True, color=GREEN)
+    code_box(slide, Inches(0.5), Inches(1.9), Inches(5.5), Inches(4.8), request_json)
+
+    arrow(slide, Inches(6.2), Inches(4.2), Inches(7.0), Inches(4.2))
+
+    text_box(slide, Inches(7.2), Inches(1.5), Inches(5.5), Inches(0.4),
+             "RESPONSE", size=Pt(14), bold=True, color=ACCENT)
+    code_box(slide, Inches(7.2), Inches(1.9), Inches(5.5), Inches(4.8), response_json)
+
+
+def _slide_04_security_boundary(prs: Presentation) -> None:
+    slide = add_slide(prs)
+    slide_title(slide, "The Security Boundary",
+                "Every path must live inside the allowed root — no exceptions")
+
+    root_box = slide.shapes.add_shape(1, Inches(0.5), Inches(1.8), Inches(6.0), Inches(4.5))
+    root_box.fill.solid()
+    root_box.fill.fore_color.rgb = RGBColor(0x1A, 0x2A, 0x1A)
+    root_box.line.color.rgb = GREEN
+    root_box.line.width = Pt(2)
+
+    text_box(slide, Inches(0.7), Inches(1.9), Inches(5.5), Inches(0.4),
+             "✓  Allowed root: /corp_filesystem/", size=Pt(14), bold=True, color=GREEN)
+
+    allowed_paths = [
+        "sensitive/security/audit_log.txt",
+        "projects/known_defects.csv",
+        "source_code/core.c",
+    ]
+    for i, path in enumerate(allowed_paths):
+        text_box(slide, Inches(0.9), Inches(2.5 + i * 0.5), Inches(5.5), Inches(0.45),
+                 f"  {path}", size=Pt(13), color=WHITE)
+
+    blocked = [
+        ("../etc/passwd",     "Access denied - path outside allowed directories"),
+        ("C:/Windows/win.ini","Access denied - path outside allowed directories"),
+        ("(empty string)",    "Access denied - path outside allowed directories"),
+    ]
+    for i, (attempt, error) in enumerate(blocked):
+        y = Inches(2.1 + i * 1.1)
+        label_box(slide, Inches(7.0), y, Inches(5.8), Inches(0.45),
+                  f"✗  {attempt}", fill=RED, text_color=WHITE, size=Pt(12))
+        text_box(slide, Inches(7.0), y + Inches(0.5), Inches(5.8), Inches(0.4),
+                 f"→ {error}", size=Pt(11), color=RED)
 def _slide_05_read_overview(prs): add_slide(prs)
 def _slide_06_read_text_file(prs): add_slide(prs)
 def _slide_07_read_media_file(prs): add_slide(prs)
