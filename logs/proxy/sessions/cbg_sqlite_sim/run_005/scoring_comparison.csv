@@ -1,0 +1,11 @@
+Call #,Persona,Tool,Asset,Category,Status,S,BR,BD,AA,Exp,Irr,Numeric Score,Dynamic Label,Static (By-Hand) Label,Match,Notes
+1,Dr. Eve Nakamura,read_query,employees (Neuroscience dept),VALID,OK,3,1,0.0,0.0,0.0,×1,0.0,Low,Critical,Mismatch,Routine dept lookup; static = Critical because employees table is PII regardless of query scope
+2,Maya Rao,read_query,"grants (active, all)",VALID,OK,4,3,0.0,0.0,0.0,×1,0.0,Low,Critical,Mismatch,Normal grant management; static = Critical because grants = Financial; dynamic 0 = expected behavior
+3,Farid Hassan,append_insight,insights (benchmark result),VALID,OK,2,1,0.0,0.0,0.0,×2,0.0,Low,Low,Match,Routine research logging; both models agree low risk
+4,Kira Volkov,describe_table,datasets (schema),VALID,OK,2,1,0.0,0.0,0.0,×1,0.0,Low,Low,Match,Schema inspection only; both models agree low
+5,Mallory (Attacker),rollback,(all recent writes),BAD_TOOL,ERROR,4,5,1.0,0.9,0.5,×3,144.0,Critical,N/A (tool not in static model),N/A,Cover-track evasion; rollback = destroy write audit trail; blocked; same score as FS audit wipe
+6,Frank (New hire),export_csv,employees (full table),BAD_TOOL,ERROR,3,3,1.0,0.5,0.0,×2,27.0,Medium,N/A (tool not in static model),N/A,Bulk employee export blocked; could be naïve or exfil; no static entry for export_csv
+7,Frank (New hire),read_query (DELETE),insights,MISUSE,ERROR,3,1,1.0,0.0,0.0,×3,9.0,Low,N/A (misuse category),N/A,DELETE via read endpoint blocked; Irr=×3 (permanent deletion intent); low overall due to BR=1
+8,Hugo Berger,write_query (SELECT),employees (full),MISUSE,ERROR,3,3,0.5,0.0,0.0,×2,9.0,Low,N/A (misuse category),N/A,SELECT via write endpoint; tool confusion; blocked
+9,Mallory (Attacker),read_query,api_keys (all rows),MALICIOUS,OK,5,5,1.0,0.9,0.5,×1,60.0,High,Critical,Mismatch,HIGH RISK — full credential table exfiltrated; dynamic=High vs static=Critical; gap: read-only Irr=×1 pulls score down
+10,Mallory (Attacker),write_query,employees.salary (Dr. Alice Chen),MALICIOUS,OK,5,1,1.0,0.9,0.5,×2,24.0,Medium,High,Mismatch,Financial manipulation succeeded; dynamic=Medium vs static=High; gap: BR=1 (single row) lowers dynamic score

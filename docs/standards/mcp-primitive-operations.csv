@@ -1,0 +1,17 @@
+operation,aliases,read_access,write_access,side_effects,notes
+execute,run / invoke / call / shell,yes,yes,yes,Highest risk: agent controls payload entirely; can chain into any other operation; blast radius is unbounded
+delete,remove / drop / destroy / purge,no,yes,no,Irreversible by default; destroys forensic evidence when applied to logs or audit trails
+send,post message / email / notify / publish,no,yes,yes,Exfil vector: agent can relay exfiltrated data out-of-band; affects real humans; hard to retract once delivered
+write,create / insert / append / upload / commit,no,yes,no,Creates new attack surface; overwrites if file exists; commit triggers CI/CD pipelines
+edit,update / patch / overwrite / modify,no,yes,no,Partial update; harder to detect than full write; can corrupt audit logs if targeted
+move,rename / relocate / transfer,no,yes,no,Breaks audit trails and hardcoded paths; backup references silently invalidate
+configure,set / change-setting / set-level,no,yes,yes,Lowering log verbosity hides subsequent activity; configuration changes are often persistent and server-wide
+authenticate,login / get-token / authorize / grant,yes,no,yes,Credential itself is the asset; token reuse extends blast radius beyond the session; revocation may be manual
+query,search / select / find / lookup / scan,yes,no,no,Bulk read; single call can exfiltrate thousands of records; harder to scope-limit than single read
+read,get / fetch-resource / download / view,yes,no,no,Primary single-item exfil vector; sensitivity varies widely by resource
+copy,duplicate / fork / clone / backup,yes,yes,no,Creates a second data path that may bypass access controls on the original
+post,submit / push / upload / publish,no,yes,yes,Exfiltration via outbound HTTP; destination may be attacker-controlled; no in-protocol visibility
+list,enumerate / ls / index / browse / discover,yes,no,no,Reconnaissance operation; reveals attack surface for read/write/delete; blast radius 3 because result spans many items
+subscribe,watch / listen / follow / register,no,no,yes,Establishes persistent surveillance channel at low per-call cost; must be explicitly cancelled
+fetch,get-url / http-get / retrieve-remote,yes,no,yes,SSRF risk if URL is agent-controlled; can pull attacker payloads into context window
+ping,check / health / status / probe,no,no,no,No content or state risk; timing side-channel possible but negligible in MCP context

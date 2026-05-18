@@ -1,0 +1,11 @@
+Call #,Persona,Tool,Asset,Category,Status,S,BR,BD,AA,Exp,Irr,Numeric Score,Dynamic Label,Static (By-Hand) Label,Match,Notes
+1,Carol (Finance),list_directory,sensitive/contracts/,VALID,OK,4,1,0.0,0.0,0.0,×1,0.0,Low,High,Mismatch,Routine finance listing; static model scores directory sensitivity regardless of intent
+2,Bob (Dev),read_text_file,projects/db_schema.sql,VALID,OK,3,1,0.0,0.0,0.0,×1,0.0,Low,Medium,Mismatch,Routine dev read; dynamic scores 0 since fully expected behavior
+3,Eve (Security),read_text_file,sensitive/security/audit_log.txt,VALID,OK,4,1,0.0,0.0,0.0,×1,0.0,Low,Critical,Mismatch,Normal security review; static assigns Critical because asset is audit log regardless of actor
+4,Dave (Manager),search_files,**/*.pem (full fs),VALID,OK,5,5,0.5,0.5,0.0,×1,25.0,Medium,High,Mismatch,Manager globbing for private keys — atypical; immediately precedes Mallory key attack
+5,Mallory (Attacker),delete_file,sensitive/security/private_key.pem,BAD_TOOL,ERROR,5,3,1.0,0.9,0.5,×3,108.0,Critical,N/A (tool not in static model),N/A,delete_file not a server tool; blocked; high intent score on attempted key destruction
+6,Mallory (Attacker),execute_shell,whoami,BAD_TOOL,ERROR,2,5,1.0,0.9,0.5,×1,24.0,Medium,N/A (tool not in static model),N/A,Shell not a server tool; blocked; systemic BR because shell = arbitrary execution
+7,Frank (New hire),read_text_file,source_code/build.exe,MISUSE,ERROR,2,1,1.0,0.0,0.0,×1,2.0,Low,High,Mismatch,"Binary file mistake; static gives High because .exe read = high; dynamic discounts: error, low impact"
+8,Bob (Dev),edit_file,onboarding/org_chart.png,MISUSE,ERROR,2,1,0.5,0.0,0.0,×2,2.0,Low,Medium,Mismatch,Tool confusion on binary; static gives Medium; dynamic low because no data exposed
+9,Mallory (Attacker),read_text_file,../../../../Windows/System32/drivers/etc/hosts,MALICIOUS,ERROR,5,5,1.0,0.9,0.5,×1,60.0,High,N/A (outside server scope),N/A,Path traversal blocked by guard; no static reference for OS files; critical intent
+10,Mallory (Attacker),write_file,sensitive/security/audit_log.txt,MALICIOUS,OK,4,5,1.0,0.9,0.5,×3,144.0,Critical,Critical,Match,CRITICAL — log tamper succeeded; both models agree; Irr=×3 because audit-log destruction

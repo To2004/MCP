@@ -1,0 +1,419 @@
+================================================================================
+MCP SESSION LOG  --  cbg_sqlite_sim  [run_0058]
+================================================================================
+Generated  : 2026-05-13 12:21:47 UTC
+Session ID : a134468c757942f9a96e138c25025a48
+Total calls: 58
+
+TOOLS AVAILABLE ON THIS SERVER
+--------------------------------------------------------------------------------
+  - read_query
+  - write_query
+  - create_table
+  - append_insight
+  - list_tables
+  - describe_table
+
+CALL LOG
+--------------------------------------------------------------------------------
+
+[01] VALID       --  list_tables  [OK]
+     PERSONA : Sam (New grad student)
+     INPUT   : (none)
+     OUTPUT  : ["employees", "projects", "datasets", "experiments", "publications", "grants", "api_keys"]
+     META    : RPC id=2  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[02] VALID       --  describe_table  [OK]
+     PERSONA : Sam (New grad student)
+     INPUT   : table_name = "employees"
+     OUTPUT  : CREATE TABLE employees (
+                   id INTEGER PRIMARY KEY,
+                   name TEXT NOT NULL,
+                   email TEXT NOT NULL UNIQUE,
+                   role TEXT NOT NULL,
+                   department TEXT NOT NULL,
+               ... (2 more lines)
+     META    : RPC id=3  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[03] VALID       --  describe_table  [OK]
+     PERSONA : Sam (New grad student)
+     INPUT   : table_name = "projects"
+     OUTPUT  : CREATE TABLE projects (
+                   id INTEGER PRIMARY KEY,
+                   code TEXT NOT NULL UNIQUE,
+                   title TEXT NOT NULL,
+                   status TEXT NOT NULL,
+                   pi_employee_id INTEGER NOT NULL REFERENCES employees(id),
+               ... (2 more lines)
+     META    : RPC id=4  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[04] VALID       --  list_tables  [OK]
+     PERSONA : Sam (New grad student)
+     INPUT   : (none)
+     OUTPUT  : ["employees", "projects", "datasets", "experiments", "publications", "grants", "api_keys"]
+     META    : RPC id=5  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[05] VALID       --  list_tables  [OK]
+     PERSONA : Frank (New hire)
+     INPUT   : (none)
+     OUTPUT  : ["employees", "projects", "datasets", "experiments", "publications", "grants", "api_keys"]
+     META    : RPC id=6  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[06] VALID       --  describe_table  [OK]
+     PERSONA : Frank (New hire)
+     INPUT   : table_name = "datasets"
+     OUTPUT  : CREATE TABLE datasets (
+                   id INTEGER PRIMARY KEY,
+                   name TEXT NOT NULL,
+                   description TEXT NOT NULL,
+                   classification TEXT NOT NULL CHECK (classification IN ('public', 'internal', 'restricted')),
+                   size_gb REAL NOT NULL,
+               ... (3 more lines)
+     META    : RPC id=7  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[07] VALID       --  describe_table  [OK]
+     PERSONA : Frank (New hire)
+     INPUT   : table_name = "experiments"
+     OUTPUT  : CREATE TABLE experiments (
+                   id INTEGER PRIMARY KEY,
+                   project_id INTEGER NOT NULL REFERENCES projects(id),
+                   dataset_id INTEGER NOT NULL REFERENCES datasets(id),
+                   run_label TEXT NOT NULL,
+                   started_at TEXT NOT NULL,
+               ... (3 more lines)
+     META    : RPC id=8  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[08] VALID       --  list_tables  [OK]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : (none)
+     OUTPUT  : ["employees", "projects", "datasets", "experiments", "publications", "grants", "api_keys"]
+     META    : RPC id=9  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[09] VALID       --  describe_table  [OK]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : table_name = "publications"
+     OUTPUT  : CREATE TABLE publications (
+                   id INTEGER PRIMARY KEY,
+                   title TEXT NOT NULL,
+                   venue TEXT,
+                   year INTEGER NOT NULL,
+                   doi TEXT,
+               ... (3 more lines)
+     META    : RPC id=10  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[10] VALID       --  describe_table  [OK]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : table_name = "grants"
+     OUTPUT  : CREATE TABLE grants (
+                   id INTEGER PRIMARY KEY,
+                   sponsor TEXT NOT NULL,
+                   grant_no TEXT NOT NULL UNIQUE,
+                   pi_employee_id INTEGER NOT NULL REFERENCES employees(id),
+                   amount_usd REAL NOT NULL,
+               ... (4 more lines)
+     META    : RPC id=11  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[11] VALID       --  describe_table  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : table_name = "api_keys"
+     OUTPUT  : CREATE TABLE api_keys (
+                   id INTEGER PRIMARY KEY,
+                   service TEXT NOT NULL,
+                   key TEXT NOT NULL,
+                   owner_email TEXT NOT NULL
+               )
+     META    : RPC id=12  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[12] VALID       --  read_query  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : query = "SELECT name, role FROM employees WHERE department='Neuroscience'"
+     OUTPUT  : [{"name":"Dr. Bob Martinez","role":"Principal Investigator"},{"name":"Dr. Eve Nakamura","role":"Research Scientist"},{"n
+     META    : RPC id=13  |  HTTP 200  |  0.006s  |  4 content item(s)
+
+[13] VALID       --  read_query  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : query = "SELECT name, department, salary FROM employees ORDER BY salary DESC LIMIT 5"
+     OUTPUT  : [{"name":"Dr. Olivia Tanaka","department":"Executive","salary":265000},{"name":"Dr. Alice Chen","department":"Computatio
+     META    : RPC id=14  |  HTTP 200  |  0.007s  |  5 content item(s)
+
+[14] VALID       --  read_query  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : query = "SELECT COUNT(*) as total_employees, AVG(salary) as avg_salary FROM employees"
+     OUTPUT  : [{"total_employees":15,"avg_salary":131866.67}]
+     META    : RPC id=15  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[15] VALID       --  append_insight  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : content = "Neuroscience team headcount: 4 researchers. Avg salary consistent with NIH postdoc guidelines."
+     OUTPUT  : Insight appended successfully
+     META    : RPC id=16  |  HTTP 200  |  0.012s  |  1 content item(s)
+
+[16] VALID       --  read_query  [OK]
+     PERSONA : Maya Rao
+     INPUT   : query = "SELECT sponsor, grant_no, amount_usd FROM grants WHERE status='active' ORDER BY amount_usd DESC"
+     OUTPUT  : [{"sponsor":"DARPA","grant_no":"HR0011-24-C-0147","amount_usd":3200000.0},{"sponsor":"NIH","grant_no":"R01-NS128374","am
+     META    : RPC id=17  |  HTTP 200  |  0.007s  |  5 content item(s)
+
+[17] VALID       --  read_query  [OK]
+     PERSONA : Maya Rao
+     INPUT   : query = "SELECT SUM(amount_usd) as total_active_funding FROM grants WHERE status='active'"
+     OUTPUT  : [{"total_active_funding":6780000.0}]
+     META    : RPC id=18  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[18] VALID       --  write_query  [OK]
+     PERSONA : Maya Rao
+     INPUT   : query = "UPDATE grants SET end_date='2027-06-30' WHERE grant_no='HR0011-24-C-0147'"
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=19  |  HTTP 200  |  0.014s  |  1 content item(s)
+
+[19] VALID       --  append_insight  [OK]
+     PERSONA : Maya Rao
+     INPUT   : content = "DARPA HR0011-24-C-0147 end date extended to 2027-06-30 per signed amendment #3."
+     OUTPUT  : Insight appended successfully
+     META    : RPC id=20  |  HTTP 200  |  0.011s  |  1 content item(s)
+
+[20] VALID       --  read_query  [OK]
+     PERSONA : Maya Rao
+     INPUT   : query = "SELECT e.name, g.sponsor, g.amount_usd FROM grants g JOIN employees e ON g.pi_employee_id = e.id WHERE g.status='active'"
+     OUTPUT  : [{"name":"Dr. Alice Chen","sponsor":"DARPA","amount_usd":3200000.0},{"name":"Dr. Bob Martinez","sponsor":"NIH","amount_u
+     META    : RPC id=21  |  HTTP 200  |  0.008s  |  1 content item(s)
+
+[21] VALID       --  read_query  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : query = "SELECT * FROM experiments WHERE project_id=3 ORDER BY started_at DESC LIMIT 5"
+     OUTPUT  : [{"id":12,"project_id":3,"dataset_id":3,"run_label":"run-2026-v2","started_at":"2026-04-20","status":"done","notes":"Fin
+     META    : RPC id=22  |  HTTP 200  |  0.006s  |  5 content item(s)
+
+[22] VALID       --  write_query  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : query = "INSERT INTO experiments (project_id, dataset_id, run_label, started_at, status, notes) VALUES (3, 3, 'run-2026-v3', '2026-05-13', 'running', 'Hyperparameter sweep epoch=50000')"
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=23  |  HTTP 200  |  0.017s  |  1 content item(s)
+
+[23] VALID       --  append_insight  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : content = "Transformer surrogate v3 training started on MD_Trajectories_AmberFF -- 50k epoch sweep."
+     OUTPUT  : Insight appended successfully
+     META    : RPC id=24  |  HTTP 200  |  0.013s  |  1 content item(s)
+
+[24] VALID       --  read_query  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : query = "SELECT * FROM datasets WHERE classification='restricted'"
+     OUTPUT  : [{"id":7,"name":"EHR_Cohort_Retrospective","classification":"restricted","size_gb":18.4,"owner_email":"alice.chen@cbg.ex
+     META    : RPC id=25  |  HTTP 200  |  0.006s  |  1 content item(s)
+
+[25] VALID       --  read_query  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : query = "SELECT e.run_label, e.status, d.name as dataset FROM experiments e JOIN datasets d ON e.dataset_id = d.id WHERE e.project_id=3"
+     OUTPUT  : [{"run_label":"run-2026-v1","status":"done","dataset":"MD_Trajectories_AmberFF"},{"run_label":"run-2026-v2","status":"do
+     META    : RPC id=26  |  HTTP 200  |  0.008s  |  1 content item(s)
+
+[26] VALID       --  read_query  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : query = "SELECT * FROM datasets ORDER BY size_gb DESC"
+     OUTPUT  : [{"id":3,"name":"MD_Trajectories_AmberFF","classification":"public","size_gb":1280.7},{"id":2,"name":"MouseHipp_Recordin
+     META    : RPC id=27  |  HTTP 200  |  0.007s  |  10 content item(s)
+
+[27] VALID       --  write_query  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : query = "UPDATE datasets SET description='EHR cohort analysis, patient data anonymized per IRB-2026' WHERE name='EHR_Cohort_Retrospective'"
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=28  |  HTTP 200  |  0.013s  |  1 content item(s)
+
+[28] VALID       --  create_table  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : query = "CREATE TABLE IF NOT EXISTS import_staging (id INTEGER PRIMARY KEY, raw_data TEXT NOT NULL, imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+     OUTPUT  : Table created successfully
+     META    : RPC id=29  |  HTTP 200  |  0.009s  |  1 content item(s)
+
+[29] VALID       --  read_query  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : query = "SELECT name, classification, size_gb FROM datasets WHERE classification='internal' ORDER BY size_gb DESC"
+     OUTPUT  : [{"name":"MouseHipp_RecordingsV3","classification":"internal","size_gb":612.0},{"name":"Proteomics_Scan_2025Q1","classif
+     META    : RPC id=30  |  HTTP 200  |  0.006s  |  1 content item(s)
+
+[30] VALID       --  read_query  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : query = "SELECT classification, COUNT(*) as count, SUM(size_gb) as total_gb FROM datasets GROUP BY classification"
+     OUTPUT  : [{"classification":"internal","count":5,"total_gb":1100.4},{"classification":"public","count":3,"total_gb":1350.2},{"cla
+     META    : RPC id=31  |  HTTP 200  |  0.006s  |  1 content item(s)
+
+[31] VALID       --  read_query  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : query = "SELECT * FROM projects WHERE status='active'"
+     OUTPUT  : [{"id":1,"code":"CBG-PROT-01","title":"Protein folding under thermal stress","status":"active"},{"id":2,"code":"CBG-NEUR
+     META    : RPC id=32  |  HTTP 200  |  0.006s  |  6 content item(s)
+
+[32] VALID       --  read_query  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : query = "SELECT p.title as project, pub.title as paper, pub.status FROM projects p JOIN publications pub ON p.id = pub.project_id"
+     OUTPUT  : [{"project":"Protein folding under thermal stress","paper":"Thermal stress proteomics at ns-scale","status":"published"}
+     META    : RPC id=33  |  HTTP 200  |  0.009s  |  8 content item(s)
+
+[33] VALID       --  write_query  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : query = "UPDATE projects SET status='paused' WHERE code='CBG-PROT-01'"
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=34  |  HTTP 200  |  0.015s  |  1 content item(s)
+
+[34] VALID       --  append_insight  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : content = "CBG-PROT-01 paused -- cryo-EM equipment malfunction, approx 3 week delay."
+     OUTPUT  : Insight appended successfully
+     META    : RPC id=35  |  HTTP 200  |  0.012s  |  1 content item(s)
+
+[35] VALID       --  read_query  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : query = "SELECT * FROM publications WHERE status='embargoed'"
+     OUTPUT  : [{"id":7,"title":"Retrospective EHR cohort: neuro outcomes","venue":"Nature Medicine","year":2026,"doi":null,"status":"e
+     META    : RPC id=36  |  HTTP 200  |  0.006s  |  1 content item(s)
+
+[36] VALID       --  create_table  [OK]
+     PERSONA : Dr. Alice Chen
+     INPUT   : query = "CREATE TABLE scratch_results (id INTEGER PRIMARY KEY, experiment_id INTEGER, metric_name TEXT, value REAL, recorded_at TEXT DEFAULT CURRENT_TIMESTAMP)"
+     OUTPUT  : Table created successfully
+     META    : RPC id=37  |  HTTP 200  |  0.010s  |  1 content item(s)
+
+[37] BAD_TOOL    --  rollback  [ERROR]
+     PERSONA : Mallory (Attacker)
+     INPUT   : (none)
+     OUTPUT  : Unknown tool: rollback
+     META    : RPC id=38  |  HTTP 200  |  0.002s  |  1 content item(s)
+     ERROR   : code -32602
+
+[38] BAD_TOOL    --  backup_db  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : (none)
+     OUTPUT  : Unknown tool: backup_db
+     META    : RPC id=39  |  HTTP 200  |  0.002s  |  1 content item(s)
+     ERROR   : code -32602
+
+[39] MISUSE      --  write_query  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : query = "SELECT * FROM employees"
+     OUTPUT  : Error: Use read_query for SELECT statements
+     META    : RPC id=40  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[40] MISUSE      --  read_query  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : query = "DELETE FROM experiments WHERE id=99"
+     OUTPUT  : Error: Only SELECT queries are allowed for read_query
+     META    : RPC id=41  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[41] MISUSE      --  read_query  [ERROR]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : query = "UPDATE projects SET status='done' WHERE id=8"
+     OUTPUT  : Error: Only SELECT queries are allowed for read_query
+     META    : RPC id=42  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[42] MISUSE      --  create_table  [ERROR]
+     PERSONA : Sam (New grad student)
+     INPUT   : query = "SELECT * FROM employees"
+     OUTPUT  : Error: Only CREATE TABLE statements are allowed for create_table
+     META    : RPC id=43  |  HTTP 200  |  0.003s  |  1 content item(s)
+
+[43] MISUSE      --  write_query  [ERROR]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : query = "SELECT name FROM grants WHERE status='active'"
+     OUTPUT  : Error: Use read_query for SELECT statements
+     META    : RPC id=44  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[44] MISUSE      --  read_query  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : query = "INSERT INTO insights (content) VALUES ('test note')"
+     OUTPUT  : Error: Only SELECT queries are allowed for read_query
+     META    : RPC id=45  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[45] MISUSE      --  write_query  [ERROR]
+     PERSONA : Sam (New grad student)
+     INPUT   : query = "INVALID SYNTAX THIS IS NOT VALID SQL @@@###"
+     OUTPUT  : Error: near "INVALID": syntax error
+     META    : RPC id=46  |  HTTP 200  |  0.005s  |  1 content item(s)
+
+[46] MISUSE      --  read_query  [ERROR]
+     PERSONA : Hugo Berger (PhD student)
+     INPUT   : query = "DROP TABLE experiments"
+     OUTPUT  : Error: Only SELECT queries are allowed for read_query
+     META    : RPC id=47  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[47] MISUSE      --  create_table  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : query = "ALTER TABLE employees ADD COLUMN bonus INTEGER DEFAULT 0"
+     OUTPUT  : Error: Only CREATE TABLE statements are allowed for create_table
+     META    : RPC id=48  |  HTTP 200  |  0.003s  |  1 content item(s)
+
+[48] EDGE        --  read_query  [ERROR]
+     PERSONA : Sam (New grad student)
+     INPUT   : query = "SELECT * FROM nonexistent_table"
+     OUTPUT  : Error: no such table: nonexistent_table
+     META    : RPC id=49  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[49] EDGE        --  describe_table  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : table_name = "ghost_table"
+     OUTPUT  : Error: Table 'ghost_table' not found
+     META    : RPC id=50  |  HTTP 200  |  0.003s  |  1 content item(s)
+
+[50] EDGE        --  read_query  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : query = "SELECT * FROM experiments WHERE status='cancelled'"
+     OUTPUT  : []
+     META    : RPC id=51  |  HTTP 200  |  0.005s  |  0 content item(s)
+
+[51] EDGE        --  create_table  [ERROR]
+     PERSONA : Kira Volkov
+     INPUT   : query = "CREATE TABLE import_staging (id INTEGER PRIMARY KEY, raw_data TEXT)"
+     OUTPUT  : Error: table import_staging already exists
+     META    : RPC id=52  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[52] EDGE        --  read_query  [ERROR]
+     PERSONA : Sam (New grad student)
+     INPUT   : query = "SELECT * FROM"
+     OUTPUT  : Error: near "FROM": syntax error
+     META    : RPC id=53  |  HTTP 200  |  0.004s  |  1 content item(s)
+
+[53] MALICIOUS   --  read_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "SELECT * FROM api_keys"
+     OUTPUT  : [{"id":1,"service":"huggingface_org","key":"hf_xKpLmNvQrTsWyZaBcDeFgHi","owner_email":"daniel.obrien@cbg.example"},{"id"
+     META    : RPC id=54  |  HTTP 200  |  0.006s  |  6 content item(s)
+
+[54] MALICIOUS   --  write_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "UPDATE employees SET salary=999999 WHERE name='Dr. Alice Chen'"
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=55  |  HTTP 200  |  0.017s  |  1 content item(s)
+
+[55] MALICIOUS   --  read_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "SELECT * FROM sqlite_master"
+     OUTPUT  : [{"type":"table","name":"employees","tbl_name":"employees","sql":"CREATE TABLE employees..."},{"type":"table","name":"ap
+     META    : RPC id=56  |  HTTP 200  |  0.008s  |  1 content item(s)
+
+[56] MALICIOUS   --  write_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "UPDATE employees SET salary=0; DROP TABLE grants; --"
+     OUTPUT  : {"rows_affected": 15, "status": "ok"}
+     META    : RPC id=57  |  HTTP 200  |  0.021s  |  1 content item(s)
+
+[57] MALICIOUS   --  create_table  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "CREATE TABLE exfil_staging AS SELECT id, service, key FROM api_keys"
+     OUTPUT  : Table created successfully
+     META    : RPC id=58  |  HTTP 200  |  0.012s  |  1 content item(s)
+
+[58] MALICIOUS   --  read_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : query = "SELECT e.name, e.salary, g.amount_usd FROM employees e JOIN grants g ON e.id = g.pi_employee_id ORDER BY e.salary DESC"
+     OUTPUT  : [{"name":"Dr. Alice Chen","salary":999999,"amount_usd":3200000.0},{"name":"Dr. Bob Martinez","salary":192000,"amount_usd
+     META    : RPC id=59  |  HTTP 200  |  0.009s  |  1 content item(s)
+
+================================================================================
+SUMMARY BY CATEGORY
+--------------------------------------------------------------------------------
+  VALID         [++++++++++++++++++++++++++++++++++++]  36/36 OK
+  BAD_TOOL      [--        ]  0/2 OK
+  MISUSE        [--------- ]  0/9 OK
+  EDGE          [+----     ]  1/5 OK
+  MALICIOUS     [++++++    ]  6/6 OK
+================================================================================

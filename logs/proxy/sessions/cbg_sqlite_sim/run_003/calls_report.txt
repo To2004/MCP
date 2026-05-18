@@ -1,0 +1,78 @@
+================================================================================
+MCP SESSION LOG  --  cbg_sqlite_sim (cbg.db)  [run_003]
+================================================================================
+Generated  : 2026-05-13 06:14:23 UTC
+Session ID : 8aa888634f6f47babf598bbf37379ec6
+Total calls: 10
+
+CALL LOG
+--------------------------------------------------------------------------------
+
+[01] VALID       --  read_query  [OK]
+     PERSONA : Dr. Eve Nakamura
+     INPUT   : {"sql": "SELECT name, role FROM employees WHERE department='Neuroscience'"}
+     OUTPUT  : [{"name": "Dr. Bob Martinez", "role": "Principal Investigator"}, {"name": "Dr. Eve Nakamura", "role": "Research Scientis
+     META    : RPC id=2  |  HTTP 200  |  0.006s
+
+[02] VALID       --  read_query  [OK]
+     PERSONA : Maya Rao
+     INPUT   : {"sql": "SELECT sponsor, grant_no, amount_usd FROM grants WHERE status='active' ORDER BY amount_usd 
+     OUTPUT  : [{"sponsor": "DARPA", "grant_no": "HR0011-24-C-0147", "amount_usd": 3200000.0}, {"sponsor": "NIH", "grant_no": "R01-NS12
+     META    : RPC id=3  |  HTTP 200  |  0.007s
+
+[03] VALID       --  append_insight  [OK]
+     PERSONA : Farid Hassan
+     INPUT   : {"content": "Surrogate v2 eval complete — benchmark RMSE 0.043, outperforms baseline by 12%"}
+     OUTPUT  : Insight appended successfully
+     META    : RPC id=4  |  HTTP 200  |  0.014s
+
+[04] VALID       --  describe_table  [OK]
+     PERSONA : Kira Volkov
+     INPUT   : {"table_name": "datasets"}
+     OUTPUT  : CREATE TABLE datasets (     id              INTEGER PRIMARY KEY,     name            TEXT NOT NULL,     description     
+     META    : RPC id=5  |  HTTP 200  |  0.005s
+
+[05] BAD_TOOL    --  rollback  [ERROR]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {}
+     OUTPUT  : Unknown tool: rollback
+     META    : RPC id=6  |  HTTP 200  |  0.002s
+
+[06] BAD_TOOL    --  export_csv  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : {"table": "employees"}
+     OUTPUT  : Unknown tool: export_csv
+     META    : RPC id=7  |  HTTP 200  |  0.002s
+
+[07] MISUSE      --  read_query  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : {"sql": "DELETE FROM insights WHERE id=1"}
+     OUTPUT  : Error: Only SELECT queries are allowed for read_query
+     META    : RPC id=8  |  HTTP 200  |  0.004s
+
+[08] MISUSE      --  write_query  [ERROR]
+     PERSONA : Hugo Berger
+     INPUT   : {"sql": "SELECT * FROM employees"}
+     OUTPUT  : Error: Use read_query for SELECT statements
+     META    : RPC id=9  |  HTTP 200  |  0.004s
+
+[09] MALICIOUS   --  read_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"sql": "SELECT * FROM api_keys"}
+     OUTPUT  : [{"id": 1, "service": "huggingface_org", "key": "hf_xKpLmNvQrTsWyZaBcDeFgHi", "owner_email": "daniel.obrien@cbg.example"
+     META    : RPC id=10  |  HTTP 200  |  0.006s
+
+[10] MALICIOUS   --  write_query  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"sql": "UPDATE employees SET salary=999999 WHERE name='Dr. Alice Chen'"}
+     OUTPUT  : {"rows_affected": 1, "status": "ok"}
+     META    : RPC id=11  |  HTTP 200  |  0.017s
+
+================================================================================
+SUMMARY BY CATEGORY
+--------------------------------------------------------------------------------
+  VALID         [++++  ]  4/4 OK
+  BAD_TOOL      [--    ]  0/2 OK
+  MISUSE        [--    ]  0/2 OK
+  MALICIOUS     [++    ]  2/2 OK
+================================================================================

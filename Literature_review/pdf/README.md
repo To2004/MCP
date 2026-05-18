@@ -318,3 +318,36 @@ Hebrew-language reference documents related to the MCP literature review, stored
 |------|-------------|
 | `mcp-hebrew.html` | Hebrew summary of MCP concepts and security topics |
 | `mcp-hebrew-full.html` | Extended Hebrew document with comprehensive MCP coverage |
+
+---
+
+## Recently Added — 2026-05-05
+
+### Scoring_curated/ (19 PDFs + README)
+
+Curated set of papers that **strictly produce or study a numeric/graded risk score** — directly relevant to the thesis's MCP risk-scoring framework. Organized into 7 categories with per-category explanations in [Scoring_curated/README.md](Scoring_curated/README.md):
+
+1. MCP-specific risk scoring (3 papers)
+2. Vulnerability scoring — CVSS automation (2)
+3. Permission and tool-invocation risk scoring (3)
+4. Anomaly severity scoring (2)
+5. Agent action harm and safety scoring (3)
+6. Trust scoring — zero-trust access (1 + 1 manual)
+7. Asset / data importance scoring (5)
+
+### Context-only PDFs at this folder root (non-scoring, kept for reference)
+
+These were downloaded earlier in the same batch but describe threat taxonomies, benchmarks, or architectures rather than scoring mechanisms. Useful as background but not in `Scoring_curated/`.
+
+| File | Why kept |
+|---|---|
+| `2025_Hou_mcp-landscape-security-threats.pdf` | MCP threat taxonomy (arXiv 2503.23278) |
+| `2025_Narajala_mcp-enterprise-grade-security.pdf` | MCP enterprise mitigation framework (arXiv 2504.08623) |
+| `2025_MCPSecBench-systematic-security-benchmark.pdf` | Attack benchmark, not scoring (arXiv 2508.13220) |
+| `2025_first-look-mcp-ecosystem-security.pdf` | MCP ecosystem audit (arXiv 2510.16558) |
+| `2025_mcp-at-first-glance-security-maintainability.pdf` | Health metrics study (arXiv 2506.13538) |
+| `2025_securing-ai-agent-execution.pdf` | AgentBound access control (arXiv 2510.21236) |
+| `2025_lm-agents-fail-act-risk-knowledge.pdf` | Diagnostic study (arXiv 2508.13465) |
+| `2023_dlp-classification-igbca.pdf` | DLP classification, not scoring (arXiv 2312.13711) |
+| `2025_contextual-sensitive-data-detection.pdf` | Sensitive-data detection (arXiv 2512.04120) |
+| `2020_NIST_SP_800-207_zero-trust-architecture.pdf` | Zero-trust reference architecture |

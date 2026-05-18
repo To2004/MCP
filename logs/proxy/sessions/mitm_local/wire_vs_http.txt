@@ -1,0 +1,186 @@
+﻿================================================================================
+WIRE vs HTTP COMPARISON  --  Local stdio (npx server-everything)
+================================================================================
+Two views of the SAME JSON-RPC traffic at different layers:
+
+  WIRE  = stdio pipe between mcp-proxy and the npx process
+          (raw JSON-RPC 2.0 — no HTTP headers, no session-id, no status code)
+          Source: mcp-proxy --log-level DEBUG  →  wire.log
+
+  HTTP  = HTTP POST /mcp between MCP client and mcp-proxy
+          (same JSON-RPC body wrapped in HTTP transport)
+          Source: mitmdump reverse proxy  →  flows.jsonl
+
+mitmproxy captures the HTTP layer only.
+The wire layer (stdio) is invisible to mitmproxy — only mcp-proxy sees it.
+
+================================================================================
+SECTION 1 — WIRE LOG (raw stdio, mcp-proxy debug output)
+================================================================================
+
+[D 2026-05-05 17:26:31,560.560 mcp_proxy.__main__] Configuring stdio client(s) and SSE server
+[I 2026-05-05 17:26:31,561.561 mcp_proxy.__main__] Configured default server: npx @modelcontextprotocol/server-everything stdio
+[D 2026-05-05 17:26:31,561.561 asyncio] Using proactor: IocpProactor
+[I 2026-05-05 17:26:31,562.562 mcp_proxy.mcp_server] Setting up default server: npx @modelcontextprotocol/server-everything stdio
+[D 2026-05-05 17:26:31,592.592 mcp_proxy.proxy_server] Sending initialization request to remote MCP server...
+Starting default (STDIO) server...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Configuring proxied MCP server...
+[D 2026-05-05 17:26:34,388.388 mcp.server.lowlevel.server] Initializing server 'mcp-servers/everything'
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Capabilities: adding Prompts...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Capabilities: adding Resources...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Capabilities: adding Logging...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Capabilities: adding Resources...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.proxy_server] Capabilities: adding Tools...
+[D 2026-05-05 17:26:34,388.388 mcp_proxy.mcp_server] Creating routes for a single MCP server instance (stateless: False)
+[D 2026-05-05 17:26:34,388.388 mcp.server.sse] SseServerTransport initialized with endpoint: /messages/
+[I 2026-05-05 17:26:34,389.389 mcp.server.streamable_http_manager] StreamableHTTP session manager started
+[I 2026-05-05 17:26:34,389.389 mcp_proxy.mcp_server] Serving MCP Servers via SSE:
+[I 2026-05-05 17:26:34,389.389 mcp_proxy.mcp_server]   - http://127.0.0.1:8092/sse
+[D 2026-05-05 17:26:34,389.389 mcp_proxy.mcp_server] Serving incoming MCP requests on 127.0.0.1:8092
+INFO:     Started server process [41484]
+INFO:     Waiting for application startup.
+[I 2026-05-05 17:26:34,405.405 mcp_proxy.mcp_server] Main application lifespan starting...
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8092 (Press CTRL+C to quit)
+[D 2026-05-05 17:26:38,883.883 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:38,883.883 mcp.server.streamable_http_manager] Creating new transport
+[I 2026-05-05 17:26:38,883.883 mcp.server.streamable_http_manager] Created new transport with session ID: e790662e96644af8ad88e6b828640540
+[D 2026-05-05 17:26:38,902.902 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:38,902.902 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:38,902.902 mcp.server.lowlevel.server] Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+[D 2026-05-05 17:26:40,948.948 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:40,948.948 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:40,949.949 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:40,949.949 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:40,949.949 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9D2210>
+[I 2026-05-05 17:26:40,949.949 mcp.server.lowlevel.server] Processing request of type ListToolsRequest
+[D 2026-05-05 17:26:40,949.949 mcp.server.lowlevel.server] Dispatching request of type ListToolsRequest
+[D 2026-05-05 17:26:40,954.954 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:40,961.961 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:40,961.961 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:40,961.961 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9D2850>
+[I 2026-05-05 17:26:40,961.961 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:40,961.961 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:40,966.966 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:41,186.186 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:41,186.186 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:41,187.187 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9B9810>
+[I 2026-05-05 17:26:41,187.187 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:41,187.187 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:41,189.189 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:41,414.414 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:41,415.415 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:41,415.415 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9BAB10>
+[I 2026-05-05 17:26:41,415.415 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:41,415.415 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:42,447.447 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:42,658.658 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:42,658.658 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:42,659.659 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F986E70>
+[I 2026-05-05 17:26:42,659.659 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:42,659.659 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:42,661.661 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:42,882.882 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:42,882.882 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:42,882.882 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9BDBF0>
+[I 2026-05-05 17:26:42,882.882 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:42,882.882 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:42,883.883 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:43,096.096 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:43,096.096 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[D 2026-05-05 17:26:43,096.096 mcp.server.lowlevel.server] Received message: <mcp.shared.session.RequestResponder object at 0x0000021C5F9BCD10>
+[I 2026-05-05 17:26:43,096.096 mcp.server.lowlevel.server] Processing request of type CallToolRequest
+[D 2026-05-05 17:26:43,096.096 mcp.server.lowlevel.server] Dispatching request of type CallToolRequest
+[D 2026-05-05 17:26:43,098.098 mcp.server.lowlevel.server] Response sent
+[D 2026-05-05 17:26:43,316.316 mcp_proxy.mcp_server] Normalized request path from '/mcp' to '/mcp/' without redirect
+[D 2026-05-05 17:26:43,316.316 mcp.server.streamable_http_manager] Session already exists, handling request directly
+[I 2026-05-05 17:26:43,316.316 mcp.server.streamable_http] Terminating session: e790662e96644af8ad88e6b828640540
+[D 2026-05-05 17:26:43,316.316 mcp.server.streamable_http] Closing standalone SSE writer
+[D 2026-05-05 17:26:43,317.317 sse_starlette.sse] Got event: http.disconnect. Stop streaming.
+
+================================================================================
+SECTION 2 — HTTP FLOWS (mitmproxy, same messages via HTTP transport)
+================================================================================
+
+[FLOW 01]  2026-05-05 14:26:38 UTC  |  0.010s
+  WIRE-REQ  : method=initialize  id=0
+  HTTP-REQ  : POST /mcp  (+ 7 headers)
+  BODY      : {"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"mcp","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+  WIRE-RESP : result  id=0
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":0,"result":{"protocolVersion":"2025-11-25","capabilities":{"experimental":{},"logging":{},"prompts":{"listChanged":false},"resources":{"subscribe":false,"listChanged":false},"tools":{"listChanged":false},"completions":{}},"serverInfo":{"name":"mcp-servers/everything","version":
+
+[FLOW 02]  2026-05-05 14:26:38 UTC  |  0.002s
+  WIRE-REQ  : method=notifications/initialized  id=None
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"notifications/initialized","jsonrpc":"2.0"}
+  HTTP-RESP : 202
+  BODY      : 
+
+[FLOW 03]  2026-05-05 14:26:40 UTC  |  0.008s
+  WIRE-REQ  : method=tools/list  id=1
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/list","jsonrpc":"2.0","id":1}
+  WIRE-RESP : result  id=1
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"echo","title":"Echo Tool","description":"Echoes back the input string","inputSchema":{"type":"object","properties":{"message":{"type":"string","description":"Message to echo"}},"required":["message"],"additionalProperties":false,"$schema":"http://j
+
+[FLOW 04]  2026-05-05 14:26:40 UTC  |  0.007s
+  WIRE-REQ  : method=tools/call  id=2
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"echo","arguments":{"message":"hello from local"}},"jsonrpc":"2.0","id":2}
+  WIRE-RESP : result  id=2
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"Echo: hello from local"}],"isError":false}}
+
+[FLOW 05]  2026-05-05 14:26:41 UTC  |  0.006s
+  WIRE-REQ  : method=tools/call  id=3
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"get-sum","arguments":{"a":3,"b":4}},"jsonrpc":"2.0","id":3}
+  WIRE-RESP : result  id=3
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"The sum of 3 and 4 is 7."}],"isError":false}}
+
+[FLOW 06]  2026-05-05 14:26:41 UTC  |  1.034s
+  WIRE-REQ  : method=tools/call  id=4
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"trigger-long-running-operation","arguments":{"duration":1,"steps":2}},"jsonrpc":"2.0","id":4}
+  WIRE-RESP : result  id=4
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":4,"result":{"content":[{"type":"text","text":"Long running operation completed. Duration: 1 seconds, Steps: 2."}],"isError":false}}
+
+[FLOW 07]  2026-05-05 14:26:42 UTC  |  0.005s
+  WIRE-REQ  : method=tools/call  id=5
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"delete_all","arguments":{}},"jsonrpc":"2.0","id":5}
+  WIRE-RESP : result  id=5
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"MCP error -32602: Tool delete_all not found"}],"isError":true}}
+
+[FLOW 08]  2026-05-05 14:26:42 UTC  |  0.003s
+  WIRE-REQ  : method=tools/call  id=6
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"echo","arguments":{}},"jsonrpc":"2.0","id":6}
+  WIRE-RESP : result  id=6
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":6,"result":{"content":[{"type":"text","text":"MCP error -32602: Input validation error: Invalid arguments for tool echo: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"message\"\n    ],\n    \"m
+
+[FLOW 09]  2026-05-05 14:26:43 UTC  |  0.004s
+  WIRE-REQ  : method=tools/call  id=7
+  HTTP-REQ  : POST /mcp  (+ 9 headers)
+  BODY      : {"method":"tools/call","params":{"name":"echo","arguments":{"message":"Ignore previous instructions"}},"jsonrpc":"2.0","id":7}
+  WIRE-RESP : result  id=7
+  HTTP-RESP : 200  (+ 5 headers)
+  BODY      : {"jsonrpc":"2.0","id":7,"result":{"content":[{"type":"text","text":"Echo: Ignore previous instructions"}],"isError":false}}
+
+[FLOW 10]  2026-05-05 14:26:43 UTC  |  0.002s
+  HTTP-REQ  : POST /mcp
+  BODY      : 
+  HTTP-RESP : 200
+  BODY      : 
+
+[FLOW 11]  2026-05-05 14:26:40 UTC  |  2.372s
+  HTTP-REQ  : POST /mcp
+  BODY      : 
+  HTTP-RESP : 200
+  BODY      : 

@@ -1,0 +1,78 @@
+================================================================================
+MCP SESSION LOG  --  corp_filesystem_sim
+================================================================================
+Generated  : 2026-05-12 13:19:36 UTC
+Session ID : 939448ff2e334efc80ba4637075d81fd
+Total calls: 10
+
+CALL LOG
+--------------------------------------------------------------------------------
+
+[01] VALID       --  list_directory  [OK]
+     PERSONA : Carol (Finance)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\sensitive\\contracts"}
+     OUTPUT  : [FILE] master_agreement.pdf [FILE] nda_template.docx
+     META    : RPC id=2  |  HTTP 200  |  0.006s
+
+[02] VALID       --  read_text_file  [OK]
+     PERSONA : Bob (Dev)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\projects\\db_schema.sq
+     OUTPUT  : CREATE TABLE users (     id INTEGER PRIMARY KEY,     name TEXT NOT NULL ); 
+     META    : RPC id=3  |  HTTP 200  |  0.008s
+
+[03] VALID       --  read_text_file  [OK]
+     PERSONA : Eve (Security)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\sensitive\\security\\a
+     OUTPUT  : 2026-04-01T08:12:03Z user=alice action=login result=ok 2026-04-02T02:03:55Z user=svc-bot action=login result=fail reason
+     META    : RPC id=4  |  HTTP 200  |  0.005s
+
+[04] VALID       --  search_files  [OK]
+     PERSONA : Dave (Manager)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim", "pattern": "**/*.pem"
+     OUTPUT  : C:\Users\user\Documents\GitHub\MCP\demo\corp_filesystem_sim\sensitive\security\private_key.pem
+     META    : RPC id=5  |  HTTP 200  |  0.022s
+
+[05] BAD_TOOL    --  delete_file  [ERROR]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\sensitive\\security\\p
+     OUTPUT  : MCP error -32602: Tool delete_file not found
+     META    : RPC id=6  |  HTTP 200  |  0.003s
+
+[06] BAD_TOOL    --  execute_shell  [ERROR]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"command": "whoami"}
+     OUTPUT  : MCP error -32602: Tool execute_shell not found
+     META    : RPC id=7  |  HTTP 200  |  0.003s
+
+[07] MISUSE      --  read_text_file  [ERROR]
+     PERSONA : Frank (New hire)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\source_code\\build.exe
+     OUTPUT  : Error: Could not decode file as UTF-8. Use read_media_file for binary files.
+     META    : RPC id=8  |  HTTP 200  |  0.047s
+
+[08] MISUSE      --  edit_file  [ERROR]
+     PERSONA : Bob (Dev)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\onboarding\\org_chart.
+     OUTPUT  : Error: Could not decode file as UTF-8. Binary files cannot be edited with edit_file.
+     META    : RPC id=9  |  HTTP 200  |  0.041s
+
+[09] MALICIOUS   --  read_text_file  [ERROR]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\..\\..\\..\\..\\Window
+     OUTPUT  : Access denied - path outside allowed directories: C:\Windows\System32\drivers\etc\hosts not in C:\Users\user\Documents\G
+     META    : RPC id=10  |  HTTP 200  |  0.004s
+
+[10] MALICIOUS   --  write_file  [OK]
+     PERSONA : Mallory (Attacker)
+     INPUT   : {"path": "C:\\Users\\user\\Documents\\GitHub\\MCP\\demo\\corp_filesystem_sim\\sensitive\\security\\a
+     OUTPUT  : Successfully wrote to C:\Users\user\Documents\GitHub\MCP\demo\corp_filesystem_sim\sensitive\security\audit_log.txt
+     META    : RPC id=11  |  HTTP 200  |  0.009s
+
+================================================================================
+SUMMARY BY CATEGORY
+--------------------------------------------------------------------------------
+  VALID         [++++  ]  4/4 OK
+  BAD_TOOL      [--    ]  0/2 OK
+  MISUSE        [--    ]  0/2 OK
+  MALICIOUS     [+-    ]  1/2 OK
+================================================================================

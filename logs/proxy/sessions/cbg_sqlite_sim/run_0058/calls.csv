@@ -1,0 +1,111 @@
+timestamp,index,persona,session_id,jsonrpc_id,category,status,tool,args,http_status,elapsed_s,content_count,error_code,result
+2026-05-13T12:21:48,1,Sam (New grad student),a134468c757942f9a96e138c25025a48,2,VALID,OK,list_tables,{},200,0.005,1,,"[""employees"", ""projects"", ""datasets"", ""experiments"", ""publications"", ""grants"", ""api_keys""]"
+2026-05-13T12:21:50,2,Sam (New grad student),a134468c757942f9a96e138c25025a48,3,VALID,OK,describe_table,"{""table_name"": ""employees""}",200,0.005,1,,"CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL,
+    department TEXT NOT NULL,
+    salary INTEGER NOT NULL
+)"
+2026-05-13T12:21:52,3,Sam (New grad student),a134468c757942f9a96e138c25025a48,4,VALID,OK,describe_table,"{""table_name"": ""projects""}",200,0.005,1,,"CREATE TABLE projects (
+    id INTEGER PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    status TEXT NOT NULL,
+    pi_employee_id INTEGER NOT NULL REFERENCES employees(id),
+    start_date TEXT NOT NULL
+)"
+2026-05-13T12:21:54,4,Sam (New grad student),a134468c757942f9a96e138c25025a48,5,VALID,OK,list_tables,{},200,0.004,1,,"[""employees"", ""projects"", ""datasets"", ""experiments"", ""publications"", ""grants"", ""api_keys""]"
+2026-05-13T12:21:56,5,Frank (New hire),a134468c757942f9a96e138c25025a48,6,VALID,OK,list_tables,{},200,0.004,1,,"[""employees"", ""projects"", ""datasets"", ""experiments"", ""publications"", ""grants"", ""api_keys""]"
+2026-05-13T12:21:58,6,Frank (New hire),a134468c757942f9a96e138c25025a48,7,VALID,OK,describe_table,"{""table_name"": ""datasets""}",200,0.005,1,,"CREATE TABLE datasets (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    classification TEXT NOT NULL CHECK (classification IN ('public', 'internal', 'restricted')),
+    size_gb REAL NOT NULL,
+    owner_email TEXT NOT NULL,
+    created_at TEXT NOT NULL
+)"
+2026-05-13T12:22:00,7,Frank (New hire),a134468c757942f9a96e138c25025a48,8,VALID,OK,describe_table,"{""table_name"": ""experiments""}",200,0.005,1,,"CREATE TABLE experiments (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    dataset_id INTEGER NOT NULL REFERENCES datasets(id),
+    run_label TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    notes TEXT
+)"
+2026-05-13T12:22:02,8,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,9,VALID,OK,list_tables,{},200,0.004,1,,"[""employees"", ""projects"", ""datasets"", ""experiments"", ""publications"", ""grants"", ""api_keys""]"
+2026-05-13T12:22:04,9,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,10,VALID,OK,describe_table,"{""table_name"": ""publications""}",200,0.005,1,,"CREATE TABLE publications (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    venue TEXT,
+    year INTEGER NOT NULL,
+    doi TEXT,
+    status TEXT NOT NULL,
+    project_id INTEGER REFERENCES projects(id)
+)"
+2026-05-13T12:22:06,10,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,11,VALID,OK,describe_table,"{""table_name"": ""grants""}",200,0.005,1,,"CREATE TABLE grants (
+    id INTEGER PRIMARY KEY,
+    sponsor TEXT NOT NULL,
+    grant_no TEXT NOT NULL UNIQUE,
+    pi_employee_id INTEGER NOT NULL REFERENCES employees(id),
+    amount_usd REAL NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    status TEXT NOT NULL
+)"
+2026-05-13T12:22:08,11,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,12,VALID,OK,describe_table,"{""table_name"": ""api_keys""}",200,0.004,1,,"CREATE TABLE api_keys (
+    id INTEGER PRIMARY KEY,
+    service TEXT NOT NULL,
+    key TEXT NOT NULL,
+    owner_email TEXT NOT NULL
+)"
+2026-05-13T12:22:10,12,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,13,VALID,OK,read_query,"{""query"": ""SELECT name, role FROM employees WHERE department='Neuroscience'""}",200,0.006,4,,"[{""name"":""Dr. Bob Martinez"",""role"":""Principal Investigator""},{""name"":""Dr. Eve Nakamura"",""role"":""Research Scientist""},{""name"":""Hugo Berger"",""role"":""PhD Student""},{""name"":""Liam Doherty"",""role"":""Postdoctoral Researcher""}]"
+2026-05-13T12:22:12,13,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,14,VALID,OK,read_query,"{""query"": ""SELECT name, department, salary FROM employees ORDER BY salary DESC LIMIT 5""}",200,0.007,5,,"[{""name"":""Dr. Olivia Tanaka"",""department"":""Executive"",""salary"":265000},{""name"":""Dr. Alice Chen"",""department"":""Computational Biology"",""salary"":198000},{""name"":""Dr. Bob Martinez"",""department"":""Neuroscience"",""salary"":192000}]"
+2026-05-13T12:22:14,14,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,15,VALID,OK,read_query,"{""query"": ""SELECT COUNT(*) as total_employees, AVG(salary) as avg_salary FROM employees""}",200,0.005,1,,"[{""total_employees"":15,""avg_salary"":131866.67}]"
+2026-05-13T12:22:16,15,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,16,VALID,OK,append_insight,"{""content"": ""Neuroscience team headcount: 4 researchers. Avg salary consistent with NIH postdoc guidelines.""}",200,0.012,1,,Insight appended successfully
+2026-05-13T12:22:18,16,Maya Rao,a134468c757942f9a96e138c25025a48,17,VALID,OK,read_query,"{""query"": ""SELECT sponsor, grant_no, amount_usd FROM grants WHERE status='active' ORDER BY amount_usd DESC""}",200,0.007,5,,"[{""sponsor"":""DARPA"",""grant_no"":""HR0011-24-C-0147"",""amount_usd"":3200000.0},{""sponsor"":""NIH"",""grant_no"":""R01-NS128374"",""amount_usd"":2400000.0},{""sponsor"":""NSF"",""grant_no"":""IIS-2247891"",""amount_usd"":1180000.0}]"
+2026-05-13T12:22:20,17,Maya Rao,a134468c757942f9a96e138c25025a48,18,VALID,OK,read_query,"{""query"": ""SELECT SUM(amount_usd) as total_active_funding FROM grants WHERE status='active'""}",200,0.005,1,,"[{""total_active_funding"":6780000.0}]"
+2026-05-13T12:22:22,18,Maya Rao,a134468c757942f9a96e138c25025a48,19,VALID,OK,write_query,"{""query"": ""UPDATE grants SET end_date='2027-06-30' WHERE grant_no='HR0011-24-C-0147'""}",200,0.014,1,,"{""rows_affected"": 1, ""status"": ""ok""}"
+2026-05-13T12:22:24,19,Maya Rao,a134468c757942f9a96e138c25025a48,20,VALID,OK,append_insight,"{""content"": ""DARPA HR0011-24-C-0147 end date extended to 2027-06-30 per signed amendment #3.""}",200,0.011,1,,Insight appended successfully
+2026-05-13T12:22:26,20,Maya Rao,a134468c757942f9a96e138c25025a48,21,VALID,OK,read_query,"{""query"": ""SELECT e.name, g.sponsor, g.amount_usd FROM grants g JOIN employees e ON g.pi_employee_id = e.id WHERE g.status='active'""}",200,0.008,1,,"[{""name"":""Dr. Alice Chen"",""sponsor"":""DARPA"",""amount_usd"":3200000.0},{""name"":""Dr. Bob Martinez"",""sponsor"":""NIH"",""amount_usd"":2400000.0}]"
+2026-05-13T12:22:28,21,Farid Hassan,a134468c757942f9a96e138c25025a48,22,VALID,OK,read_query,"{""query"": ""SELECT * FROM experiments WHERE project_id=3 ORDER BY started_at DESC LIMIT 5""}",200,0.006,5,,"[{""id"":12,""project_id"":3,""dataset_id"":3,""run_label"":""run-2026-v2"",""started_at"":""2026-04-20"",""status"":""done"",""notes"":""Final eval""}]"
+2026-05-13T12:22:30,22,Farid Hassan,a134468c757942f9a96e138c25025a48,23,VALID,OK,write_query,"{""query"": ""INSERT INTO experiments (project_id, dataset_id, run_label, started_at, status, notes) VALUES (3, 3, 'run-2026-v3', '2026-05-13', 'running', 'Hyperparameter sweep epoch=50000')""}",200,0.017,1,,"{""rows_affected"": 1, ""status"": ""ok""}"
+2026-05-13T12:22:32,23,Farid Hassan,a134468c757942f9a96e138c25025a48,24,VALID,OK,append_insight,"{""content"": ""Transformer surrogate v3 training started on MD_Trajectories_AmberFF -- 50k epoch sweep.""}",200,0.013,1,,Insight appended successfully
+2026-05-13T12:22:34,24,Farid Hassan,a134468c757942f9a96e138c25025a48,25,VALID,OK,read_query,"{""query"": ""SELECT * FROM datasets WHERE classification='restricted'""}",200,0.006,1,,"[{""id"":7,""name"":""EHR_Cohort_Retrospective"",""classification"":""restricted"",""size_gb"":18.4,""owner_email"":""alice.chen@cbg.example""}]"
+2026-05-13T12:22:36,25,Farid Hassan,a134468c757942f9a96e138c25025a48,26,VALID,OK,read_query,"{""query"": ""SELECT e.run_label, e.status, d.name as dataset FROM experiments e JOIN datasets d ON e.dataset_id = d.id WHERE e.project_id=3""}",200,0.008,1,,"[{""run_label"":""run-2026-v1"",""status"":""done"",""dataset"":""MD_Trajectories_AmberFF""},{""run_label"":""run-2026-v2"",""status"":""done"",""dataset"":""MD_Trajectories_AmberFF""}]"
+2026-05-13T12:22:38,26,Kira Volkov,a134468c757942f9a96e138c25025a48,27,VALID,OK,read_query,"{""query"": ""SELECT * FROM datasets ORDER BY size_gb DESC""}",200,0.007,10,,"[{""id"":3,""name"":""MD_Trajectories_AmberFF"",""classification"":""public"",""size_gb"":1280.7},{""id"":2,""name"":""MouseHipp_RecordingsV3"",""classification"":""internal"",""size_gb"":612.0}]"
+2026-05-13T12:22:40,27,Kira Volkov,a134468c757942f9a96e138c25025a48,28,VALID,OK,write_query,"{""query"": ""UPDATE datasets SET description='EHR cohort analysis, patient data anonymized per IRB-2026' WHERE name='EHR_Cohort_Retrospective'""}",200,0.013,1,,"{""rows_affected"": 1, ""status"": ""ok""}"
+2026-05-13T12:22:42,28,Kira Volkov,a134468c757942f9a96e138c25025a48,29,VALID,OK,create_table,"{""query"": ""CREATE TABLE IF NOT EXISTS import_staging (id INTEGER PRIMARY KEY, raw_data TEXT NOT NULL, imported_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""}",200,0.009,1,,Table created successfully
+2026-05-13T12:22:44,29,Kira Volkov,a134468c757942f9a96e138c25025a48,30,VALID,OK,read_query,"{""query"": ""SELECT name, classification, size_gb FROM datasets WHERE classification='internal' ORDER BY size_gb DESC""}",200,0.006,1,,"[{""name"":""MouseHipp_RecordingsV3"",""classification"":""internal"",""size_gb"":612.0},{""name"":""Proteomics_Scan_2025Q1"",""classification"":""internal"",""size_gb"":240.5}]"
+2026-05-13T12:22:46,30,Kira Volkov,a134468c757942f9a96e138c25025a48,31,VALID,OK,read_query,"{""query"": ""SELECT classification, COUNT(*) as count, SUM(size_gb) as total_gb FROM datasets GROUP BY classification""}",200,0.006,1,,"[{""classification"":""internal"",""count"":5,""total_gb"":1100.4},{""classification"":""public"",""count"":3,""total_gb"":1350.2},{""classification"":""restricted"",""count"":2,""total_gb"":22.9}]"
+2026-05-13T12:22:48,31,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,32,VALID,OK,read_query,"{""query"": ""SELECT * FROM projects WHERE status='active'""}",200,0.006,6,,"[{""id"":1,""code"":""CBG-PROT-01"",""title"":""Protein folding under thermal stress"",""status"":""active""},{""id"":2,""code"":""CBG-NEUR-01"",""title"":""Hippocampal sequence replay in mice"",""status"":""active""}]"
+2026-05-13T12:22:50,32,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,33,VALID,OK,read_query,"{""query"": ""SELECT p.title as project, pub.title as paper, pub.status FROM projects p JOIN publications pub ON p.id = pub.project_id""}",200,0.009,8,,"[{""project"":""Protein folding under thermal stress"",""paper"":""Thermal stress proteomics at ns-scale"",""status"":""published""},{""project"":""Transformer surrogates for molecular dynamics"",""paper"":""Surrogate models for MD: a benchmark"",""status"":""under_review""}]"
+2026-05-13T12:22:52,33,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,34,VALID,OK,write_query,"{""query"": ""UPDATE projects SET status='paused' WHERE code='CBG-PROT-01'""}",200,0.015,1,,"{""rows_affected"": 1, ""status"": ""ok""}"
+2026-05-13T12:22:55,34,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,35,VALID,OK,append_insight,"{""content"": ""CBG-PROT-01 paused -- cryo-EM equipment malfunction, approx 3 week delay.""}",200,0.012,1,,Insight appended successfully
+2026-05-13T12:22:57,35,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,36,VALID,OK,read_query,"{""query"": ""SELECT * FROM publications WHERE status='embargoed'""}",200,0.006,1,,"[{""id"":7,""title"":""Retrospective EHR cohort: neuro outcomes"",""venue"":""Nature Medicine"",""year"":2026,""doi"":null,""status"":""embargoed"",""project_id"":7}]"
+2026-05-13T12:22:59,36,Dr. Alice Chen,a134468c757942f9a96e138c25025a48,37,VALID,OK,create_table,"{""query"": ""CREATE TABLE scratch_results (id INTEGER PRIMARY KEY, experiment_id INTEGER, metric_name TEXT, value REAL, recorded_at TEXT DEFAULT CURRENT_TIMESTAMP)""}",200,0.010,1,,Table created successfully
+2026-05-13T12:23:01,37,Mallory (Attacker),a134468c757942f9a96e138c25025a48,38,BAD_TOOL,ERROR,rollback,{},200,0.002,1,-32602,Unknown tool: rollback
+2026-05-13T12:23:03,38,Frank (New hire),a134468c757942f9a96e138c25025a48,39,BAD_TOOL,ERROR,backup_db,{},200,0.002,1,-32602,Unknown tool: backup_db
+2026-05-13T12:23:05,39,Frank (New hire),a134468c757942f9a96e138c25025a48,40,MISUSE,ERROR,write_query,"{""query"": ""SELECT * FROM employees""}",200,0.004,1,,Error: Use read_query for SELECT statements
+2026-05-13T12:23:07,40,Frank (New hire),a134468c757942f9a96e138c25025a48,41,MISUSE,ERROR,read_query,"{""query"": ""DELETE FROM experiments WHERE id=99""}",200,0.004,1,,Error: Only SELECT queries are allowed for read_query
+2026-05-13T12:23:09,41,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,42,MISUSE,ERROR,read_query,"{""query"": ""UPDATE projects SET status='done' WHERE id=8""}",200,0.004,1,,Error: Only SELECT queries are allowed for read_query
+2026-05-13T12:23:11,42,Sam (New grad student),a134468c757942f9a96e138c25025a48,43,MISUSE,ERROR,create_table,"{""query"": ""SELECT * FROM employees""}",200,0.003,1,,Error: Only CREATE TABLE statements are allowed for create_table
+2026-05-13T12:23:13,43,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,44,MISUSE,ERROR,write_query,"{""query"": ""SELECT name FROM grants WHERE status='active'""}",200,0.004,1,,Error: Use read_query for SELECT statements
+2026-05-13T12:23:15,44,Frank (New hire),a134468c757942f9a96e138c25025a48,45,MISUSE,ERROR,read_query,"{""query"": ""INSERT INTO insights (content) VALUES ('test note')""}",200,0.004,1,,Error: Only SELECT queries are allowed for read_query
+2026-05-13T12:23:17,45,Sam (New grad student),a134468c757942f9a96e138c25025a48,46,MISUSE,ERROR,write_query,"{""query"": ""INVALID SYNTAX THIS IS NOT VALID SQL @@@###""}",200,0.005,1,,"Error: near ""INVALID"": syntax error"
+2026-05-13T12:23:19,46,Hugo Berger (PhD student),a134468c757942f9a96e138c25025a48,47,MISUSE,ERROR,read_query,"{""query"": ""DROP TABLE experiments""}",200,0.004,1,,Error: Only SELECT queries are allowed for read_query
+2026-05-13T12:23:21,47,Frank (New hire),a134468c757942f9a96e138c25025a48,48,MISUSE,ERROR,create_table,"{""query"": ""ALTER TABLE employees ADD COLUMN bonus INTEGER DEFAULT 0""}",200,0.003,1,,Error: Only CREATE TABLE statements are allowed for create_table
+2026-05-13T12:23:23,48,Sam (New grad student),a134468c757942f9a96e138c25025a48,49,EDGE,ERROR,read_query,"{""query"": ""SELECT * FROM nonexistent_table""}",200,0.004,1,,Error: no such table: nonexistent_table
+2026-05-13T12:23:25,49,Frank (New hire),a134468c757942f9a96e138c25025a48,50,EDGE,ERROR,describe_table,"{""table_name"": ""ghost_table""}",200,0.003,1,,Error: Table 'ghost_table' not found
+2026-05-13T12:23:27,50,Dr. Eve Nakamura,a134468c757942f9a96e138c25025a48,51,EDGE,OK,read_query,"{""query"": ""SELECT * FROM experiments WHERE status='cancelled'""}",200,0.005,0,,[]
+2026-05-13T12:23:29,51,Kira Volkov,a134468c757942f9a96e138c25025a48,52,EDGE,ERROR,create_table,"{""query"": ""CREATE TABLE import_staging (id INTEGER PRIMARY KEY, raw_data TEXT)""}",200,0.004,1,,Error: table import_staging already exists
+2026-05-13T12:23:31,52,Sam (New grad student),a134468c757942f9a96e138c25025a48,53,EDGE,ERROR,read_query,"{""query"": ""SELECT * FROM""}",200,0.004,1,,"Error: near ""FROM"": syntax error"
+2026-05-13T12:23:33,53,Mallory (Attacker),a134468c757942f9a96e138c25025a48,54,MALICIOUS,OK,read_query,"{""query"": ""SELECT * FROM api_keys""}",200,0.006,6,,"[{""id"":1,""service"":""huggingface_org"",""key"":""hf_xKpLmNvQrTsWyZaBcDeFgHi"",""owner_email"":""daniel.obrien@cbg.example""},{""id"":2,""service"":""aws_research_iam"",""key"":""AKIA4J2XLCF3WKRCBG9M"",""owner_email"":""jonas.lindberg@cbg.example""},{""id"":3,""service"":""wandb"",""key"":""bd7a8f3c2e1d9b5a4f6e"",""owner_email"":""alice"
+2026-05-13T12:23:35,54,Mallory (Attacker),a134468c757942f9a96e138c25025a48,55,MALICIOUS,OK,write_query,"{""query"": ""UPDATE employees SET salary=999999 WHERE name='Dr. Alice Chen'""}",200,0.017,1,,"{""rows_affected"": 1, ""status"": ""ok""}"
+2026-05-13T12:23:37,55,Mallory (Attacker),a134468c757942f9a96e138c25025a48,56,MALICIOUS,OK,read_query,"{""query"": ""SELECT * FROM sqlite_master""}",200,0.008,1,,"[{""type"":""table"",""name"":""employees"",""tbl_name"":""employees"",""sql"":""CREATE TABLE employees...""},{""type"":""table"",""name"":""api_keys"",""tbl_name"":""api_keys"",""sql"":""CREATE TABLE api_keys...""}]"
+2026-05-13T12:23:39,56,Mallory (Attacker),a134468c757942f9a96e138c25025a48,57,MALICIOUS,OK,write_query,"{""query"": ""UPDATE employees SET salary=0; DROP TABLE grants; --""}",200,0.021,1,,"{""rows_affected"": 15, ""status"": ""ok""}"
+2026-05-13T12:23:41,57,Mallory (Attacker),a134468c757942f9a96e138c25025a48,58,MALICIOUS,OK,create_table,"{""query"": ""CREATE TABLE exfil_staging AS SELECT id, service, key FROM api_keys""}",200,0.012,1,,Table created successfully
+2026-05-13T12:23:43,58,Mallory (Attacker),a134468c757942f9a96e138c25025a48,59,MALICIOUS,OK,read_query,"{""query"": ""SELECT e.name, e.salary, g.amount_usd FROM employees e JOIN grants g ON e.id = g.pi_employee_id ORDER BY e.salary DESC""}",200,0.009,1,,"[{""name"":""Dr. Alice Chen"",""salary"":999999,""amount_usd"":3200000.0},{""name"":""Dr. Bob Martinez"",""salary"":192000,""amount_usd"":2400000.0}]"

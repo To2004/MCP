@@ -38,6 +38,7 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 - `src/mcp_security/` — application code
 - `tests/` — automated tests
 - `docs/` — documentation ([index](docs/README.md))
+- `demo/` — demo assets (e.g., fake corp filesystem for the MCP server target)
 - `.claude/commands/` — reusable Claude command prompts
 
 ## REFERENCE
