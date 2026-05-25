@@ -12,6 +12,8 @@ or asset_rank for slack/sqlite.
 
 import shutil
 import openpyxl
+from datetime import datetime, timezone
+from openpyxl.utils import get_column_letter
 from pathlib import Path
 from _xlsx_colors import apply_colors as _apply_colors
 
@@ -22,6 +24,21 @@ BAND_ORDER = {"N/A": 0, "Low": 1, "Medium": 2, "High": 3, "Critical": 4}
 
 def max_band(*labels: str) -> str:
     return max(labels, key=lambda x: BAND_ORDER.get(x, 2))
+
+
+def _add_reasoning_col(ws, name_to_reasoning: dict, name_col: int = 2, out_col: int = 4) -> None:
+    """Write a Reasoning header + values into a ranking sheet."""
+    ws.cell(1, out_col).value = "Reasoning"
+    ws.column_dimensions[get_column_letter(out_col)].width = 72
+    for row in range(2, ws.max_row + 1):
+        name = ws.cell(row, name_col).value
+        if name:
+            ws.cell(row, out_col).value = name_to_reasoning.get(name, "")
+
+
+def _backup_if_exists(path: Path) -> None:
+    if path.exists():
+        shutil.copy2(path, path.with_name(path.stem + "_backup" + path.suffix))
 
 
 # ---------------------------------------------------------------------------
@@ -96,9 +113,19 @@ _BLANK_FOLDER_LOOKUP = {
 }
 
 
-def write_filesystem_xlsx(out_dir: Path, tool_r: dict, folder_r: dict, filetype_r: dict, label: str = None) -> None:
+def write_filesystem_xlsx(
+    out_dir: Path,
+    tool_r: dict,
+    folder_r: dict,
+    filetype_r: dict,
+    label: str = None,
+    tool_rsn: dict = None,
+    folder_rsn: dict = None,
+    filetype_rsn: dict = None,
+) -> None:
     src = BLANK_DIR / "risk_ranking_filesystemMCP_blank.xlsx"
     out = out_dir / f"risk_ranking_filesystemMCP_{label or out_dir.name}.xlsx"
+    _backup_if_exists(out)
     shutil.copy2(src, out)
     wb = openpyxl.load_workbook(out)
 
@@ -151,6 +178,8 @@ def write_filesystem_xlsx(out_dir: Path, tool_r: dict, folder_r: dict, filetype_
         if name:
             ws3.cell(row, 1).value = row - 1
             ws3.cell(row, 3).value = tool_r.get(name, "Medium")
+    if tool_rsn:
+        _add_reasoning_col(ws3, tool_rsn)
 
     # Ranking_Filetypes
     ws4 = wb["Ranking_Filetypes"]
@@ -159,6 +188,8 @@ def write_filesystem_xlsx(out_dir: Path, tool_r: dict, folder_r: dict, filetype_
         if name:
             ws4.cell(row, 1).value = row - 1
             ws4.cell(row, 3).value = filetype_r.get(name, "Medium")
+    if filetype_rsn:
+        _add_reasoning_col(ws4, filetype_rsn)
 
     # Ranking_Folders
     ws5 = wb["Ranking_Folders"]
@@ -169,8 +200,16 @@ def write_filesystem_xlsx(out_dir: Path, tool_r: dict, folder_r: dict, filetype_
         lookup = _BLANK_FOLDER_LOOKUP.get(name, name)
         ws5.cell(row, 1).value = row - 1
         ws5.cell(row, 3).value = folder_r.get(lookup, "Medium")
+    if folder_rsn:
+        ws5.cell(1, 4).value = "Reasoning"
+        ws5.column_dimensions[get_column_letter(4)].width = 72
+        for row in range(2, ws5.max_row + 1):
+            name = ws5.cell(row, 2).value
+            if name:
+                lookup = _BLANK_FOLDER_LOOKUP.get(name, name)
+                ws5.cell(row, 4).value = folder_rsn.get(lookup, "")
 
-    # Ranking_Assets — specific file paths
+    # Ranking_Assets — specific file paths (derived, no direct reasoning)
     ws6 = wb["Ranking_Assets"]
     for row in range(2, ws6.max_row + 1):
         name = ws6.cell(row, 2).value
@@ -215,9 +254,19 @@ SLACK_ASSETS   = [
 ]
 
 
-def write_slack_xlsx(out_dir: Path, tool_r: dict, channel_r: dict, asset_r: dict, label: str = None) -> None:
+def write_slack_xlsx(
+    out_dir: Path,
+    tool_r: dict,
+    channel_r: dict,
+    asset_r: dict,
+    label: str = None,
+    tool_rsn: dict = None,
+    channel_rsn: dict = None,
+    asset_rsn: dict = None,
+) -> None:
     src = BLANK_DIR / "risk_ranking_slackMCP_formatted_blank.xlsx"
     out = out_dir / f"risk_ranking_slackMCP_{label or out_dir.name}.xlsx"
+    _backup_if_exists(out)
     shutil.copy2(src, out)
     wb = openpyxl.load_workbook(out)
 
@@ -228,6 +277,8 @@ def write_slack_xlsx(out_dir: Path, tool_r: dict, channel_r: dict, asset_r: dict
         if name:
             ws.cell(row, 1).value = row - 1
             ws.cell(row, 3).value = tool_r.get(name, "Medium")
+    if tool_rsn:
+        _add_reasoning_col(ws, tool_rsn)
 
     # Ranking_AssetCategories
     ws2 = wb["Ranking_AssetCategories"]
@@ -236,6 +287,8 @@ def write_slack_xlsx(out_dir: Path, tool_r: dict, channel_r: dict, asset_r: dict
         if name:
             ws2.cell(row, 1).value = row - 1
             ws2.cell(row, 3).value = channel_r.get(name, "Medium")
+    if channel_rsn:
+        _add_reasoning_col(ws2, channel_rsn)
 
     # Ranking_Assets
     ws3 = wb["Ranking_Assets"]
@@ -244,6 +297,8 @@ def write_slack_xlsx(out_dir: Path, tool_r: dict, channel_r: dict, asset_r: dict
         if name:
             ws3.cell(row, 1).value = row - 1
             ws3.cell(row, 3).value = asset_r.get(name, "Medium")
+    if asset_rsn:
+        _add_reasoning_col(ws3, asset_rsn)
 
     # T3_All_Together — rows: channel × asset, cols: tools
     ws4 = wb["T3_All_Together"]
@@ -293,9 +348,19 @@ SQLITE_DATATYPES = [
 ]
 
 
-def write_sqlite_xlsx(out_dir: Path, tool_r: dict, datatype_r: dict, table_r: dict, label: str = None) -> None:
+def write_sqlite_xlsx(
+    out_dir: Path,
+    tool_r: dict,
+    datatype_r: dict,
+    table_r: dict,
+    label: str = None,
+    tool_rsn: dict = None,
+    datatype_rsn: dict = None,
+    table_rsn: dict = None,
+) -> None:
     src = BLANK_DIR / "mcp_sqlite_risk_rankings_blank.xlsx"
     out = out_dir / f"mcp_sqlite_risk_rankings_{label or out_dir.name}.xlsx"
+    _backup_if_exists(out)
     shutil.copy2(src, out)
     wb = openpyxl.load_workbook(out)
 
@@ -349,6 +414,8 @@ def write_sqlite_xlsx(out_dir: Path, tool_r: dict, datatype_r: dict, table_r: di
         if name:
             ws4.cell(row, 1).value = row - 1
             ws4.cell(row, 3).value = tool_r.get(name, "Medium")
+    if tool_rsn:
+        _add_reasoning_col(ws4, tool_rsn)
 
     # Ranking_DataTypes
     ws5 = wb["Ranking_DataTypes"]
@@ -357,6 +424,13 @@ def write_sqlite_xlsx(out_dir: Path, tool_r: dict, datatype_r: dict, table_r: di
         if name:
             ws5.cell(row, 1).value = row - 1
             ws5.cell(row, 3).value = datatype_r.get(name.strip(), "Medium")
+    if datatype_rsn:
+        ws5.cell(1, 4).value = "Reasoning"
+        ws5.column_dimensions[get_column_letter(4)].width = 72
+        for row in range(2, ws5.max_row + 1):
+            name = ws5.cell(row, 2).value
+            if name:
+                ws5.cell(row, 4).value = datatype_rsn.get(name.strip(), "")
 
     # Ranking_Tables
     ws6 = wb["Ranking_Tables"]
@@ -365,6 +439,13 @@ def write_sqlite_xlsx(out_dir: Path, tool_r: dict, datatype_r: dict, table_r: di
         if name:
             ws6.cell(row, 1).value = row - 1
             ws6.cell(row, 3).value = table_r.get(name.strip(), "Medium")
+    if table_rsn:
+        ws6.cell(1, 4).value = "Reasoning"
+        ws6.column_dimensions[get_column_letter(4)].width = 72
+        for row in range(2, ws6.max_row + 1):
+            name = ws6.cell(row, 2).value
+            if name:
+                ws6.cell(row, 4).value = table_rsn.get(name.strip(), "")
 
     _apply_colors(wb)
     wb.save(out)
@@ -372,27 +453,108 @@ def write_sqlite_xlsx(out_dir: Path, tool_r: dict, datatype_r: dict, table_r: di
 
 
 # ---------------------------------------------------------------------------
+# Markdown notes
+# ---------------------------------------------------------------------------
+
+def write_md_notes(ai_scores: dict, out_dir: Path, label: str, variant_desc: str) -> None:
+    """Write one markdown file per MCP server (3 files total) with AI reasoning."""
+
+    def _esc(s: str) -> str:
+        return s.replace("|", "\\|")
+
+    def _table(rows: list[dict], key_field: str) -> list[str]:
+        lines = [
+            f"| {key_field.replace('_', ' ').title()} | Risk Level | Reasoning |",
+            "|---|---|---|",
+        ]
+        for e in rows:
+            k = _esc(e.get(key_field, ""))
+            r = e.get("risk_level", "")
+            reason = _esc(e.get("reasoning", ""))
+            lines.append(f"| {k} | {r} | {reason} |")
+        return lines
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    def _header(server: str) -> list[str]:
+        return [
+            f"# {server} — Scoring Notes",
+            "",
+            f"**Variant:** {variant_desc}",
+            f"**Generated:** {now}",
+            "",
+        ]
+
+    # --- Filesystem ---
+    fs = ai_scores["filesystem_mcp"]
+    lines = _header("Filesystem MCP")
+    lines += ["## Tools", ""]
+    lines += _table(fs["tool_rankings"], "tool")
+    lines += ["", "## File Types", ""]
+    lines += _table(fs["filetype_rankings"], "filetype")
+    lines += ["", "## Folders", ""]
+    lines += _table(fs["folder_rankings"], "folder")
+    lines.append("")
+    out_fs = out_dir / f"scoring_notes_{label}_filesystem.md"
+    out_fs.write_text("\n".join(lines), encoding="utf-8")
+    print(f"  Written: {out_fs.name}")
+
+    # --- Slack ---
+    sl = ai_scores["slack_mcp"]
+    lines = _header("Slack MCP")
+    lines += ["## Tools", ""]
+    lines += _table(sl["tool_rankings"], "tool")
+    lines += ["", "## Channel Categories", ""]
+    lines += _table(sl["channel_category_rankings"], "category")
+    lines += ["", "## Assets", ""]
+    lines += _table(sl["asset_rankings"], "asset")
+    lines.append("")
+    out_sl = out_dir / f"scoring_notes_{label}_slack.md"
+    out_sl.write_text("\n".join(lines), encoding="utf-8")
+    print(f"  Written: {out_sl.name}")
+
+    # --- SQLite ---
+    sq = ai_scores["sqlite_mcp"]
+    lines = _header("SQLite MCP")
+    lines += ["## Tools", ""]
+    lines += _table(sq["tool_rankings"], "tool")
+    lines += ["", "## Data Types", ""]
+    lines += _table(sq["data_type_rankings"], "data_type")
+    lines += ["", "## Tables", ""]
+    lines += _table(sq["table_rankings"], "table")
+    lines.append("")
+    out_sq = out_dir / f"scoring_notes_{label}_sqlite.md"
+    out_sq.write_text("\n".join(lines), encoding="utf-8")
+    print(f"  Written: {out_sq.name}")
+
+
+# ---------------------------------------------------------------------------
 # Entry point: given the full AI JSON payload, fill all 3 xlsx files
 # ---------------------------------------------------------------------------
 
-def fill_all_xlsx(ai_scores: dict, out_dir: Path, label: str = None) -> None:
+def fill_all_xlsx(
+    ai_scores: dict,
+    out_dir: Path,
+    label: str = None,
+    variant_desc: str = None,
+) -> None:
     """
     ai_scores must have the structure returned by the shared prompt:
       {
         "filesystem_mcp": {
-          "tool_rankings":    [{"tool": ..., "risk_level": ...}, ...],
-          "filetype_rankings":[{"filetype": ..., "risk_level": ...}, ...],
-          "folder_rankings":  [{"folder": ...,   "risk_level": ...}, ...],
+          "tool_rankings":    [{"tool": ..., "risk_level": ..., "reasoning": ...}, ...],
+          "filetype_rankings":[{"filetype": ..., "risk_level": ..., "reasoning": ...}, ...],
+          "folder_rankings":  [{"folder": ...,   "risk_level": ..., "reasoning": ...}, ...],
         },
         "slack_mcp": {
           "tool_rankings":             [...],
-          "channel_category_rankings": [{"category": ..., "risk_level": ...}, ...],
-          "asset_rankings":            [{"asset": ...,    "risk_level": ...}, ...],
+          "channel_category_rankings": [{"category": ..., "risk_level": ..., "reasoning": ...}, ...],
+          "asset_rankings":            [{"asset": ...,    "risk_level": ..., "reasoning": ...}, ...],
         },
         "sqlite_mcp": {
           "tool_rankings":      [...],
-          "data_type_rankings": [{"data_type": ..., "risk_level": ...}, ...],
-          "table_rankings":     [{"table": ...,     "risk_level": ...}, ...],
+          "data_type_rankings": [{"data_type": ..., "risk_level": ..., "reasoning": ...}, ...],
+          "table_rankings":     [{"table": ...,     "risk_level": ..., "reasoning": ...}, ...],
         },
       }
     """
@@ -400,19 +562,35 @@ def fill_all_xlsx(ai_scores: dict, out_dir: Path, label: str = None) -> None:
 
     fs = ai_scores["filesystem_mcp"]
     tool_r_fs     = {e["tool"]:     e["risk_level"] for e in fs["tool_rankings"]}
+    tool_rsn_fs   = {e["tool"]:     e.get("reasoning", "") for e in fs["tool_rankings"]}
     filetype_r_fs = {e["filetype"]: e["risk_level"] for e in fs["filetype_rankings"]}
+    filetype_rsn_fs = {e["filetype"]: e.get("reasoning", "") for e in fs["filetype_rankings"]}
     folder_r_fs   = {e["folder"]:   e["risk_level"] for e in fs["folder_rankings"]}
+    folder_rsn_fs = {e["folder"]:   e.get("reasoning", "") for e in fs["folder_rankings"]}
 
     sl = ai_scores["slack_mcp"]
     tool_r_sl    = {e["tool"]:     e["risk_level"] for e in sl["tool_rankings"]}
+    tool_rsn_sl  = {e["tool"]:     e.get("reasoning", "") for e in sl["tool_rankings"]}
     channel_r_sl = {e["category"]: e["risk_level"] for e in sl["channel_category_rankings"]}
+    channel_rsn_sl = {e["category"]: e.get("reasoning", "") for e in sl["channel_category_rankings"]}
     asset_r_sl   = {e["asset"]:    e["risk_level"] for e in sl["asset_rankings"]}
+    asset_rsn_sl = {e["asset"]:    e.get("reasoning", "") for e in sl["asset_rankings"]}
 
     sq = ai_scores["sqlite_mcp"]
     tool_r_sq     = {e["tool"]:      e["risk_level"] for e in sq["tool_rankings"]}
+    tool_rsn_sq   = {e["tool"]:      e.get("reasoning", "") for e in sq["tool_rankings"]}
     datatype_r_sq = {e["data_type"]: e["risk_level"] for e in sq["data_type_rankings"]}
+    datatype_rsn_sq = {e["data_type"]: e.get("reasoning", "") for e in sq["data_type_rankings"]}
     table_r_sq    = {e["table"]:     e["risk_level"] for e in sq["table_rankings"]}
+    table_rsn_sq  = {e["table"]:     e.get("reasoning", "") for e in sq["table_rankings"]}
 
-    write_filesystem_xlsx(out_dir, tool_r_fs, folder_r_fs, filetype_r_fs, label)
-    write_slack_xlsx(out_dir, tool_r_sl, channel_r_sl, asset_r_sl, label)
-    write_sqlite_xlsx(out_dir, tool_r_sq, datatype_r_sq, table_r_sq, label)
+    write_filesystem_xlsx(out_dir, tool_r_fs, folder_r_fs, filetype_r_fs, label,
+                          tool_rsn=tool_rsn_fs, folder_rsn=folder_rsn_fs, filetype_rsn=filetype_rsn_fs)
+    write_slack_xlsx(out_dir, tool_r_sl, channel_r_sl, asset_r_sl, label,
+                     tool_rsn=tool_rsn_sl, channel_rsn=channel_rsn_sl, asset_rsn=asset_rsn_sl)
+    write_sqlite_xlsx(out_dir, tool_r_sq, datatype_r_sq, table_r_sq, label,
+                      tool_rsn=tool_rsn_sq, datatype_rsn=datatype_rsn_sq, table_rsn=table_rsn_sq)
+
+    if label:
+        desc = variant_desc or label
+        write_md_notes(ai_scores, out_dir, label, desc)

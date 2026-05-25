@@ -209,13 +209,15 @@ def main() -> None:
     print("=== Run 1: plain (no system prompt) ===")
     scores_plain = _call(client, SYSTEM_PLAIN)
     _save_json(scores_plain, "plain", "plain — no system prompt")
-    fill_all_xlsx(scores_plain, SCRIPT_DIR, label="chatgpt_plain")
+    fill_all_xlsx(scores_plain, SCRIPT_DIR, label="chatgpt_plain",
+                  variant_desc="ChatGPT (gpt-4o) — plain, no system prompt")
 
     # -- Run 2: security expert context (NIST/OWASP) ------------------------
     print("\n=== Run 2: security expert (NIST SP 800-30 + OWASP LLM Top 10) ===")
     scores_security = _call(client, SYSTEM_SECURITY)
     _save_json(scores_security, "security", "security analyst — NIST SP 800-30 + OWASP LLM Top 10")
-    fill_all_xlsx(scores_security, SCRIPT_DIR, label="chatgpt_security")
+    fill_all_xlsx(scores_security, SCRIPT_DIR, label="chatgpt_security",
+                  variant_desc="ChatGPT (gpt-4o) — security analyst, NIST SP 800-30 + OWASP LLM Top 10")
 
     print("\nDone — 6 xlsx files written.")
 
