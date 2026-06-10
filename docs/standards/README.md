@@ -16,6 +16,7 @@ Rules and conventions for working in the MCP Security project.
 | [mcp-primitive-operations.csv](mcp-primitive-operations.csv) | 16 generic primitive operations MCP tools perform (read, write, delete…) with risk rankings |
 | [mcp-primitive-operations-references.md](mcp-primitive-operations-references.md) | Per-operation justification citing MITRE ATT&CK, CVSS v3.1, OWASP AIVSS, and project papers |
 | [mcp-atomic-operations.csv](mcp-atomic-operations.csv) | All 23 MCP protocol-level methods (tools/call, resources/read…) with risk scores |
+| [atomic-op-classification.md](atomic-op-classification.md) | How the rules-based classifier maps MCP tools to the 13 atomic operations (two-path: README + ToolList) |
 
 ## Where to Start
 
