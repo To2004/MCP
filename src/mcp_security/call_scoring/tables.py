@@ -17,27 +17,22 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TABLES_BUNDLE = REPO_ROOT / "reports" / "samples" / "all_static_tables.json"
 
-# The static-scoring formula, reproduced for fallback scoring of pairs that are
-# not present in a table's precomputed ``cells`` matrix.
-LIKELIHOOD = 1.0
+# Status labels for calls that do not resolve to a precomputed table cell. They
+# are deliberately NOT risk bands: the tables band each cell with domain
+# reasoning that cannot be reconstructed from the numeric score alone, so a call
+# we cannot resolve is reported as a status, never given a fabricated band.
+STATUS_UNRESOLVED = "unresolved"
+STATUS_INVALID = "invalid"
 
-# Ordering used when comparing or sorting band labels.
-BAND_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
-
-
-def band_for_score(score: float, thresholds: dict[str, float]) -> str:
-    """Map a numeric score to a band using a table's ``band_thresholds``.
-
-    Used only for fallback (computed) scores; pairs found in a table's ``cells``
-    matrix carry their own pre-banded label, which is preferred.
-    """
-    if score >= thresholds["high"]:
-        return "critical"
-    if score >= thresholds["medium"]:
-        return "high"
-    if score >= thresholds["low"]:
-        return "medium"
-    return "low"
+# Ordering used when sorting: real risk bands rank above the non-scored statuses.
+BAND_ORDER = {
+    "critical": 5,
+    "high": 4,
+    "medium": 3,
+    "low": 2,
+    STATUS_UNRESOLVED: 1,
+    STATUS_INVALID: 0,
+}
 
 
 @dataclass(frozen=True)
@@ -62,24 +57,15 @@ class StaticTable:
         return tool in self.tool_impact
 
     def cell(self, tool: str, asset: str) -> tuple[float, str] | None:
-        """Return ``(score, band)`` for a precomputed (asset, tool) cell."""
+        """Return the precomputed ``(score, band)`` for an (asset, tool) cell.
+
+        The band is taken verbatim from the table's ``bands`` matrix — it is the
+        design-time judgement and is never recomputed from the score.
+        """
         row = self.cells.get(asset)
         if row is None or tool not in row:
             return None
         return row[tool], self.bands[asset][tool]
-
-    def blast(self, tool: str, asset: str) -> int | None:
-        return self.blast_radius.get(f"{tool}|{asset}")
-
-    def worst_blast(self, tool: str) -> int:
-        """Highest blast radius this tool reaches across any asset (worst case)."""
-        vals = [v for k, v in self.blast_radius.items() if k.startswith(f"{tool}|")]
-        return max(vals) if vals else 0
-
-    def compute(self, tool: str, sensitivity: int, blast: int) -> tuple[float, str]:
-        """Score a pair not present in ``cells`` via the static-scoring formula."""
-        score = sensitivity * blast * LIKELIHOOD * self.tool_impact.get(tool, 0)
-        return score, band_for_score(score, self.band_thresholds)
 
 
 def _table_from_dict(name: str, raw: dict) -> StaticTable:

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .loader import load_calls
 from .score import ScoredCall, score_call
-from .tables import BAND_ORDER, StaticTable, load_tables
+from .tables import BAND_ORDER, STATUS_INVALID, STATUS_UNRESOLVED, StaticTable, load_tables
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +48,20 @@ _CSV_FIELDS = (
     "scorable",
     "reason",
     "source",
+    "run_id",
     "index",
     "args_raw",
 )
+
+
+def _rank_key(call: ScoredCall) -> tuple[int, float, int]:
+    """Sort key: scored calls by score (desc) above the unscored statuses.
+
+    Ranking by the numeric score keeps the ``score`` column visibly ordered; the
+    band tier is only a deterministic tie-break between equal scores.
+    """
+    scored = 1 if call.score is not None else 0
+    return (scored, call.score or 0.0, BAND_ORDER.get(call.band, -1))
 
 
 def score_corpus(
@@ -72,7 +83,7 @@ def score_corpus(
             continue
         for call in load_calls(path, source=rel_path):
             scored.append(score_call(call, table))
-    scored.sort(key=lambda s: (s.score if s.score is not None else -1.0), reverse=True)
+    scored.sort(key=_rank_key, reverse=True)
     return scored
 
 
@@ -92,27 +103,28 @@ def write_ranked_csv(scored: list[ScoredCall], output: Path = DEFAULT_OUTPUT) ->
 
 
 def summarize(scored: list[ScoredCall]) -> str:
-    """Build a short human-readable summary of the ranked corpus."""
-    bands = Counter(s.band for s in scored)
+    """Build a short, honest summary: coverage first, then the scored ranking."""
+    total = len(scored)
     by_server = Counter(s.server for s in scored)
-    unscorable = [s for s in scored if not s.scorable]
-    ordered_bands = sorted(bands, key=lambda b: BAND_ORDER.get(b, -1), reverse=True)
+    bands = Counter(s.band for s in scored)
+    risk_bands = [b for b in ("critical", "high", "medium", "low") if bands[b]]
+    resolved = sum(bands[b] for b in risk_bands)
 
-    lines = [f"Scored {len(scored)} calls across {len(by_server)} servers.", ""]
-    lines.append("By band:")
-    lines += [f"  {band:>8}: {bands[band]}" for band in ordered_bands]
+    lines = [f"{total} calls across {len(by_server)} servers.", ""]
+    lines.append(f"Resolved to a real table cell: {resolved}/{total}")
+    lines += [f"  {band:>8}: {bands[band]}" for band in risk_bands]
+    lines.append(f"  {STATUS_UNRESOLVED}: {bands.get(STATUS_UNRESOLVED, 0)} "
+                 "(directory/enumeration ops, no-arg calls, or assets not in the table)")
+    lines.append(f"  {STATUS_INVALID}: {bands.get(STATUS_INVALID, 0)} (unknown tools)")
     lines.append("")
     lines.append("By server:")
     lines += [f"  {server}: {count}" for server, count in by_server.most_common()]
     lines.append("")
-    lines.append(f"Unscorable (invalid/unknown tool): {len(unscorable)}")
-    lines.append("")
-    lines.append("Top 10 riskiest calls:")
-    for rank, call in enumerate(scored[:10], start=1):
-        score = "n/a" if call.score is None else f"{call.score:g}"
-        asset = call.asset or "-"
+    lines.append("Top 10 riskiest resolved calls:")
+    ranked = [s for s in scored if s.scorable][:10]
+    for rank, call in enumerate(ranked, start=1):
         lines.append(
-            f"  {rank:>2}. [{call.band:>8} {score:>4}] {call.server}/{call.tool}"
-            f" -> {asset}  ({call.category})"
+            f"  {rank:>2}. [{call.band:>8} {call.score:g}] {call.server}/{call.tool}"
+            f" -> {call.asset}  ({call.category})"
         )
     return "\n".join(lines)

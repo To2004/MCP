@@ -21,18 +21,24 @@ the full ranked corpus to `reports/ranked_calls.csv` (highest risk first).
 ## How a call is scored
 
 Each captured session is scored against its server's static table
-(`reports/samples/all_static_tables.json`). For one call:
+(`reports/samples/all_static_tables.json`). A call is scored only when it
+resolves to a precomputed cell; the module never fabricates a score or band for
+calls it cannot resolve. For one call:
 
-1. **Unknown tool** — the tool is absent from the table's registry (a typo or a
-   non-existent tool, e.g. `drop_table`). Unscorable; flagged `invalid`, which
-   is itself a misconfiguration signal.
-2. **Resolved asset** — the argument names an asset the table knows (a file
-   extension, a SQL table, a channel). Scored directly from the precomputed
-   `cells` matrix: `asset_sensitivity x blast_radius x tool_impact`.
-3. **Unresolved asset** — known tool, unknown asset. Scored as a worst-case
-   floor: minimum sensitivity at the tool's highest blast radius.
+1. **Resolved** — the argument names an asset the table knows (a file extension,
+   a SQL table, a channel) and the `(tool, asset)` cell exists. The score and
+   band come **verbatim** from the table's `cells` and `bands` matrices. The
+   bands carry design-time judgement and are never recomputed from the score.
+2. **`unresolved`** — a known tool whose target is not a cell: a
+   directory/enumeration op with no single file asset, a no-argument call, or an
+   extension/table the design-time table never enumerated. No score; the
+   `reason` records which, so the table can be extended where it matters.
+3. **`invalid`** — the tool is absent from the table's registry (a typo or a
+   non-existent tool, e.g. `drop_table`). A misconfiguration signal.
 
-Bands are `low < medium < high < critical`, plus `invalid` for unscorable calls.
+Risk bands are `low < medium < high < critical` (resolved calls only).
+`unresolved` and `invalid` are statuses, not bands. Calls rank by numeric score
+descending; unscored statuses sink below all scored calls.
 
 ## Sources and tables
 

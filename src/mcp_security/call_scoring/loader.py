@@ -34,6 +34,7 @@ class Call:
     category: str = ""
     status: str = ""
     persona: str = ""
+    run_id: str = ""
     args_raw: str = ""
 
 
@@ -74,6 +75,7 @@ def load_calls(path: Path, source: str | None = None) -> list[Call]:
                 category=(row.get("category") or "").strip(),
                 status=(row.get("status") or "").strip(),
                 persona=(row.get("persona") or "").strip(),
+                run_id=(row.get("run_id") or row.get("session_idx") or "").strip(),
                 args_raw=(raw_args or "").strip(),
             )
         )
