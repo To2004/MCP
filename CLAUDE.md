@@ -49,6 +49,7 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Run | `uv run python -m mcp_security.main` |
 | Scan assets | `uv run python -m mcp_security.scanner` |
 | Static score | `uv run python -m mcp_security.static_scoring --kind filesystem` |
+| Score calls | `uv run python -m mcp_security.call_scoring` |
 | Test | `uv run pytest` |
 | Lint | `uv run ruff check .` |
 | Format | `uv run ruff format .` |
