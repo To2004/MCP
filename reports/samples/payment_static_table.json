@@ -1,0 +1,90 @@
+{
+  "version": "static-2026-06-22",
+  "mcp_kind": "inferred system (mock)",
+  "inferred_profile": {
+    "mcp_kind": "inferred system (mock)",
+    "asset_meaning": "a category of protected object",
+    "blast_radius_meaning": "how broadly/irreversibly a tool acts on it",
+    "dangerous_classes": [
+      "holds secrets",
+      "moves money",
+      "executable"
+    ],
+    "irreversible_actions": [
+      "delete",
+      "drop",
+      "transfer",
+      "exec"
+    ],
+    "worked_example": "destructive tool on a secret-holding asset = critical",
+    "confidence": 0.9,
+    "needs_human_review": false
+  },
+  "formula": "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact",
+  "band_thresholds": {
+    "low": 6,
+    "medium": 18,
+    "high": 36
+  },
+  "tool_impact": {
+    "get_balance": 1,
+    "issue_refund": 2,
+    "transfer_funds": 3
+  },
+  "asset_sensitivity": {
+    "customer_card": 5,
+    "payout_account": 5,
+    "settled_transaction": 3
+  },
+  "blast_radius": {
+    "get_balance|customer_card": 1,
+    "get_balance|payout_account": 1,
+    "get_balance|settled_transaction": 1,
+    "issue_refund|customer_card": 4,
+    "issue_refund|payout_account": 4,
+    "issue_refund|settled_transaction": 2,
+    "transfer_funds|customer_card": 4,
+    "transfer_funds|payout_account": 4,
+    "transfer_funds|settled_transaction": 4
+  },
+  "cells": {
+    "customer_card": {
+      "get_balance": 5,
+      "issue_refund": 40,
+      "transfer_funds": 60
+    },
+    "payout_account": {
+      "get_balance": 5,
+      "issue_refund": 40,
+      "transfer_funds": 60
+    },
+    "settled_transaction": {
+      "get_balance": 3,
+      "issue_refund": 12,
+      "transfer_funds": 36
+    }
+  },
+  "baselines": {
+    "support_console": {
+      "app_id": "support_console",
+      "expected_tools": [
+        "read"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "read internal",
+          "normal_sensitivity_max": 3
+        }
+      ],
+      "anomalous_patterns": [
+        "sensitive -> public"
+      ],
+      "confidence": 0.9,
+      "reasoning": "mock"
+    }
+  },
+  "crosscheck_summary": {
+    "total_records": 16,
+    "flagged_for_review": 2
+  }
+}

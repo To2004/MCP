@@ -1,0 +1,298 @@
+{
+  "version": "static-2026-06-23",
+  "server": "corp-sqlite-server",
+  "mcp_kind": "SQL database",
+  "model_reviewed": true,
+  "inferred_profile": {
+    "mcp_kind": "SQL database",
+    "asset_meaning": "Database tables containing various types of data such as employee information, customer details, orders, API keys, and insights.",
+    "blast_radius_meaning": "The extent to which a tool can affect the data within an asset. A narrow touch might be reading from one table, while the most severe action could involve modifying or deleting records across multiple tables.",
+    "dangerous_classes": [
+      "holds secrets",
+      "holds PII at scale",
+      "is executable"
+    ],
+    "irreversible_actions": [
+      "deletes",
+      "executes code",
+      "transfers funds",
+      "sends external messages"
+    ],
+    "worked_example": "The 'write_query' tool paired with the 'api_keys' asset is highly severe because it can modify or delete sensitive API keys, which are critical for securing access to services.",
+    "confidence": 0.9,
+    "needs_human_review": false
+  },
+  "formula": "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact",
+  "band_thresholds": {
+    "low": 6,
+    "medium": 18,
+    "high": 36
+  },
+  "tool_impact": {
+    "list_tables": 1,
+    "describe_table": 1,
+    "read_query": 1,
+    "write_query": 3,
+    "insert_row": 3
+  },
+  "asset_sensitivity": {
+    "employees": 4,
+    "customers": 4,
+    "orders": 3,
+    "api_keys": 5,
+    "insights": 3,
+    "sqlite_sequence": 2
+  },
+  "blast_radius": {
+    "list_tables|employees": 1,
+    "list_tables|customers": 1,
+    "list_tables|orders": 1,
+    "list_tables|api_keys": 1,
+    "list_tables|insights": 1,
+    "list_tables|sqlite_sequence": 1,
+    "describe_table|employees": 1,
+    "describe_table|customers": 1,
+    "describe_table|orders": 1,
+    "describe_table|api_keys": 1,
+    "describe_table|insights": 1,
+    "describe_table|sqlite_sequence": 1,
+    "read_query|employees": 1,
+    "read_query|customers": 1,
+    "read_query|orders": 1,
+    "read_query|api_keys": 1,
+    "read_query|insights": 1,
+    "read_query|sqlite_sequence": 1,
+    "write_query|employees": 4,
+    "write_query|customers": 4,
+    "write_query|orders": 4,
+    "write_query|api_keys": 4,
+    "write_query|insights": 3,
+    "write_query|sqlite_sequence": 3,
+    "insert_row|employees": 3,
+    "insert_row|customers": 3,
+    "insert_row|orders": 2,
+    "insert_row|api_keys": 2,
+    "insert_row|insights": 2,
+    "insert_row|sqlite_sequence": 2
+  },
+  "cells": {
+    "employees": {
+      "list_tables": 4.0,
+      "describe_table": 4.0,
+      "read_query": 4.0,
+      "write_query": 48.0,
+      "insert_row": 36.0
+    },
+    "customers": {
+      "list_tables": 4.0,
+      "describe_table": 4.0,
+      "read_query": 4.0,
+      "write_query": 48.0,
+      "insert_row": 36.0
+    },
+    "orders": {
+      "list_tables": 3.0,
+      "describe_table": 3.0,
+      "read_query": 3.0,
+      "write_query": 36.0,
+      "insert_row": 18.0
+    },
+    "api_keys": {
+      "list_tables": 5.0,
+      "describe_table": 5.0,
+      "read_query": 5.0,
+      "write_query": 60.0,
+      "insert_row": 30.0
+    },
+    "insights": {
+      "list_tables": 3.0,
+      "describe_table": 3.0,
+      "read_query": 3.0,
+      "write_query": 27.0,
+      "insert_row": 18.0
+    },
+    "sqlite_sequence": {
+      "list_tables": 2.0,
+      "describe_table": 2.0,
+      "read_query": 2.0,
+      "write_query": 18.0,
+      "insert_row": 12.0
+    }
+  },
+  "bands": {
+    "employees": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "customers": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "orders": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "high",
+      "insert_row": "medium"
+    },
+    "api_keys": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "insights": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "high",
+      "insert_row": "medium"
+    },
+    "sqlite_sequence": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "medium",
+      "insert_row": "medium"
+    }
+  },
+  "baselines": {
+    "research_portal": {
+      "app_id": "research_portal",
+      "expected_tools": [
+        "read_query"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "SELECT * FROM employee_information WHERE condition",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "SELECT * FROM customer_details WHERE condition",
+          "normal_sensitivity_max": 4
+        },
+        {
+          "pattern": "SELECT * FROM orders WHERE condition",
+          "normal_sensitivity_max": 2
+        },
+        {
+          "pattern": "SELECT * FROM insights WHERE condition",
+          "normal_sensitivity_max": 1
+        }
+      ],
+      "anomalous_patterns": [
+        "INSERT INTO any_table VALUES (...)",
+        "UPDATE any_table SET column = value WHERE condition",
+        "DELETE FROM any_table WHERE condition",
+        "EXECUTE any_code"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The research_portal is expected to perform read-only operations (SELECT queries) across various tables, with a focus on retrieving data for analysis and reporting purposes. Any attempt to modify or delete records would be considered anomalous."
+    },
+    "admin_console": {
+      "app_id": "admin_console",
+      "expected_tools": [
+        "insert_row",
+        "update_row"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "insert_row into employee_information",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "insert_row into customer_details",
+          "normal_sensitivity_max": 4
+        },
+        {
+          "pattern": "update_row in orders",
+          "normal_sensitivity_max": 2
+        },
+        {
+          "pattern": "update_row in insights",
+          "normal_sensitivity_max": 1
+        }
+      ],
+      "anomalous_patterns": [
+        "delete from any table",
+        "execute code on the database server",
+        "transfer funds using the admin_console",
+        "send external messages"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The admin_console is expected to perform insertions and updates, which are within its stated purpose of managing data entries. Any deletion actions or attempts to execute code, transfer funds, or send external messages would be outside the normal scope of operations for this application."
+    }
+  },
+  "crosscheck_summary": {
+    "total_records": 41,
+    "reviewed": 41,
+    "flagged_for_review": 8,
+    "judge_ran": true,
+    "overridden": 8,
+    "disagreements": [
+      {
+        "field": "tool_impact",
+        "key": "insert_row",
+        "proposed": 2,
+        "judged": 3,
+        "reasoning": "The 'insert_row' operation can lead to significant data integrity issues if not properly managed or validated before insertion. Given the potential for inserting incorrect or malicious data into tables that hold sensitive information, this action should be rated higher in terms of impact."
+      },
+      {
+        "field": "sensitivity",
+        "key": "orders",
+        "proposed": 4,
+        "judged": 3,
+        "reasoning": "While the 'orders' table contains a customer_id which can be linked to personal information, it does not inherently contain PII itself but rather an identifier that could lead to PII. The sensitivity is high due to potential linkage to PII, but not as severe as indicated by the first model."
+      },
+      {
+        "field": "blast_radius",
+        "key": "write_query|employees",
+        "proposed": 3,
+        "judged": 4,
+        "reasoning": "The 'write_query' tool can perform INSERT, UPDATE, and DELETE operations on the 'employees' table, which contains PII such as name and email. Although the profile does not explicitly escalate based on holding PII at scale, the potential impact of modifying or deleting employee records is significant"
+      },
+      {
+        "field": "blast_radius",
+        "key": "write_query|customers",
+        "proposed": 3,
+        "judged": 4,
+        "reasoning": "The 'write_query' tool can perform destructive actions (INSERT, UPDATE, DELETE) on the 'customers' table which holds PII at scale. Given that this action could potentially affect all records in a sensitive asset class, the blast radius should be higher to reflect the severity of potential data breac"
+      },
+      {
+        "field": "blast_radius",
+        "key": "write_query|orders",
+        "proposed": 3,
+        "judged": 4,
+        "reasoning": "The 'write_query' tool can perform INSERT, UPDATE, and DELETE operations on the 'orders' table, which allows for broad modification or deletion of records. Given that orders are critical to business operations, any action that could lead to data loss or corruption should be considered more severe."
+      },
+      {
+        "field": "blast_radius",
+        "key": "write_query|sqlite_sequence",
+        "proposed": 2,
+        "judged": 3,
+        "reasoning": "The 'write_query' tool can perform destructive actions (UPDATE/DELETE) on the sqlite_sequence table which is critical for maintaining sequence numbers in SQLite databases. Such modifications could lead to inconsistencies or data corruption, thus having a wider blast radius than initially assessed."
+      },
+      {
+        "field": "blast_radius",
+        "key": "insert_row|employees",
+        "proposed": 2,
+        "judged": 3,
+        "reasoning": "The 'insert_row' tool can modify the 'employees' asset by adding a new record, which could potentially impact data integrity and consistency within the employees table. Given that this action involves modifying an asset that holds PII at scale (employee details), it should be considered more severe "
+      },
+      {
+        "field": "blast_radius",
+        "key": "insert_row|customers",
+        "proposed": 2,
+        "judged": 3,
+        "reasoning": "The 'insert_row' tool can modify the 'customers' asset by adding a new record. Given that this table contains PII (name, email), and considering the scale of potential impact if used maliciously to insert numerous fake or harmful records, the blast radius should be higher than initially assessed."
+      }
+    ]
+  }
+}
