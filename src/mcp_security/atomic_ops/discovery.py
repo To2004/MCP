@@ -67,16 +67,37 @@ def _load_cached(server: ServerEntry) -> list[dict]:
     return []
 
 
+# Optional registry mapping a server name to a live connection spec. Empty by
+# default, so plain ServerEntry classification (and all existing tests) keep the
+# README/cached behaviour. The scanner populates this to opt a server into real
+# live introspection. See mcp_security.scanner.introspect.
+_LIVE_REGISTRY: dict[str, object] = {}
+
+
+def register_connection(server_name: str, spec: object) -> None:
+    """Opt a server into live introspection by associating a ConnectionSpec."""
+    _LIVE_REGISTRY[server_name] = spec
+
+
 def _try_live_introspect(server: ServerEntry) -> list[dict] | None:
-    """Attempt to spawn the server via subprocess and call tools/list.
+    """Attempt to connect to the server live and return its tools/list.
 
-    Returns None on any failure; logs the reason. This is intentionally
-    best-effort — many servers need credentials, runtime envs (Node, Docker),
-    or network access that may not be available.
-
-    Implementation note: this is a skeleton. Implementing it for every
-    npx/uvx package without credentials is out of scope for the first pass;
-    cached JSONs in data/tool_lists/ serve as the practical source.
+    Only servers registered via :func:`register_connection` are attempted; for
+    everyone else this returns None and the caller falls back to cached/README
+    sources. Best-effort — any connection failure also returns None.
     """
-    logger.info("live introspection skipped (skeleton) for %s", server.name)
-    return None
+    spec = _LIVE_REGISTRY.get(server.name)
+    if spec is None:
+        logger.debug("no live connection registered for %s", server.name)
+        return None
+    try:
+        from mcp_security.scanner.introspect import introspect_sync
+
+        result = introspect_sync(spec)  # type: ignore[arg-type]
+    except Exception as exc:  # noqa: BLE001 — live path is strictly best-effort
+        logger.info("live introspection failed for %s: %s", server.name, exc)
+        return None
+    if not result.reachable:
+        logger.info("live introspection unreachable for %s: %s", server.name, result.error)
+        return None
+    return result.tools

@@ -8,6 +8,8 @@ All commands use `uv run` to execute within the project's virtual environment.
 |---------|-------------|
 | `uv sync` | Install/update all dependencies |
 | `uv run python -m mcp_security.main` | Run the project |
+| `uv run python -m mcp_security.scanner` | Scan connected MCP servers' assets ([guide](../guides/scanning-connected-assets.md)) |
+| `uv run python -m mcp_security.atomic_ops.build_heatmap` | Build the atomic-op classification heatmap |
 | `uv run pytest` | Run all tests |
 | `uv run ruff check .` | Lint the codebase |
 | `uv run ruff format .` | Auto-format the codebase |
