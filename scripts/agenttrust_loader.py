@@ -23,9 +23,19 @@ from pathlib import Path
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DIR = Path(
-    os.environ.get("AGENTTRUST_DIR", REPO_ROOT / "external" / "agenttrust" / "scenarios")
-)
+_EXT = Path(os.environ.get("AGENTTRUST_DIR", REPO_ROOT / "external"))
+DEFAULT_DIR = _EXT / "agenttrust" / "scenarios"
+
+# Severity-graded benchmark sources, all sharing the AgentTrust scenario schema
+# (``action.action_type``/``raw_content`` + ``expected_risk``). Three are external
+# (AgentTrust); ``mcp_native`` is an author-created MCP-specific set (secondary).
+SOURCES: dict[str, Path] = {
+    "agenttrust_internal": _EXT / "agenttrust" / "scenarios",          # 300, external
+    "agenttrust_independent": _EXT / "agenttrust" / "extra" / "independent_test.yaml",  # 30
+    "agenttrust_realworld": _EXT / "agenttrust" / "extra" / "real_world_100.yaml",      # 100
+    "mcp_native": _EXT / "mcp_severity",                               # author-created
+}
+EXTERNAL_SOURCES = ("agenttrust_internal", "agenttrust_independent", "agenttrust_realworld")
 
 # Ground-truth severity scale (ordinal). none=0 .. critical=4.
 SEVERITY = {"none": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
@@ -34,9 +44,10 @@ SEVERITY_NAME = {v: k for k, v in SEVERITY.items()}
 
 @dataclass(frozen=True)
 class Scenario:
-    """One AgentTrust scenario with its graded ground-truth severity."""
+    """One graded scenario from a severity benchmark."""
 
     id: str
+    source: str
     category: str
     action_type: str
     tool_name: str
@@ -54,28 +65,52 @@ class Scenario:
         return " ".join(p for p in parts if p)
 
 
+def _parse(items: list, source: str, default_cat: str) -> list[Scenario]:
+    out: list[Scenario] = []
+    for it in items or []:
+        action = it.get("action", {}) or {}
+        risk = str(it.get("expected_risk", "none")).lower()
+        out.append(Scenario(
+            id=it.get("id", ""),
+            source=source,
+            category=it.get("category", default_cat),
+            action_type=action.get("action_type", ""),
+            tool_name=action.get("tool_name", ""),
+            description=action.get("description", "") or it.get("description", ""),
+            parameters=action.get("parameters", {}) or {},
+            raw_content=action.get("raw_content", "") or "",
+            severity=SEVERITY.get(risk, 0),
+            verdict=str(it.get("expected_verdict", "")).lower(),
+            difficulty=str(it.get("difficulty", "")).lower(),
+        ))
+    return out
+
+
+def load_source(name: str) -> list[Scenario]:
+    """Load one named benchmark source (a directory of YAMLs, or a single YAML)."""
+    path = SOURCES[name]
+    files = sorted(path.glob("*.yaml")) if path.is_dir() else [path]
+    out: list[Scenario] = []
+    for f in files:
+        if f.exists():
+            out += _parse(yaml.safe_load(f.read_text(encoding="utf-8")), name, f.stem)
+    return out
+
+
 def load_scenarios(scenario_dir: Path = DEFAULT_DIR) -> list[Scenario]:
-    """Every scenario across the six category files, in file then list order."""
+    """Backward-compatible: the AgentTrust internal 300."""
     out: list[Scenario] = []
     for path in sorted(scenario_dir.glob("*.yaml")):
-        items = yaml.safe_load(path.read_text(encoding="utf-8")) or []
-        for it in items:
-            action = it.get("action", {}) or {}
-            risk = str(it.get("expected_risk", "none")).lower()
-            out.append(
-                Scenario(
-                    id=it.get("id", ""),
-                    category=it.get("category", path.stem),
-                    action_type=action.get("action_type", ""),
-                    tool_name=action.get("tool_name", ""),
-                    description=action.get("description", "") or it.get("description", ""),
-                    parameters=action.get("parameters", {}) or {},
-                    raw_content=action.get("raw_content", "") or "",
-                    severity=SEVERITY.get(risk, 0),
-                    verdict=str(it.get("expected_verdict", "")).lower(),
-                    difficulty=str(it.get("difficulty", "")).lower(),
-                )
-            )
+        out += _parse(yaml.safe_load(path.read_text(encoding="utf-8")),
+                      "agenttrust_internal", path.stem)
+    return out
+
+
+def load_all() -> list[Scenario]:
+    """Every scenario from every available source (skips missing ones)."""
+    out: list[Scenario] = []
+    for name in SOURCES:
+        out += load_source(name)
     return out
 
 
