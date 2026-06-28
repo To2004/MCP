@@ -117,19 +117,16 @@ def load_all() -> list[Scenario]:
 def main() -> None:
     from collections import Counter
 
-    scen = load_scenarios()
-    print(f"Loaded {len(scen)} AgentTrust scenarios from {DEFAULT_DIR}\n")
-    by_cat = Counter(s.category for s in scen)
-    by_sev = Counter(s.severity for s in scen)
-    by_act = Counter(s.action_type for s in scen)
-    print("Per category:")
-    for c, n in sorted(by_cat.items()):
-        print(f"  {c:20} {n}")
-    print("\nSeverity ground truth (0 none .. 4 critical):")
-    for s in range(5):
-        print(f"  {s} {SEVERITY_NAME[s]:9} {by_sev.get(s, 0)}")
-    print(f"\n{len(by_act)} distinct action types; e.g. "
-          f"{dict(sorted(by_act.items(), key=lambda kv: -kv[1])[:8])}")
+    for name in SOURCES:
+        scen = load_source(name)
+        if not scen:
+            print(f"{name:24} (missing)")
+            continue
+        by_sev = Counter(s.severity for s in scen)
+        tag = "external" if name in EXTERNAL_SOURCES else "author-created"
+        dist = " ".join(f"{SEVERITY_NAME[k]}={by_sev.get(k, 0)}" for k in range(5))
+        print(f"{name:24} {len(scen):4} scenarios  [{tag}]   {dist}")
+    print(f"\nTOTAL: {len(load_all())} scenarios across {len(SOURCES)} sources")
 
 
 if __name__ == "__main__":
