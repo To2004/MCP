@@ -33,6 +33,17 @@ logger = logging.getLogger(__name__)
 
 FORMULA = "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact"
 LIKELIHOOD = 1.0
+BANDS = ("low", "medium", "high", "critical")
+_BANDS_SET = set(BANDS)
+
+
+class LLMUnavailableError(RuntimeError):
+    """Raised in strict (LLM-only) mode when the model cannot score a record.
+
+    Strict mode is used by the live scanner, which must never substitute a
+    hardcoded heuristic for the model's judgement: if the model is unreachable
+    or returns something unusable, the scan fails loudly instead of fabricating.
+    """
 # Score cutoffs on the multiplied score (max scale 5*4*3 = 60).
 BAND_THRESHOLDS = {"medium": 8, "high": 24}
 # A decision below this confidence is counted as needing human review.
@@ -122,9 +133,17 @@ class StaticScorer:
         deterministic — useful offline and in tests.
     """
 
-    def __init__(self, registry: ServerRegistry, *, use_llm: bool = True) -> None:
+    def __init__(
+        self, registry: ServerRegistry, *, use_llm: bool = True, strict: bool = False
+    ) -> None:
         self.registry = registry
         self.use_llm = use_llm
+        # strict = LLM-only: never fall back to the deterministic heuristics; raise
+        # LLMUnavailableError instead. Implies use_llm. Used by the scanner so its
+        # scores are always the model's, never a hardcoded table or anchor.
+        self.strict = strict
+        if strict and not use_llm:
+            raise ValueError("strict mode is LLM-only and requires use_llm=True")
         self._used_fallback = False
         self._proposals: list[_Proposal] = []
         self._overrides: dict[tuple[str, str], int] = {}
@@ -138,8 +157,20 @@ class StaticScorer:
             return None
         result = query_ollama(prompt)
         if result is None:
+            if self.strict:
+                raise LLMUnavailableError(
+                    "local LLM returned no answer; strict mode forbids a fallback score"
+                )
             self._used_fallback = True
         return result
+
+    def _strict_fail(self, stage: str, key: str) -> None:
+        """In strict mode, abort rather than accept a fabricated value."""
+        if self.strict:
+            raise LLMUnavailableError(
+                f"local LLM gave no usable {stage} for {key!r}; "
+                "strict mode forbids a fallback score"
+            )
 
     def _proposer_prompt(self, task: str, user: str) -> str:
         """Assemble preamble + task + user message for a proposer stage."""
@@ -160,6 +191,7 @@ class StaticScorer:
         )
         result = self._ask(prompt)
         if not isinstance(result, dict) or "mcp_kind" not in result:
+            self._strict_fail("domain inference", self.registry.server)
             self._used_fallback = True
             result = fallback.domain_profile(self.registry)
         self.domain_profile = result
@@ -181,6 +213,8 @@ class StaticScorer:
             if isinstance(result, dict) and "tool_impact" in result:
                 impact = _clamp(result["tool_impact"], 1, 3, fb_impact)
                 proposed, conf = result, float(result.get("confidence", 0.7))
+            elif self.strict:
+                self._strict_fail("tool_impact", tool.name)  # raises; never fabricates
             else:
                 self._used_fallback = True
                 impact = fb_impact
@@ -207,6 +241,8 @@ class StaticScorer:
             if isinstance(result, dict) and "sensitivity" in result:
                 value = _clamp(result["sensitivity"], 1, 5, fb_sens)
                 proposed, conf = result, float(result.get("confidence", 0.7))
+            elif self.strict:
+                self._strict_fail("sensitivity", asset.asset_id)  # raises; never fabricates
             else:
                 self._used_fallback = True
                 value = fb_sens
@@ -239,6 +275,8 @@ class StaticScorer:
                 if isinstance(result, dict) and "blast_radius" in result:
                     value = _clamp(result["blast_radius"], 0, 4, fb_blast)
                     proposed, conf = result, float(result.get("confidence", 0.7))
+                elif self.strict:
+                    self._strict_fail("blast_radius", f"{tool.name}|{asset.asset_id}")  # raises
                 else:
                     self._used_fallback = True
                     value = fb_blast
@@ -250,6 +288,55 @@ class StaticScorer:
                     _Proposal("blast_radius", key, item, proposed, value, 0, 4, conf)
                 )
         return blast
+
+    # -- Stage 4b: risk band (LLM decides, replacing a hardcoded policy) -----
+    def score_bands(
+        self,
+        sensitivity: dict[str, int],
+        impacts: dict[str, int],
+        blast: dict[str, int],
+    ) -> dict[str, dict[str, str]]:
+        """Ask the LLM for each cell's band, one call per asset row.
+
+        The band is the model's security judgement (given the impact, blast and
+        raw score as evidence), not a fixed numeric threshold. Strict mode requires
+        a model band for every cell; offline/non-strict falls back to the
+        deterministic :func:`band_label` calibration and flags the table.
+        """
+        bands: dict[str, dict[str, str]] = {}
+        for asset in self.registry.assets:
+            s = sensitivity[asset.asset_id]
+            payload = []
+            for tool in self.registry.tools:
+                br = blast[f"{tool.name}|{asset.asset_id}"]
+                i = impacts[tool.name]
+                payload.append({
+                    "tool_name": tool.name, "impact": i, "blast": br,
+                    "raw_score": round(s * br * LIKELIHOOD * i, 2),
+                })
+            asset_json = {**asset.to_prompt_json(), "sensitivity": s}
+            result = self._ask(
+                self._proposer_prompt(
+                    prompts.BAND_TASK,
+                    prompts.BAND_USER.format(
+                        asset_json=json.dumps(asset_json), tools_json=json.dumps(payload)
+                    ),
+                )
+            )
+            llm_bands = result.get("bands") if isinstance(result, dict) else None
+            row: dict[str, str] = {}
+            for entry in payload:
+                tool = entry["tool_name"]
+                band = (llm_bands or {}).get(tool)
+                if band in _BANDS_SET:
+                    row[tool] = band
+                elif self.strict:
+                    self._strict_fail("band", f"{tool}|{asset.asset_id}")  # raises; LLM-only
+                else:
+                    self._used_fallback = True
+                    row[tool] = band_label(s, entry["blast"], entry["impact"])
+            bands[asset.asset_id] = row
+        return bands
 
     # -- Stage 5: judge cross-check -----------------------------------------
     def judge(self) -> dict:
@@ -330,6 +417,8 @@ class StaticScorer:
             result = self._ask(self._proposer_prompt(prompts.BASELINE_TASK, user))
             if isinstance(result, dict) and "expected_tools" in result:
                 baselines[app_id] = result
+            elif self.strict:
+                self._strict_fail("baseline", app_id)  # raises; never fabricates
             else:
                 self._used_fallback = True
                 baselines[app_id] = _fallback_baseline(app_id, purpose, self.registry)
@@ -355,19 +444,18 @@ class StaticScorer:
             elif field == "blast_radius":
                 blast[key] = value
 
+        # Scores come from the formula; the BAND is the LLM's judgement (stage 4b),
+        # not a hardcoded policy. Offline, score_bands falls back to band_label.
+        bands = self.score_bands(sensitivity, impacts, blast)
         cells: dict[str, dict[str, float]] = {}
-        bands: dict[str, dict[str, str]] = {}
         for asset in self.registry.assets:
             row: dict[str, float] = {}
-            brow: dict[str, str] = {}
             s = sensitivity[asset.asset_id]
             for tool in self.registry.tools:
                 br = blast[f"{tool.name}|{asset.asset_id}"]
                 i = impacts[tool.name]
                 row[tool.name] = round(s * br * LIKELIHOOD * i, 2)
-                brow[tool.name] = band_label(s, br, i)
             cells[asset.asset_id] = row
-            bands[asset.asset_id] = brow
 
         if self._used_fallback:
             profile["needs_human_review"] = True
@@ -437,11 +525,15 @@ def build_static_table(
     registry: ServerRegistry,
     *,
     use_llm: bool = True,
+    strict: bool = False,
     version: str = "static-0000-00-00",
 ) -> dict:
     """Convenience entry point: score ``registry`` and return the table dict.
 
-    Pass ``use_llm=False`` for a fully deterministic run. Tests that exercise the
-    LLM path monkeypatch ``mcp_security.static_scoring.pipeline.query_ollama``.
+    Pass ``use_llm=False`` for a fully deterministic run. Pass ``strict=True`` for
+    the LLM-only mode the scanner uses: any unanswered record raises
+    :class:`LLMUnavailableError` instead of falling back to a heuristic. Tests
+    that exercise the LLM path monkeypatch
+    ``mcp_security.static_scoring.pipeline.query_ollama``.
     """
-    return StaticScorer(registry, use_llm=use_llm).build_table(version)
+    return StaticScorer(registry, use_llm=use_llm, strict=strict).build_table(version)

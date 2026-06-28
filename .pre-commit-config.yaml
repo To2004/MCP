@@ -1,0 +1,31 @@
+# Pre-commit hooks for the MCP risk-scoring framework.
+#   install:  uv run pre-commit install
+#   run all:  uv run pre-commit run --all-files
+#
+# The `pipeline-verify` hook is the gate that matters here: it runs the
+# deterministic correctness verifier (no LLM, <1s) so a commit that publishes an
+# inconsistent scan/rank artifact — a band that does not recount, a ranked call
+# resolving to a cell the scan never produced, a leakage path — fails before it
+# lands. See src/mcp_security/review/verify.py and test_verifier_passes_*.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff (lint)
+        entry: uv run ruff check
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff (format check)
+        entry: uv run ruff format --check
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: pipeline-verify
+        name: pipeline correctness verifier (deterministic)
+        entry: uv run python -m mcp_security.review verify
+        language: system
+        # Re-run whenever scoring code or a published artifact changes.
+        files: ^(src/mcp_security/(scanner|static_scoring|call_scoring|param_scoring)/|reports/(scan/|ranked_calls\.csv)|reports/tool_lists/)
+        pass_filenames: false

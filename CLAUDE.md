@@ -47,9 +47,18 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 |--------|---------|
 | Install | `uv sync` |
 | Run | `uv run python -m mcp_security.main` |
-| Scan assets | `uv run python -m mcp_security.scanner` |
-| Static score | `uv run python -m mcp_security.static_scoring --kind filesystem` |
-| Score calls | `uv run python -m mcp_security.call_scoring` |
+| Make new simulations | `uv run python scripts/make_simulations.py` |
+| Scan (static, LLM-only) | `uv run python -m mcp_security.scanner --kind filesystem --root demo/corp_filesystem` |
+| Scan (declarative kind) | `uv run python -m mcp_security.scanner --kind calendar` (also `github`, `slack`) |
+| Param rubrics (LLM) | `uv run python -m mcp_security.param_scoring --kind filesystem --server fs:corp_filesystem` |
+| Rank calls vs scan | `uv run python -m mcp_security.call_scoring` |
+| Full pipeline (multi-GPU) | `sbatch scripts/scan_and_rank_multigpu.sbatch` |
+| Grade scanner (vs LLM tables) | `uv run python scripts/evaluate_scanner.py` |
+| Grade scanner (vs oracle panel + inter-rater) | `uv run python scripts/evaluate_vs_human.py` |
+| Formula sensitivity (band robustness) | `uv run python scripts/formula_sensitivity.py` |
+| Verify pipeline (deterministic) | `uv run python -m mcp_security.review verify` |
+| Review (verify + judge + results + advise) | `uv run python -m mcp_security.review all` |
+| Export eval tables | `uv run python scripts/export_eval_tables.py` |
 | Test | `uv run pytest` |
 | Lint | `uv run ruff check .` |
 | Format | `uv run ruff format .` |

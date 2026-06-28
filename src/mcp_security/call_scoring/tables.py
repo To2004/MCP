@@ -1,26 +1,33 @@
-"""Load the design-time static risk tables and expose per-call lookups.
+"""Load the scanner's risk matrices and expose per-call lookups.
 
-A static table (one per MCP server kind) is the output of
-:mod:`mcp_security.static_scoring`: it carries the three scoring primitives
-(tool impact, asset sensitivity, per-pair blast radius), the multiplied
-``cells`` matrix, and the pre-banded ``bands`` matrix. This module loads the
-committed bundle (``reports/samples/all_static_tables.json``) and wraps each
-table so a single observed call ``(tool, asset)`` can be scored by lookup.
+A captured call is scored against the matrix the **scanner** produced for that
+server — a *scan artifact* under ``reports/scan/<server>.json``, freshly derived
+by the LLM from the scanned tools and assets. These artifacts have the same shape
+as a static table (the three primitives, the ``cells`` matrix, the ``bands``
+matrix), so one observed ``(tool, asset)`` can be scored by lookup into the
+scan.
+
+This module deliberately does **not** read the committed design-time tables under
+``reports/samples`` or ``reports/evaluation``: those are ground truth for grading
+the scanner, never an input to scoring.
 """
 
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-TABLES_BUNDLE = REPO_ROOT / "reports" / "samples" / "all_static_tables.json"
+logger = logging.getLogger(__name__)
 
-# Status labels for calls that do not resolve to a precomputed table cell. They
-# are deliberately NOT risk bands: the tables band each cell with domain
-# reasoning that cannot be reconstructed from the numeric score alone, so a call
-# we cannot resolve is reported as a status, never given a fabricated band.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+SCAN_DIR = REPO_ROOT / "reports" / "scan"
+
+# Status labels for calls that do not resolve to a scanned cell. They are
+# deliberately NOT risk bands: the scan bands each cell with the model's domain
+# reasoning, so a call we cannot resolve is reported as a status, never given a
+# fabricated band.
 STATUS_UNRESOLVED = "unresolved"
 STATUS_INVALID = "invalid"
 
@@ -37,11 +44,15 @@ BAND_ORDER = {
 
 @dataclass(frozen=True)
 class StaticTable:
-    """One server kind's design-time risk table, indexed for call scoring."""
+    """One server's scanned risk matrix, indexed for call scoring."""
 
     name: str
     server: str
     mcp_kind: str
+    # The registry kind (filesystem/sqlite/slack/calendar/github), recorded by the
+    # scanner. Authoritative for resolver dispatch; "" for older scans (fall back
+    # to the inferred ``mcp_kind`` then).
+    server_kind: str
     tool_impact: dict[str, int]
     asset_sensitivity: dict[str, int]
     blast_radius: dict[str, int]  # "tool|asset" -> 0..4
@@ -57,10 +68,10 @@ class StaticTable:
         return tool in self.tool_impact
 
     def cell(self, tool: str, asset: str) -> tuple[float, str] | None:
-        """Return the precomputed ``(score, band)`` for an (asset, tool) cell.
+        """Return the scanned ``(score, band)`` for an (asset, tool) cell.
 
-        The band is taken verbatim from the table's ``bands`` matrix — it is the
-        design-time judgement and is never recomputed from the score.
+        The band is taken verbatim from the scan's ``bands`` matrix — it is the
+        model's judgement and is never recomputed from the score.
         """
         row = self.cells.get(asset)
         if row is None or tool not in row:
@@ -68,11 +79,13 @@ class StaticTable:
         return row[tool], self.bands[asset][tool]
 
 
-def _table_from_dict(name: str, raw: dict) -> StaticTable:
+def table_from_dict(name: str, raw: dict) -> StaticTable:
+    """Wrap a scan-artifact dict (or any same-shaped table) as a StaticTable."""
     return StaticTable(
         name=name,
         server=raw.get("server", name),
         mcp_kind=raw.get("mcp_kind", "unknown"),
+        server_kind=raw.get("server_kind", ""),
         tool_impact=dict(raw.get("tool_impact", {})),
         asset_sensitivity=dict(raw.get("asset_sensitivity", {})),
         blast_radius=dict(raw.get("blast_radius", {})),
@@ -82,7 +95,48 @@ def _table_from_dict(name: str, raw: dict) -> StaticTable:
     )
 
 
-def load_tables(bundle: Path = TABLES_BUNDLE) -> dict[str, StaticTable]:
-    """Load every static table from the committed bundle, keyed by table name."""
-    data = json.loads(bundle.read_text(encoding="utf-8"))
-    return {name: _table_from_dict(name, raw) for name, raw in data["tables"].items()}
+def load_scan(path: Path) -> StaticTable:
+    """Load a single scan artifact (``reports/scan/<server>.json``)."""
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return table_from_dict(path.stem, raw)
+
+
+def load_scans(scan_dir: Path = SCAN_DIR) -> dict[str, StaticTable]:
+    """Load every scan artifact in ``scan_dir``, keyed by its filename stem.
+
+    Returns an empty mapping (with a warning) when no scans exist yet — the
+    scanner must be run first, which needs the local LLM. ``*_params.json`` files
+    (parameter rubrics) are skipped here; load them with :func:`load_param_rubrics`.
+    """
+    if not scan_dir.exists():
+        logger.warning("no scan directory %s — run `python -m mcp_security.scanner` first", scan_dir)
+        return {}
+    scans = {
+        p.stem: load_scan(p)
+        for p in sorted(scan_dir.glob("*.json"))
+        if not p.stem.endswith("_params")
+    }
+    if not scans:
+        logger.warning("no scan artifacts in %s — run the scanner first", scan_dir)
+    return scans
+
+
+def load_param_rubrics(scan_dir: Path = SCAN_DIR) -> dict[str, dict]:
+    """Load parameter rubrics, keyed by scan stem -> {tool_name: ToolRubric}.
+
+    Reads ``<server>_params.json`` artifacts (produced by
+    ``python -m mcp_security.param_scoring``). Returns an empty mapping if none
+    exist, in which case call scoring simply skips the parameter dimension.
+    """
+    from mcp_security.param_scoring.rubric import ToolRubric
+
+    rubrics: dict[str, dict] = {}
+    if not scan_dir.exists():
+        return rubrics
+    for path in sorted(scan_dir.glob("*_params.json")):
+        stem = path.stem[: -len("_params")]
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        rubrics[stem] = {
+            tool: ToolRubric.from_dict(r) for tool, r in raw.get("rubrics", {}).items()
+        }
+    return rubrics
