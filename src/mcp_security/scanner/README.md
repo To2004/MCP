@@ -1,82 +1,71 @@
 # scanner
 
-MCP asset scanner — enumerate the assets each connected MCP server can reach and
-rank them into a `Rank | Name | Risk Level | Reasoning` table.
+Static, **pre-runtime** MCP scanner. It understands a server's tools and assets
+*before the server runs* and **never connects to a live MCP**. It derives every
+risk primitive with the local LLM (strict, LLM-only) — nothing is hardcoded and
+no design-time table is read.
 
-An MCP server is connected to an *asset store* whose unit depends on the server
-kind (files for filesystem, tables for sqlite, channels for slack, resources for
-anything else). The scanner connects to each configured server, enumerates the
-assets it can reach **read-only**, and ranks them with the shared sensitivity
-anchors plus the local LLM (Qwen2.5 via Ollama).
+## Why static
+
+A gateway needs the risk picture *before* it lets an agent talk to a server, and
+a live connection is neither always available nor safe to make at design time. So
+the scanner reads the server description from committed, static sources:
+
+- **tools** — from the Excel tool catalog `docs/mcp-tools/xlsx/<kind>_tools.xlsx`
+  (`tool_catalog.py`). Only the inventory is used (name, description, annotation
+  hints, params); the catalog's hand-authored `risk_tier` columns are *evaluation
+  ground truth*, never an input.
+- **assets** — from the on-disk store the server fronts: a filesystem tree
+  (`os.walk`), a sqlite schema (read-only), or the seeded slack channels.
 
 ## Pipeline
 
 ```
-config_reader → enumerate (generic, per kind) → rank → table
-                      │
-   local store ───────┤ filesystem: os.walk · sqlite: read-only sqlite3
-   any MCP server ────┤ generic: list_resources + read-only enumeration tools
-   unreachable ───────┘ resolver: web/GitHub lookup → LLM, else theorise
+Excel tool catalog ─┐
+on-disk asset store ─┴─► ServerRegistry ─► StaticScorer(strict, LLM-only) ─► scan artifact
+                          (scan.py)          (static_scoring.pipeline)        reports/scan/<server>.json
 ```
 
-Enumeration is **generic by default**: every server is scanned via the MCP
-protocol itself (`list_resources` + read-only tools), so an unknown kind still
-works with no per-kind code. `filesystem` and `sqlite` add local fast-paths.
-
-**Find through the server's own tools.** A *configured* fs/sqlite server (one
-with a launch command) is enumerated by driving its read-only MCP tools —
-sqlite via `list_tables` + `describe_table`, filesystem via `directory_tree` /
-`list_directory` — all behind the read-only gate. A raw `--root` path (no
-server) is still read directly from disk. This per-kind procedure is necessary
-because *how* to enumerate (which tool, what argument, how to recurse) differs
-per server kind.
-
-**Discovery is deterministic; understanding is the agent.** Finding *where* the
-assets are is plain code. Understanding *what* each asset is and how sensitive it
-is, is done by a local-LLM ranking agent that reads the server's own
-self-description (its tool/resource descriptions, captured as `AssetInventory.context`)
-— so a server kind that was never pre-coded is still understood, not guessed.
+The understanding stage is `mcp_security.static_scoring.pipeline.StaticScorer` in
+**strict mode**: each primitive (domain, tool impact, asset sensitivity, blast
+radius) is decided by the model via the `prompts.txt` suite, and if the model is
+unreachable the scan raises `LLMUnavailableError` instead of falling back to a
+heuristic or a checked-in number.
 
 ## Files
 
 | File | Responsibility |
 |------|----------------|
-| `config_reader.py` | Read connected servers + asset roots from `~/.claude.json` (secrets redacted to key names) |
-| `enumerator.py` (filesystem) | Walk roots: emit **directories** (ranked by most sensitive file in their subtree) + files (by type, or per-file with `--by-file`) |
-| `introspect.py` | Live, passive MCP connect (stdio/SSE) with timeouts |
-| `safety.py` | Read-only gate: only LIST/SEARCH/METADATA tools may be invoked |
-| `enumerator.py` | Per-kind + generic asset enumeration → `AssetInventory` |
-| `resolver.py` | Web/theorise asset discovery for unreachable servers |
-| `ranker.py` | Understanding agent (local LLM, kind-agnostic, reads server context) → ranked table; anchors are hints + offline fallback |
+| `tool_catalog.py` | Load the tool inventory from the Excel catalog → `ToolSpec` list |
+| `scan.py` | Assemble the registry (Excel tools + disk assets), run the LLM understanding, write the scan artifact |
+| `render.py` | Render a scan artifact as markdown |
 | `__main__.py` | CLI |
 
 ## Usage
 
 ```bash
-# Scan a local store directly (no config needed)
-python -m mcp_security.scanner --root demo/corp_filesystem
-python -m mcp_security.scanner --root demo/corp_sqlite/corp.db --kind sqlite
+# Real scan (needs Ollama/Qwen — run on a GPU node)
+python -m mcp_security.scanner --kind filesystem --root demo/corp_filesystem \
+    --server fs:corp_filesystem --out reports/scan/fs_corp_filesystem.md
+python -m mcp_security.scanner --kind sqlite --root demo/cbg_sqlite/cbg.db
 
-# Scan every server configured in ~/.claude.json
-python -m mcp_security.scanner
+# Whole pipeline (scan every demo server, rank calls, grade vs ground truth)
+sbatch scripts/scan_and_rank_on_gpu.sbatch
 
-# Flags
---server NAME   only this configured server
---out FILE      also write the markdown report
---no-llm        anchored ranking only (offline)
---no-web        skip the web/theorise fallback
---by-file       (filesystem) list files, not types
+# Offline smoke check only (deterministic baseline, NOT a real scan)
+python -m mcp_security.scanner --kind filesystem --no-llm
 ```
+
+The scan artifact (`reports/scan/<server>.json`) has the same shape as a static
+table — tool impact, asset sensitivity, per-pair blast radius, the `cells` matrix
+and its `bands`. The call ranker (`mcp_security.call_scoring`) scores observed
+calls against it.
 
 ## Notes
 
-- **Read-only.** Enumeration never invokes write/delete tools; local stores use
-  `os.walk` / immutable sqlite connections.
-- **Local LLM only.** All model calls go to Ollama (`OLLAMA_HOST`, Qwen2.5:32b)
-  via `mcp_security.llm.ollama_client`. No cloud. If Ollama is down, anchored rows
-  still print and unanchored ones are flagged `unranked`.
-- **No per-kind code is required for a new server.** Enumeration and
-  understanding are both generic: an unknown kind is enumerated via the protocol
-  and ranked by the agent from the server's context. Adding a marker in
-  `config_reader._KIND_MARKERS` + an anchor in `mcp_security.sensitivity` is now
-  *optional* — it only adds a deterministic fast-path/hint for a known kind.
+- **No live MCP.** There is no protocol connection, no port, no running server.
+- **LLM-only.** A real scan needs the model; `--no-llm` is a deterministic smoke
+  path for tests, never shipped as a scan.
+- **Graded, not fed, by the tables.** The committed design-time tables become
+  evaluation ground truth (`reports/evaluation/`); `scripts/evaluate_scanner.py`
+  scores the scanner against them. The scanner never reads them.

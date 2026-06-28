@@ -33,6 +33,45 @@ def _strip_fences(text: str) -> str:
     return text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
 
 
+def _extract_json(text: str) -> dict | None:
+    """Parse the first balanced JSON object from a model reply.
+
+    Tolerates trailing prose ("Extra data") and leading chatter by scanning for the
+    first ``{`` and matching braces (string-aware). Returns ``None`` if no valid
+    object can be recovered.
+    """
+    text = _strip_fences(text)
+    try:
+        obj = json.loads(text)
+        return obj if isinstance(obj, dict) else None
+    except (json.JSONDecodeError, ValueError):
+        pass
+    start = text.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = esc = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_str:
+            esc = (c == "\\") and not esc
+            if c == '"' and not esc:
+                in_str = False
+        elif c == '"':
+            in_str = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    obj = json.loads(text[start : i + 1])
+                except (json.JSONDecodeError, ValueError):
+                    return None
+                return obj if isinstance(obj, dict) else None
+    return None
+
+
 def query_ollama(
     prompt: str,
     *,
@@ -61,16 +100,12 @@ def query_ollama(
             timeout=timeout,
         )
         resp.raise_for_status()
-        raw = _strip_fences(resp.json().get("response", ""))
-        parsed = json.loads(raw)
+        parsed = _extract_json(resp.json().get("response", ""))
     except requests.RequestException as exc:
         logger.warning("Ollama request failed: %s", exc)
         return None
-    except (json.JSONDecodeError, ValueError) as exc:
-        logger.warning("Ollama returned non-JSON response: %s", exc)
-        return None
 
-    if not isinstance(parsed, dict):
-        logger.warning("Ollama returned %s, expected object", type(parsed).__name__)
+    if parsed is None:
+        logger.warning("Ollama returned no usable JSON object")
         return None
     return parsed

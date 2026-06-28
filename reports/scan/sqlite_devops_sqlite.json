@@ -1,0 +1,269 @@
+{
+  "version": "scan-0000-00-00",
+  "server": "sqlite:devops_sqlite",
+  "mcp_kind": "SQL database",
+  "model_reviewed": true,
+  "inferred_profile": {
+    "mcp_kind": "SQL database",
+    "asset_meaning": "Database tables that store various types of data such as user information, API tokens, deployment records, audit logs, and public metrics.",
+    "blast_radius_meaning": "The extent to which a tool can affect the integrity or confidentiality of assets. A narrow touch might involve reading from a single table, while severe actions could include modifying critical tables that hold sensitive information.",
+    "dangerous_classes": [
+      "holds secrets",
+      "holds PII at scale"
+    ],
+    "irreversible_actions": [
+      "deletes rows",
+      "inserts new data",
+      "updates existing records"
+    ],
+    "worked_example": "The 'write_query' tool paired with the 'users' asset class could severely impact security if used to update or delete sensitive user information.",
+    "confidence": 0.9,
+    "needs_human_review": false
+  },
+  "formula": "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact",
+  "band_thresholds": {
+    "medium": 8,
+    "high": 24
+  },
+  "tool_impact": {
+    "list_tables": 1,
+    "describe_table": 1,
+    "read_query": 1,
+    "write_query": 3,
+    "insert_row": 3
+  },
+  "asset_sensitivity": {
+    "users": 5,
+    "api_tokens": 4,
+    "deployments": 3,
+    "audit_log": 4,
+    "public_metrics": 1
+  },
+  "blast_radius": {
+    "list_tables|users": 2,
+    "list_tables|api_tokens": 1,
+    "list_tables|deployments": 3,
+    "list_tables|audit_log": 3,
+    "list_tables|public_metrics": 3,
+    "describe_table|users": 1,
+    "describe_table|api_tokens": 1,
+    "describe_table|deployments": 1,
+    "describe_table|audit_log": 1,
+    "describe_table|public_metrics": 2,
+    "read_query|users": 3,
+    "read_query|api_tokens": 2,
+    "read_query|deployments": 3,
+    "read_query|audit_log": 2,
+    "read_query|public_metrics": 1,
+    "write_query|users": 4,
+    "write_query|api_tokens": 4,
+    "write_query|deployments": 4,
+    "write_query|audit_log": 3,
+    "write_query|public_metrics": 3,
+    "insert_row|users": 2,
+    "insert_row|api_tokens": 3,
+    "insert_row|deployments": 2,
+    "insert_row|audit_log": 2,
+    "insert_row|public_metrics": 2
+  },
+  "cells": {
+    "users": {
+      "list_tables": 10.0,
+      "describe_table": 5.0,
+      "read_query": 15.0,
+      "write_query": 60.0,
+      "insert_row": 30.0
+    },
+    "api_tokens": {
+      "list_tables": 4.0,
+      "describe_table": 4.0,
+      "read_query": 8.0,
+      "write_query": 48.0,
+      "insert_row": 36.0
+    },
+    "deployments": {
+      "list_tables": 9.0,
+      "describe_table": 3.0,
+      "read_query": 9.0,
+      "write_query": 36.0,
+      "insert_row": 18.0
+    },
+    "audit_log": {
+      "list_tables": 12.0,
+      "describe_table": 4.0,
+      "read_query": 8.0,
+      "write_query": 36.0,
+      "insert_row": 24.0
+    },
+    "public_metrics": {
+      "list_tables": 3.0,
+      "describe_table": 2.0,
+      "read_query": 1.0,
+      "write_query": 9.0,
+      "insert_row": 6.0
+    }
+  },
+  "bands": {
+    "users": {
+      "list_tables": "medium",
+      "describe_table": "low",
+      "read_query": "high",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "api_tokens": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "high",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "deployments": {
+      "list_tables": "medium",
+      "describe_table": "low",
+      "read_query": "medium",
+      "write_query": "high",
+      "insert_row": "high"
+    },
+    "audit_log": {
+      "list_tables": "high",
+      "describe_table": "low",
+      "read_query": "high",
+      "write_query": "critical",
+      "insert_row": "high"
+    },
+    "public_metrics": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "medium",
+      "insert_row": "medium"
+    }
+  },
+  "band_distribution": {
+    "low": 8,
+    "medium": 5,
+    "high": 9,
+    "critical": 3
+  },
+  "baselines": {
+    "research_portal": {
+      "app_id": "research_portal",
+      "expected_tools": [
+        "read_query"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "SELECT * FROM users WHERE condition",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "SELECT * FROM api_tokens WHERE condition",
+          "normal_sensitivity_max": 4
+        },
+        {
+          "pattern": "SELECT * FROM deployment_records WHERE condition",
+          "normal_sensitivity_max": 2
+        },
+        {
+          "pattern": "SELECT * FROM audit_logs WHERE condition",
+          "normal_sensitivity_max": 5
+        },
+        {
+          "pattern": "SELECT * FROM public_metrics WHERE condition",
+          "normal_sensitivity_max": 1
+        }
+      ],
+      "anomalous_patterns": [
+        "INSERT INTO users VALUES (...)",
+        "UPDATE users SET ... WHERE condition",
+        "DELETE FROM users WHERE condition"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The research_portal is expected to perform read-only operations across various tables, with a focus on SELECT queries. Any attempt to modify data through INSERT, UPDATE, or DELETE actions would be considered anomalous."
+    },
+    "admin_console": {
+      "app_id": "admin_console",
+      "expected_tools": [
+        "write_query",
+        "read_query"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "inserts new data into non-sensitive tables",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "updates existing records in non-sensitive tables",
+          "normal_sensitivity_max": 4
+        }
+      ],
+      "anomalous_patterns": [
+        "deletes rows from any table",
+        "modifies critical tables that hold sensitive information"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The admin_console is expected to perform insertions and updates, but only within the scope of non-sensitive data as per its stated purpose. Any deletion actions or modifications to sensitive assets would be considered anomalous."
+    }
+  },
+  "crosscheck_summary": {
+    "total_records": 35,
+    "reviewed": 35,
+    "flagged_for_review": 7,
+    "judge_ran": true,
+    "overridden": 7,
+    "disagreements": [
+      {
+        "field": "blast_radius",
+        "key": "list_tables|users",
+        "proposed": 3,
+        "judged": 2,
+        "reasoning": "The 'list_tables' tool is read-only and does not modify any data or affect the integrity of assets directly. Although it lists tables that may contain sensitive information, its impact on confidentiality is limited to revealing the existence of such tables rather than their contents. Therefore, a bl"
+      },
+      {
+        "field": "blast_radius",
+        "key": "list_tables|api_tokens",
+        "proposed": 3,
+        "judged": 1,
+        "reasoning": "The 'list_tables' tool is read-only and does not modify any data in the database. It merely lists table names available in the CBG database, which includes the 'api_tokens' table. Since no actual modification or exposure of sensitive data occurs (the content of tables is not accessed), this operatio"
+      },
+      {
+        "field": "blast_radius",
+        "key": "read_query|api_tokens",
+        "proposed": 3,
+        "judged": 2,
+        "reasoning": "The 'read_query' tool is read-only and does not modify data, which limits its potential impact on the integrity or confidentiality of assets. Although it can access up to 100 rows from the 'api_tokens' table, which holds secrets, this action alone does not constitute a broad modification or full ove"
+      },
+      {
+        "field": "blast_radius",
+        "key": "read_query|audit_log",
+        "proposed": 3,
+        "judged": 2,
+        "reasoning": "The 'read_query' tool is read-only and only retrieves up to 100 rows from the audit_log table. While it can expose information across multiple entries, its impact on the integrity or confidentiality of assets is limited since no modifications are made. The blast radius should be considered moderate "
+      },
+      {
+        "field": "blast_radius",
+        "key": "read_query|public_metrics",
+        "proposed": 3,
+        "judged": 1,
+        "reasoning": "The 'read_query' tool is read-only and only retrieves up to 100 rows from the 'public_metrics' table, which does not involve any modification or deletion of data. This operation has a narrow touch as it does not affect the integrity or confidentiality of assets in a significant way."
+      },
+      {
+        "field": "blast_radius",
+        "key": "write_query|deployments",
+        "proposed": 3,
+        "judged": 4,
+        "reasoning": "The 'write_query' tool can perform irreversible actions such as inserting new data, updating existing records, and deleting rows in the 'deployments' table. Although this asset does not hold secrets or PII at scale, it still involves critical operations that could affect deployment integrity and his"
+      },
+      {
+        "field": "blast_radius",
+        "key": "insert_row|api_tokens",
+        "proposed": 2,
+        "judged": 3,
+        "reasoning": "The 'insert_row' tool can insert new data into the 'api_tokens' table, which holds secrets and is therefore classified as dangerous. Inserting a new API token could potentially allow unauthorized access if not properly managed, thus increasing the blast radius beyond what was initially assessed."
+      }
+    ]
+  },
+  "provenance": "llm-scan",
+  "server_kind": "sqlite"
+}

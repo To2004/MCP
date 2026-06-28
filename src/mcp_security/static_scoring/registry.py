@@ -40,12 +40,29 @@ class ToolSpec:
     read_only_hint: bool | None = None
     destructive_hint: bool | None = None
     idempotent_hint: bool | None = None
+    # The tool's JSON input schema, straight from the server's tools/list.
+    input_schema: dict = field(default_factory=dict)
+
+    def parameters(self) -> list[dict]:
+        """Flatten the input schema into ``{name, type, description, required}``."""
+        props = self.input_schema.get("properties", {}) if self.input_schema else {}
+        required = set(self.input_schema.get("required", [])) if self.input_schema else set()
+        return [
+            {
+                "name": name,
+                "type": spec.get("type", "any") if isinstance(spec, dict) else "any",
+                "description": spec.get("description", "") if isinstance(spec, dict) else "",
+                "required": name in required,
+            }
+            for name, spec in props.items()
+        ]
 
     def to_prompt_json(self) -> dict:
         """The registry entry shape the per-tool prompts expect."""
         return {
             "tool_name": self.name,
             "description": self.description,
+            "parameters": self.parameters(),
             "annotations": {
                 "read_only_hint": self.read_only_hint,
                 "destructive_hint": self.destructive_hint,
@@ -148,24 +165,69 @@ def _filesystem_assets(root: Path) -> list[AssetSpec]:
 
 # Cap per-file enumeration so a large tree can't explode the matrix / GPU cost.
 _MAX_FILES_BY_PATH = 80
+# Cap directory-scope assets independently of files.
+_MAX_DIRS_BY_PATH = 24
 _FS_IGNORE = {".gitkeep", ".gitignore", ".DS_Store"}
+# Directory-scope asset ids carry a trailing slash so they never collide with a
+# file of the same name; the store root is the bare slash.
+_DIR_SUFFIX = "/"
+_ROOT_DIR_ID = "/"
+
+
+def _directory_scope_assets(rels: list[Path]) -> list[AssetSpec]:
+    """Build directory-scope assets from the relative paths of the scanned files.
+
+    A directory scope is a *container* asset: enumeration/fan-out tools
+    (list_directory, directory_tree, search_files, multi-file reads) and any call
+    that targets a folder rather than a single file score against it. The scope's
+    description lists what it contains (file count + extensions) so the LLM can
+    judge how much one enumeration would expose; the worst child extension is
+    tagged so the offline fallback can see sensitive contents too.
+    """
+    children: dict[str, list[Path]] = {}
+    for rel in rels:
+        for parent in rel.parents:  # e.g. sensitive/security, sensitive, .
+            key = "" if parent == Path(".") else str(parent)
+            children.setdefault(key, []).append(rel)
+    scopes: list[AssetSpec] = []
+    # Largest scopes first (root, then broad dirs) so the cap keeps the most
+    # consequential containers; deterministic tie-break on the path.
+    for key in sorted(children, key=lambda k: (-len(children[k]), k))[:_MAX_DIRS_BY_PATH]:
+        members = children[key]
+        exts = sorted({(p.suffix.lstrip(".").lower() or "noext") for p in members})
+        asset_id = _ROOT_DIR_ID if key == "" else key + _DIR_SUFFIX
+        label = "store root" if key == "" else key
+        seg_tags = tuple(f"path:{seg.lower()}" for seg in Path(key).parts) if key else ()
+        scopes.append(
+            AssetSpec(
+                asset_id=asset_id,
+                description=(
+                    f"directory scope '{label}' containing {len(members)} file(s) "
+                    f"[{', '.join(exts)}] — one enumeration exposes all of them"
+                ),
+                tags=("kind:directory", *(f"ext:{e}" for e in exts), *seg_tags),
+            )
+        )
+    return scopes
 
 
 def _filesystem_assets_by_file(root: Path) -> list[AssetSpec]:
-    """take2 asset classes = one per file, identified by its full relative path.
+    """take2 asset classes = one per file (full relative path) PLUS directory scopes.
 
-    The asset id is the path itself (``patients/alice_johnson/medical_history.txt``)
-    so the model — and the offline keyword fallback — can see what the file *is*
-    from its directory and name, not just its extension. Sorted for determinism
-    and capped at :data:`_MAX_FILES_BY_PATH`.
+    The file asset id is the path itself (``patients/alice/medical_history.txt``)
+    so the model can see what the file *is* from its directory and name. In
+    addition, one *directory-scope* asset is emitted per folder (and the root) so
+    enumeration/fan-out tools and folder-targeted calls resolve to a concrete
+    container instead of being dropped as unresolved. Sorted for determinism and
+    capped at :data:`_MAX_FILES_BY_PATH` files / :data:`_MAX_DIRS_BY_PATH` dirs.
     """
     files = sorted(p for p in root.rglob("*") if p.is_file() and p.name not in _FS_IGNORE)
     if len(files) > _MAX_FILES_BY_PATH:
         files = files[:_MAX_FILES_BY_PATH]
+    rels = [path.relative_to(root) for path in files]
     assets: list[AssetSpec] = []
-    for path in files:
-        rel = path.relative_to(root)
-        ext = path.suffix.lstrip(".").lower() or "noext"
+    for rel in rels:
+        ext = rel.suffix.lstrip(".").lower() or "noext"
         # Tag each path segment so the fallback can match on folders too.
         seg_tags = tuple(f"path:{seg.lower()}" for seg in rel.parts[:-1])
         assets.append(
@@ -175,6 +237,7 @@ def _filesystem_assets_by_file(root: Path) -> list[AssetSpec]:
                 tags=(f"ext:{ext}", *seg_tags),
             )
         )
+    assets.extend(_directory_scope_assets(rels))
     return assets
 
 
@@ -340,6 +403,144 @@ def load_slack_registry() -> ServerRegistry:
     )
 
 
+# Google Calendar MCP — a scheduling server. Assets are CALENDARS (scopes); the
+# threat surface is mass deletion, external invites (exfil), contact-directory
+# reads (PII), and oversized-attendee events. Tools mirror the captured calendar
+# session (logs/proxy/sessions/calendar_pm_sim). Destructive tools push impact 3.
+_CALENDAR_TOOLS: list[ToolSpec] = [
+    ToolSpec("list_calendars", "List the calendars the agent can access.", read_only_hint=True),
+    ToolSpec("list_events", "List events on a calendar in a date range.", read_only_hint=True),
+    ToolSpec("list_week", "List a week of events on a calendar.", read_only_hint=True),
+    ToolSpec("get_event", "Read one event's full details.", read_only_hint=True),
+    ToolSpec("find_free_slot", "Find a free time slot across attendees.", read_only_hint=True),
+    ToolSpec("access_contacts", "Read the contact directory (names, emails).", read_only_hint=True),
+    ToolSpec(
+        "create_event", "Create an event with attendees.", read_only_hint=False,
+        input_schema={
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "event title"},
+                "date": {"type": "string", "description": "event date"},
+                "calendar": {"type": "string", "description": "target calendar id"},
+                "attendees": {"type": "array",
+                              "description": "attendee usernames/emails invited"},
+                "duration_min": {"type": "number", "description": "meeting length in minutes"},
+            },
+            "required": ["title", "date"],
+        },
+    ),
+    ToolSpec(
+        "update_event", "Modify an existing event.", read_only_hint=False,
+        input_schema={
+            "type": "object",
+            "properties": {
+                "event_id": {"type": "string"},
+                "calendar": {"type": "string", "description": "target calendar id"},
+                "attendees": {"type": "array",
+                              "description": "attendee usernames/emails invited"},
+                "duration_min": {"type": "number", "description": "meeting length in minutes"},
+            },
+            "required": ["event_id"],
+        },
+    ),
+    ToolSpec("send_email_invite", "Email an invite to external attendees.",
+             read_only_hint=False, destructive_hint=False),
+    ToolSpec("delete_event", "Delete one event.", read_only_hint=False, destructive_hint=True),
+    ToolSpec("delete_all_events", "Delete every event on a calendar.",
+             read_only_hint=False, destructive_hint=True),
+]
+
+# (calendar_id, category, note) — the calendar scopes an agent can target.
+_CALENDAR_SCOPES: list[tuple[str, str, str]] = [
+    ("personal", "personal", "the user's own schedule"),
+    ("team", "team", "shared engineering team calendar"),
+    ("executive", "executive", "exec/board calendar — M&A, comp, strategy meetings"),
+    ("recruiting", "recruiting", "candidate interview schedule — PII of applicants"),
+    ("contacts", "directory", "contact directory: names, emails, phone numbers (PII)"),
+    ("holidays", "public", "public company holiday calendar"),
+]
+
+
+def load_calendar_registry(
+    tools: list[ToolSpec] | None = None, *, server: str = "google-calendar-mcp"
+) -> ServerRegistry:
+    """Build the Google Calendar MCP registry: fixed tool set + calendar scopes."""
+    assets = [
+        AssetSpec(
+            asset_id=cal_id,
+            description=f"{category} calendar — {note}",
+            tags=(f"calendar:{category}",),
+        )
+        for cal_id, category, note in _CALENDAR_SCOPES
+    ]
+    return ServerRegistry(
+        server=server,
+        kind="calendar",
+        tools=list(tools or _CALENDAR_TOOLS),
+        assets=assets,
+        apps={
+            "scheduler_bot": "Agent that books and reschedules team meetings",
+            "exec_assistant": "Agent managing the executive calendar and invites",
+        },
+    )
+
+
+# GitHub MCP — a source-control server. Assets are REPOSITORIES (scopes); the
+# threat surface is reading secret-bearing config, pushing to protected branches,
+# deleting files, and merging unreviewed PRs. Destructive/write tools push impact.
+_GITHUB_TOOLS: list[ToolSpec] = [
+    ToolSpec("search_repositories", "Search repositories.", read_only_hint=True),
+    ToolSpec("get_file_contents", "Read a file from a repository.", read_only_hint=True),
+    ToolSpec("list_commits", "List a repository's commits.", read_only_hint=True),
+    ToolSpec("get_issue", "Read an issue and its comments.", read_only_hint=True),
+    ToolSpec("create_issue", "Open a new issue.", read_only_hint=False),
+    ToolSpec("create_or_update_file", "Write or overwrite a file in a repo.",
+             read_only_hint=False, destructive_hint=True),
+    ToolSpec("push_files", "Push multiple files in one commit.",
+             read_only_hint=False, destructive_hint=True),
+    ToolSpec("delete_file", "Delete a file from a repo.",
+             read_only_hint=False, destructive_hint=True),
+    ToolSpec("create_pull_request", "Open a pull request.", read_only_hint=False),
+    ToolSpec("merge_pull_request", "Merge a pull request into the base branch.",
+             read_only_hint=False, destructive_hint=True),
+    ToolSpec("fork_repository", "Fork a repository to another account.", read_only_hint=False),
+]
+
+# (repo, category, note) — the repositories an agent can target.
+_GITHUB_REPOS: list[tuple[str, str, str]] = [
+    ("public-website", "public", "the public marketing site — open source"),
+    ("internal-docs", "internal", "internal engineering documentation"),
+    ("backend-api", "source", "core backend service source code"),
+    ("payments-service", "source", "payment processing service — handles card flows"),
+    ("infra-config", "secrets", "infra/CI config: deploy keys, tokens, .env templates"),
+    ("ml-research", "source", "proprietary ML research and model weights pointers"),
+]
+
+
+def load_github_registry(
+    tools: list[ToolSpec] | None = None, *, server: str = "github-mcp"
+) -> ServerRegistry:
+    """Build the GitHub MCP registry: fixed tool set + repository scopes."""
+    assets = [
+        AssetSpec(
+            asset_id=repo,
+            description=f"{category} repository — {note}",
+            tags=(f"repo:{category}",),
+        )
+        for repo, category, note in _GITHUB_REPOS
+    ]
+    return ServerRegistry(
+        server=server,
+        kind="github",
+        tools=list(tools or _GITHUB_TOOLS),
+        assets=assets,
+        apps={
+            "ci_bot": "Agent that opens PRs and reads files for CI",
+            "release_bot": "Agent that pushes release commits and merges PRs",
+        },
+    )
+
+
 # All demo servers, keyed by a friendly name. The filesystem demos share one
 # tool registry over different corpora; the sqlite demos share one tool set over
 # different schemas. This is the full set of "simulations" the --all runner scores.
@@ -380,6 +581,20 @@ LOADERS: dict[str, Callable[[], ServerRegistry]] = {
     "sqlite": load_sqlite_registry,
     **DEMO_SERVERS,
 }
+
+
+# Public aliases — the scanner reuses these disk/schema asset builders and the
+# default app catalogs, but sources its *tools* from the Excel tool catalog.
+filesystem_assets = _filesystem_assets
+filesystem_assets_by_file = _filesystem_assets_by_file
+sqlite_assets = _sqlite_assets
+FS_DEFAULT_APPS = _FS_DEFAULT_APPS
+SQLITE_DEFAULT_APPS = _SQLITE_DEFAULT_APPS
+# Declarative-registry servers (assets come from the registry, not disk): the
+# scanner calls these directly for the messaging/scheduling/source-control kinds.
+CALENDAR_TOOLS = _CALENDAR_TOOLS
+GITHUB_TOOLS = _GITHUB_TOOLS
+SLACK_TOOLS = _SLACK_TOOLS
 
 
 def load_registry_from_json(path: Path) -> ServerRegistry:

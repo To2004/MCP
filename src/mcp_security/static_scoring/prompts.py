@@ -104,10 +104,19 @@ TASK: Assign BLAST RADIUS (0-4) for one (tool, asset class) pair -- how far this
 tool reaches into this asset when it acts, per the inferred
 blast_radius_meaning.
   0 = cannot touch this asset class (N/A cell).
-  1 = narrow / read-only touch.
-  2 = scoped, recoverable modification.
-  3 = broad modification or full overwrite.
+  1 = narrow / read-only touch of a SINGLE item.
+  2 = scoped, recoverable modification of a single item.
+  3 = broad modification or full overwrite, OR a read/enumeration that spans MANY
+      items at once.
   4 = clobber/destroy/irrevocable, or fan-out across many instances at once.
+BREADTH RULE (do not under-score reads): reach is not only about writing. A tool
+that ENUMERATES or reads ACROSS a whole scope at once -- listing a directory,
+walking a tree, searching/globbing, reading multiple files, or any SELECT over a
+table -- aggregates exposure over every item in that scope. When the asset class
+is a CONTAINER/SCOPE (a directory, a whole table, a channel) and the tool lists,
+walks, searches, or bulk-reads it, the blast radius is broad (>=3), because one
+call exposes everything inside -- even though each individual read is harmless.
+A single-file read stays at 1; it is the FAN-OUT over many items that raises it.
 Escalation: if the asset class matches the inferred dangerous_classes, raise by
 1 (cap 4) versus the same operation on an ordinary asset; say so in rationale."""
 
@@ -165,3 +174,39 @@ First model's answer:
 Independently determine the correct {field_name}, then return JSON:
 {{"agree": bool, "judged_value": <your independent value for {field_name}>,
   "reasoning": str, "confidence": 0.0-1.0}}"""
+
+
+# --- 5. Risk band (LLM decides the band, replacing a hardcoded policy) --------
+
+BAND_TASK = """
+TASK: Assign a RISK BAND to each (asset, tool) pair on THIS asset --
+low | medium | high | critical -- expressing how much a security gate should
+worry about that operation here. Decide with security judgement for this domain,
+NOT a fixed numeric threshold.
+Principles:
+  - critical: irreversible destruction, or mass exfiltration, of a crown-jewel
+    asset (regulated / PII / secrets / financial). The ops you hard-gate. Rare.
+  - high: serious but recoverable; an irreversible op on restricted data; or a
+    broad read of sensitive data (mass leak). A bulk read / enumeration / listing
+    / search / tree-walk over a SENSITIVE scope (a directory or table holding
+    restricted, PII, secret or financial data) is HIGH -- one call leaks the whole
+    scope -- even though a single-item read of the same data is only medium.
+  - medium: a narrow read of a crown-jewel (one record leaks); a moderate change
+    to internal data; an enumeration/listing over an ORDINARY scope.
+  - low: routine operations on ordinary / public data. A read can leak but never
+    destroys, so reads are never critical. Do NOT default an enumeration over a
+    sensitive scope to low just because listing is "read-only" -- judge it by what
+    the whole scope exposes (see blast radius).
+You are given each tool's impact (1 read, 2 recoverable, 3 destructive), its
+blast radius into this asset (0-4) and a raw score -- use them as evidence, but
+the band is your judgement, not a formula."""
+
+BAND_USER = """Asset (with its sensitivity 1-5):
+{asset_json}
+
+Tools acting on this asset (each with impact, blast, raw_score):
+{tools_json}
+
+Return JSON:
+{{"asset_id": str, "bands": {{"<tool_name>": "low|medium|high|critical"}},
+  "reasoning": str}}"""

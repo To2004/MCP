@@ -110,6 +110,11 @@ def test_llm_answers_override_fallback(monkeypatch):
             return {"blast_radius": 1, "confidence": 0.9}
         if "behavioral baseline" in prompt:
             return {"expected_tools": ["read_query"], "confidence": 0.9}
+        if "Assign a RISK BAND" in prompt:
+            import re
+
+            names = re.findall(r'"tool_name":\s*"([^"]+)"', prompt)
+            return {"asset_id": "a", "bands": {n: "high" for n in names}, "reasoning": "x"}
         return None
 
     monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
@@ -149,6 +154,11 @@ def test_judge_overrides_proposer_and_flags_disagreement(monkeypatch):
             return {"blast_radius": 2, "confidence": 0.9}
         if "behavioral baseline" in prompt:
             return {"expected_tools": ["read_query"], "confidence": 0.9}
+        if "Assign a RISK BAND" in prompt:
+            import re
+
+            names = re.findall(r'"tool_name":\s*"([^"]+)"', prompt)
+            return {"asset_id": "a", "bands": {n: "high" for n in names}, "reasoning": "x"}
         return None
 
     monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
@@ -160,3 +170,70 @@ def test_judge_overrides_proposer_and_flags_disagreement(monkeypatch):
     assert summary["overridden"] == 2
     assert summary["flagged_for_review"] == 2
     assert any(d["proposed"] == 1 and d["judged"] == 3 for d in summary["disagreements"])
+
+
+def test_strict_mode_raises_instead_of_fabricating(monkeypatch):
+    """LLM-only (strict) mode must abort, never fall back to a heuristic score."""
+    from mcp_security.static_scoring.pipeline import LLMUnavailableError
+
+    monkeypatch.setattr(pipeline_mod, "query_ollama", lambda *a, **k: None)
+    with __import__("pytest").raises(LLMUnavailableError):
+        build_static_table(_toy_registry(), use_llm=True, strict=True, version="static-test")
+
+
+def test_strict_requires_llm():
+    with __import__("pytest").raises(ValueError):
+        from mcp_security.static_scoring.pipeline import StaticScorer
+
+        StaticScorer(_toy_registry(), use_llm=False, strict=True)
+
+
+def test_llm_decides_band_not_hardcoded_policy(monkeypatch):
+    """The band is the model's call: a model that says 'low' overrides band_label."""
+    def fake_query(prompt, **_):
+        if "bootstrapping a misuse" in prompt:
+            return {"mcp_kind": "SQL database", "confidence": 0.95, "needs_human_review": False}
+        if "Assign TOOL IMPACT" in prompt:
+            return {"tool_impact": 3, "confidence": 0.9}
+        if "Assign ASSET SENSITIVITY" in prompt:
+            return {"sensitivity": 5, "confidence": 0.9}
+        if "Assign BLAST RADIUS" in prompt:
+            return {"blast_radius": 4, "confidence": 0.9}
+        if "behavioral baseline" in prompt:
+            return {"expected_tools": ["read_query"], "confidence": 0.9}
+        if "Assign a RISK BAND" in prompt:
+            import re
+
+            names = re.findall(r'"tool_name":\s*"([^"]+)"', prompt)
+            # Model deliberately says 'low' everywhere — band_label would say critical.
+            return {"asset_id": "a", "bands": {n: "low" for n in names}, "reasoning": "x"}
+        return None
+
+    monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
+    table = build_static_table(_toy_registry(), use_llm=True, version="static-test")
+    # sensitivity 5, blast 4, impact 3 would be band_label -> 'critical'; the model
+    # said 'low', and the model wins.
+    assert all(b == "low" for row in table["bands"].values() for b in row.values())
+    assert table["band_distribution"]["critical"] == 0
+
+
+def test_strict_requires_llm_band(monkeypatch):
+    from mcp_security.static_scoring.pipeline import LLMUnavailableError
+
+    def fake_query(prompt, **_):
+        if "bootstrapping a misuse" in prompt:
+            return {"mcp_kind": "SQL database", "confidence": 0.95, "needs_human_review": False}
+        if "Assign TOOL IMPACT" in prompt:
+            return {"tool_impact": 2, "confidence": 0.9}
+        if "Assign ASSET SENSITIVITY" in prompt:
+            return {"sensitivity": 3, "confidence": 0.9}
+        if "Assign BLAST RADIUS" in prompt:
+            return {"blast_radius": 2, "confidence": 0.9}
+        if "behavioral baseline" in prompt:
+            return {"expected_tools": ["read_query"], "confidence": 0.9}
+        # No band answer -> strict must raise rather than fall back to band_label.
+        return None
+
+    monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
+    with __import__("pytest").raises(LLMUnavailableError):
+        build_static_table(_toy_registry(), use_llm=True, strict=True, version="static-test")

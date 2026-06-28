@@ -1,0 +1,84 @@
+{
+  "server": "sqlite:devops_sqlite",
+  "kind": "sqlite",
+  "rubrics": {
+    "list_tables": {
+      "tool_name": "list_tables",
+      "parameters": []
+    },
+    "describe_table": {
+      "tool_name": "describe_table",
+      "parameters": []
+    },
+    "read_query": {
+      "tool_name": "read_query",
+      "parameters": [
+        {
+          "name": "sql",
+          "base_rank": "medium",
+          "extract": "parsed_limit",
+          "cutoffs": [
+            {
+              "min": 100.0,
+              "band": "low"
+            },
+            {
+              "min": 500.0,
+              "band": "medium"
+            },
+            {
+              "min": 1000.0,
+              "band": "high"
+            }
+          ],
+          "when_true": null,
+          "reasoning": "The 'sql' parameter carries risk magnitude based on the LIMIT clause in the SQL query. The absence of a LIMIT clause implies an unbounded read operation which is considered critical."
+        }
+      ]
+    },
+    "write_query": {
+      "tool_name": "write_query",
+      "parameters": [
+        {
+          "name": "sql",
+          "base_rank": "high",
+          "extract": "parsed_limit",
+          "cutoffs": [
+            {
+              "min": 100.0,
+              "band": "low"
+            },
+            {
+              "min": 1000.0,
+              "band": "medium"
+            },
+            {
+              "min": 5000.0,
+              "band": "high"
+            }
+          ],
+          "when_true": null,
+          "reasoning": "The SQL query parameter can affect a large number of rows depending on the LIMIT clause. Without a LIMIT, it could potentially impact all rows in a table."
+        }
+      ]
+    },
+    "insert_row": {
+      "tool_name": "insert_row",
+      "parameters": [
+        {
+          "name": "values",
+          "base_rank": "low",
+          "extract": "parsed_limit",
+          "cutoffs": [
+            {
+              "min": 1.0,
+              "band": "low"
+            }
+          ],
+          "when_true": null,
+          "reasoning": "The 'values' parameter carries the data to be inserted. Since it's an insert operation, the risk is relatively low compared to operations that can affect multiple rows or delete data."
+        }
+      ]
+    }
+  }
+}
