@@ -6,6 +6,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 
 | scorer | Spearman ρ | QW-κ | MAE | within-1 | exact |
 | --- | --- | --- | --- | --- | --- |
+| agenttrust | +0.91 | +0.93 | +0.26 | 97% | 79% |
 | keyword | +0.48 | +0.24 | +1.51 | 52% | 27% |
 | **ours** | +0.35 | +0.27 | +1.33 | 64% | 18% |
 | owasp | +0.34 | +0.26 | +1.28 | 61% | 20% |
@@ -19,6 +20,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 
 | scorer | Spearman ρ | QW-κ | MAE | within-1 | exact |
 | --- | --- | --- | --- | --- | --- |
+| agenttrust | +0.88 | +0.90 | +0.33 | 96% | 74% |
 | keyword | +0.49 | +0.26 | +1.42 | 56% | 29% |
 | **ours** | +0.45 | +0.34 | +1.23 | 69% | 20% |
 | nist | +0.42 | +0.37 | +1.17 | 73% | 22% |
@@ -32,6 +34,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 
 | scorer | Spearman ρ | QW-κ | MAE | within-1 | exact |
 | --- | --- | --- | --- | --- | --- |
+| agenttrust | +0.99 | +0.98 | +0.10 | 100% | 90% |
 | random | +0.41 | +0.35 | +1.33 | 63% | 30% |
 | keyword | +0.37 | +0.13 | +1.83 | 37% | 10% |
 | owasp | +0.03 | +0.04 | +1.33 | 57% | 20% |
@@ -45,6 +48,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 
 | scorer | Spearman ρ | QW-κ | MAE | within-1 | exact |
 | --- | --- | --- | --- | --- | --- |
+| agenttrust | +0.97 | +0.98 | +0.09 | 99% | 92% |
 | keyword | +0.48 | +0.20 | +1.69 | 43% | 25% |
 | random | +0.32 | +0.33 | +1.36 | 60% | 26% |
 | **ours** | +0.24 | +0.21 | +1.51 | 59% | 14% |
@@ -63,6 +67,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 | owasp | +0.58 | +0.52 | +0.91 | 80% | 36% |
 | cvss | +0.55 | +0.36 | +1.44 | 52% | 27% |
 | nist | +0.54 | +0.44 | +0.89 | 82% | 36% |
+| agenttrust | +0.43 | +0.29 | +1.52 | 56% | 29% |
 | dread | +0.26 | +0.05 | +1.30 | 61% | 27% |
 | random | -0.13 | -0.14 | +1.74 | 45% | 20% |
 | majority | — | +0.00 | +2.05 | 39% | 18% |
@@ -71,6 +76,7 @@ Each scorer maps the same extracted action features to a 0–4 severity (none..c
 
 | scorer | Spearman ρ | QW-κ | MAE | within-1 | exact |
 | --- | --- | --- | --- | --- | --- |
+| agenttrust | +0.83 | +0.84 | +0.43 | 92% | 72% |
 | keyword | +0.50 | +0.25 | +1.51 | 51% | 26% |
 | **ours** | +0.38 | +0.30 | +1.29 | 66% | 21% |
 | owasp | +0.37 | +0.30 | +1.23 | 63% | 22% |

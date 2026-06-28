@@ -85,20 +85,34 @@ def _table(title: str, rows: dict[str, dict]) -> str:
     return "\n".join(lines)
 
 
-def _eval_set(scen: list[Scenario]) -> dict[str, dict]:
+def _eval_set(scen: list[Scenario], ext: dict[str, list[int]]) -> dict[str, dict]:
     gt = [s.severity for s in scen]
-    scorers = {**score_all(scen), **_external(len(scen))}
+    scorers = {**score_all(scen), **ext}
     return {name: _metrics(pred, gt) for name, pred in scorers.items()}
 
 
 def main() -> None:
-    # Per-source results + an external-only pooled set + an all-pooled set.
-    sets: dict[str, list[Scenario]] = {n: load_source(n) for n in SOURCES if load_source(n)}
-    external = [s for n in EXTERNAL_SOURCES for s in sets.get(n, [])]
-    sets["external (pooled)"] = external
-    sets["all (pooled)"] = load_all()
+    # One source of truth (load_all order = the global index); every subset is a
+    # selection of those indices, so external score files (sev_scores/<name>.json,
+    # aligned to load_all) can be sliced to any subset and graded as extra columns.
+    full = load_all()
+    ext_full = _external(len(full))  # {scorer: [score per global index]}
+    offsets: dict[str, range] = {}
+    cursor = 0
+    for n in SOURCES:
+        k = len(load_source(n))
+        offsets[n] = range(cursor, cursor + k)
+        cursor += k
 
-    results = {name: _eval_set(scen) for name, scen in sets.items() if scen}
+    set_idx: dict[str, list[int]] = {n: list(offsets[n]) for n in SOURCES if offsets[n]}
+    set_idx["external (pooled)"] = [i for n in EXTERNAL_SOURCES for i in offsets[n]]
+    set_idx["all (pooled)"] = list(range(len(full)))
+
+    sets = {name: [full[i] for i in idx] for name, idx in set_idx.items()}
+    results = {
+        name: _eval_set(sets[name], {k: [v[i] for i in set_idx[name]] for k, v in ext_full.items()})
+        for name in sets if sets[name]
+    }
 
     out = [
         "# Severity-agreement benchmark: risk scorers vs. graded ground truth", "",
