@@ -1,0 +1,54 @@
+This appendix walks a single call through the full McpRisk pipeline of
+\Cref{chapter:framework}, to make the interaction of the static and parameter
+layers concrete.
+
+\section*{The scenario}
+
+An agent connected to the corporate-filesystem server issues:
+\begin{quote}
+\texttt{move\_file(src="/sensitive/security/private\_key.pem",
+dst="/public/shared/key.pem")}
+\end{quote}
+
+\section*{Static cell score}
+
+The scanner has already classified the tool and the asset at design time:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Asset sensitivity} $s=5$. The target \texttt{private\_key.pem}
+        is a regulated / crown-jewel secret (\Cref{tab:sensitivity}).
+  \item \textbf{Tool impact} $i=3$. \texttt{move\_file} maps to the atomic
+        operation \textsc{move}, but because it removes the file from its
+        protected location it is treated as access-changing and irreversible at
+        the top of its impact class.
+  \item \textbf{Blast radius} $b=4$. Relocating a key from a restricted folder
+        to a public one exposes it system-wide.
+\end{itemize}
+
+Applying \Cref{eq:static}, the raw score is
+$\text{score}=s\cdot b\cdot i = 5\cdot 4\cdot 3 = 60$, the maximum on the scale.
+By the calibration of \Cref{tab:bands} the cell satisfies the \textit{critical}
+condition ($i=3 \wedge s=5 \wedge b\ge 3$), so the inherent cell band is
+\textbf{critical}.
+
+\section*{Parameter escalation}
+
+The parameter rubric for \texttt{move\_file} flags the destination path as a
+magnitude-bearing argument, with a higher \texttt{base\_rank} when the
+destination is world-readable. Here the destination \texttt{/public/shared/}
+lands in the top value band. Combining the two ranks with \Cref{eq:paramavg}
+gives a parameter risk of \textit{critical}, and the escalation of
+\Cref{eq:escalate} takes
+$\text{final\_band}=\max(\textit{critical},\textit{critical})=\textbf{critical}$.
+The call is therefore surfaced at the top band --- and indeed calls of exactly
+this shape (\texttt{move\_file} on a crown-jewel asset, raw score $60$) are the
+highest-ranked entries in the captured-call corpus of
+\Cref{sec:experiments:results:dynamic}.
+
+\section*{Contrast: a benign call}
+
+For comparison, \texttt{read\_file("/public/README.md")} scores $s=1$, $i=1$,
+$b=1$, giving a raw score of $1$ and a band of \textbf{low} --- it is neither
+gated nor escalated. This contrast illustrates the design goal of
+\Cref{sec:framework:model}: ordinary work stays low while the destruction or
+exfiltration of a sensitive asset rises to the top of the pyramid.

@@ -1,0 +1,105 @@
+This chapter summarizes the progress made so far, identifies the challenges that
+remain, and lays out a concrete plan --- with work packages, a timeline, and
+expected contributions --- for completing the research.
+
+\section{Summary of Progress}
+\label{sec:plan:progress}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{סיכום ההתקדמות}}
+
+The preliminary work has established that interpretable, server-side risk scoring
+for MCP is feasible. We have (i) formalized the server-as-victim threat model
+(\Cref{sec:framework:threat_model}); (ii) designed the factor-based scoring model
+and its atomic-operation taxonomy (\Cref{sec:framework:model,sec:framework:atomic});
+(iii) implemented the full static and request-time pipeline driven by a single
+deterministic local model; and (iv) run an initial multi-oracle evaluation
+(\Cref{chapter:experiments}). The results are encouraging where the problem is
+well-defined --- $97\%$ agreement with reviewed judgments on tool impact and a
+quadratic-weighted $\kappa$ of $+0.66$ against a human panel, second among eight
+frameworks --- and, importantly, show that content-aware scoring separates live
+attacks where capability-only scores such as CVSS do not. This is sufficient
+evidence that the direction is worth completing.
+
+\section{Remaining Challenges}
+\label{sec:plan:challenges}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{אתגרים שנותרו}}
+
+The preliminary evaluation also exposed the problems the remaining research must
+solve. The most significant is the \emph{fragility of the composite band}:
+$85\%$ of scored cells change band under a single $\pm1$ perturbation of their
+inputs, concentrated at the \textit{medium} threshold, which undermines a gate
+that must act on the band. Second, the request-time evaluation rests on
+\emph{weak, intent-based labels} (AUC $0.64$), and the static model
+systematically under-weights read-only exfiltration. Third, calls are scored
+\emph{individually}, so cumulative risk across a sequence of low-risk actions is
+not yet modeled. Fourth, reliance on a \emph{single local model} for both scoring
+and part of the evaluation introduces a circularity we mitigated but did not
+eliminate. These four challenges define the work packages below.
+
+\section{Planned Work}
+\label{sec:plan:work}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{עבודה מתוכננת}}
+
+\textbf{WP1 --- Stabilize the banding formula.} Replace the hard integer
+cut-points with calibrated, monotone soft thresholds, or learn the band
+boundaries against the human consensus, and re-run the sensitivity analysis to
+target a substantial reduction in the $85\%$ fragility.
+
+\textbf{WP2 --- A contextual request-time scorer.} Build the dynamic scorer that
+reads the actual arguments and recent call history to close the
+read-only-exfiltration gap, operationalizing the likelihood sub-factors of
+\Cref{sec:framework:misuse} from real runtime logs rather than fixed constants.
+The external-benchmark result suggests this is where the discriminative power
+lies.
+
+\textbf{WP3 --- Multi-step chain modeling.} Extend the scorer to accumulate risk
+across a session, so that reconnaissance followed by a single exfiltration is
+scored as the campaign it is rather than as isolated low-risk calls.
+
+\textbf{WP4 --- Strengthened, multi-model evaluation.} Replace the weak dynamic
+labels with an audited ground truth, broaden the oracle panel, and repeat the
+study across multiple model families to remove the single-model circularity and
+test generalization.
+
+\textbf{WP5 --- Deployment study.} Integrate the scorer as a gate in front of a
+live MCP server and measure end-to-end latency and overhead, addressing the
+practical constraints of cost and speed that a real deployment imposes.
+
+\section{Timeline}
+\label{sec:plan:timeline}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{לוח זמנים}}
+
+We plan the remaining work over four phases, as summarized in
+\Cref{tab:timeline}. WP1 and WP2 are prioritized because they address the two
+weaknesses that most limit a deployable gate; WP3--WP5 build on their outputs.
+
+\begin{table}[H]
+    \centering
+    \caption{Planned schedule for the remaining research.}
+    \label{tab:timeline}
+    \begin{tabular}{l l}
+        \hline
+        \textbf{Phase} & \textbf{Focus} \\
+        \hline
+        Months 1--3   & WP1: formula stabilization and re-analysis \\
+        Months 3--7   & WP2: contextual request-time scorer \\
+        Months 6--9   & WP3: multi-step chain modeling \\
+        Months 8--11  & WP4: strengthened, multi-model evaluation \\
+        Months 10--12 & WP5: deployment study and thesis writing \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Expected Contributions}
+\label{sec:plan:contributions}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{תרומות צפויות}}
+
+On completion, the research is expected to contribute: (i) a server-centric
+threat model and a factor-based, interpretable risk-scoring model for MCP tool
+interactions; (ii) a stabilized banding formula with quantified robustness; (iii)
+a contextual request-time scorer that closes the exfiltration gap and models
+multi-step campaigns; (iv) a strengthened, multi-model evaluation against human
+and framework oracles; and (v) a deployable proof-of-concept gate with measured
+overhead. Together these would provide the first graduated, interpretable,
+server-side risk-scoring framework for the Model Context Protocol, giving servers
+a computable signal to gate, throttle, or deny risky agent requests before they
+execute.

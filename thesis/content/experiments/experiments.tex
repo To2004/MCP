@@ -1,0 +1,144 @@
+To establish that the proposed approach is feasible and worth pursuing, we have
+implemented a proof-of-concept of McpRisk and run an initial evaluation. This
+chapter reports those \emph{preliminary} results; a fuller evaluation is part of
+the planned work in \Cref{chapter:discussion_and_conclusions}. Because risk
+banding is intrinsically subjective, we do not evaluate against a single
+``correct'' answer but triangulate across four kinds of ground truth, and we
+report both the results that favor the approach and those that do not.
+
+\section{Setup}
+\label{sec:experiments:setup}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{הגדרות הניסוי}}
+
+The evaluation uses four datasets. First, \textbf{seven realistic MCP
+deployments} --- corporate, legal, medical, and media filesystems, and two SQLite
+databases --- each seeded with crown-jewel assets (private keys, payslips,
+patient records, API tokens); their judge-reviewed static tables ($61$ tools,
+over $40$ assets, $5$ \textit{critical} cells) form the design-time ground truth.
+Second, an \textbf{independent ten-rater oracle panel} per cell, combining a
+hand-authored human heatmap with nine framework baselines (DREAD, CVSS~v3, two
+NIST methods, OWASP Risk Rating, OWASP AIVSS, MAESTRO, and two ChatGPT raters);
+the scanner's own model is excluded to avoid circularity. Third, a
+\textbf{captured-call corpus} of $969$ calls from seeded simulations across
+Calendar, GitHub, Slack, a fintech filesystem, and a DevOps database, mixing
+benign operators with attackers. Fourth, $150$ labeled calls from three
+\textbf{external attack benchmarks} (MCPSecBench, MCP-SafetyBench, MSB) that share
+our client~$\to$~server threat model.
+
+All scores were produced by a single local model (Qwen2.5:32B via Ollama,
+temperature $0$, seed $0$). Since the output is an ordinal four-band label, we
+report \emph{exact} and \emph{within-one-band} agreement, quadratic-weighted
+Cohen's $\kappa$, and --- for the detection experiments --- the area under the ROC
+curve (AUC). Panel consensus is the upper-median across raters, robust to the
+maximalism of frameworks such as DREAD that rate almost everything dangerous.
+
+\section{Static Scoring vs.\ Human Judgment}
+\label{sec:experiments:static}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{ניקוד סטטי מול שיפוט אנושי}}
+
+The two \emph{primitive} judgments are highly consistent with the reviewed
+tables: tool-impact agreement is $59/61$ ($97\%$) and asset-sensitivity
+agreement $5/7$ ($71\%$). Agreement on the \emph{composite} band is lower ($34\%$
+exact), the first sign that the composite score --- not the primitives --- is the
+weak point. Against the independent panel, the crucial context is the
+\emph{legitimate-disagreement ceiling}: the human and framework raters agree with
+\emph{each other} only $50\%$ (filesystem) and $42\%$ (SQLite) of the time
+exactly (\Cref{tab:human}). Risk banding is inherently subjective, and no scorer
+can exceed this ceiling. McpRisk reaches $35\%$ exact and $69\%$ within-one
+agreement with the consensus --- inside the band of human disagreement, though at
+its lower end --- and tends to score \emph{below} the conservative consensus,
+i.e.\ it under-alarms rather than over-alarms.
+
+\begin{table}[H]
+    \centering
+    \caption{Scanner vs.\ the human/framework panel, against the inter-rater
+    ceiling. ``Exact'' and ``$\le 1$'' are band-agreement rates.}
+    \label{tab:human}
+    \begin{tabular}{l c c}
+        \hline
+        \textbf{Comparison} & \textbf{Exact} & \textbf{$\le 1$ band} \\
+        \hline
+        Inter-rater ceiling (filesystem) & 50\% & 78\% \\
+        Inter-rater ceiling (SQLite)     & 42\% & 75\% \\
+        Scanner vs.\ consensus (overall) & 35\% & 69\% \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Scoring the same cells with every baseline and comparing against the human oracle
+by quadratic-weighted $\kappa$ (\Cref{tab:headtohead}), McpRisk attains
+$\kappa=+0.66$ with $97\%$ within-one agreement --- second only to OWASP AIVSS
+and well ahead of CVSS~v3. The maximalist frameworks reach apparent safety
+trivially by rating almost everything dangerous (DREAD $\kappa=+0.10$ at a
+$100\%$ over-block rate); McpRisk's $56\%$ over-block matches AIVSS while
+preserving discrimination, the intended behavior of the risk pyramid.
+
+\begin{table}[H]
+    \centering
+    \caption{Agreement with the human oracle (pooled). QW-$\kappa$ is
+    quadratic-weighted Cohen's $\kappa$; over-block is the fraction rated
+    high/critical.}
+    \label{tab:headtohead}
+    \begin{tabular}{l c c c}
+        \hline
+        \textbf{Scorer} & \textbf{QW-$\kappa$} & \textbf{Within-1} & \textbf{Over-block} \\
+        \hline
+        OWASP AIVSS             & $+0.69$ & --    & 56\% \\
+        \textbf{McpRisk (ours)} & $+0.66$ & 97\%  & 56\% \\
+        CVSS v3                 & $+0.36$ & --    & --   \\
+        ChatGPT (plain)         & $+0.23$ & --    & 98\% \\
+        DREAD                   & $+0.10$ & --    & 100\% \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Robustness, Request-Time, and Out-of-Distribution Detection}
+\label{sec:experiments:dynamic}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{יציבות, זמן ריצה וזיהוי מחוץ להתפלגות}}
+
+The approach's most significant weakness is the \emph{stability} of the composite
+score. Perturbing each of the $1{,}700$ scored cells' inputs by $\pm1$, one at a
+time, changes the band for $85\%$ of cells, with the fragility clustered at the
+\textit{medium} threshold. The multiplicative formula with fixed integer
+cut-points is thus unstable precisely where a gate's behavior hinges --- the
+primary target of the planned work.
+
+On the captured-call corpus, McpRisk produces a scorable band for $87\%$ of a
+labeled subset, abstaining honestly on the rest, and reaches an AUC of $0.64$
+against the sessions' authored-intent labels. These labels are a \emph{weak}
+ground truth, so the numbers are diagnostic; the informative failure mode is that
+$27$ malicious \emph{read-only} exfiltration calls score only low/medium, since
+the inherent cell under-weights pure exfiltration --- exactly the gap the planned
+contextual scorer must close. The out-of-distribution result is the most
+encouraging (\Cref{tab:external}): on the external benchmarks, content-aware
+scoring separates attacks (LLM-judge AUC $0.68$) while the argument-blind
+capability frameworks CVSS and AIVSS score $0.52$ --- essentially no skill,
+because they cannot see the arguments that make a call malicious. This is direct
+evidence for the proposal's premise that risk must be assessed from the request
+content, not the tool's capability alone.
+
+\begin{table}[H]
+    \centering
+    \caption{Attack-vs-valid detection on $150$ external-benchmark calls.}
+    \label{tab:external}
+    \begin{tabular}{l c c}
+        \hline
+        \textbf{Scorer} & \textbf{AUC} & \textbf{Recall @ 10\% FPR} \\
+        \hline
+        LLM judge (content-aware) & 0.68 & 42\% \\
+        Keyword (content-aware)   & 0.67 & 38\% \\
+        CVSS (capability-only)    & 0.52 & 0\%  \\
+        AIVSS (capability-only)   & 0.52 & 0\%  \\
+        Random baseline           & 0.48 & 11\% \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Finally, an independent review subsystem audits the pipeline: a deterministic
+verifier passes all $8/8$ correctness checks and a methodology judge confirms all
+$7/7$ integrity claims (no data leakage, LLM-only with no fabrication, honest
+handling of unresolved calls), while a results judge returns a sober verdict of
+``adequate, with concern'' --- the pipeline is correct and honest, but its
+agreement with the human consensus is only modestly above chance. These
+preliminary findings, and the weaknesses they expose, motivate the research plan
+of the next chapter.

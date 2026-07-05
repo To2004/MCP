@@ -1,0 +1,113 @@
+\section{Motivation}
+\label{sec:intro:motivation}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מוטיבציה}}
+
+Large language models (LLMs) are increasingly deployed as \emph{autonomous
+agents} that do not merely produce text but take actions in the world: they
+read and write files, query databases, push code, and send messages on a
+user's behalf. The Model Context Protocol (MCP), introduced by
+Anthropic in late 2024~\cite{anthropic2024mcp}, has become the de facto
+standard for connecting such agents to external capabilities. An MCP
+\emph{server} advertises a set of \emph{tools} (for example
+\texttt{read\_file}, \texttt{delete\_file}, or \texttt{write\_query}); an MCP
+\emph{client}, driven by an LLM agent, discovers those tools and invokes them
+over a uniform JSON-RPC interface. This uniformity is precisely what makes MCP
+powerful --- and what makes it dangerous.
+
+The overwhelming majority of published MCP-security research studies the
+protocol from the \emph{client's} point of view: how a malicious or
+poisoned server can trick an agent into leaking data or executing harmful
+instructions~\cite{shi2025toolhijacker,jing2025mcip}. This thesis deliberately
+inverts that direction. We take the standpoint of the \textbf{server as the
+protected asset} and the \textbf{agent as the threat source}. A server that
+exposes a corporate filesystem, a production database, or a company Slack
+workspace has no native way to decide, at the moment a call arrives, whether
+\texttt{delete\_file} on a private key or an unbounded
+\texttt{SELECT * FROM api\_tokens} should be allowed, throttled, or denied. An
+agent that has been indirectly prompt-injected~\cite{zhan2024injecagent,
+debenedetti2024agentdojo} looks, to the server, exactly like a legitimate one.
+The server therefore needs a way to reason about \emph{how risky each incoming
+request is} before it executes.
+
+\section{Problem Statement}
+\label{sec:intro:problem}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{הגדרת הבעיה}}
+
+Traditional vulnerability-scoring systems do not answer this question. CVSS,
+DREAD, and the NIST risk methodologies were designed for static software and
+human-driven workflows; they score a \emph{vulnerability}, not a live tool
+invocation, and they are argument-blind --- they cannot distinguish
+\texttt{ls /tmp} from \texttt{rm -rf /}. Recent work confirms that when these
+scores are applied to AI-specific threats they collapse toward a single value
+and lose discriminative power~\cite{bahar2024validity,spring2021time}. At the
+same time, the emerging MCP-specific defenses are largely \emph{binary}
+detectors that label a request attack-or-benign~\cite{xing2025mcpguard,
+yang2025mcpsecbench}; they do not give the server a graded, interpretable
+number it can threshold and act on.
+
+This thesis asks: \emph{Can we assign every MCP tool interaction a graduated,
+interpretable risk score --- computed both statically from the tool's declared
+properties and dynamically from the specific request --- that a server can use
+to gate, throttle, or deny agent actions before they execute, under the
+threat model in which the server is the victim and the agent is the threat?}
+
+\section{Approach and Research Objectives}
+\label{sec:intro:contributions}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{גישה ומטרות המחקר}}
+
+We propose to answer this question by designing, implementing, and evaluating
+\textbf{McpRisk}, a defense-oriented risk-scoring framework for MCP servers.
+McpRisk decomposes the risk of a tool interaction into a small set of
+interpretable factors --- the \emph{sensitivity} of the asset being touched,
+the \emph{blast radius} of the operation, and the \emph{impact}
+(reversibility) of the tool --- and combines them into a four-band score
+(\textit{low}, \textit{medium}, \textit{high}, \textit{critical}). A
+\emph{static} pipeline scores each (tool, asset) pair at design time as an
+upper bound; a \emph{parameter} layer then escalates that band at request time
+according to the magnitude of the actual arguments (for example, a
+\texttt{SELECT} with no \texttt{LIMIT} is treated as touching every row). Every
+score is produced by a local, deterministic LLM working against an explicit
+rubric, cross-checked by an independent LLM judge, and --- crucially ---
+validated against a panel of human and framework oracles rather than asserted.
+
+The objectives of this research are:
+
+\begin{enumerate}[leftmargin=*]
+  \item A \textbf{server-centric threat model} for MCP
+        (\Cref{sec:framework:threat_model}) that treats the agent as the
+        adversary and formalizes the client~$\to$~server attack direction,
+        together with a mapping from MCP tools to a 13-operation
+        \emph{atomic-operation} severity taxonomy.
+  \item A \textbf{factor-based scoring model}
+        (\Cref{sec:framework:model}) that replaces the rigid CVSS base score
+        with an interpretable product of sensitivity, blast radius, and impact,
+        calibrated to a risk pyramid, together with a parameter-magnitude layer
+        for request-time escalation.
+  \item A \textbf{proof-of-concept implementation} (\Cref{chapter:framework})
+        comprising a static scanner, a six-stage scoring pipeline, a
+        parameter-rubric engine, and a call ranker, driven by a single
+        reproducible local model.
+  \item A \textbf{multi-oracle evaluation} (\Cref{chapter:experiments}) against
+        realistic MCP deployments, a human-and-framework panel, a corpus of
+        captured calls, and external attack benchmarks --- reporting where the
+        approach succeeds and where it does not.
+\end{enumerate}
+
+Objectives~1--3 and an initial version of objective~4 have been realized in
+preliminary work (\Cref{chapter:framework,chapter:experiments}); the remaining
+evaluation and the improvements it motivates form the research plan of
+\Cref{chapter:discussion_and_conclusions}.
+
+\section{Proposal Structure}
+\label{sec:intro:structure}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מבנה ההצעה}}
+
+\Cref{chapter:related_work} reviews the work surrounding the problem: the MCP
+attack surface, MCP-specific defenses and attacks, the safety of tool-using
+agents, guardrails and runtime gating, and risk-scoring methodologies.
+\Cref{chapter:framework} presents the proposed McpRisk threat model, the scoring
+model and its formulas, the atomic-operation taxonomy, and the pipeline.
+\Cref{chapter:experiments} reports preliminary results from a proof-of-concept
+implementation. \Cref{chapter:discussion_and_conclusions} sets out the remaining
+challenges, a detailed research plan with a timeline, and the expected
+contributions.
