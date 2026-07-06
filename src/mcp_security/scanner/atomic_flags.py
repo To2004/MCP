@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from mcp_security.atomic_ops import toollist_rules
 from mcp_security.atomic_ops.classifier import DEFAULT_TAXONOMY, _to_op_set_and_severities
 from mcp_security.atomic_ops.taxonomy import AtomicOp, load_taxonomy
+from mcp_security.llm.ollama_client import query_ollama
 from mcp_security.static_scoring.registry import ToolSpec
 
 # Input-risk heuristic, most-amplifying first. Each rule matches on the parameter
@@ -144,27 +145,116 @@ def _input_risk(param: dict) -> _InputRule:
     return _DEFAULT_INPUT_RULE
 
 
-def rank_tool_inputs(tools: list[ToolSpec]) -> dict[str, list[dict]]:
-    """Rank each tool's input parameters by risk amplification (highest first)."""
-    ranking: dict[str, list[dict]] = {}
-    for tool in tools:
-        ranked = [
+def _rank_inputs_deterministic(tool: ToolSpec) -> list[dict]:
+    """Rule-based ranking of a tool's inputs (the LLM-off / fallback path)."""
+    ranked = [
+        {
+            "name": p["name"],
+            "type": p.get("type", "any"),
+            "required": p.get("required", False),
+            "risk": (rule := _input_risk(p)).risk,
+            "reason": rule.reason,
+        }
+        for p in tool.parameters()
+    ]
+    ranked.sort(key=lambda r: (r["risk"], r["required"]), reverse=True)
+    return ranked
+
+
+_INPUT_RANK_PROMPT = """You are a security analyst reviewing one MCP tool's inputs \
+for how they could be abused against the server.
+
+Tool: {tool}
+Description: {desc}
+Input parameters:
+{params}
+
+Rank EVERY parameter by how much its *value* can amplify the call's risk to the
+server — a free-form query/command or a payload the caller fully controls, a list
+whose length is breadth (bulk fan-out), a destructive or scope-widening flag, and
+a large magnitude/count are high; a parameter that merely names the target or is a
+fixed enum/structural field is low. Judge intent, not just the name.
+
+Output ONLY a JSON object, every parameter listed exactly once:
+{{"ranking": [{{"name": <parameter name>, "risk": <integer 1-5, 5=most amplifying>,
+"reason": "<one short clause>"}}]}}"""
+
+
+def _rank_inputs_llm(tool: ToolSpec) -> list[dict] | None:
+    """LLM ranking of a tool's inputs; None if the model is unreachable or unusable.
+
+    Returns None (so the caller falls back to the deterministic ranking) unless the
+    model returns a well-formed ranking covering *every* parameter exactly once.
+    """
+    params = tool.parameters()
+    if not params:
+        return []
+    param_lines = "\n".join(
+        f"- {p['name']} ({p.get('type', 'any')}"
+        f"{', required' if p.get('required') else ''}): {(p.get('description') or '')[:90]}"
+        for p in params
+    )
+    prompt = _INPUT_RANK_PROMPT.format(
+        tool=tool.name, desc=(tool.description or "")[:200], params=param_lines
+    )
+    resp = query_ollama(prompt)
+    if not isinstance(resp, dict) or not isinstance(resp.get("ranking"), list):
+        return None
+    by_name = {p["name"]: p for p in params}
+    ranked: list[dict] = []
+    seen: set[str] = set()
+    for entry in resp["ranking"]:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        if name not in by_name or name in seen:
+            continue
+        try:
+            risk = max(1, min(5, int(entry.get("risk"))))
+        except (TypeError, ValueError):
+            continue
+        ranked.append(
             {
-                "name": p["name"],
-                "type": p.get("type", "any"),
-                "required": p.get("required", False),
-                "risk": (rule := _input_risk(p)).risk,
-                "reason": rule.reason,
+                "name": name,
+                "type": by_name[name].get("type", "any"),
+                "required": by_name[name].get("required", False),
+                "risk": risk,
+                "reason": str(entry.get("reason", ""))[:140],
             }
-            for p in tool.parameters()
-        ]
-        ranked.sort(key=lambda r: (r["risk"], r["required"]), reverse=True)
-        ranking[tool.name] = ranked
+        )
+        seen.add(name)
+    if len(ranked) != len(params):  # must cover every parameter to be trusted
+        return None
+    ranked.sort(key=lambda r: (r["risk"], r["required"]), reverse=True)
+    return ranked
+
+
+def rank_tool_inputs(tools: list[ToolSpec], *, use_llm: bool = False) -> dict[str, dict]:
+    """Rank each tool's inputs by risk. LLM when ``use_llm``, else the rule heuristic.
+
+    Each tool maps to ``{"source": "llm"|"rules"|"rules-fallback", "inputs": [...]}``
+    so the provenance of the ranking is explicit (an LLM ranking that failed
+    degrades to the deterministic rules, tagged ``rules-fallback``).
+    """
+    ranking: dict[str, dict] = {}
+    for tool in tools:
+        inputs = None
+        source = "rules"
+        if use_llm:
+            inputs = _rank_inputs_llm(tool)
+            source = "llm" if inputs is not None else "rules-fallback"
+        if inputs is None:
+            inputs = _rank_inputs_deterministic(tool)
+        ranking[tool.name] = {"source": source, "inputs": inputs}
     return ranking
 
 
-def enrich_scan(table: dict, tools: list[ToolSpec]) -> dict:
-    """Attach ``tool_atomic_ops`` and ``tool_input_ranking`` to a scan table in place."""
+def enrich_scan(table: dict, tools: list[ToolSpec], *, use_llm: bool = False) -> dict:
+    """Attach ``tool_atomic_ops`` and ``tool_input_ranking`` to a scan table in place.
+
+    The atomic-op flag is always the deterministic taxonomy match; the input
+    ranking uses the LLM when ``use_llm`` is set (falling back to the rules).
+    """
     table["tool_atomic_ops"] = classify_tools_atomic(tools)
-    table["tool_input_ranking"] = rank_tool_inputs(tools)
+    table["tool_input_ranking"] = rank_tool_inputs(tools, use_llm=use_llm)
     return table

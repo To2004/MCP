@@ -149,9 +149,10 @@ def scan_server(
     # (e.g. "team messaging workspace"), but the call ranker dispatches its resolver
     # on this exact kind so it never depends on the inferred phrasing.
     table["server_kind"] = kind
-    # Additive, deterministic enrichment (no LLM): flag every tool's atomic
-    # operation from the taxonomy, and rank each tool's inputs by risk.
-    enrich_scan(table, registry.tools)
+    # Additive enrichment: flag every tool's atomic operation from the taxonomy
+    # (always deterministic), and rank each tool's inputs by risk — with the LLM
+    # when this is a real (LLM) scan, else the rule heuristic.
+    enrich_scan(table, registry.tools, use_llm=use_llm)
     return ScanResult(server=registry.server, kind=kind, table=table)
 
 

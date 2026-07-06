@@ -154,19 +154,28 @@ the `source` field ("rules" vs "verb-fallback") stays honest. Examples from the
 real catalogs: `delete_file → DELETE (Critical)`, `merge_pull_request → OVERWRITE`,
 `conversations_add_message → BROADCAST (High)`, `list-calendars → LIST (Low)`.
 
-### 5b. Per-tool input-risk ranking
+### 5b. Per-tool input-risk ranking (LLM, with a rule fallback)
 
 Alongside the cross-server magnitude ranking above, every scan carries a
-**per-tool** ranking of that tool's own inputs (`tool_input_ranking`), scored by
-how much each input amplifies risk — a free-form query/command (5), a list whose
-length is breadth or a payload/content string (4), a destructive flag (4), a
-magnitude count (3), a target identifier (2), else structural (1). So for
-`push_files` the ranking surfaces `files` (array) and `message` (payload) above
-`owner`/`repo` — the inputs an operator should watch first, read straight from
-the tool's schema, no LLM needed.
+**per-tool** ranking of that tool's own inputs (`tool_input_ranking` →
+`{source, inputs:[{name, type, required, risk 1–5, reason}]}`), scored by how
+much each input can amplify the call's risk.
 
-Both `5a` and `5b` ship inside every `reports/scan/<server>.json` and are
-backfilled onto older scans by `scripts/enrich_scans_atomic.py`.
+On a real (LLM) scan the ranking is produced by the model, which reasons about
+*intent* — the prompt (in `atomic_flags._INPUT_RANK_PROMPT`) asks a security
+analyst to rank every parameter 1–5 by how much its *value* amplifies risk (a
+free-form query/command or caller-controlled payload, a list whose length is
+breadth, a destructive/scope-widening flag rank high; a parameter that merely
+names the target or is a fixed enum ranks low) and to return JSON covering every
+parameter exactly once. If the model is unreachable or returns a partial/invalid
+ranking, it **degrades to a deterministic rule heuristic** (query/command=5,
+list/payload/destructive-flag=4, magnitude count=3, target id=2, else 1) — the
+`source` field records `llm` / `rules` / `rules-fallback` honestly. Either way,
+for `push_files` the risky inputs (`files`, `message`) surface above `owner`/`repo`.
+
+Both `5a` and `5b` ship inside every `reports/scan/<server>.json`. New scans get
+them automatically; older scans are backfilled by `scripts/enrich_scans_atomic.py`
+(`--llm` for the model ranking, needs a GPU node; default is the rule heuristic).
 
 ---
 
