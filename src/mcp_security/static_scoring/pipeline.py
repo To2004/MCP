@@ -51,46 +51,51 @@ REVIEW_CONFIDENCE = 0.7
 
 
 def band_label(sensitivity: int, blast: int, impact: int) -> str:
-    """Operational band for one (asset, tool) cell — a security-gate calibration.
+    """Deterministic operational band for one (asset, tool) cell.
 
-    The static score is an *upper-bound* (likelihood pinned to 1.0), so banding
-    on the raw number alone makes too many cells critical and a gate that blocks
-    them would stop legitimate work. Instead we reserve the top band the way a
-    reviewer would, per ``docs/standards/scoring-reference.md``:
+    A pure function of the three primitives (impact, sensitivity, blast on the
+    ``0-5`` scale) — so the band is fully reproducible and a straight function of
+    the score. The score is an *upper bound* (likelihood pinned to 1.0), so we do
+    not band on the raw number alone; instead explicit **security floors** encode
+    the judgement an independent reviewer used to add on top:
 
-    * **critical** — only the catastrophes you must hard-gate: an *irreversible*
-      action (impact 3 / Irreversibility ×3) that destroys a *crown-jewel*
-      asset (sensitivity 5 = regulated / PII / secrets) at departmental-or-wider
-      reach (blast ≥ 3). These cannot be reconstituted.
-    * **high** — serious but recoverable or sub-crown-jewel: any irreversible op
-      on restricted business data (sensitivity ≥ 4), or a high raw score. Watch
-      and throttle, don't block.
-    * **medium / low** — routine; let it through. Reads stay low regardless of
-      sensitivity (they don't change state), so normal work is not gated.
+    * **critical** — an *irreversible* action (impact 3) that destroys
+      RESTRICTED-or-worse data (sensitivity ≥ 4) *at scale* (blast ≥ 4): mass,
+      unrecoverable loss.
+    * **high** — any irreversible op on sensitive data (impact 3 ∧ sensitivity ≥
+      3), a write to a crown jewel (impact 2 ∧ sensitivity 5), a broad/mass read
+      of restricted data (impact 1 ∧ sensitivity ≥ 4 ∧ blast ≥ 4 = exfiltration),
+      or a high raw score.
+    * **medium — floors:** ANY irreversible op is at least medium (destroying even
+      trivial data is still a state change), and reading restricted-or-worse data
+      is at least medium (confidentiality), plus any middling score.
+    * **low** — routine reads / narrow reach of ordinary data.
 
-    Confidentiality matters too: a read (impact 1) can't *destroy* anything, but
-    reading a crown-jewel still leaks it. So reads carry a floor — a narrow read
-    of regulated/PII/secret data is never "nothing" (medium), and a broad read of
-    sensitive data is mass exfiltration (high). Routine reads of ordinary data
-    stay low, so normal work still flows.
-
-    This yields a risk pyramid (~1-2% critical) instead of a flat alarm.
+    These floors were derived by measuring where an LLM reviewer systematically
+    disagreed with the old formula (it up-rated irreversible ops on trivial data,
+    reads of restricted data, and mass destruction of restricted data) — folding
+    that judgement into the deterministic rule instead of a per-scan override.
     """
     score = sensitivity * blast * impact
-    # critical — irreversible destruction of a crown-jewel asset at scale.
-    if impact == 3 and sensitivity == 5 and blast >= 3:
+    # critical — irreversible mass destruction of restricted-or-worse data.
+    if impact == 3 and sensitivity >= 4 and blast >= 4:
         return "critical"
-    # high — irreversible op on restricted+ data, a high raw score, or a *broad*
-    # read of sensitive data (mass exfiltration of regulated/PII/secrets).
+    # high — irreversible op on sensitive data, a crown-jewel write, a broad read
+    # of restricted data (mass exfiltration), or a high raw score.
     if (
-        (impact == 3 and sensitivity >= 4)
+        (impact == 3 and sensitivity >= 3)
+        or (impact == 2 and sensitivity == 5)
+        or (impact == 1 and sensitivity >= 4 and blast >= 4)
         or score >= BAND_THRESHOLDS["high"]
-        or (impact == 1 and sensitivity >= 4 and blast >= 3)
     ):
         return "high"
-    # medium — middling score, or any read of a crown-jewel (confidentiality
-    # floor: reading a secret / PII record is never simply "low").
-    if score >= BAND_THRESHOLDS["medium"] or (impact == 1 and sensitivity == 5):
+    # medium — irreversibility floor (any impact-3 op), confidentiality floor
+    # (any read of restricted+ data), or a middling score.
+    if (
+        impact == 3
+        or (impact == 1 and sensitivity >= 4)
+        or score >= BAND_THRESHOLDS["medium"]
+    ):
         return "medium"
     return "low"
 
@@ -134,10 +139,19 @@ class StaticScorer:
     """
 
     def __init__(
-        self, registry: ServerRegistry, *, use_llm: bool = True, strict: bool = False
+        self, registry: ServerRegistry, *, use_llm: bool = True, strict: bool = False,
+        use_judge: bool = False, llm_bands: bool = False,
     ) -> None:
         self.registry = registry
         self.use_llm = use_llm
+        # Bands are the deterministic band_label of the primitives by default —
+        # reproducible, a pure function of the score. The optional LLM band stage
+        # (``llm_bands``) and the primitive-override judge (``use_judge``) are
+        # retained for the review/methodology story but off by default: they made
+        # bands non-reproducible ("numbers move on re-scan") while their judgement
+        # is now folded into band_label's floors.
+        self.use_judge = use_judge
+        self.llm_bands = llm_bands
         # strict = LLM-only: never fall back to the deterministic heuristics; raise
         # LLMUnavailableError instead. Implies use_llm. Used by the scanner so its
         # scores are always the model's, never a hardcoded table or anchor.
@@ -433,20 +447,35 @@ class StaticScorer:
         blast = self.score_blast(sensitivity)
         baselines = self.build_baselines()
 
-        # Stage 5: judge, then apply its overrides before the cells are derived
-        # so the matrix reflects the reviewed values, not the first proposals.
-        crosscheck = self.judge()
-        for (field, key), value in self._overrides.items():
-            if field == "tool_impact":
-                impacts[key] = value
-            elif field == "sensitivity":
-                sensitivity[key] = value
-            elif field == "blast_radius":
-                blast[key] = value
+        # Optional primitive-override judge (off by default): apply its overrides
+        # before the cells are derived so the matrix reflects the reviewed values.
+        crosscheck = self.judge() if self.use_judge else {"judge_ran": False, "note": "judge disabled"}
+        if self.use_judge:
+            for (field, key), value in self._overrides.items():
+                if field == "tool_impact":
+                    impacts[key] = value
+                elif field == "sensitivity":
+                    sensitivity[key] = value
+                elif field == "blast_radius":
+                    blast[key] = value
 
-        # Scores come from the formula; the BAND is the LLM's judgement (stage 4b),
-        # not a hardcoded policy. Offline, score_bands falls back to band_label.
-        bands = self.score_bands(sensitivity, impacts, blast)
+        # Bands: deterministic band_label of the primitives by default (a pure,
+        # reproducible function of the score); the LLM band stage is opt-in.
+        bands = (
+            self.score_bands(sensitivity, impacts, blast)
+            if self.llm_bands
+            else {
+                asset.asset_id: {
+                    tool.name: band_label(
+                        sensitivity[asset.asset_id],
+                        blast[f"{tool.name}|{asset.asset_id}"],
+                        impacts[tool.name],
+                    )
+                    for tool in self.registry.tools
+                }
+                for asset in self.registry.assets
+            }
+        )
         cells: dict[str, dict[str, float]] = {}
         for asset in self.registry.assets:
             row: dict[str, float] = {}
@@ -527,6 +556,8 @@ def build_static_table(
     use_llm: bool = True,
     strict: bool = False,
     version: str = "static-0000-00-00",
+    use_judge: bool = False,
+    llm_bands: bool = False,
 ) -> dict:
     """Convenience entry point: score ``registry`` and return the table dict.
 
@@ -536,4 +567,6 @@ def build_static_table(
     that exercise the LLM path monkeypatch
     ``mcp_security.static_scoring.pipeline.query_ollama``.
     """
-    return StaticScorer(registry, use_llm=use_llm, strict=strict).build_table(version)
+    return StaticScorer(
+        registry, use_llm=use_llm, strict=strict, use_judge=use_judge, llm_bands=llm_bands
+    ).build_table(version)

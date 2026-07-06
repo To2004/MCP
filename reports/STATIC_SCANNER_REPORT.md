@@ -53,7 +53,7 @@ Five packages, ~5,300 lines, in a clean pipeline:
 | Package | Role | Key files |
 | --- | --- | --- |
 | `scanner/` | Assemble a server's description (tools from its own `tools/list`, assets from its on-disk store) and drive the LLM stage. | `scan.py`, `tool_list.py` |
-| `static_scoring/` | The LLM pipeline: infer domain → score tool impact, asset sensitivity, blast radius → multiply → band → judge. | `pipeline.py`, `prompts.py`, `registry.py` |
+| `static_scoring/` | The LLM pipeline: infer domain → score tool impact, asset sensitivity, blast radius → multiply → **deterministic** `band_label` (LLM-band + judge are opt-in). | `pipeline.py`, `prompts.py`, `registry.py` |
 | `param_scoring/` | Per-tool **input-parameter** rubrics: which inputs carry magnitude (counts, amounts, unbounded queries) and how a value escalates the band. | `derive.py`, `rubric.py`, `apply.py` |
 | `call_scoring/` | Resolve an observed call's arguments to a scanned asset and look up its band; honest status when unresolvable. | `resolve.py`, `score.py`, `tables.py` |
 | `atomic_ops/` | Design-time classification of tool catalogs into atomic operations + sensitivity heatmaps. | `classifier.py`, `toollist_rules.py` |
@@ -245,19 +245,18 @@ scored them static-only. Results in `reports/static_check/`:
   strictly higher for the same tool; a bigger input parameter escalates the band.
   All four checks pass on data outside the training set.
 
-- **Band provenance — an honest reproducibility caveat.** Only **810/1700
-  (47.6%)** of stored bands equal the deterministic `band_label(sensitivity,
-  blast, impact)`; the other **52%** are the pipeline's per-cell **LLM band
-  override** (the judge stage). The LLM both escalates (e.g. `delete_all_events`
-  high→critical) and de-escalates (e.g. a modest `create_event` high→medium).
-  This is *by design* — LLM bands are the intended output — but it has two
-  consequences worth stating plainly: (1) bands are **not reproducible** across
-  rescans (the known "numbers move on re-scan" effect), and (2) the numeric
-  score and the band can rank cells differently, so the score is not, by itself,
-  the authoritative signal — the band is.
-
-  *(Correction to an earlier note: the score↔band "inversions" are mostly this
-  intended categorical/LLM behavior, not a scorer bug.)*
+- **Bands are now deterministic (this was the ~52%-override problem, fixed).**
+  Previously ~52% of bands were a per-cell **LLM band override** plus a
+  primitive-override **judge** stage — which made bands non-reproducible ("numbers
+  move on re-scan") and divergent from the score. Since the band isn't the product
+  here (the **dynamic** scorer is; it consumes the static band only as a coarse
+  impact floor), both the judge and the LLM band stage are now **off by default**:
+  the band is `band_label(score)`, a pure reproducible function of the primitives.
+  The judgement the LLM used to add (irreversible ops on trivial data, reads of
+  restricted data, mass destruction of restricted data) was measured and **folded
+  into `band_label`'s security floors**, so the first pass is right without an
+  overrider. The judge / LLM-band remain available opt-in (`use_judge`,
+  `llm_bands`) for the methodology comparison, but are not the default path.
 
 ---
 
@@ -267,10 +266,9 @@ scored them static-only. Results in `reports/static_check/`:
    capability, not the intent in the arguments. A base64-wrapped reverse shell
    or `cat secrets | mail external@` is rated by the benign tool it rides on.
    This is the gap the **dynamic** scorer (`src/mcp_security/dynamic/`) closes.
-2. **Band reproducibility.** ~52% of bands are LLM judgement; a rescan can move
-   them. Deriving bands deterministically from the score via `band_label()`
-   (already implemented, used as the offline fallback) would trade some nuance
-   for full reproducibility — a decision to make, not a bug to fix.
+2. **Band reproducibility — resolved.** Bands are now deterministic
+   `band_label(score)` (judge + LLM-band off by default), so rescans reproduce
+   them. The band is a coarse floor for the dynamic scorer, not the product.
 3. **Formula fragility.** 85% of cells flip band under a ±1 change to a primitive.
 4. **Flat sensitivity on some kinds.** The calendar scan rates every calendar
    sensitivity 4, so it cannot distinguish a benign from a sensitive calendar by
