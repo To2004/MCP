@@ -1184,1042 +1184,1042 @@
   },
   "tool_input_ranking": {
     "create_or_update_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "content",
           "type": "string",
           "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
-        },
-        {
-          "name": "message",
-          "type": "string",
-          "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 5,
+          "reason": "Can contain arbitrary code or data"
         },
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "Can target critical files or directories"
         },
         {
           "name": "branch",
           "type": "string",
           "required": true,
+          "risk": 3,
+          "reason": "Can affect different stages of development"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Can mislead commit history"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Names the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the repository owner"
         },
         {
           "name": "sha",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Specific to existing file updates"
         }
       ]
     },
     "search_repositories": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "query",
           "type": "string",
           "required": true,
           "risk": 5,
-          "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
-        },
-        {
-          "name": "page",
-          "type": "number",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Can be used to craft complex and potentially malicious search queries"
         },
         {
           "name": "perPage",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Allows for a large number of results to be fetched at once, increasing load"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "risk": 2,
+          "reason": "Used for pagination but has limited impact on server risk"
         }
       ]
     },
     "create_repository": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
+        {
+          "name": "private",
+          "type": "boolean",
+          "required": false,
+          "risk": 3,
+          "reason": "Controls visibility and access scope"
+        },
         {
           "name": "description",
           "type": "string",
           "required": false,
-          "risk": 5,
-          "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+          "risk": 2,
+          "reason": "Can contain arbitrary text"
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "private",
-          "type": "boolean",
-          "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply names the repository"
         },
         {
           "name": "autoInit",
           "type": "boolean",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Does not significantly affect security"
         }
       ]
     },
     "get_file_contents": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "reason": "Can be used to access sensitive files"
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "required": false,
+          "risk": 3,
+          "reason": "Allows targeting different branches which may contain vulnerabilities"
+        },
         {
           "name": "owner",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Identifies the repository owner but does not directly amplify risk"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "path",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "branch",
-          "type": "string",
-          "required": false,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Identifies the specific repository but does not directly amplify risk"
         }
       ]
     },
     "push_files": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "files",
           "type": "array",
           "required": true,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "risk": 5,
+          "reason": "Can contain arbitrary code or data"
         },
         {
           "name": "message",
           "type": "string",
           "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "Allows for potential social engineering through commit messages"
         },
         {
           "name": "branch",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Could target critical branches but is limited in scope"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Simply identifies the repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the owner of the repository"
         }
       ]
     },
     "create_issue": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "body",
           "type": "string",
           "required": false,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+          "risk": 5,
+          "reason": "can contain arbitrary code or malicious content"
         },
         {
           "name": "assignees",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "allows bulk assignment to multiple users"
         },
         {
           "name": "labels",
           "type": "array",
           "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can be used to tag issues in a way that overwhelms the system"
         },
         {
           "name": "title",
           "type": "string",
           "required": true,
+          "risk": 2,
+          "reason": "can contain misleading or sensitive information"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "merely names the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "identifies the owner of the repository"
         },
         {
           "name": "milestone",
           "type": "number",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "affects issue tracking but not directly risky"
         }
       ]
     },
     "create_pull_request": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "body",
           "type": "string",
           "required": false,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
-        },
-        {
-          "name": "maintainer_can_modify",
-          "type": "boolean",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 5,
+          "reason": "Can contain arbitrary code or malicious content"
         },
         {
           "name": "title",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 4,
+          "reason": "May mislead maintainers with deceptive text"
         },
         {
           "name": "head",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Could point to a branch with harmful changes"
         },
         {
           "name": "base",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Can be set to critical branches for wider impact"
         },
         {
           "name": "draft",
           "type": "boolean",
           "required": false,
+          "risk": 2,
+          "reason": "Allows hiding malicious content until ready"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply identifies the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the owner without amplifying risk"
+        },
+        {
+          "name": "maintainer_can_modify",
+          "type": "boolean",
+          "required": false,
+          "risk": 1,
+          "reason": "Does not directly amplify risk"
         }
       ]
     },
     "fork_repository": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
         {
           "name": "organization",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        }
-      ]
-    },
-    "create_branch": {
-      "source": "rules",
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "can specify a different target organization"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "allows selection of any repository to fork"
         },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "reason": "defines the source repository owner"
+        }
+      ]
+    },
+    "create_branch": {
+      "source": "llm",
+      "inputs": [
         {
           "name": "branch",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can be used to create arbitrary branch names"
         },
         {
           "name": "from_branch",
           "type": "string",
           "required": false,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        }
-      ]
-    },
-    "list_commits": {
-      "source": "rules",
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "allows specifying an alternative source branch"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "merely identifies the repository target"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "identifies the owner but does not influence action scope"
+        }
+      ]
+    },
+    "list_commits": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "perPage",
+          "type": "number",
+          "required": false,
+          "risk": 4,
+          "reason": "controls the volume of data retrieved per request"
         },
         {
           "name": "sha",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "can specify arbitrary commit"
         },
         {
           "name": "page",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "perPage",
-          "type": "number",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        }
-      ]
-    },
-    "list_issues": {
-      "source": "rules",
-      "inputs": [
-        {
-          "name": "labels",
-          "type": "array",
-          "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "per_page",
-          "type": "number",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "affects pagination but not as directly risky as perPage"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "merely names the target repository"
         },
         {
-          "name": "direction",
+          "name": "owner",
           "type": "string",
-          "required": false,
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "identifies the owner of the repository"
+        }
+      ]
+    },
+    "list_issues": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "labels",
+          "type": "array",
+          "required": false,
+          "risk": 5,
+          "reason": "can be used to filter for a large number of issues"
+        },
+        {
+          "name": "per_page",
+          "type": "number",
+          "required": false,
+          "risk": 4,
+          "reason": "allows setting a high count per page"
         },
         {
           "name": "page",
           "type": "number",
           "required": false,
+          "risk": 3,
+          "reason": "can lead to excessive pagination requests"
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "changes the order but not scope"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "changes the order but not scope"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "merely names the repository owner"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "merely names the target repository"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "reason": "limits to open or closed issues"
         },
         {
           "name": "since",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "sort",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "state",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "narrows down by time"
         }
       ]
     },
     "update_issue": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "body",
           "type": "string",
           "required": false,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+          "risk": 5,
+          "reason": "can contain arbitrary code or large payloads"
         },
         {
           "name": "assignees",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "allows bulk assignment to multiple users"
         },
         {
           "name": "labels",
           "type": "array",
           "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "issue_number",
-          "type": "number",
-          "required": true,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "can be used to tag issues in a way that overwhelms the system"
         },
         {
           "name": "title",
           "type": "string",
           "required": false,
+          "risk": 2,
+          "reason": "can contain misleading or large text"
+        },
+        {
+          "name": "issue_number",
+          "type": "number",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "identifies the target issue only"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "names the repository and is structural"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "names the owner and is structural"
         },
         {
           "name": "milestone",
           "type": "number",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "affects scope but is less likely to cause direct harm"
         },
         {
           "name": "state",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "changes issue status but not inherently risky"
         }
       ]
     },
     "add_issue_comment": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "body",
           "type": "string",
           "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+          "risk": 5,
+          "reason": "Fully controlled payload can contain malicious content"
         },
         {
           "name": "issue_number",
           "type": "number",
           "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Identifies the target issue but does not control scope or content"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "Names the repository and thus limits the scope to a specific project"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Limits the action to a specific user or organization"
         }
       ]
     },
     "search_code": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
+        {
+          "name": "q",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "reason": "Can be used to craft complex and potentially malicious queries"
+        },
         {
           "name": "per_page",
           "type": "number",
           "required": false,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Allows for requesting large amounts of data in a single call"
         },
         {
-          "name": "q",
-          "type": "string",
-          "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "risk": 2,
+          "reason": "Facilitates iterating through multiple pages, increasing potential data exposure"
         },
         {
           "name": "order",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "page",
-          "type": "number",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Only affects the sorting of results, minimal impact"
         }
       ]
     },
     "search_issues": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "per_page",
-          "type": "number",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
         {
           "name": "q",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 5,
+          "reason": "Allows arbitrary and complex queries that can overwhelm the server"
+        },
+        {
+          "name": "per_page",
+          "type": "number",
+          "required": false,
+          "risk": 4,
+          "reason": "Controls the number of results returned per page, potentially leading to large data transfers"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "risk": 3,
+          "reason": "Can be used in conjunction with per_page to request a large number of pages"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "Alters the order of results but does not inherently increase risk"
         },
         {
           "name": "order",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "page",
-          "type": "number",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "sort",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Limits to 'asc' or 'desc', minimal impact on server load"
         }
       ]
     },
     "search_users": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "per_page",
-          "type": "number",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
         {
           "name": "q",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 5,
+          "reason": "can be used for complex and broad queries"
+        },
+        {
+          "name": "per_page",
+          "type": "number",
+          "required": false,
+          "risk": 4,
+          "reason": "increases the breadth of data retrieved per call"
+        },
+        {
+          "name": "page",
+          "type": "number",
+          "required": false,
+          "risk": 3,
+          "reason": "allows for iterative retrieval over many pages"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "modifies the order but not the scope"
         },
         {
           "name": "order",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "page",
-          "type": "number",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "sort",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "only changes the direction of sorting"
         }
       ]
     },
     "get_issue": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 4,
+          "reason": "potentially allows access across multiple repositories"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "reason": "can target any repository within an owner's account"
+        },
         {
           "name": "issue_number",
           "type": "number",
           "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "limits the scope to a single issue"
         }
       ]
     },
     "get_pull_request": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "pull_number",
-          "type": "number",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
         {
           "name": "owner",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "allows targeting of different users or organizations"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
+          "risk": 3,
+          "reason": "can target any repository within an owner's account"
+        },
+        {
+          "name": "pull_number",
+          "type": "number",
+          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "limits the scope to a specific pull request"
         }
       ]
     },
     "list_pull_requests": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "per_page",
           "type": "number",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "risk": 5,
+          "reason": "Can amplify server load by requesting maximum results per page"
         },
         {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "state",
-          "type": "string",
+          "name": "page",
+          "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 4,
+          "reason": "Allows for broad fan-out across multiple pages of data"
         },
         {
           "name": "head",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Potentially allows filtering with complex or malicious branch names"
         },
         {
           "name": "base",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Can widen scope by targeting critical base branches"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "Could be used to target specific states for manipulation"
         },
         {
           "name": "sort",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "Alters the order of results but not inherently risky"
         },
         {
           "name": "direction",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "Changes sorting direction without amplifying risk significantly"
         },
         {
-          "name": "page",
-          "type": "number",
-          "required": false,
+          "name": "owner",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply identifies the repository owner"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the specific repository"
         }
       ]
     },
     "create_pull_request_review": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "body",
           "type": "string",
           "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+          "risk": 5,
+          "reason": "Can contain arbitrary text, potentially malicious"
         },
         {
           "name": "comments",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "pull_number",
-          "type": "number",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Array can be large, allowing bulk posting of comments"
         },
         {
           "name": "event",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "Could specify a destructive or scope-widening action"
         },
         {
           "name": "commit_id",
           "type": "string",
           "required": false,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Can target any commit, but is more specific"
+        },
+        {
+          "name": "pull_number",
+          "type": "number",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the pull request, no amplification"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Names the repository, no amplification"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the owner, no amplification"
         }
       ]
     },
     "merge_pull_request": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "commit_message",
           "type": "string",
           "required": false,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
-        },
-        {
-          "name": "pull_number",
-          "type": "number",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 5,
+          "reason": "Can contain arbitrary code or instructions"
         },
         {
           "name": "commit_title",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 4,
+          "reason": "May include misleading information"
         },
         {
           "name": "merge_method",
           "type": "string",
           "required": false,
+          "risk": 3,
+          "reason": "Could alter merge behavior in unexpected ways"
+        },
+        {
+          "name": "pull_number",
+          "type": "number",
+          "required": true,
+          "risk": 2,
+          "reason": "Allows targeting specific pull requests but not inherently risky"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply identifies the repository target"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Identifies the owner of the repository"
         }
       ]
     },
     "get_pull_request_files": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "pull_number",
           "type": "number",
           "required": true,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "can be used to target specific sensitive pull requests"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "limits the scope to a single repository but does not amplify risk on its own"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "merely names the repository owner without amplifying risk"
         }
       ]
     },
     "get_pull_request_status": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "pull_number",
           "type": "number",
           "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "identifies specific pull request"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "names the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "names the target owner"
         }
       ]
     },
     "update_pull_request_branch": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "pull_number",
-          "type": "number",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "repo",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
         {
           "name": "expected_head_sha",
           "type": "string",
           "required": false,
+          "risk": 3,
+          "reason": "Can be used to manipulate merge conditions"
+        },
+        {
+          "name": "pull_number",
+          "type": "number",
+          "required": true,
+          "risk": 2,
+          "reason": "Identifies the target pull request but does not directly amplify risk"
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply identifies the repository without amplifying risk"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "Names the owner of the repository without additional risk"
         }
       ]
     },
     "get_pull_request_comments": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "pull_number",
           "type": "number",
           "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "limits the scope to a specific pull request"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "merely names the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "merely identifies the repository owner"
         }
       ]
     },
     "get_pull_request_reviews": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "pull_number",
           "type": "number",
           "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "owner",
-          "type": "string",
-          "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "limits the scope to a specific pull request"
         },
         {
           "name": "repo",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 1,
+          "reason": "merely names the target repository"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "merely identifies the owner of the repository"
         }
       ]
     }
