@@ -37,19 +37,23 @@ class _InputRule:
     reason: str
     name_hints: tuple[str, ...] = ()
     types: tuple[str, ...] = ()
+    trigger: str | None = None  # best-effort critical condition (the rules can't know exact numbers)
 
 
 _INPUT_RULES: tuple[_InputRule, ...] = (
     _InputRule(5, "free-form query/command — unbounded reach; the whole payload is attacker-controlled",
-               name_hints=("query", "sql", "command", "cmd", "script", "code", "expression", "filter")),
+               name_hints=("query", "sql", "command", "cmd", "script", "code", "expression", "filter"),
+               trigger="unbounded / no bound on scope"),
     _InputRule(4, "list/array — risk scales with its length (bulk reach, mass fan-out)",
-               types=("array",)),
+               types=("array",), trigger="large list (bulk fan-out)"),
     _InputRule(4, "payload content — injection / exfiltration / poisoning vector",
                name_hints=("content", "body", "data", "payload", "text", "message", "blocks", "attachments")),
     _InputRule(4, "escalating flag — flips the call to a wider/irreversible mode",
-               name_hints=("recursive", "force", "all", "confirm", "overwrite", "permanent", "cascade", "hard")),
+               name_hints=("recursive", "force", "all", "confirm", "overwrite", "permanent", "cascade", "hard"),
+               trigger="flag set true"),
     _InputRule(3, "magnitude/count — larger value means broader effect",
-               name_hints=("limit", "count", "max", "depth", "size", "number", "amount", "quantity", "n_", "per_page", "days")),
+               name_hints=("limit", "count", "max", "depth", "size", "number", "amount", "quantity", "n_", "per_page", "days"),
+               trigger="large value"),
     _InputRule(2, "names the target resource — selects what the op touches",
                name_hints=("path", "file", "repo", "owner", "channel", "calendar", "table", "branch", "id",
                            "name", "url", "email", "recipient", "user", "event", "issue", "pull")),
@@ -153,6 +157,7 @@ def _rank_inputs_deterministic(tool: ToolSpec) -> list[dict]:
             "type": p.get("type", "any"),
             "required": p.get("required", False),
             "risk": (rule := _input_risk(p)).risk,
+            "critical_trigger": rule.trigger,
             "reason": rule.reason,
         }
         for p in tool.parameters()
@@ -169,15 +174,20 @@ Description: {desc}
 Input parameters:
 {params}
 
-Rank EVERY parameter by how much its *value* can amplify the call's risk to the
-server — a free-form query/command or a payload the caller fully controls, a list
-whose length is breadth (bulk fan-out), a destructive or scope-widening flag, and
-a large magnitude/count are high; a parameter that merely names the target or is a
-fixed enum/structural field is low. Judge intent, not just the name.
+For EVERY parameter, do two things:
+1. rank how much its *value* can amplify the call's risk to the server — a
+   free-form query/command or a payload the caller fully controls, a list whose
+   length is breadth (bulk fan-out), a destructive or scope-widening flag, and a
+   large magnitude/count are high; a parameter that merely names the target or is
+   a fixed enum/structural field is low. Judge intent, not just the name.
+2. if the parameter carries a MAGNITUDE (a money amount, a count, a list length,
+   a row limit, a recursion depth, …), give the concrete value/condition at which
+   the call should be treated as CRITICAL — e.g. "amount >= 100000",
+   ">= 20 recipients", "unbounded (no LIMIT)". If it has no such threshold, use null.
 
 Output ONLY a JSON object, every parameter listed exactly once:
 {{"ranking": [{{"name": <parameter name>, "risk": <integer 1-5, 5=most amplifying>,
-"reason": "<one short clause>"}}]}}"""
+"critical_trigger": <string threshold or null>, "reason": "<one short clause>"}}]}}"""
 
 
 def _rank_inputs_llm(tool: ToolSpec) -> list[dict] | None:
@@ -213,12 +223,14 @@ def _rank_inputs_llm(tool: ToolSpec) -> list[dict] | None:
             risk = max(1, min(5, int(entry.get("risk"))))
         except (TypeError, ValueError):
             continue
+        trigger = entry.get("critical_trigger")
         ranked.append(
             {
                 "name": name,
                 "type": by_name[name].get("type", "any"),
                 "required": by_name[name].get("required", False),
                 "risk": risk,
+                "critical_trigger": str(trigger)[:80] if trigger else None,
                 "reason": str(entry.get("reason", ""))[:140],
             }
         )

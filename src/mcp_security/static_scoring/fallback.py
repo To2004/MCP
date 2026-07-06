@@ -190,11 +190,11 @@ def asset_sensitivity(asset: AssetSpec) -> tuple[int, list[str], str]:
 
 
 def blast_radius(tool: ToolSpec, asset: AssetSpec, sensitivity: int) -> tuple[int, str]:
-    """Return ``(blast 0-4, rationale)`` for one (tool, asset) pair.
+    """Return ``(blast 0-5, rationale)`` for one (tool, asset) pair.
 
     Read-only tools are a narrow touch (1); mutating tools scale with their
     impact; a dangerous asset (sensitivity ≥ 4) escalates the reach by one,
-    capped at 4 — mirroring the inferred ``dangerous_classes`` escalation.
+    capped at 5 — mirroring the inferred ``dangerous_classes`` escalation.
     """
     impact, _, _ = tool_impact(tool)
     if impact == 1:
@@ -204,10 +204,10 @@ def blast_radius(tool: ToolSpec, asset: AssetSpec, sensitivity: int) -> tuple[in
         base = 2
         why = "scoped, recoverable modification"
     else:
-        base = 4
+        base = 5
         why = "clobber/destroy or irreversible action"
-    if sensitivity >= 4 and base < 4:
-        return min(base + 1, 4), f"{why}; +1 escalation for a dangerous asset class"
+    if sensitivity >= 4 and base < 5:
+        return min(base + 1, 5), f"{why}; +1 escalation for a dangerous asset class"
     return base, why
 
 

@@ -100,25 +100,25 @@ Return JSON:
 # --- 3. Blast Radius ---------------------------------------------------------
 
 BLAST_TASK = """
-TASK: Assign BLAST RADIUS (0-4) for one (tool, asset class) pair -- how far this
+TASK: Assign BLAST RADIUS (0-5) for one (tool, asset class) pair -- how far this
 tool reaches into this asset when it acts, per the inferred
 blast_radius_meaning.
   0 = cannot touch this asset class (N/A cell).
   1 = narrow / read-only touch of a SINGLE item.
   2 = scoped, recoverable modification of a single item.
-  3 = broad modification or full overwrite, OR a read/enumeration that spans MANY
-      items at once.
-  4 = clobber/destroy/irrevocable, or fan-out across many instances at once.
+  3 = broad modification of several items in one scope.
+  4 = full overwrite, OR a read/enumeration that spans MANY items at once.
+  5 = clobber/destroy/irrevocable, or fan-out across many instances at once.
 BREADTH RULE (do not under-score reads): reach is not only about writing. A tool
 that ENUMERATES or reads ACROSS a whole scope at once -- listing a directory,
 walking a tree, searching/globbing, reading multiple files, or any SELECT over a
 table -- aggregates exposure over every item in that scope. When the asset class
 is a CONTAINER/SCOPE (a directory, a whole table, a channel) and the tool lists,
-walks, searches, or bulk-reads it, the blast radius is broad (>=3), because one
+walks, searches, or bulk-reads it, the blast radius is broad (>=4), because one
 call exposes everything inside -- even though each individual read is harmless.
 A single-file read stays at 1; it is the FAN-OUT over many items that raises it.
 Escalation: if the asset class matches the inferred dangerous_classes, raise by
-1 (cap 4) versus the same operation on an ordinary asset; say so in rationale."""
+1 (cap 5) versus the same operation on an ordinary asset; say so in rationale."""
 
 BLAST_USER = """Tool:
 {tool_json}
@@ -127,7 +127,7 @@ Asset class:
 {asset_json}
 
 Return JSON:
-{{"tool_name": str, "asset_id": str, "blast_radius": 0-4, "rationale": str,
+{{"tool_name": str, "asset_id": str, "blast_radius": 0-5, "rationale": str,
   "confidence": 0.0-1.0}}"""
 
 

@@ -66,12 +66,16 @@ Each `(tool, asset)` cell gets a numeric score from three primitives the LLM
 derives, with **likelihood pinned to 1.0** (a design-time upper bound):
 
 ```
-score = asset_sensitivity(1–5) × blast_radius(1–4) × tool_impact(1–3)
+score = asset_sensitivity(1–5) × blast_radius(0–5) × tool_impact(1–3)
 ```
 
 - **tool_impact** — reversibility of the action: read = 1, create = 2, overwrite/delete/move = 3.
 - **asset_sensitivity** — 1 (public) … 5 (regulated / PII / secrets / crown jewels).
-- **blast_radius** — how far one call reaches: a single file = 1 … whole store = 4.
+- **blast_radius** — how far one call reaches, on a `0–5` scale (`0` = can't
+  touch this asset; `1` single-item touch … `4` bulk read/overwrite across many
+  … `5` clobber/destroy/fan-out). *(Widened from `0–4` to `0–5` so reach spans
+  the same 1–5 gradation as sensitivity; `band_label`'s "broad" threshold stays
+  `blast ≥ 3`, so this is a scale extension, not a re-calibration.)*
 
 The **band** is *not* a raw threshold on the score. `band_label()` reserves the
 top band the way a security reviewer would, so a gate does not block normal work:
@@ -158,8 +162,11 @@ real catalogs: `delete_file → DELETE (Critical)`, `merge_pull_request → OVER
 
 Alongside the cross-server magnitude ranking above, every scan carries a
 **per-tool** ranking of that tool's own inputs (`tool_input_ranking` →
-`{source, inputs:[{name, type, required, risk 1–5, reason}]}`), scored by how
-much each input can amplify the call's risk.
+`{source, inputs:[{name, type, required, risk 1–5, critical_trigger, reason}]}`),
+scored by how much each input can amplify the call's risk. `critical_trigger` is
+the value/condition that pushes *that input* to critical — e.g. `amount ≥ 100000`,
+`≥ 20 recipients`, `unbounded (no LIMIT)` — or null for non-magnitude inputs
+(the same value-cutoff idea as the §5 param rubrics, produced inline here).
 
 On a real (LLM) scan the ranking is produced by the model, which reasons about
 *intent* — the prompt (in `atomic_flags._INPUT_RANK_PROMPT`) asks a security

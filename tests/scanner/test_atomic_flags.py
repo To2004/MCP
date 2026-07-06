@@ -89,6 +89,24 @@ def test_llm_ranking_falls_back_when_incomplete(monkeypatch):
     assert entry["source"] == "rules-fallback"
 
 
+def test_llm_ranking_carries_critical_trigger(monkeypatch):
+    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
+        {"name": "owner", "risk": 2, "critical_trigger": None, "reason": "target"},
+        {"name": "content", "risk": 4, "critical_trigger": None, "reason": "payload"},
+        {"name": "files", "risk": 5, "critical_trigger": ">= 20 files", "reason": "bulk"},
+    ]})
+    inputs = rank_tool_inputs([_tool("push_files", "", _PUSH_SCHEMA)], use_llm=True)["push_files"]["inputs"]
+    files = next(r for r in inputs if r["name"] == "files")
+    assert files["critical_trigger"] == ">= 20 files"
+
+
+def test_deterministic_ranking_has_trigger_field():
+    inputs = rank_tool_inputs([_tool("read_query", "", {
+        "type": "object", "properties": {"query": {"type": "string"}}})])["read_query"]["inputs"]
+    assert inputs[0]["name"] == "query"
+    assert inputs[0]["critical_trigger"] == "unbounded / no bound on scope"
+
+
 def test_enrich_scan_attaches_both_fields():
     table = {"tool_impact": {"read_file": 1}}
     enrich_scan(table, [_tool("read_file", "Read a file")])
