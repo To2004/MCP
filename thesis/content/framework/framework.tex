@@ -1,0 +1,356 @@
+This chapter presents \textbf{McpRisk}, our defense-oriented risk-scoring
+framework. We first make the threat model precise
+(\Cref{sec:framework:threat_model}), then describe the end-to-end system
+architecture (\Cref{sec:framework:architecture}), the factor-based scoring
+model and its formulas (\Cref{sec:framework:model}), the atomic-operation
+severity taxonomy (\Cref{sec:framework:atomic}), the parameter layer that turns
+the static score into a request-time score (\Cref{sec:framework:params}), and
+finally the implementation and its reproducibility guarantees
+(\Cref{sec:framework:implementation}).
+
+\section{Threat Model}
+\label{sec:framework:threat_model}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מודל האיום}}
+
+McpRisk adopts a single, deliberately asymmetric threat model:
+
+\begin{quote}
+\textbf{The MCP server is always the protected asset; the agent is always the
+threat source.}
+\end{quote}
+
+Every interaction we consider flows \emph{client} $\to$ \emph{server}: an
+autonomous or semi-autonomous LLM agent (or the user behind it) issues tool
+calls through the protocol in order to read, modify, destroy, or exfiltrate
+resources that the server fronts. The agent may be malicious by intent, or
+benign but compromised --- for instance, an agent that has ingested an indirect
+prompt injection~\cite{zhan2024injecagent} and now acts against the server's
+interest. From the server's vantage point these cases are indistinguishable,
+so McpRisk does not attempt to infer intent; it scores the \emph{consequence}
+of the requested operation.
+
+The inverse scenario --- a malicious server attacking its client, the classical
+``tool poisoning'' direction~\cite{shi2025toolhijacker} --- is explicitly out
+of scope. Tool poisoning enters our model only as a \emph{cause}: a poisoned
+agent subsequently becomes a threat \emph{to the server}, and it is that
+downstream request we score. Two further design commitments follow from this
+framing. First, McpRisk is \textbf{not anomaly detection}: it does not flag
+deviations from a learned baseline of ``normal'' traffic, because a
+first-of-its-kind malicious call has no baseline. Instead it defines, from
+concrete factors, what \emph{makes} an interaction risky. Second, the score is
+\textbf{graduated, not binary}: rather than an allow/deny verdict, it produces a
+four-level band so that a server can gate the top band, throttle or escalate the
+middle bands, and log the rest.
+
+\section{System Architecture}
+\label{sec:framework:architecture}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{ארכיטקטורת המערכת}}
+
+McpRisk is organized as a pipeline of loosely coupled stages, summarized in
+\Cref{fig:pipeline}. It operates in two phases that mirror the two scoring
+modes of the introduction.
+
+\textbf{Design time (static).} A \emph{scanner} runs before the server goes
+live. It never connects to a running server and reads no pre-existing risk
+table; instead it assembles a registry from two static sources --- the tools
+the server advertises in its own \texttt{tools/list} response, and the assets
+of the store it fronts (a filesystem tree, a SQLite schema, or a set of
+declared Slack channels, calendars, or repositories). A six-stage
+\emph{static-scoring} pipeline then assigns each (tool, asset) pair a risk band,
+producing a scan artifact.
+
+\textbf{Request time (dynamic).} A \emph{parameter-scoring} module derives, per
+tool, a rubric for the magnitude-bearing arguments of a call, and a
+\emph{call-scoring} module resolves each captured call to a scanned (tool,
+asset) cell and escalates its band according to the actual argument magnitudes.
+Calls that cannot be resolved are handled honestly: an unknown tool is marked
+\emph{invalid} (a misconfiguration) and a known tool aimed at an unscanned
+target is marked \emph{unresolved} (the scorer abstains) rather than guessing.
+
+A separate \emph{review} subsystem --- comprising deterministic verification, an
+independent LLM judge, an advisor, and a panel of persona critics --- audits
+the pipeline's outputs but is never imported by the scorer itself, keeping
+evaluation independent of scoring.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        box/.style={draw, rounded corners, align=center, minimum height=1cm,
+                    text width=2.6cm, fill=black!3},
+        arr/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[box] (scan) {Scanner\\{\scriptsize tools $\cup$ assets}};
+        \node[box, right=1.1cm of scan] (static) {Static scoring\\{\scriptsize 6 stages}};
+        \node[box, right=1.1cm of static] (param) {Parameter\\rubric};
+        \node[box, right=1.1cm of param] (call) {Call scoring\\{\scriptsize resolve + escalate}};
+        \node[box, below=1.0cm of static, text width=6cm] (review)
+            {Review: verify $\cdot$ judge $\cdot$ advise $\cdot$ critics};
+
+        \draw[arr] (scan) -- (static);
+        \draw[arr] (static) -- (param);
+        \draw[arr] (param) -- (call);
+        \draw[arr] (static) -- (review);
+        \draw[arr] (call.south) |- (review.east);
+    \end{tikzpicture}
+    \caption{The McpRisk pipeline. The scanner and static-scoring stages run at
+    design time; the parameter and call-scoring stages run at request time. The
+    review subsystem audits outputs independently of the scorer.}
+    \label{fig:pipeline}
+\end{figure}
+
+The static-scoring pipeline itself proceeds through six stages, each of which
+prefers a local LLM working against an explicit rubric and degrades to a
+deterministic fallback when the model is unavailable (except in \emph{strict}
+mode, where an unreachable model raises an error rather than fabricating a
+value): (0)~\emph{domain inference} of the server kind and profile;
+(1)~\emph{tool impact} on a $1$--$3$ scale; (2)~\emph{asset sensitivity} on a
+$1$--$5$ scale; (3)~\emph{blast radius} per (tool, asset) pair;
+(4)~\emph{baselines} of expected behavior and \emph{risk-band} assignment; and
+(5)~an independent \emph{judge} that re-derives every primitive from the same
+domain profile and whose value overrides the proposer's on disagreement. Over
+the seven evaluation servers this judge recorded $52$ overrides, and the
+scan records a cross-check summary and provenance flag
+(\texttt{llm-scan} vs.\ \texttt{offline-baseline}) for every cell.
+
+\section{The Scoring Model}
+\label{sec:framework:model}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מודל הניקוד}}
+
+At the conceptual level, McpRisk views the risk of an interaction as the
+product of how much damage it can do and how likely that damage is:
+\begin{equation}
+\text{Risk} \;=\; \text{Impact} \times \text{Likelihood} \times
+\text{Irreversibility}.
+\label{eq:conceptual}
+\end{equation}
+In the implemented \emph{static} pipeline, likelihood is pinned to its upper
+bound ($\text{Likelihood}=1.0$) because a design-time score must assume the
+worst case, and irreversibility is folded into the tool-impact term. This
+yields the concrete static score for a (tool, asset) cell:
+\begin{equation}
+\text{score} \;=\; \underbrace{s}_{\text{sensitivity}} \;\times\;
+\underbrace{b}_{\text{blast radius}} \;\times\;
+\underbrace{i}_{\text{tool impact}},
+\qquad s \in [1,5],\; b \in [0,4],\; i \in [1,3],
+\label{eq:static}
+\end{equation}
+so the score ranges over $[0, 60]$. The three primitives are defined as
+follows.
+
+\textbf{Sensitivity $s$ ($1$--$5$)} measures the confidentiality and value of
+the asset being touched, from public data to regulated PII
+(\Cref{tab:sensitivity}). \textbf{Blast radius $b$} measures how far a single
+action propagates, from a single record (local) to the entire system
+(systemic). \textbf{Tool impact $i$ ($1$--$3$)} measures reversibility: $1$ for
+read-only tools that cannot change state, $2$ for tools that make a recoverable
+change (write, edit, insert, move, post), and $3$ for irreversible or
+access-changing tools (delete, drop, overwrite, execute, revoke, grant). This
+last term is where the framework encodes the intuition that
+\texttt{file\_write} is inherently riskier than \texttt{file\_read} and that
+\texttt{delete\_file} is riskier still.
+
+\begin{table}[H]
+    \centering
+    \caption{The asset-sensitivity scale ($s$).}
+    \label{tab:sensitivity}
+    \begin{tabular}{c l l}
+        \hline
+        \textbf{$s$} & \textbf{Asset class} & \textbf{Examples} \\
+        \hline
+        1 & Public / non-sensitive        & Public config, non-sensitive logs \\
+        2 & Low-sensitivity infrastructure & Generic file store, API endpoints \\
+        3 & Internal operational data     & Internal DB, system config, QA plans \\
+        4 & Restricted business data      & Audit logs, source code, email \\
+        5 & Regulated / PII               & Financial records, PII, private keys \\
+        \hline
+    \end{tabular}
+\end{table}
+
+The numeric score is discretized into four \textbf{risk bands} ---
+\textit{low}, \textit{medium}, \textit{high}, \textit{critical} --- using the
+thresholds and calibration rules of \Cref{tab:bands}. The calibration is
+deliberately shaped like a \emph{risk pyramid}: only a cell that is irreversible
+($i=3$), aimed at a crown-jewel asset ($s=5$), with at least departmental reach
+($b \ge 3$) is labeled \textit{critical}, so that in practice only $1$--$2\%$ of
+cells reach the top band. Two special rules encode confidentiality intuitions
+that the raw product would miss: a broad read of highly sensitive data
+($i=1, s\ge4, b\ge3$) is treated as mass exfiltration and raised to
+\textit{high}, and any read of a crown-jewel asset ($i=1, s=5$) is never allowed
+to fall below \textit{medium}. Read-only operations otherwise remain
+\textit{low}, so that ordinary work is not gated.
+
+\begin{table}[H]
+    \centering
+    \caption{Risk-band calibration. Thresholds on the raw score are
+    $\text{medium}\ge 8$ and $\text{high}\ge 24$; the rules below refine them.}
+    \label{tab:bands}
+    \begin{tabular}{l l}
+        \hline
+        \textbf{Band} & \textbf{Condition} \\
+        \hline
+        critical & $i=3 \wedge s=5 \wedge b\ge 3$ \\
+        high     & $(i=3 \wedge s\ge 4)\ \vee\ \text{score}\ge 24\ \vee\ (i=1 \wedge s\ge 4 \wedge b\ge 3)$ \\
+        medium   & $\text{score}\ge 8\ \vee\ (i=1 \wedge s=5)$ \\
+        low      & otherwise \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Atomic-Operation Taxonomy}
+\label{sec:framework:atomic}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{טקסונומיית הפעולות האטומיות}}
+
+To assign the tool-impact term consistently across heterogeneous servers, we
+map every MCP tool to one or more of thirteen \emph{atomic operations}, each
+carrying a fixed severity from $1$ (lightweight discovery) to $5$ (total
+compromise), shown in \Cref{tab:atomic}. A tool's effective impact derives from
+the highest-severity operation it can perform: a SQLite \texttt{write\_query}
+tool that accepts free-form SQL, for example, is tagged with the full
+worst-case set (\textsc{execute}, \textsc{delete}, \textsc{overwrite},
+\textsc{schema\_modify}, \textsc{write}) because the argument alone determines
+which it performs.
+
+The mapping is produced by a \emph{rules-based} classifier that runs two
+independent paths --- one over the server's README prose and one over the
+structural signals of its tool-list schema (name prefixes, parameter shapes) ---
+and surfaces any disagreement between them for review. Keeping this stage
+rule-based rather than model-based makes the tool-to-severity mapping auditable
+and fully reproducible.
+
+\begin{table}[H]
+    \centering
+    \caption{The 13 atomic operations and their fixed severities.}
+    \label{tab:atomic}
+    \begin{tabular}{l c l}
+        \hline
+        \textbf{Operation} & \textbf{Severity} & \textbf{Rationale} \\
+        \hline
+        \textsc{execute}       & 5 & Arbitrary code/command execution; total compromise \\
+        \textsc{delete}        & 5 & Irreversible data destruction \\
+        \textsc{overwrite}     & 4 & Corrupts existing data in full \\
+        \textsc{schema\_modify} & 4 & Structural damage; cascading failures \\
+        \textsc{broadcast}     & 4 & Sends data externally; exfiltration + impersonation \\
+        \textsc{write}         & 3 & Injects new data; malicious persistence \\
+        \textsc{modify}        & 3 & Tampers with existing data; integrity violation \\
+        \textsc{move}          & 3 & Relocates resources; can hide or expose data \\
+        \textsc{create}        & 3 & New persistent resource; staging for writes \\
+        \textsc{read}          & 2 & Accesses content; confidentiality breach \\
+        \textsc{search}        & 2 & Targeted discovery of sensitive data \\
+        \textsc{metadata}      & 1 & Attributes without content; structural recon \\
+        \textsc{list}          & 1 & Enumerates resources; existence discovery \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Parameter (Request-Time) Scoring}
+\label{sec:framework:params}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{ניקוד ברמת הפרמטר (בזמן ריצה)}}
+
+The static cell score is an upper bound over all possible invocations of a tool.
+To turn it into a request-time score, McpRisk adds a \emph{parameter} layer that
+reads the actual arguments of a call. For each tool, the LLM derives a rubric
+that identifies the magnitude-bearing parameters, and for each such parameter a
+\texttt{base\_rank} (its intrinsic sensitivity), an extraction rule (whether the
+magnitude is a number, a list length, a parsed \texttt{LIMIT}, or a boolean),
+and a set of ascending numeric \texttt{cutoffs}. A concrete value is banded by
+the highest cutoff it meets. A crucial rule is that the \emph{absence} of a
+\texttt{LIMIT} clause is treated as unbounded ($\infty$) and therefore
+worst-case, so that a \texttt{SELECT} or \texttt{DELETE} touching every row is
+scored as maximally broad.
+
+Two bands are then combined arithmetically, where
+$\text{low}=1,\ \text{medium}=2,\ \text{high}=3,\ \text{critical}=4$. The
+\emph{parameter risk} is the average of the parameter's base rank and its value
+band, rounded half-up:
+\begin{equation}
+\text{param\_risk} \;=\; \left\lfloor \tfrac{\text{base\_rank} +
+\text{value\_band}}{2} + 0.5 \right\rfloor .
+\label{eq:paramavg}
+\end{equation}
+The final band of the call escalates the inherent (tool, asset) band by the
+parameter risk, taking the more severe of the two so that a risky argument can
+only \emph{raise} the band, never lower it:
+\begin{equation}
+\text{final\_band} \;=\; \max\!\big(\text{cell\_band},\ \text{param\_risk}\big).
+\label{eq:escalate}
+\end{equation}
+For example, a \texttt{create\_event} call whose \texttt{attendees} parameter has
+base rank \textit{medium} and $50$ recipients (value band \textit{critical})
+yields $\text{param\_risk}=\lfloor(2+4)/2+0.5\rfloor=3$; combined with a
+\textit{high} inherent cell this escalates the call to \textit{critical}. When
+several parameters apply, the most severe governs.
+
+\section{Operationalizing Likelihood: Misuse Scoring of Call Logs}
+\label{sec:framework:misuse}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{ניקוד שימוש לרעה של יומני קריאות}}
+
+The parameter layer captures the \emph{magnitude} of a request, but the
+conceptual model of \Cref{eq:conceptual} also has a \emph{likelihood} term. To
+score a captured call log end to end, McpRisk instantiates that term with a
+concrete formula, calibrated against the canonical lookup tables used to build
+the project's hand-labeled heatmaps:
+\begin{align}
+\text{AssetImpact} &= \min(\text{Sensitivity}\times\text{Blast},\ 25),
+\label{eq:assetimpact}\\
+\text{Likelihood}  &= \text{BaseDev}\times\text{Anomaly}\times\text{Exposure},
+\label{eq:likelihood}\\
+\text{Misuse}      &= \max\!\big(\text{AssetImpact}\times\text{Likelihood}
+                       \times\text{ToolImpact},\ 1.0\big),
+\label{eq:misuse}
+\end{align}
+where $\text{ToolImpact}\in\{1,2,3\}$ is the reversibility multiplier of
+\Cref{sec:framework:model}. The three likelihood sub-factors follow the
+definitions of the conceptual model: \emph{baseline deviation} (how unusual the
+call is relative to intended use), \emph{access anomaly} (time/volume
+outlierness), and \emph{exposure} (how reachable the destination makes the
+asset). Crucially, the first two require a history of prior calls that a server
+gating a request in isolation does not have; consistent with the framework's
+open question about how much runtime log context is available, they are set to
+conservative constants ($\text{BaseDev}=0.9$, a high prior that any logged call
+may deviate; $\text{Anomaly}=0.3$, a low value reflecting the absence of
+observable access patterns), while \emph{exposure} is read from a lookup table
+keyed on the destination directory (from $0.3$ for public areas to $0.9$ for
+security-evidence stores). The floor of $1.0$ ensures every logged call registers
+at least baseline activity. Because the context multiplier of the original
+design was removed, the band thresholds are rescaled accordingly to
+$\textit{critical}\ge 27$, $\textit{high}\in[13,26]$, $\textit{medium}\in[7,12]$,
+and $\textit{low}<7$.
+
+Five judgment rules close gaps the lookup tables leave open, and encode the
+threat intuitions a naive product would miss. (i)~For cross-path tools
+(move/copy/rename), sensitivity is taken from the \emph{source} and exposure from
+the \emph{destination}; if a sensitive source ($\text{Sensitivity}\ge 4$) is
+moved to a low-exposure public area, exposure is forced to $1.0$ --- the asset is
+now reachable to anyone, and renaming its extension does not lower its
+sensitivity. (ii)~A path-traversal attempt (e.g.\ \texttt{../../etc/passwd}) is
+scored as a system asset ($\text{Sensitivity}=5$, $\text{Exposure}=0.9$) even if
+it was blocked, because the probe itself is the signal. (iii)~For multi-path
+calls, the worst case across paths governs. (iv)~Errors and denied calls still
+score, since the attempt is a signal. (v)~Asset-name overrides raise sensitivity
+where the extension hides it --- an \texttt{audit\_log.txt} or a file matching
+\texttt{*credential*} is scored at sensitivity $5$ regardless of its
+\texttt{.txt} suffix. These rules are exactly the cases where the static cell
+score under-weights a real threat, and folding them into the request-time score
+is how the dynamic mode adds value over the static upper bound. A richer
+contextual scorer that learns baseline deviation and access anomaly from real
+runtime logs remains future work, as we discuss in
+\Cref{chapter:discussion_and_conclusions}.
+
+\section{Implementation and Reproducibility}
+\label{sec:framework:implementation}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מימוש ושחזוריות}}
+
+McpRisk is implemented in Python~$3.12$ as the package
+\texttt{mcp\_security}, with the stages of \Cref{fig:pipeline} realized as the
+sub-packages \texttt{scanner}, \texttt{static\_scoring},
+\texttt{param\_scoring}, \texttt{call\_scoring}, \texttt{atomic\_ops}, and
+\texttt{review}. All model-backed stages call a single local model ---
+Qwen2.5:32B served through Ollama --- with no cloud fallback by design, so that
+no server metadata leaves the machine. Decoding is made deterministic and
+reproducible by fixing greedy decoding parameters (temperature $0$, seed $0$,
+top-$p$ $1.0$). Because the same model both proposes and (through the judge
+stage) cross-checks scores, and because it also underlies part of the
+evaluation, we treat model-induced circularity as a first-class limitation and
+address it in \Cref{chapter:experiments} by validating against \emph{external}
+human and framework oracles.

@@ -1,0 +1,127 @@
+This chapter reviews the work most relevant to a defense-oriented risk scorer
+for the Model Context Protocol (MCP). We cover five areas: the MCP attack
+surface, MCP-specific defenses and attacks, the safety of tool-using agents,
+guardrails and runtime gating, and risk-scoring methodologies from CVSS to
+LLM-based judges. We then position the proposed research.
+
+\section{The MCP Attack Surface}
+\label{sec:related_work:mcp_surface}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{משטח התקיפה של MCP}}
+
+MCP standardizes how LLM agents discover and invoke external tools, resources,
+and prompts exposed by a server~\cite{anthropic2024mcp}. The uniform interface
+that makes MCP powerful also creates a broad attack surface: any agent that
+speaks the protocol can request any exposed operation, and the server has little
+native machinery to decide whether a request should be allowed --- a gap the
+protocol's own security guidance acknowledges~\cite{mcp2026securitybp}.
+\citet{hou2025mcp} give the first systematic map of this surface, defining the
+server lifecycle and a threat taxonomy across four attacker types, while
+\citet{rostamzadeh2026mcpdpt} organize attacks by the architectural component
+responsible for enforcement and find protection uneven and predominantly
+tool-centric --- directly motivating a server-side gate. Empirical studies
+confirm the risk is real: \citet{radosevich2025mcpsafety} coerce models through
+MCP tools into compromising a host; \citet{hasan2025mcp} find that of $1{,}899$
+servers, $7.2\%$ carry general vulnerabilities and $5.5\%$ exhibit tool
+poisoning; \citet{zhao2026parasites} measure $12{,}230$ tools across $1{,}360$
+servers and define parasitic toolchain attacks; and \citet{li2025privilege}
+statically analyze $2{,}562$ servers and argue for explicit privilege
+management. \citet{yang2025mcpsecbench} standardize this into a benchmark of
+seventeen attack types and report that existing protections block fewer than
+$30\%$ of attacks.
+
+\section{MCP-Specific Defenses and Attacks}
+\label{sec:related_work:mcp_defenses}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{הגנות והתקפות ייחודיות ל-MCP}}
+
+On the defensive side, \citet{xing2025mcpguard} propose \emph{MCP-Guard}, a
+proxy-based three-stage pipeline (static scan, neural detector, and LLM
+arbitrator) whose layered architecture is the closest in spirit to ours, and
+\citet{jing2025mcip} track contextual integrity of information flows. Because a
+tool's natural-language description drives agent tool selection, that
+description is itself an attack vector: \citet{shi2025toolhijacker} show a single
+poisoned tool document can hijack tool selection, and tool-squatting and
+rug-pull attacks motivate OAuth-signed, versioned tool
+definitions~\cite{bhatt2025etdi}. The work closest to ours places enforcement at
+the server boundary: \citet{buhler2026agentbound} present the first
+access-control framework for MCP servers, \citet{sharma2026pauth} propose precise
+task-scoped authorization in which the server verifies a call is a legitimate
+consequence of the user's task, and \citet{huang2026caller} measure ``caller
+identity confusion'' --- servers generally cannot tell which agent is invoking a
+request. All three issue an allow/deny decision; our proposal instead computes a
+graduated risk \emph{score}.
+
+\section{Safety of Tool-Using Agents and Prompt Injection}
+\label{sec:related_work:agent_safety}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{בטיחות סוכנים והזרקת פקודות}}
+
+Because the threat originates from an agent, the agent-safety literature
+characterizes what a server-side scorer must anticipate.
+\citet{yuan2024rjudge} show that even strong models judge the safety of agent
+actions correctly only $74\%$ of the time; \citet{andriushchenko2025agentharm}
+find leading models compliant with malicious agent tasks; and
+\citet{ruan2024toolemu} use LM-emulated sandboxing to measure risky behavior at
+scale. Most pointedly for us, \citet{cartagena2026gap} demonstrate that textual
+safety does \emph{not} transfer to tool-call safety --- models often refuse in
+chat yet still execute the harmful call --- a direct argument for scoring the
+call itself. Indirect prompt injection is the mechanism that turns a benign
+agent into a threat: \citet{zhan2024injecagent} and \citet{debenedetti2024agentdojo}
+show that tool-returned data can hijack agent behavior in realistic workflows.
+Rather than detecting injection, our proposal bounds the \emph{damage} an
+injected agent can do by scoring each requested operation before it runs.
+
+\section{Guardrails and Runtime Gating}
+\label{sec:related_work:guardrails}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מעקות בטיחות ושערים בזמן ריצה}}
+
+A growing line of work places an interpretable enforcement layer between a model
+and its effects, from LLM-based input/output classifiers~\cite{inan2023llamaguard}
+to per-call least-privilege systems: Progent expresses tool-call permissions as
+verifiable symbolic rules~\cite{shi2025progent}, and AgenTRIM reconstructs tool
+interfaces offline and blocks misaligned calls at
+runtime~\cite{betser2026agentrim}. These systems decide \emph{whether} to allow
+an action; our framework is complementary in computing \emph{how risky} an action
+is on a graduated scale, a signal such gates could consume. The need is
+underscored by evidence that agents can behave as strategic ``insider threats''
+when their goals are obstructed~\cite{anthropic2025misalignment}.
+
+\section{Risk Scoring: From CVSS to LLM Judges}
+\label{sec:related_work:scoring}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{ניקוד סיכון: מ-CVSS ועד שופטי LLM}}
+
+Our framework is, at its core, a scoring system. \citet{spring2021time} argue
+CVSS is inadequate as a risk proxy because its algorithm is neither formally nor
+empirically justified; \citet{jacobs2021epss} complement severity with
+data-driven exploitation likelihood; and \citet{bahar2024validity} show CVSS,
+DREAD, and OWASP Risk Rating produce minimal variation across very different LLM
+attacks. The community has responded with agentic-specific scores and
+checklists~\cite{owasp2025aivss,mehra2025graphofeffort,owasp2026agentictop10},
+and with LLMs applied directly to security scoring: prior work from our own group
+uses LLMs to detect and reason about misconfigurations
+(GenKubeSec~\cite{malul2024genkubesec}, KubeGuard~\cite{cohen2025kubeguard}), and
+others evaluate LLMs for vulnerability triage~\cite{haddad2025prompting}. The
+mechanism we adopt --- an LLM producing a numeric score against an explicit
+rubric --- descends from the LLM-as-judge literature: G-Eval couples
+chain-of-thought with form-filling for calibrated scores~\cite{liu2023geval},
+and \citet{zheng2023judging} both validate the approach and catalog its biases.
+Two very recent works retarget this to our exact setting --- SkillVetBench scores
+agent skills with a CVSS-flavored rubric~\cite{hossain2026skillvet}, and
+\citet{fleming2025tbac} have an LLM judge each access request to drive
+risk-adaptive access control --- and, like them, we validate the LLM's scores
+against external oracles rather than trusting them blindly. Finally, since an MCP
+call is structurally an authenticated API request, the runtime half of our
+framework draws on dynamic risk assessment~\cite{cheimonidis2023dynamic}.
+
+\section{Positioning of the Proposed Research}
+\label{sec:related_work:positioning}
+\addcontentsline{tocheb}{section}{\protect\numberline{\secnumforhebrewtoc}{מיקום המחקר המוצע}}
+
+Three gaps recur across this literature. First, the fast-growing set of MCP
+defenses is overwhelmingly \emph{binary} (attack vs.\ benign) and tool-centric,
+leaving no graded, server-side notion of ``how risky is this particular call.''
+Second, general vulnerability scores such as CVSS are demonstrably insensitive to
+AI-specific threats. Third, even the systems closest to ours ---
+AgentBound~\cite{buhler2026agentbound} and PAuth~\cite{sharma2026pauth} --- issue
+an allow/deny decision rather than a graduated risk score. The proposed research
+addresses all three by placing an interpretable, factor-based risk scorer at the
+server boundary, computed statically from a tool's declared properties and
+dynamically from the specific request.

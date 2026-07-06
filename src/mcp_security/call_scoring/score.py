@@ -21,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from mcp_security.param_scoring import score_call_params
+from mcp_security.param_scoring.apply import ParamScore
 from mcp_security.param_scoring.rubric import ToolRubric
 
 from .loader import Call
@@ -119,6 +120,4 @@ def score_call(
 
 
 # Sentinel parameter score used when no rubric is supplied (no parameter signal).
-from mcp_security.param_scoring.apply import ParamScore  # noqa: E402
-
 _NO_PARAM = ParamScore(band=None, top_param=None, details=())
