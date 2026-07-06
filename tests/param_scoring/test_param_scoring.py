@@ -85,3 +85,37 @@ def test_derive_parses_model_json(monkeypatch):
     rubric = derive_mod.derive_tool_rubric(ToolSpec("create_event", "Create a calendar event"))
     assert rubric.parameters[0].name == "attendees"
     assert rubric.parameters[0].cutoffs[-1].band == "critical"
+
+
+def test_most_influential_round_trips():
+    rubric = ToolRubric(
+        "transfer_funds",
+        (ParamRubric("amount", "high", "number", (Cutoff(10000, "critical"),)),),
+        most_influential="amount",
+    )
+    restored = ToolRubric.from_dict(rubric.to_dict())
+    assert restored.most_influential == "amount"
+
+
+def test_most_influential_defaults_empty_on_old_rubric():
+    # A rubric dict predating the field (no "most_influential" key) loads as "".
+    restored = ToolRubric.from_dict({"tool_name": "x", "parameters": []})
+    assert restored.most_influential == ""
+
+
+def test_derive_parses_most_influential(monkeypatch):
+    def fake(prompt, **_):
+        return {
+            "tool_name": "send_email_invite",
+            "most_influential": "recipients",
+            "parameters": [
+                {"name": "recipients", "base_rank": "medium", "extract": "list_length",
+                 "cutoffs": [{"min": 50, "band": "critical"}]}
+            ],
+        }
+
+    monkeypatch.setattr(derive_mod, "query_ollama", fake)
+    from mcp_security.static_scoring.registry import ToolSpec
+
+    rubric = derive_mod.derive_tool_rubric(ToolSpec("send_email_invite", "Send an invite"))
+    assert rubric.most_influential == "recipients"

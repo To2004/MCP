@@ -64,19 +64,32 @@ class ParamRubric:
 
 @dataclass(frozen=True)
 class ToolRubric:
-    """All magnitude-bearing parameters for one tool."""
+    """All magnitude-bearing parameters for one tool.
+
+    ``most_influential`` names the single parameter the model judged to move the
+    call's risk the most (e.g. a money ``amount``, a recipient count). It is an
+    annotation for reporting only — scoring uses every parameter in
+    ``parameters`` — and is ``""`` on older rubrics derived before the field
+    existed.
+    """
 
     tool_name: str
     parameters: tuple[ParamRubric, ...] = field(default_factory=tuple)
+    most_influential: str = ""
 
     def to_dict(self) -> dict:
-        return {"tool_name": self.tool_name, "parameters": [p.to_dict() for p in self.parameters]}
+        return {
+            "tool_name": self.tool_name,
+            "parameters": [p.to_dict() for p in self.parameters],
+            "most_influential": self.most_influential,
+        }
 
     @classmethod
     def from_dict(cls, raw: dict) -> ToolRubric:
         return cls(
             tool_name=str(raw.get("tool_name", "")),
             parameters=tuple(ParamRubric.from_dict(p) for p in raw.get("parameters", [])),
+            most_influential=str(raw.get("most_influential", "")),
         )
 
 

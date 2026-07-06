@@ -91,20 +91,34 @@ final = max(medium, high) = high. A `high` base parameter at 50 → average(3,4)
 
 ## LLM prompt (derivation)
 
-> You are a security analyst. For the MCP tool below, list only the input
-> parameters that carry **risk magnitude** — a count, size, breadth, recipient
-> list, row limit, recursion depth, or an escalating flag. For each, return its
-> `base_rank` (low/medium/high/critical), how to `extract` its value from a call
-> (number | list_length | parsed_limit | boolean), and ascending `cutoffs` mapping
-> the value to bands, following the worked example above. If the tool has no
-> magnitude-bearing parameter, return an empty list. Output ONLY valid JSON.
+> You are a security analyst. For the MCP tool below, list the input parameters
+> that carry **risk magnitude** — a count, size, breadth, recipient list, row
+> limit, recursion depth, a monetary **amount**, an escalating flag, or a
+> free-text query/command whose reach depends on its content. Look past the
+> obvious numeric fields: a `content`/`body` string carries the size of what is
+> written; a `force`/`recursive`/`confirm` boolean escalates; an `amount` or
+> `quantity` is pure magnitude; an owner/repo/path string that can name a broad
+> scope carries breadth. **A tool almost always has at least one magnitude
+> input — return an empty list only when genuinely none exists.**
+>
+> For each parameter return its `base_rank` (low/medium/high/critical), how to
+> `extract` its value from a call (number | list_length | parsed_limit |
+> boolean), and ascending `cutoffs` mapping the value to bands, following the
+> worked example above.
+>
+> Then name, in `most_influential`, the **single** parameter whose *value* most
+> changes this call's risk — the one input an operator should watch first (e.g.
+> a money `amount`, a `recipients` count, an unbounded `query`). It must be one
+> of the parameter names you returned, or `""` if the list is empty. Output ONLY
+> valid JSON.
 >
 > Tool: `{tool_json}`
 >
-> Return: `{"tool_name": str, "parameters": [{"name": str, "base_rank":
-> "low|medium|high|critical", "extract": "number|list_length|parsed_limit|boolean",
-> "cutoffs": [{"min": number, "band": "low|medium|high|critical"}],
-> "when_true": "low|medium|high|critical"|null, "reasoning": str}]}`
+> Return: `{"tool_name": str, "most_influential": str, "parameters": [{"name":
+> str, "base_rank": "low|medium|high|critical", "extract":
+> "number|list_length|parsed_limit|boolean", "cutoffs": [{"min": number, "band":
+> "low|medium|high|critical"}], "when_true": "low|medium|high|critical"|null,
+> "reasoning": str}]}`
 
 The application of the derived rubric to a concrete call (reading the value,
 banding it, combining) is deterministic and lives in
