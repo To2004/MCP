@@ -14,6 +14,7 @@ from tests.testbed.harness.attack_runner import (
     _check_damage,
     _response_to_text,
 )
+from tests.testbed.harness import scorer_bridge
 from tests.testbed.harness.scorer_bridge import score
 
 
@@ -113,20 +114,36 @@ def test_build_args_none_input_schema() -> None:
 
 
 # ---------------------------------------------------------------------------
-# scorer_bridge stub
+# scorer_bridge
 # ---------------------------------------------------------------------------
 
 
-def test_scorer_bridge_stub_returns_none_scores() -> None:
-    """Stub scorer returns None for static, dynamic, and combined scores."""
+def test_scorer_bridge_static_and_combined_always_none(monkeypatch) -> None:
+    """static/combined stay None: no profile-to-scan-artifact mapping exists yet."""
+    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: ("high", "test reason"))
     result = score("read_file", {"path": "foo"}, "Reads a file", "file contents")
     assert result["static"] is None
-    assert result["dynamic"] is None
     assert result["combined"] is None
 
 
-def test_scorer_bridge_stub_has_note_key() -> None:
-    """Stub scorer always includes a 'note' key explaining the placeholder."""
+def test_scorer_bridge_dynamic_reflects_judge_verdict(monkeypatch) -> None:
+    """dynamic is the judge's band when the judge returns a verdict."""
+    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: ("critical", "obfuscated payload"))
+    result = score("run_command", {"cmd": "..."}, "Runs a command", "")
+    assert result["dynamic"] == "critical"
+    assert "obfuscated payload" in result["note"]
+
+
+def test_scorer_bridge_dynamic_none_when_judge_has_no_verdict(monkeypatch) -> None:
+    """dynamic is None (not fabricated) when the judge stage has no opinion."""
+    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: None)
+    result = score("any_tool", {}, "", "")
+    assert result["dynamic"] is None
+
+
+def test_scorer_bridge_always_has_note_key(monkeypatch) -> None:
+    """The bridge always includes a 'note' key explaining the current verdict."""
+    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: None)
     result = score("any_tool", {}, "", "")
     assert "note" in result
     assert isinstance(result["note"], str)

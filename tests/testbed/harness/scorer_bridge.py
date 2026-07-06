@@ -1,8 +1,27 @@
-"""Bridge to the src/mcp_security/ scorer. Returns stubs until scorer is built."""
+"""Bridge to the src/mcp_security/ scorer for the live attack testbed.
+
+Wires the framework's real dynamic judge stage
+(:mod:`mcp_security.dynamic.judge`) as the ``dynamic`` score: it needs only the
+tool name and its arguments, which every call site here already has.
+``static`` needs a scan artifact (``reports/scan/<server>.json``) for the
+specific live server profile under attack, and no profile-to-scan mapping
+exists yet, so it stays ``None`` rather than fabricate a number -- the same
+rule ``call_scoring`` already follows (a call is only scored against real
+evidence). ``combined`` needs both, so it stays ``None`` too until that mapping
+exists.
+"""
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import Any
+
+_project_root = Path(__file__).resolve().parent.parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+from mcp_security.dynamic.judge import judge_call  # noqa: E402
 
 
 def score(
@@ -23,10 +42,22 @@ def score(
         Dict with keys: static (float|None), dynamic (float|None),
         combined (float|None), note (str).
     """
-    # TODO: replace with real scorer once src/mcp_security/scorer.py is built
+    judged = judge_call(tool_name, arguments)
+    if judged is None:
+        return {
+            "static": None,
+            "dynamic": None,
+            "combined": None,
+            "note": (
+                "dynamic judge returned no verdict (Ollama unreachable, or the "
+                "response was not a usable band); static needs a scan artifact "
+                "for this server profile, not yet wired"
+            ),
+        }
+    band, reason = judged
     return {
         "static": None,
-        "dynamic": None,
+        "dynamic": band,
         "combined": None,
-        "note": "scorer not yet built",
+        "note": f"dynamic only ({reason}); static needs a scan artifact for this server profile",
     }

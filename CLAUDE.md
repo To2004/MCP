@@ -52,6 +52,10 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Scan (declarative kind) | `uv run python -m mcp_security.scanner --kind calendar` (also `github`, `slack`) |
 | Param rubrics (LLM) | `uv run python -m mcp_security.param_scoring --kind filesystem --server fs:corp_filesystem` |
 | Rank calls vs scan | `uv run python -m mcp_security.call_scoring` |
+| Highlight most influential inputs | `uv run python scripts/highlight_influential_inputs.py` |
+| Score one session (static + dynamic) | `uv run python -m mcp_security.dynamic --session <calls.csv> --server <scan-stem>` |
+| Generate dynamic testbed (benign+malicious, big-MCP-weighted) | `uv run python scripts/make_dynamic_testbed.py` |
+| Benign-vs-adversarial separation report | `uv run python scripts/evaluate_dynamic.py` |
 | Full pipeline (multi-GPU) | `sbatch scripts/scan_and_rank_multigpu.sbatch` |
 | Grade scanner (vs LLM tables) | `uv run python scripts/evaluate_scanner.py` |
 | Grade scanner (vs oracle panel + inter-rater) | `uv run python scripts/evaluate_vs_human.py` |
