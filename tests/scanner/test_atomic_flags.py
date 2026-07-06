@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import mcp_security.scanner.atomic_flags as af
 from mcp_security.scanner.atomic_flags import (
     classify_tools_atomic,
     enrich_scan,
@@ -42,20 +43,50 @@ def test_every_tool_gets_flagged():
     assert all(f["atomic_ops"] for f in flags.values())  # none left empty
 
 
-def test_input_ranking_puts_payload_and_arrays_first():
-    schema = {
-        "type": "object",
-        "properties": {
-            "owner": {"type": "string"},
-            "content": {"type": "string"},
-            "files": {"type": "array"},
-        },
-        "required": ["owner"],
-    }
-    ranking = rank_tool_inputs([_tool("push_files", "Push files", schema)])["push_files"]
-    top_two = {r["name"] for r in ranking[:2]}
-    assert top_two == {"content", "files"}  # payload + array outrank the target id
-    assert ranking[-1]["name"] == "owner"
+_PUSH_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "owner": {"type": "string"},
+        "content": {"type": "string"},
+        "files": {"type": "array"},
+    },
+    "required": ["owner"],
+}
+
+
+def test_input_ranking_deterministic_puts_payload_and_arrays_first():
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)])["push_files"]
+    assert entry["source"] == "rules"
+    inputs = entry["inputs"]
+    assert {r["name"] for r in inputs[:2]} == {"content", "files"}  # outrank the target id
+    assert inputs[-1]["name"] == "owner"
+
+
+def test_input_ranking_uses_llm_when_available(monkeypatch):
+    # Model ranks owner highest (reversing the heuristic) -> proves the LLM path is used.
+    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
+        {"name": "owner", "risk": 5, "reason": "controls the whole target"},
+        {"name": "content", "risk": 2, "reason": "just text"},
+        {"name": "files", "risk": 1, "reason": "empty here"},
+    ]})
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    assert entry["source"] == "llm"
+    assert entry["inputs"][0]["name"] == "owner" and entry["inputs"][0]["risk"] == 5
+
+
+def test_llm_ranking_falls_back_to_rules_when_unreachable(monkeypatch):
+    monkeypatch.setattr(af, "query_ollama", lambda prompt: None)  # Ollama down
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    assert entry["source"] == "rules-fallback"
+    assert {r["name"] for r in entry["inputs"][:2]} == {"content", "files"}
+
+
+def test_llm_ranking_falls_back_when_incomplete(monkeypatch):
+    # Model omits a parameter -> untrusted -> fall back to rules.
+    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
+        {"name": "owner", "risk": 5, "reason": "x"}]})
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    assert entry["source"] == "rules-fallback"
 
 
 def test_enrich_scan_attaches_both_fields():
@@ -63,3 +94,4 @@ def test_enrich_scan_attaches_both_fields():
     enrich_scan(table, [_tool("read_file", "Read a file")])
     assert "tool_atomic_ops" in table and "tool_input_ranking" in table
     assert table["tool_atomic_ops"]["read_file"]["primary_op"] == "READ"
+    assert table["tool_input_ranking"]["read_file"]["source"] == "rules"
