@@ -1792,247 +1792,247 @@
   },
   "tool_input_ranking": {
     "read_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can target sensitive files"
         },
         {
           "name": "tail",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "limits exposure to last N lines"
         },
         {
           "name": "head",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "limits exposure to first N lines"
         }
       ]
     },
     "read_text_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "can target any file on the server"
         },
         {
           "name": "tail",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "limits output to last N lines, reducing risk"
         },
         {
           "name": "head",
           "type": "number",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "limits output to first N lines, reducing risk"
         }
       ]
     },
     "read_media_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "Can be used to access sensitive files if directory restrictions are not strictly enforced"
         }
       ]
     },
     "read_multiple_files": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "paths",
           "type": "array",
           "required": true,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Can be used to read a large number of files, potentially exposing sensitive data"
         }
       ]
     },
     "write_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "content",
           "type": "string",
           "required": true,
-          "risk": 4,
-          "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+          "risk": 5,
+          "reason": "Fully controlled payload can execute arbitrary code or data"
         },
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "Can target critical files but doesn't control content directly"
         }
       ]
     },
     "edit_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "edits",
           "type": "array",
           "required": true,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "risk": 5,
+          "reason": "Can contain arbitrary content to modify files"
         },
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "Identifies the target file but is constrained by allowed directories"
         },
         {
           "name": "dryRun",
           "type": "boolean",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Does not make actual changes, only previews"
         }
       ]
     },
     "create_directory": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can be used to navigate to sensitive directories"
         }
       ]
     },
     "list_directory": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can expose sensitive directories"
         }
       ]
     },
     "list_directory_with_sizes": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 4,
+          "reason": "Can target sensitive directories"
         },
         {
           "name": "sortBy",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Limited to predefined options"
         }
       ]
     },
     "directory_tree": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "excludePatterns",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Can be used to bypass directory restrictions"
         },
         {
           "name": "path",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Limits scope but can still target sensitive directories"
         }
       ]
     },
     "move_file": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "source",
-          "type": "string",
-          "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        },
         {
           "name": "destination",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 4,
+          "reason": "can lead to unintended overwriting or misplacement"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "reason": "can target any file or directory"
         }
       ]
     },
     "search_files": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
+        {
+          "name": "pattern",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "reason": "Can be crafted to match a wide range of files"
+        },
         {
           "name": "excludePatterns",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Allows for complex inclusion/exclusion logic that can still target critical files"
         },
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "pattern",
-          "type": "string",
-          "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 3,
+          "reason": "Defines the starting point but is less flexible than patterns"
         }
       ]
     },
     "get_file_info": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "path",
           "type": "string",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "can target sensitive directories or files"
         }
       ]
     },
     "list_allowed_directories": {
-      "source": "rules",
+      "source": "llm",
       "inputs": []
     }
   }

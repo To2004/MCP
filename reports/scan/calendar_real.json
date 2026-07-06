@@ -722,193 +722,193 @@
   },
   "tool_input_ranking": {
     "list-calendars": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "account",
           "type": "any",
           "required": false,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "can broaden the scope of queried calendars"
         }
       ]
     },
     "list-events": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "fields",
-          "type": "array",
-          "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
         {
           "name": "privateExtendedProperty",
           "type": "array",
           "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "risk": 5,
+          "reason": "Allows for complex and potentially broad filtering"
         },
         {
           "name": "sharedExtendedProperty",
           "type": "array",
           "required": false,
+          "risk": 5,
+          "reason": "Allows for complex and potentially broad filtering"
+        },
+        {
+          "name": "fields",
+          "type": "array",
+          "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Can request a large amount of data"
         },
         {
           "name": "account",
           "type": "any",
           "required": false,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "timeMax",
-          "type": "string",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Can query multiple accounts, increasing scope"
         },
         {
           "name": "calendarId",
           "type": "any",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Names the target calendar but does not widen scope"
         },
         {
           "name": "timeMin",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Limits the time range, reducing risk"
+        },
+        {
+          "name": "timeMax",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "reason": "Limits the time range, reducing risk"
         },
         {
           "name": "timeZone",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Does not affect scope or data volume"
         }
       ]
     },
     "search-events": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "query",
           "type": "string",
           "required": true,
           "risk": 5,
-          "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+          "reason": "Can be used for injection or broad data extraction"
         },
         {
-          "name": "fields",
-          "type": "array",
+          "name": "account",
+          "type": "any",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Allows querying multiple accounts, increasing scope"
         },
         {
           "name": "privateExtendedProperty",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "reason": "Enables filtering by sensitive private properties"
         },
         {
           "name": "sharedExtendedProperty",
           "type": "array",
           "required": false,
           "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "timeMax",
-          "type": "string",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "account",
-          "type": "any",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Allows filtering by potentially sensitive shared properties"
         },
         {
           "name": "calendarId",
           "type": "any",
           "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "risk": 3,
+          "reason": "Can target multiple calendars, widening access"
+        },
+        {
+          "name": "fields",
+          "type": "array",
+          "required": false,
+          "risk": 3,
+          "reason": "Can request additional fields, increasing data exposure"
         },
         {
           "name": "timeMin",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 2,
+          "reason": "Starts the time range but does not inherently amplify risk"
+        },
+        {
+          "name": "timeMax",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "reason": "Ends the time range but does not inherently amplify risk"
         },
         {
           "name": "timeZone",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Sets timezone and has minimal impact on data exposure"
         }
       ]
     },
     "get-event": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "fields",
           "type": "array",
           "required": false,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "risk": 5,
+          "reason": "Can request sensitive or excessive data"
         },
         {
-          "name": "account",
+          "name": "eventId",
           "type": "string",
-          "required": false,
+          "required": true,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Potentially used to target specific events for bulk operations"
         },
         {
           "name": "calendarId",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Limits the scope but can still be abused in conjunction with other parameters"
         },
         {
-          "name": "eventId",
+          "name": "account",
           "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "required": false,
+          "risk": 1,
+          "reason": "Simply identifies the account and has limited impact on risk"
         }
       ]
     },
     "list-colors": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "account",
           "type": "string",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "risk": 2,
+          "reason": "merely names the target"
         }
       ]
     },
     "create-event": {
-      "source": "rules",
+      "source": "rules-fallback",
       "inputs": [
         {
           "name": "description",
@@ -1130,47 +1130,47 @@
       ]
     },
     "create-events": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
           "name": "events",
           "type": "array",
           "required": true,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+          "risk": 5,
+          "reason": "Controls the bulk creation of events"
         },
         {
           "name": "account",
           "type": "string",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "risk": 4,
+          "reason": "Can target any account for event creation"
         },
         {
           "name": "calendarId",
           "type": "string",
           "required": false,
+          "risk": 3,
+          "reason": "Allows selection of specific calendars to modify"
+        },
+        {
+          "name": "sendUpdates",
+          "type": "string",
+          "required": false,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Controls notifications which can be abused for spamming"
         },
         {
           "name": "timeZone",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "sendUpdates",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Simply sets the timezone and has minimal impact"
         }
       ]
     },
     "update-event": {
-      "source": "rules",
+      "source": "rules-fallback",
       "inputs": [
         {
           "name": "description",
@@ -1371,188 +1371,188 @@
       ]
     },
     "delete-event": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
-          "name": "account",
+          "name": "sendUpdates",
           "type": "string",
           "required": false,
+          "risk": 4,
+          "reason": "Controls notification fan-out"
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Identifies specific event to delete"
         },
         {
           "name": "calendarId",
           "type": "string",
           "required": true,
           "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
+          "reason": "Limits operation to a specific calendar"
         },
         {
-          "name": "eventId",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "sendUpdates",
+          "name": "account",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Names the account, limited scope"
         }
       ]
     },
     "get-freebusy": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
         {
-          "name": "calendars",
-          "type": "array",
-          "required": true,
-          "risk": 4,
-          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
-        },
-        {
-          "name": "timeMax",
-          "type": "string",
-          "required": true,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "account",
-          "type": "any",
+          "name": "calendarExpansionMax",
+          "type": "integer",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "risk": 5,
+          "reason": "Can significantly increase the number of calendars queried"
         },
         {
           "name": "groupExpansionMax",
           "type": "integer",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "risk": 4,
+          "reason": "Expands groups to include more calendars, increasing query breadth"
         },
         {
-          "name": "calendarExpansionMax",
-          "type": "integer",
-          "required": false,
+          "name": "calendars",
+          "type": "array",
+          "required": true,
           "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
+          "reason": "Allows querying multiple calendars directly, broadening scope"
+        },
+        {
+          "name": "account",
+          "type": "any",
+          "required": false,
+          "risk": 2,
+          "reason": "Can target multiple accounts, widening the scope of information retrieved"
         },
         {
           "name": "timeMin",
           "type": "string",
           "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Start time for query, does not inherently amplify risk"
+        },
+        {
+          "name": "timeMax",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "End time for query, does not inherently amplify risk"
         },
         {
           "name": "timeZone",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "Time zone setting, minimal impact on amplifying risk"
         }
       ]
     },
     "get-current-time": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "account",
-          "type": "string",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
         {
           "name": "timeZone",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
-        }
-      ]
-    },
-    "respond-to-event": {
-      "source": "rules",
-      "inputs": [
+          "risk": 2,
+          "reason": "limits impact to a specific timezone"
+        },
         {
           "name": "account",
           "type": "string",
           "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
-        {
-          "name": "calendarId",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "eventId",
-          "type": "string",
-          "required": true,
-          "risk": 2,
-          "reason": "names the target resource \u2014 selects what the op touches"
-        },
-        {
-          "name": "response",
-          "type": "string",
-          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
+          "reason": "merely names the target account"
+        }
+      ]
+    },
+    "respond-to-event": {
+      "source": "llm",
+      "inputs": [
         {
-          "name": "comment",
+          "name": "sendUpdates",
           "type": "string",
           "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 5,
+          "reason": "can trigger widespread notifications"
         },
         {
           "name": "modificationScope",
           "type": "string",
           "required": false,
+          "risk": 4,
+          "reason": "affects all instances of a recurring event"
+        },
+        {
+          "name": "comment",
+          "type": "string",
+          "required": false,
+          "risk": 3,
+          "reason": "allows arbitrary text input that could be abused"
+        },
+        {
+          "name": "response",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "reason": "changes the state of an event but is limited in scope"
+        },
+        {
+          "name": "eventId",
+          "type": "string",
+          "required": true,
           "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "merely identifies the target event"
+        },
+        {
+          "name": "calendarId",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "reason": "identifies the calendar, not inherently risky"
+        },
+        {
+          "name": "account",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "reason": "specifies account context but does not amplify risk"
         },
         {
           "name": "originalStartTime",
           "type": "string",
           "required": false,
           "risk": 1,
-          "reason": "minor / structural parameter"
-        },
-        {
-          "name": "sendUpdates",
-          "type": "string",
-          "required": false,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "reason": "required for specific event modification, no amplification"
         }
       ]
     },
     "manage-accounts": {
-      "source": "rules",
+      "source": "llm",
       "inputs": [
-        {
-          "name": "account_id",
-          "type": "string",
-          "required": false,
-          "risk": 3,
-          "reason": "magnitude/count \u2014 larger value means broader effect"
-        },
         {
           "name": "action",
           "type": "string",
           "required": true,
-          "risk": 1,
-          "reason": "minor / structural parameter"
+          "risk": 4,
+          "reason": "defines the operation's nature and scope"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "reason": "merely names the target"
         }
       ]
     }
