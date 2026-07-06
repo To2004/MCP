@@ -19,6 +19,8 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from mcp_security.param_scoring.rubric import ToolRubric
+
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -128,8 +130,6 @@ def load_param_rubrics(scan_dir: Path = SCAN_DIR) -> dict[str, dict]:
     ``python -m mcp_security.param_scoring``). Returns an empty mapping if none
     exist, in which case call scoring simply skips the parameter dimension.
     """
-    from mcp_security.param_scoring.rubric import ToolRubric
-
     rubrics: dict[str, dict] = {}
     if not scan_dir.exists():
         return rubrics
