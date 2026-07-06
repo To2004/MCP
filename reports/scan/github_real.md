@@ -1,6 +1,6 @@
 # Scan — github:real
 
-_kind=github · provenance=llm-scan · model_reviewed=True · bands={'low': 75, 'medium': 47, 'high': 20, 'critical': 14}_
+_kind=github · provenance=llm-scan · model_reviewed=True · bands={'low': 32, 'medium': 58, 'high': 58, 'critical': 8}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -57,9 +57,9 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | create_or_update_file | search_repositories | create_repository | get_file_contents | push_files | create_issue | create_pull_request | fork_repository | create_branch | list_commits | list_issues | update_issue | add_issue_comment | search_code | search_issues | search_users | get_issue | get_pull_request | list_pull_requests | create_pull_request_review | merge_pull_request | get_pull_request_files | get_pull_request_status | update_pull_request_branch | get_pull_request_comments | get_pull_request_reviews |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `public-website` | 6 🟡 | 3 🟢 | 2 🟢 | 1 🟢 | 6 🟡 | 2 🟢 | 4 🟢 | 6 🟢 | 4 🟢 | 3 🟢 | 1 🟢 | 4 🟢 | 2 🟢 | 3 🟢 | 3 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 3 🟢 | 4 🟢 | 12 🟠 | 3 🟢 | 1 🟢 | 6 🟡 | 1 🟢 | 1 🟢 |
-| `internal-docs` | 18 🟠 | 6 🟡 | 0 🟢 | 9 🟡 | 27 🔴 | 6 🟢 | 12 🟡 | 18 🟠 | 12 🟡 | 9 🟡 | 9 🟡 | 12 🟡 | 6 🟢 | 9 🟡 | 9 🟡 | 0 🟢 | 3 🟢 | 3 🟢 | 9 🟡 | 12 🟡 | 27 🔴 | 9 🟡 | 3 🟢 | 18 🟠 | 6 🟢 | 3 🟢 |
-| `backend-api` | 36 🔴 | 4 🟢 | 8 🟢 | 8 🟡 | 48 🔴 | 8 🟢 | 16 🟡 | 24 🟠 | 16 🟡 | 8 🟢 | 8 🟢 | 16 🟡 | 8 🟢 | 12 🟠 | 8 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 8 🟢 | 16 🟡 | 48 🔴 | 8 🟢 | 8 🟢 | 16 🟠 | 4 🟢 | 8 🟢 |
-| `payments-service` | 36 🔴 | 4 🟢 | 0 🟢 | 12 🟠 | 48 🔴 | 16 🟡 | 16 🟡 | 24 🟠 | 16 🟡 | 8 🟡 | 8 🟡 | 16 🟡 | 8 🟢 | 8 🟡 | 8 🟡 | 4 🟢 | 4 🟢 | 4 🟢 | 8 🟡 | 16 🟡 | 48 🔴 | 8 🟡 | 4 🟢 | 24 🟠 | 4 🟢 | 8 🟡 |
-| `infra-config` | 45 🔴 | 10 🟡 | 0 🟢 | 15 🟠 | 60 🔴 | 10 🟢 | 20 🟡 | 20 🟡 | 30 🟠 | 15 🟡 | 10 🟢 | 10 🟢 | 10 🟢 | 15 🟠 | 10 🟢 | 0 🟢 | 5 🟢 | 10 🟡 | 10 🟡 | 20 🟡 | 60 🔴 | 10 🟡 | 5 🟢 | 40 🟠 | 10 🟡 | 5 🟢 |
-| `ml-research` | 36 🔴 | 8 🟡 | 8 🟢 | 8 🟠 | 48 🔴 | 8 🟢 | 16 🟡 | 24 🟡 | 16 🟡 | 8 🟢 | 8 🟢 | 16 🟡 | 8 🟢 | 8 🟠 | 12 🟠 | 4 🟢 | 4 🟢 | 4 🟢 | 12 🟠 | 16 🟡 | 48 🔴 | 8 🟠 | 8 🟢 | 24 🟠 | 8 🟢 | 8 🟢 |
+| `public-website` | 6 🟡 | 4 🟢 | 0 🟢 | 4 🟢 | 9 🟡 | 2 🟢 | 4 🟢 | 8 🟡 | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 2 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 4 🟢 | 4 🟢 | 9 🟡 | 4 🟢 | 1 🟢 | 6 🟢 | 1 🟢 | 1 🟢 |
+| `internal-docs` | 18 🟠 | 12 🟡 | 0 🟢 | 12 🟡 | 27 🟠 | 6 🟢 | 12 🟡 | 24 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 6 🟢 | 12 🟡 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 12 🟡 | 27 🟠 | 12 🟡 | 3 🟢 | 18 🟡 | 12 🟡 | 3 🟢 |
+| `backend-api` | 24 🟠 | 16 🟠 | 16 🟡 | 16 🟠 | 48 🔴 | 16 🟡 | 16 🟡 | 32 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 8 🟡 | 16 🟠 | 16 🟠 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 48 🔴 | 16 🟠 | 8 🟡 | 24 🟠 | 16 🟠 | 16 🟠 |
+| `payments-service` | 24 🟠 | 16 🟠 | 0 🟢 | 16 🟠 | 48 🔴 | 8 🟡 | 16 🟡 | 32 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 8 🟡 | 16 🟠 | 16 🟠 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 48 🔴 | 16 🟠 | 8 🟡 | 24 🟠 | 8 🟡 | 8 🟡 |
+| `infra-config` | 30 🟠 | 20 🟠 | 0 🟠 | 20 🟠 | 75 🔴 | 10 🟠 | 20 🟠 | 40 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 10 🟠 | 20 🟠 | 20 🟠 | 0 🟡 | 5 🟡 | 5 🟡 | 20 🟠 | 20 🟠 | 60 🔴 | 20 🟠 | 5 🟡 | 40 🟠 | 10 🟡 | 20 🟠 |
+| `ml-research` | 24 🟠 | 16 🟠 | 0 🟢 | 16 🟠 | 48 🔴 | 16 🟡 | 16 🟡 | 32 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 8 🟡 | 16 🟠 | 16 🟠 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 48 🔴 | 16 🟠 | 8 🟡 | 24 🟠 | 8 🟡 | 8 🟡 |
