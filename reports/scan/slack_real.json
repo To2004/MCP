@@ -1066,5 +1066,626 @@
     ]
   },
   "provenance": "llm-scan",
-  "server_kind": "slack"
+  "server_kind": "slack",
+  "tool_atomic_ops": {
+    "channels_list": {
+      "atomic_ops": [
+        "LIST"
+      ],
+      "primary_op": "LIST",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "rules"
+    },
+    "channels_me": {
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "primary_op": "METADATA",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    },
+    "conversations_add_message": {
+      "atomic_ops": [
+        "BROADCAST"
+      ],
+      "primary_op": "BROADCAST",
+      "severity": 4,
+      "severity_label": "High",
+      "source": "verb-fallback"
+    },
+    "conversations_history": {
+      "atomic_ops": [
+        "READ"
+      ],
+      "primary_op": "READ",
+      "severity": 2,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    },
+    "conversations_join": {
+      "atomic_ops": [
+        "CREATE"
+      ],
+      "primary_op": "CREATE",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "conversations_leave": {
+      "atomic_ops": [
+        "MODIFY"
+      ],
+      "primary_op": "MODIFY",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "conversations_mark": {
+      "atomic_ops": [
+        "MODIFY"
+      ],
+      "primary_op": "MODIFY",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "conversations_replies": {
+      "atomic_ops": [
+        "READ"
+      ],
+      "primary_op": "READ",
+      "severity": 2,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    },
+    "conversations_search_messages": {
+      "atomic_ops": [
+        "BROADCAST"
+      ],
+      "primary_op": "BROADCAST",
+      "severity": 4,
+      "severity_label": "High",
+      "source": "verb-fallback"
+    },
+    "conversations_unreads": {
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "primary_op": "METADATA",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    },
+    "usergroups_create": {
+      "atomic_ops": [
+        "CREATE"
+      ],
+      "primary_op": "CREATE",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "usergroups_list": {
+      "atomic_ops": [
+        "LIST"
+      ],
+      "primary_op": "LIST",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "rules"
+    },
+    "usergroups_me": {
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "primary_op": "METADATA",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    },
+    "usergroups_update": {
+      "atomic_ops": [
+        "MODIFY"
+      ],
+      "primary_op": "MODIFY",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "usergroups_users_update": {
+      "atomic_ops": [
+        "MODIFY"
+      ],
+      "primary_op": "MODIFY",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "verb-fallback"
+    },
+    "users_search": {
+      "atomic_ops": [
+        "SEARCH"
+      ],
+      "primary_op": "SEARCH",
+      "severity": 2,
+      "severity_label": "Low",
+      "source": "verb-fallback"
+    }
+  },
+  "tool_input_ranking": {
+    "channels_list": [
+      {
+        "name": "query",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "query_targets",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "limit",
+        "type": "number",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "channel_types",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "cursor",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      },
+      {
+        "name": "sort",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "channels_me": [
+      {
+        "name": "limit",
+        "type": "number",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "channel_types",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "cursor",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_add_message": [
+      {
+        "name": "blocks",
+        "type": "string",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "content_type",
+        "type": "string",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "thread_ts",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_history": [
+      {
+        "name": "include_activity_messages",
+        "type": "boolean",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "limit",
+        "type": "string",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "cursor",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_join": [
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      }
+    ],
+    "conversations_leave": [
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      }
+    ],
+    "conversations_mark": [
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "ts",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_replies": [
+      {
+        "name": "include_activity_messages",
+        "type": "boolean",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "limit",
+        "type": "string",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "channel_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "thread_ts",
+        "type": "string",
+        "required": true,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      },
+      {
+        "name": "cursor",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_search_messages": [
+      {
+        "name": "filter_date_after",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_date_before",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_date_during",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_date_on",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_in_channel",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_in_im_or_mpim",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_threads_only",
+        "type": "boolean",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_users_from",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "filter_users_with",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "search_query",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "limit",
+        "type": "number",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "cursor",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "conversations_unreads": [
+      {
+        "name": "include_messages",
+        "type": "boolean",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "max_messages_per_channel",
+        "type": "number",
+        "required": false,
+        "risk": 4,
+        "reason": "payload content \u2014 injection / exfiltration / poisoning vector"
+      },
+      {
+        "name": "max_channels",
+        "type": "number",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "channel_types",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "include_muted",
+        "type": "boolean",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      },
+      {
+        "name": "mentions_only",
+        "type": "boolean",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "usergroups_create": [
+      {
+        "name": "description",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "channels",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "handle",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "usergroups_list": [
+      {
+        "name": "include_count",
+        "type": "boolean",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      {
+        "name": "include_users",
+        "type": "boolean",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "include_disabled",
+        "type": "boolean",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "usergroups_me": [
+      {
+        "name": "usergroup_id",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "action",
+        "type": "string",
+        "required": true,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "usergroups_update": [
+      {
+        "name": "description",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "usergroup_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "channels",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": false,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "handle",
+        "type": "string",
+        "required": false,
+        "risk": 1,
+        "reason": "minor / structural parameter"
+      }
+    ],
+    "usergroups_users_update": [
+      {
+        "name": "usergroup_id",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      {
+        "name": "users",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      }
+    ],
+    "users_search": [
+      {
+        "name": "query",
+        "type": "string",
+        "required": true,
+        "risk": 5,
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      {
+        "name": "limit",
+        "type": "number",
+        "required": false,
+        "risk": 3,
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      }
+    ]
+  }
 }

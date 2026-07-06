@@ -168,19 +168,29 @@ def check_tools_match_tool_list() -> Check:
 
     Disk-backed kinds (filesystem, sqlite) are checked against the saved
     ``tools/list``; declarative kinds (slack, calendar, github) against the
-    registry's declared tool set. Dispatch uses the authoritative ``server_kind``.
+    registry's declared tool set. ``<kind>_real`` scans are checked against their
+    captured real catalog (``reports/tool_lists/<stem>.json``), not the demo
+    registry. Dispatch uses the authoritative ``server_kind``.
     """
     bad: list[str] = []
     if not TOOL_LISTS.exists():
         return Check("tools_match_tool_list", False, "reports/tool_lists missing")
     for path in _scan_files():
         d = _load(path)
-        kind = d.get("server_kind") or ("filesystem" if d.get("mcp_kind") == "filesystem"
-                                        else "sqlite")
-        want = _advertised_tools(kind)
-        if want is None:
-            bad.append(f"{path.stem}: no advertised tool set for kind '{kind}'")
-            continue
+        if path.stem.endswith("_real"):
+            # Real-catalog scan: validate against the captured tools/list it was scanned from.
+            catalog = TOOL_LISTS / f"{path.stem}.json"
+            if not catalog.exists():
+                bad.append(f"{path.stem}: real scan but no catalog {catalog.name}")
+                continue
+            want = {t["name"] for t in _load(catalog).get("tools", []) if t.get("name")}
+        else:
+            kind = d.get("server_kind") or ("filesystem" if d.get("mcp_kind") == "filesystem"
+                                            else "sqlite")
+            want = _advertised_tools(kind)
+            if want is None:
+                bad.append(f"{path.stem}: no advertised tool set for kind '{kind}'")
+                continue
         got = set(d["tool_impact"])
         if got != want:
             extra, missing = got - want, want - got
