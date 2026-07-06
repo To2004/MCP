@@ -1,0 +1,170 @@
+"""Enrich a scan with per-tool atomic-operation flags and an input-risk ranking.
+
+Two deterministic (no-LLM) additions layered on top of the existing scan:
+
+* **atomic-op flag** — every tool is classified into the project's atomic-op
+  taxonomy (``presentations/heatmap_byhand/csv/atomic_operations.csv``:
+  EXECUTE/DELETE/OVERWRITE/… ranked by severity) using the existing
+  :mod:`mcp_security.atomic_ops` rule classifier. Answers "what does this tool
+  fundamentally *do*, and how dangerous is that verb".
+* **input ranking** — each tool's input parameters are ranked by how much they
+  can amplify risk (a free-form query/command, a list whose length is breadth, a
+  destructive flag, a magnitude count, …), so an operator sees which input to
+  watch first, from the tool's own schema.
+
+Both are attached to the scan table (``tool_atomic_ops``, ``tool_input_ranking``)
+so they ship inside ``reports/scan/<server>.json`` alongside the risk matrix.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from mcp_security.atomic_ops import toollist_rules
+from mcp_security.atomic_ops.classifier import DEFAULT_TAXONOMY, _to_op_set_and_severities
+from mcp_security.atomic_ops.taxonomy import AtomicOp, load_taxonomy
+from mcp_security.static_scoring.registry import ToolSpec
+
+# Input-risk heuristic, most-amplifying first. Each rule matches on the parameter
+# name (substring) and/or JSON-schema type, and assigns a 1–5 risk with a reason.
+# A parameter takes the first (highest) rule it matches.
+
+
+@dataclass(frozen=True)
+class _InputRule:
+    risk: int
+    reason: str
+    name_hints: tuple[str, ...] = ()
+    types: tuple[str, ...] = ()
+
+
+_INPUT_RULES: tuple[_InputRule, ...] = (
+    _InputRule(5, "free-form query/command — unbounded reach; the whole payload is attacker-controlled",
+               name_hints=("query", "sql", "command", "cmd", "script", "code", "expression", "filter")),
+    _InputRule(4, "list/array — risk scales with its length (bulk reach, mass fan-out)",
+               types=("array",)),
+    _InputRule(4, "payload content — injection / exfiltration / poisoning vector",
+               name_hints=("content", "body", "data", "payload", "text", "message", "blocks", "attachments")),
+    _InputRule(4, "escalating flag — flips the call to a wider/irreversible mode",
+               name_hints=("recursive", "force", "all", "confirm", "overwrite", "permanent", "cascade", "hard")),
+    _InputRule(3, "magnitude/count — larger value means broader effect",
+               name_hints=("limit", "count", "max", "depth", "size", "number", "amount", "quantity", "n_", "per_page", "days")),
+    _InputRule(2, "names the target resource — selects what the op touches",
+               name_hints=("path", "file", "repo", "owner", "channel", "calendar", "table", "branch", "id",
+                           "name", "url", "email", "recipient", "user", "event", "issue", "pull")),
+)
+_DEFAULT_INPUT_RULE = _InputRule(1, "minor / structural parameter")
+
+
+# Verb -> atomic-op fallback, most-severe first, matched as substrings of the
+# (namespace-stripped, underscore-normalised) tool name. Used only when the rule
+# classifier finds nothing, so EVERY tool still gets a best-effort flag.
+_VERB_OPS: tuple[tuple[tuple[str, ...], str], ...] = (
+    (("execute", "exec", "invoke", "eval", "shell"), "EXECUTE"),
+    (("delete", "remove", "drop", "destroy", "purge", "wipe", "clear"), "DELETE"),
+    (("overwrite", "replace", "merge"), "OVERWRITE"),
+    (("send", "post", "publish", "broadcast", "invite", "email", "message", "notify", "reply", "share"), "BROADCAST"),
+    (("update", "edit", "modify", "patch", "mark", "rename", "respond", "manage", "leave", "set"), "MODIFY"),
+    (("move", "transfer", "rename"), "MOVE"),
+    (("create", "add", "new", "insert", "push", "upload", "write", "join", "fork", "make"), "CREATE"),
+    (("search", "find", "query", "lookup"), "SEARCH"),
+    (("list", "enumerate"), "LIST"),
+    (("describe", "info", "status", "meta", "freebusy", "current", "colors", "unread", "_me", "profile"), "METADATA"),
+    (("read", "get", "fetch", "download", "view", "show", "history", "content", "reties", "replies"), "READ"),
+)
+_FALLBACK_DEFAULT_OP = "READ"
+
+
+@dataclass(frozen=True)
+class AtomicFlag:
+    """One tool's atomic-operation classification."""
+
+    atomic_ops: list[str]
+    primary_op: str
+    severity: int
+    severity_label: str
+    source: str  # "rules" (the toollist classifier) or "verb-fallback"
+
+
+def _verb_fallback_op(name: str) -> str:
+    """Infer an atomic op from a tool name when the rule classifier found nothing."""
+    lowered = name.lower().replace("-", "_")
+    for hints, op in _VERB_OPS:
+        if any(h in lowered for h in hints):
+            return op
+    return _FALLBACK_DEFAULT_OP
+
+
+def _sev_for(op: str, taxonomy: list[AtomicOp]) -> tuple[int, str]:
+    for entry in taxonomy:
+        if entry.name == op:
+            return entry.severity, entry.severity_label
+    return 0, ""
+
+
+def _classify_one(tool: ToolSpec, taxonomy: list[AtomicOp], op_rank: dict[str, int]) -> AtomicFlag:
+    # Normalise hyphenated names (e.g. calendar `create-event`) for the rule set.
+    norm_name = tool.name.replace("-", "_")
+    hits = toollist_rules.classify_from_toollist(norm_name, tool.description, tool.input_schema)
+    ops, sev, label = _to_op_set_and_severities(hits, taxonomy)
+    if ops:
+        primary = min(ops, key=lambda o: op_rank.get(o, 999))
+        return AtomicFlag(sorted(ops), primary, sev, label, "rules")
+    # Fallback: infer the verb so no tool is left unflagged.
+    op = _verb_fallback_op(tool.name)
+    sev, label = _sev_for(op, taxonomy)
+    return AtomicFlag([op], op, sev, label, "verb-fallback")
+
+
+def classify_tools_atomic(tools: list[ToolSpec], taxonomy: list[AtomicOp] | None = None) -> dict[str, dict]:
+    """Flag every tool with its atomic operation(s) + max severity from the taxonomy."""
+    tax = taxonomy or load_taxonomy(DEFAULT_TAXONOMY)
+    op_rank = {op.name: op.rank for op in tax}
+    result: dict[str, dict] = {}
+    for t in tools:
+        flag = _classify_one(t, tax, op_rank)
+        result[t.name] = {
+            "atomic_ops": flag.atomic_ops,
+            "primary_op": flag.primary_op,
+            "severity": flag.severity,
+            "severity_label": flag.severity_label,
+            "source": flag.source,
+        }
+    return result
+
+
+def _input_risk(param: dict) -> _InputRule:
+    name = param.get("name", "").lower()
+    ptype = str(param.get("type", "")).lower()
+    for rule in _INPUT_RULES:
+        if rule.types and ptype in rule.types:
+            return rule
+        if rule.name_hints and any(h in name for h in rule.name_hints):
+            return rule
+    return _DEFAULT_INPUT_RULE
+
+
+def rank_tool_inputs(tools: list[ToolSpec]) -> dict[str, list[dict]]:
+    """Rank each tool's input parameters by risk amplification (highest first)."""
+    ranking: dict[str, list[dict]] = {}
+    for tool in tools:
+        ranked = [
+            {
+                "name": p["name"],
+                "type": p.get("type", "any"),
+                "required": p.get("required", False),
+                "risk": (rule := _input_risk(p)).risk,
+                "reason": rule.reason,
+            }
+            for p in tool.parameters()
+        ]
+        ranked.sort(key=lambda r: (r["risk"], r["required"]), reverse=True)
+        ranking[tool.name] = ranked
+    return ranking
+
+
+def enrich_scan(table: dict, tools: list[ToolSpec]) -> dict:
+    """Attach ``tool_atomic_ops`` and ``tool_input_ranking`` to a scan table in place."""
+    table["tool_atomic_ops"] = classify_tools_atomic(tools)
+    table["tool_input_ranking"] = rank_tool_inputs(tools)
+    return table

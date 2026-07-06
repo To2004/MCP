@@ -31,6 +31,7 @@ from mcp_security.static_scoring import registry as reg
 from mcp_security.static_scoring.pipeline import build_static_table
 from mcp_security.static_scoring.registry import ServerRegistry
 
+from .atomic_flags import enrich_scan
 from .tool_list import load_tool_list
 
 logger = logging.getLogger(__name__)
@@ -148,6 +149,9 @@ def scan_server(
     # (e.g. "team messaging workspace"), but the call ranker dispatches its resolver
     # on this exact kind so it never depends on the inferred phrasing.
     table["server_kind"] = kind
+    # Additive, deterministic enrichment (no LLM): flag every tool's atomic
+    # operation from the taxonomy, and rank each tool's inputs by risk.
+    enrich_scan(table, registry.tools)
     return ScanResult(server=registry.server, kind=kind, table=table)
 
 

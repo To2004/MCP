@@ -137,6 +137,37 @@ scan — a gap the improved "pick the single most-influential input" prompt in
 `docs/standards/parameter-scoring.md` targets on the next derivation.) A money
 `amount` on a future payments tool would surface here identically.
 
+### 5a. Atomic-operation flag per tool
+
+Every scan now also classifies **each tool into one atomic operation** from the
+project's severity-ranked taxonomy (`atomic_operations.csv`:
+EXECUTE(5)/DELETE(5)/OVERWRITE(4)/SCHEMA_MODIFY(4)/BROADCAST(4)/WRITE/MODIFY/MOVE/
+CREATE(3)/READ/SEARCH(2)/METADATA/LIST(1)). This answers "what does this tool
+*fundamentally do*, and how dangerous is that verb", independent of the asset.
+
+It is deterministic (no LLM), attached to the scan as `tool_atomic_ops`
+(`{primary_op, atomic_ops, severity, severity_label, source}`), produced by
+`mcp_security.scanner.atomic_flags` wrapping the existing `atomic_ops` rule
+classifier. When the rule set doesn't recognise a tool, a verb fallback infers
+the op from the tool name (hyphens normalised), so **every** tool is flagged and
+the `source` field ("rules" vs "verb-fallback") stays honest. Examples from the
+real catalogs: `delete_file → DELETE (Critical)`, `merge_pull_request → OVERWRITE`,
+`conversations_add_message → BROADCAST (High)`, `list-calendars → LIST (Low)`.
+
+### 5b. Per-tool input-risk ranking
+
+Alongside the cross-server magnitude ranking above, every scan carries a
+**per-tool** ranking of that tool's own inputs (`tool_input_ranking`), scored by
+how much each input amplifies risk — a free-form query/command (5), a list whose
+length is breadth or a payload/content string (4), a destructive flag (4), a
+magnitude count (3), a target identifier (2), else structural (1). So for
+`push_files` the ranking surfaces `files` (array) and `message` (payload) above
+`owner`/`repo` — the inputs an operator should watch first, read straight from
+the tool's schema, no LLM needed.
+
+Both `5a` and `5b` ship inside every `reports/scan/<server>.json` and are
+backfilled onto older scans by `scripts/enrich_scans_atomic.py`.
+
 ---
 
 ## 6. Call scoring — resolving observed calls, honestly
