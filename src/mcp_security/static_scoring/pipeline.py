@@ -273,7 +273,7 @@ class StaticScorer:
                     )
                 )
                 if isinstance(result, dict) and "blast_radius" in result:
-                    value = _clamp(result["blast_radius"], 0, 4, fb_blast)
+                    value = _clamp(result["blast_radius"], 0, 5, fb_blast)
                     proposed, conf = result, float(result.get("confidence", 0.7))
                 elif self.strict:
                     self._strict_fail("blast_radius", f"{tool.name}|{asset.asset_id}")  # raises
@@ -285,7 +285,7 @@ class StaticScorer:
                 key = f"{tool.name}|{asset.asset_id}"
                 blast[key] = value
                 self._proposals.append(
-                    _Proposal("blast_radius", key, item, proposed, value, 0, 4, conf)
+                    _Proposal("blast_radius", key, item, proposed, value, 0, 5, conf)
                 )
         return blast
 

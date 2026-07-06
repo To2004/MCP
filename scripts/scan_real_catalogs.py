@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from mcp_security.scanner.atomic_flags import enrich_scan
 from mcp_security.scanner.render import scan_to_markdown
 from mcp_security.scanner.scan import ScanResult, write_scan
 from mcp_security.scanner.tool_list import load_tool_list
@@ -46,6 +47,8 @@ def scan_one(kind: str, catalog: Path, loader, *, use_llm: bool, version: str) -
     table = build_static_table(registry, use_llm=use_llm, strict=use_llm, version=version)
     table["provenance"] = "llm-scan" if use_llm else "offline-baseline"
     table["server_kind"] = kind
+    # Atomic-op flags + input ranking (LLM ranking on a real scan) in the same pass.
+    enrich_scan(table, registry.tools, use_llm=use_llm)
     return ScanResult(server=registry.server, kind=kind, table=table)
 
 
