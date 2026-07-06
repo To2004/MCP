@@ -7,9 +7,15 @@ from datetime import date
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ARCHIVE_ROOT = REPO_ROOT / "_archive"
+RUNS_ROOT = REPO_ROOT / "runs"
 
 # Directories to skip entirely (never enter)
-SKIP_DIRS = {".git", ".venv", "_archive", ".worktrees", "node_modules"}
+SKIP_DIRS = {".git", ".venv", "_archive", ".worktrees", "node_modules", "runs"}
+
+# Top-level dirs where *.log / *.out are SLURM/ollama/pipeline run artifacts, not
+# source. logs/ is excluded on purpose: it holds intentional MCP proxy captures.
+RUN_ARTIFACT_DIRS = {"reports"}
+RUN_ARTIFACT_SUFFIXES = {".log", ".out"}
 
 # Junk dir names — archive the whole directory
 JUNK_DIR_NAMES = {"__pycache__", ".pytest_cache", ".ruff_cache", ".playwright-mcp", ".mypy_cache"}
@@ -147,6 +153,47 @@ def find_duplicates(root: Path) -> list[tuple[Path, Path]]:
     return duplicates
 
 
+def find_run_artifacts(root: Path) -> list[Path]:
+    """Return stray SLURM/ollama/pipeline ``*.log``/``*.out`` files under RUN_ARTIFACT_DIRS.
+
+    These already match ``.gitignore`` (so they are never committed) but clutter
+    ``reports/`` on disk and bury the curated ``.md``/``.json`` deliverables next
+    to them. Not recursive: only sweeps the top level of each run-artifact dir,
+    where these files land by default.
+    """
+    results: list[Path] = []
+    for dir_name in RUN_ARTIFACT_DIRS:
+        directory = root / dir_name
+        if not directory.is_dir():
+            continue
+        for entry in sorted(directory.iterdir()):
+            if entry.is_file() and entry.suffix in RUN_ARTIFACT_SUFFIXES:
+                results.append(entry)
+    return results
+
+
+def sweep_run_artifacts(root: Path, runs_root: Path) -> list[dict]:
+    """Move stray run artifacts into runs_root, flat, with collision-safe names.
+
+    Kept separate from ``archive_item`` (which dates and nests by relative
+    path): run artifacts are named by job ID already, so a flat, undated
+    ``runs/`` directory keeps a still-running job's log easy to find.
+
+    Returns move records in the same shape as ``archive_item``'s.
+    """
+    runs_root.mkdir(exist_ok=True)
+    moves: list[dict] = []
+    for src in find_run_artifacts(root):
+        dest = runs_root / src.name
+        counter = 1
+        while dest.exists():
+            dest = runs_root / f"{src.stem}_{counter}{src.suffix}"
+            counter += 1
+        shutil.move(str(src), str(dest))
+        moves.append({"original": str(src), "archived_to": str(dest), "reason": "run artifact"})
+    return moves
+
+
 def archive_item(
     src: Path,
     repo_root: Path,
@@ -215,6 +262,11 @@ def main() -> None:
     print(f"[cleanup] Repo root: {REPO_ROOT}")
 
     moves: list[dict] = []
+
+    # 0. Stray run artifacts (SLURM/ollama logs) out of reports/, into runs/
+    run_artifacts = sweep_run_artifacts(REPO_ROOT, RUNS_ROOT)
+    print(f"[cleanup] Swept {len(run_artifacts)} run artifacts out of reports/")
+    moves.extend(run_artifacts)
 
     # 1. Gitignore-matching junk
     junk = find_gitignore_matches(REPO_ROOT)

@@ -8,6 +8,8 @@ from scripts.weekly_cleanup import (
     find_gitignore_matches,
     find_duplicates,
     find_backup_named,
+    find_run_artifacts,
+    sweep_run_artifacts,
     archive_item,
     write_report,
 )
@@ -66,6 +68,56 @@ def test_find_duplicates_skips_archive(tmp_path):
     (archive / "orig.pdf").write_bytes(content)
     dupes = find_duplicates(tmp_path)
     assert dupes == []
+
+
+# ── find_run_artifacts / sweep_run_artifacts ─────────────────────────────────
+
+def test_find_run_artifacts_finds_reports_logs_and_out(tmp_path):
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    (reports / "ollama-serve-123.log").write_text("log")
+    (reports / "scan-sqlite-456.out").write_text("out")
+    (reports / "SUMMARY.md").write_text("# keep me")
+    result = find_run_artifacts(tmp_path)
+    names = {p.name for p in result}
+    assert "ollama-serve-123.log" in names
+    assert "scan-sqlite-456.out" in names
+    assert "SUMMARY.md" not in names
+
+
+def test_find_run_artifacts_ignores_logs_dir(tmp_path):
+    logs = tmp_path / "logs" / "proxy"
+    logs.mkdir(parents=True)
+    (logs / "capture.log").write_text("intentional capture")
+    result = find_run_artifacts(tmp_path)
+    assert result == []
+
+
+def test_sweep_run_artifacts_moves_flat_into_runs(tmp_path):
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    (reports / "ollama-serve-123.log").write_text("log")
+    runs_root = tmp_path / "runs"
+
+    moves = sweep_run_artifacts(tmp_path, runs_root)
+
+    assert (runs_root / "ollama-serve-123.log").exists()
+    assert not (reports / "ollama-serve-123.log").exists()
+    assert moves[0]["reason"] == "run artifact"
+
+
+def test_sweep_run_artifacts_handles_collision(tmp_path):
+    reports = tmp_path / "reports"
+    reports.mkdir()
+    (reports / "scan.log").write_text("first")
+    runs_root = tmp_path / "runs"
+    runs_root.mkdir()
+    (runs_root / "scan.log").write_text("already here")
+
+    moves = sweep_run_artifacts(tmp_path, runs_root)
+
+    assert Path(moves[0]["archived_to"]).exists()
+    assert Path(moves[0]["archived_to"]) != runs_root / "scan.log"
 
 
 # ── find_backup_named ─────────────────────────────────────────────────────────
