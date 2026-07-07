@@ -12,8 +12,9 @@ Score *every* demo server into one combined results file::
     python -m mcp_security.static_scoring --all              # model-reviewed
     python -m mcp_security.static_scoring --all --no-llm     # deterministic
 
-With the local model serving (e.g. on a GPU node) the judge stage runs and the
-combined file records every cross-server disagreement.
+With the local model serving (e.g. on a GPU node) every primitive is the model's
+own judgement; bands are the deterministic band_label. The judge cross-check does
+not run in a scan (it is evaluation-only), so ``judge_ran`` is always false here.
 """
 
 from __future__ import annotations

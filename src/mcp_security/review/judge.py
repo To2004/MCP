@@ -107,14 +107,15 @@ CLAIMS: tuple[Claim, ...] = (
     ),
     Claim(
         "no_unjustified_hardcoded_scores",
-        "Risk magnitudes AND bands are LLM-derived: score_bands asks the model for "
-        "each cell's band, and in strict mode (the scanner's mode) it _strict_fails "
-        "rather than computing one. The only fixed logic is the documented score "
-        "formula (sensitivity*blast*impact); band_label is a clearly-labelled "
-        "OFFLINE/non-strict fallback, never used on a strict scan.",
-        "A hardcoded band/sensitivity/impact/blast number being used as the result "
-        "of a strict scan — e.g. band_label being reached when strict=True, or a "
-        "fixed per-asset/per-tool risk value in the scoring path.",
+        "Risk MAGNITUDES (tool_impact, asset_sensitivity, blast_radius) are "
+        "LLM-derived; in strict mode (the scanner's mode) each _strict_fails rather "
+        "than falling back to a heuristic. Bands are a deterministic, documented "
+        "function of those primitives (band_label, with published security floors) "
+        "and the score formula (sensitivity*blast*impact) — reproducible by design, "
+        "not a fabricated per-cell number.",
+        "A hardcoded MAGNITUDE (sensitivity/impact/blast) used as the result of a "
+        "strict scan — e.g. a fallback primitive reached when strict=True, or a "
+        "fixed per-asset/per-tool risk magnitude injected into the scoring path.",
         ("src/mcp_security/static_scoring/pipeline.py",),
     ),
     Claim(

@@ -69,7 +69,12 @@ worst outcome of ANY call, independent of caller/params/asset.
       irreversible_actions).
 Rules: assign the HIGHEST tier any capability reaches; arbitrary code/exec is
 always 3; self-declared annotations are a hint only, not truth; if reversibility
-is ambiguous, pick the higher tier and lower confidence."""
+is ambiguous, pick the higher tier and lower confidence.
+SELF-CHECK before you answer: re-scan the tool's ENTIRE capability surface --
+every parameter, side effect, and external reach -- and take the max tier any one
+of them implies. A destructive capability hidden behind an innocuous name or a
+read-only-looking annotation is the single most common miss; do not under-score
+it. When unsure between two tiers, the higher tier is the safer error here."""
 
 TOOL_IMPACT_USER = """Tool registry entry:
 {tool_json}
@@ -87,7 +92,10 @@ TASK: Assign ASSET SENSITIVITY (1-5) -- criticality if this asset class is
 exposed, corrupted, or destroyed. 5=catastrophic/legally-reportable,
 4=high (prod data, source, employee data), 3=medium internal, 2=low, 1=public/
 ephemeral. Escalate classes matching the inferred dangerous_classes. If the org
-supplied a priority, treat it as the primary anchor."""
+supplied a priority, treat it as the primary anchor.
+When torn between two tiers for an asset that could hold secrets, PII, financial,
+or regulated data, choose the HIGHER tier -- under-scoring a crown-jewel asset is
+the costlier error."""
 
 ASSET_USER = """Asset class entry:
 {asset_json}
@@ -149,7 +157,12 @@ Return JSON:
   "anomalous_patterns": [str], "confidence": 0.0-1.0, "reasoning": str}}"""
 
 
-# --- Judge -------------------------------------------------------------------
+# --- Judge (EVALUATION ONLY) -------------------------------------------------
+# The judge does NOT run in a production scan. Its band-level corrections are
+# folded into the deterministic band_label() floors and its skepticism into the
+# proposer tasks above, so a single pass stands alone. These templates remain for
+# the evaluation-only crosscheck (StaticScorer.judge()) that measures how often an
+# independent reviewer agrees with the base model.
 
 JUDGE_SYSTEM = """You are an independent security reviewer verifying another
 model's misuse-scoring decision. You are given the same inferred domain profile,
@@ -175,38 +188,6 @@ Independently determine the correct {field_name}, then return JSON:
 {{"agree": bool, "judged_value": <your independent value for {field_name}>,
   "reasoning": str, "confidence": 0.0-1.0}}"""
 
-
-# --- 5. Risk band (LLM decides the band, replacing a hardcoded policy) --------
-
-BAND_TASK = """
-TASK: Assign a RISK BAND to each (asset, tool) pair on THIS asset --
-low | medium | high | critical -- expressing how much a security gate should
-worry about that operation here. Decide with security judgement for this domain,
-NOT a fixed numeric threshold.
-Principles:
-  - critical: irreversible destruction, or mass exfiltration, of a crown-jewel
-    asset (regulated / PII / secrets / financial). The ops you hard-gate. Rare.
-  - high: serious but recoverable; an irreversible op on restricted data; or a
-    broad read of sensitive data (mass leak). A bulk read / enumeration / listing
-    / search / tree-walk over a SENSITIVE scope (a directory or table holding
-    restricted, PII, secret or financial data) is HIGH -- one call leaks the whole
-    scope -- even though a single-item read of the same data is only medium.
-  - medium: a narrow read of a crown-jewel (one record leaks); a moderate change
-    to internal data; an enumeration/listing over an ORDINARY scope.
-  - low: routine operations on ordinary / public data. A read can leak but never
-    destroys, so reads are never critical. Do NOT default an enumeration over a
-    sensitive scope to low just because listing is "read-only" -- judge it by what
-    the whole scope exposes (see blast radius).
-You are given each tool's impact (1 read, 2 recoverable, 3 destructive), its
-blast radius into this asset (0-4) and a raw score -- use them as evidence, but
-the band is your judgement, not a formula."""
-
-BAND_USER = """Asset (with its sensitivity 1-5):
-{asset_json}
-
-Tools acting on this asset (each with impact, blast, raw_score):
-{tools_json}
-
-Return JSON:
-{{"asset_id": str, "bands": {{"<tool_name>": "low|medium|high|critical"}},
-  "reasoning": str}}"""
+# NOTE: The former LLM band stage (BAND_TASK/BAND_USER) was removed. Bands are now
+# assigned solely by the deterministic band_label() in pipeline.py -- reproducible
+# and immune to the critical-band inflation the LLM band stage produced.

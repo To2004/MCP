@@ -26,8 +26,8 @@ def bundle(rels: list[str], *, per_file_chars: int = 16000) -> str:
     """Concatenate several repo files into one labelled evidence blob.
 
     The default budget is large enough to show a whole scoring module (e.g. the
-    ~16 KB of pipeline.py that holds both the LLM band path ``score_bands`` and the
-    strict-mode ``_strict_fail`` guard) — truncating before them is what made an
-    earlier audit misread the deprecated ``band_label`` fallback as the live policy.
+    ~16 KB of pipeline.py that holds both the deterministic band policy
+    ``band_label`` and the strict-mode ``_strict_fail`` guard) — truncating before
+    them is what made an earlier audit misread the scoring path.
     """
     return "\n\n".join(read_file(rel, max_chars=per_file_chars) for rel in rels)

@@ -24,7 +24,7 @@ One JSON table per server (same shape as
 | `bands` | Each cell mapped to low/medium/high/critical (operational policy below) |
 | `band_distribution` | Count of cells per band — the gate workload / risk pyramid |
 | `baselines` | Expected behaviour per consuming app |
-| `crosscheck_summary` | Judge pass: records scored, records flagged for review |
+| `crosscheck_summary` | Always `judge_ran: false` — the judge is evaluation-only and is not run in a scan |
 
 ## Band policy — a gate calibration, not a raw threshold
 
@@ -58,10 +58,11 @@ registry → 0 infer domain ─┐
            1 tool impact    ├─ LLM (Qwen2.5/Ollama) per stage,
            2 asset sens.    │   each anchored to the inferred profile,
            3 blast radius    │   falling back to deterministic heuristics
-           4 baselines      │   when the model is unreachable
-           5 judge xcheck ──┘
+           4 baselines     ─┘   when the model is unreachable
                  │
-              cells = sensitivity × blast × likelihood × impact → bands
+              cells = sensitivity × blast × likelihood × impact
+                 │
+              bands = band_label(sensitivity, blast, impact)   ← deterministic
 ```
 
 The prompt templates are in `prompts.py`; the offline heuristics (tool
@@ -69,13 +70,24 @@ annotations + the shared `mcp_security.sensitivity` anchors, plus crown-jewel
 name escalation) are in `fallback.py`. Any table built with a fallback in play
 is flagged `model_reviewed=false` / `needs_human_review=true`.
 
-**Stage 5 is a real independent reviewer.** The judge re-derives every primitive
-from the same domain profile via the `JUDGE_*` prompts, and on disagreement its
-value *overrides* the proposer's before the cells are computed. Every override is
-recorded in `crosscheck_summary.disagreements`. Offline (no model) the judge
-cannot run, so `judge_ran=false` and low-confidence proposals are flagged
-instead. Model decoding is greedy + fixed-seed (`temperature=0`), so a given
-registry produces a byte-identical table every run.
+**No judge in a scan — the base model stands alone.** Earlier versions ran a
+stage-5 judge (an independent reviewer that re-derived every primitive and
+*overrode* the proposer) plus an LLM band stage. Both were removed from the scan
+path: measured against the deterministic default they changed ~46% of bands and
+inflated `critical` 2–4× while making tables non-reproducible ("numbers move on
+re-scan"; see `reports/heatmap_comparison/deterministic_vs_judged.md`). Their
+*useful* signal is now permanent instead of per-run — the band-level corrections
+live in `band_label`'s floors, and the judge's skepticism ("you may have
+under-scored a dangerous capability") is baked into the proposer prompts
+(`prompts.py`: the tool-impact and asset self-checks). So a single pass is as
+strong as proposer+judge, and bands are a pure function of the primitives.
+
+`StaticScorer.judge()` and the `JUDGE_*` prompts remain **for evaluation only** —
+run the proposer stages, then `judge()`, to measure how often an independent
+reviewer agrees with the base model. It is never called during a scan
+(`crosscheck_summary.judge_ran` is always `false`). Model decoding is greedy +
+fixed-seed (`temperature=0`), so a given registry produces a byte-identical table
+every run.
 
 ## take1 vs take2 — filesystem asset granularity
 

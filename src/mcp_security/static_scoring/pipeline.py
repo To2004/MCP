@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 FORMULA = "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact"
 LIKELIHOOD = 1.0
 BANDS = ("low", "medium", "high", "critical")
-_BANDS_SET = set(BANDS)
 
 
 class LLMUnavailableError(RuntimeError):
@@ -140,18 +139,16 @@ class StaticScorer:
 
     def __init__(
         self, registry: ServerRegistry, *, use_llm: bool = True, strict: bool = False,
-        use_judge: bool = False, llm_bands: bool = False,
     ) -> None:
         self.registry = registry
         self.use_llm = use_llm
-        # Bands are the deterministic band_label of the primitives by default —
-        # reproducible, a pure function of the score. The optional LLM band stage
-        # (``llm_bands``) and the primitive-override judge (``use_judge``) are
-        # retained for the review/methodology story but off by default: they made
-        # bands non-reproducible ("numbers move on re-scan") while their judgement
-        # is now folded into band_label's floors.
-        self.use_judge = use_judge
-        self.llm_bands = llm_bands
+        # Bands are always the deterministic band_label of the primitives — a pure,
+        # reproducible function of the score. The former opt-in LLM band stage and
+        # primitive-override judge were removed from the scan path: they made bands
+        # non-reproducible ("numbers move on re-scan") and inflated `critical`, while
+        # their useful signal is now folded into band_label's floors and the proposer
+        # prompts. The judge() method below is retained for evaluation only and is
+        # never called during a scan.
         # strict = LLM-only: never fall back to the deterministic heuristics; raise
         # LLMUnavailableError instead. Implies use_llm. Used by the scanner so its
         # scores are always the model's, never a hardcoded table or anchor.
@@ -303,65 +300,18 @@ class StaticScorer:
                 )
         return blast
 
-    # -- Stage 4b: risk band (LLM decides, replacing a hardcoded policy) -----
-    def score_bands(
-        self,
-        sensitivity: dict[str, int],
-        impacts: dict[str, int],
-        blast: dict[str, int],
-    ) -> dict[str, dict[str, str]]:
-        """Ask the LLM for each cell's band, one call per asset row.
-
-        The band is the model's security judgement (given the impact, blast and
-        raw score as evidence), not a fixed numeric threshold. Strict mode requires
-        a model band for every cell; offline/non-strict falls back to the
-        deterministic :func:`band_label` calibration and flags the table.
-        """
-        bands: dict[str, dict[str, str]] = {}
-        for asset in self.registry.assets:
-            s = sensitivity[asset.asset_id]
-            payload = []
-            for tool in self.registry.tools:
-                br = blast[f"{tool.name}|{asset.asset_id}"]
-                i = impacts[tool.name]
-                payload.append({
-                    "tool_name": tool.name, "impact": i, "blast": br,
-                    "raw_score": round(s * br * LIKELIHOOD * i, 2),
-                })
-            asset_json = {**asset.to_prompt_json(), "sensitivity": s}
-            result = self._ask(
-                self._proposer_prompt(
-                    prompts.BAND_TASK,
-                    prompts.BAND_USER.format(
-                        asset_json=json.dumps(asset_json), tools_json=json.dumps(payload)
-                    ),
-                )
-            )
-            llm_bands = result.get("bands") if isinstance(result, dict) else None
-            row: dict[str, str] = {}
-            for entry in payload:
-                tool = entry["tool_name"]
-                band = (llm_bands or {}).get(tool)
-                if band in _BANDS_SET:
-                    row[tool] = band
-                elif self.strict:
-                    self._strict_fail("band", f"{tool}|{asset.asset_id}")  # raises; LLM-only
-                else:
-                    self._used_fallback = True
-                    row[tool] = band_label(s, entry["blast"], entry["impact"])
-            bands[asset.asset_id] = row
-        return bands
-
-    # -- Stage 5: judge cross-check -----------------------------------------
+    # -- Judge cross-check (EVALUATION ONLY — never called during a scan) ----
     def judge(self) -> dict:
-        """Run the independent reviewer over every proposal (stage 5).
+        """Run the independent reviewer over every proposal.
 
-        For each primitive decision the judge re-derives the value from the same
-        domain profile and compares. A disagreement is recorded and the judge's
-        value overrides the proposer's — implementing the ``JUDGE_*`` templates
-        from the registry's prompt set. Returns the cross-check summary; with no
-        model available the judge cannot run and we fall back to flagging
-        low-confidence proposals.
+        **Evaluation-only.** This is NOT part of a production scan (``build_table``
+        never calls it): its band-level corrections are folded into
+        :func:`band_label`'s floors and its skepticism into the proposer prompts,
+        so a single pass stands alone. It remains callable so an evaluation can
+        measure how often an independent reviewer agrees with the base model — run
+        the proposer stages first (they populate ``self._proposals``), then call
+        this. For each primitive decision the judge re-derives the value from the
+        same domain profile and compares, recording any disagreement.
         """
         overrides: dict[tuple[str, str], int] = {}
         disagreements: list[dict] = []
@@ -447,35 +397,24 @@ class StaticScorer:
         blast = self.score_blast(sensitivity)
         baselines = self.build_baselines()
 
-        # Optional primitive-override judge (off by default): apply its overrides
-        # before the cells are derived so the matrix reflects the reviewed values.
-        crosscheck = self.judge() if self.use_judge else {"judge_ran": False, "note": "judge disabled"}
-        if self.use_judge:
-            for (field, key), value in self._overrides.items():
-                if field == "tool_impact":
-                    impacts[key] = value
-                elif field == "sensitivity":
-                    sensitivity[key] = value
-                elif field == "blast_radius":
-                    blast[key] = value
+        # The judge never runs in a scan: its band-level corrections live in
+        # band_label's floors and its skepticism in the proposer prompts, so a
+        # single pass stands alone. judge() remains callable for evaluation only.
+        crosscheck = {"judge_ran": False, "note": "judge not run in scans (evaluation-only)"}
 
-        # Bands: deterministic band_label of the primitives by default (a pure,
-        # reproducible function of the score); the LLM band stage is opt-in.
-        bands = (
-            self.score_bands(sensitivity, impacts, blast)
-            if self.llm_bands
-            else {
-                asset.asset_id: {
-                    tool.name: band_label(
-                        sensitivity[asset.asset_id],
-                        blast[f"{tool.name}|{asset.asset_id}"],
-                        impacts[tool.name],
-                    )
-                    for tool in self.registry.tools
-                }
-                for asset in self.registry.assets
+        # Bands are always the deterministic band_label of the primitives — a pure,
+        # reproducible function of the score.
+        bands = {
+            asset.asset_id: {
+                tool.name: band_label(
+                    sensitivity[asset.asset_id],
+                    blast[f"{tool.name}|{asset.asset_id}"],
+                    impacts[tool.name],
+                )
+                for tool in self.registry.tools
             }
-        )
+            for asset in self.registry.assets
+        }
         cells: dict[str, dict[str, float]] = {}
         for asset in self.registry.assets:
             row: dict[str, float] = {}
@@ -556,8 +495,6 @@ def build_static_table(
     use_llm: bool = True,
     strict: bool = False,
     version: str = "static-0000-00-00",
-    use_judge: bool = False,
-    llm_bands: bool = False,
 ) -> dict:
     """Convenience entry point: score ``registry`` and return the table dict.
 
@@ -566,7 +503,8 @@ def build_static_table(
     :class:`LLMUnavailableError` instead of falling back to a heuristic. Tests
     that exercise the LLM path monkeypatch
     ``mcp_security.static_scoring.pipeline.query_ollama``.
+
+    The scan never runs the judge; bands are always the deterministic
+    :func:`band_label`. :meth:`StaticScorer.judge` remains for evaluation only.
     """
-    return StaticScorer(
-        registry, use_llm=use_llm, strict=strict, use_judge=use_judge, llm_bands=llm_bands
-    ).build_table(version)
+    return StaticScorer(registry, use_llm=use_llm, strict=strict).build_table(version)

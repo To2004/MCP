@@ -38,8 +38,9 @@ resolve. For one call:
 
 1. **Resolved** — the argument names an asset the scan knows (a file extension, a
    SQL table, a channel) and the `(tool, asset)` cell exists. The score and band
-   come **verbatim** from the scan's `cells` and `bands` matrices. The bands carry
-   the model's judgement and are never recomputed from the score.
+   come **verbatim** from the scan's `cells` and `bands` matrices. The bands were
+   assigned at scan time by the deterministic `band_label` and are read as-is here,
+   never recomputed.
 2. **`unresolved`** — a known tool whose target is not a cell: a
    directory/enumeration op with no single file asset, a no-argument call, or an
    extension/table the scan never enumerated. No score; the `reason` records which.
