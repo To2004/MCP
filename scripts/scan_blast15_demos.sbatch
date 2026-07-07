@@ -15,7 +15,7 @@
 set -u
 REPO=/home/ovadyat/MCP
 BIN=/home/ovadyat/local-llm/ollama
-OUT=/home/ovadyat/MCP/reports/scan_blast15
+OUT=/home/ovadyat/MCP/reports/scan   # scanner writes the .json here (its default scan-dir)
 PORT=$((11600 + RANDOM % 300))
 export OLLAMA_MODELS=/home/ovadyat/local-llm/models
 export OLLAMA_HOST=127.0.0.1:$PORT
@@ -52,14 +52,16 @@ export OLLAMA_HOST=http://127.0.0.1:$PORT
 cd "$REPO"; PY="$REPO/.venv/bin/python"; RC=0
 for job in "${JOBS[@]}"; do
   IFS='|' read -r kind root name extra <<< "$job"
-  stem=$(echo "$name" | tr ':' '_' | tr -c 'A-Za-z0-9_-' '_')
+  # printf (not echo) so no trailing newline leaks into the stem via tr.
+  stem=$(printf '%s' "$name" | tr ':' '_' | tr -c 'A-Za-z0-9_-' '_')
   echo "=== scan $name ($kind) ==="
+  # --scan-dir routes the .json; --out the .md — both to $OUT so the set stays consistent.
   if [ "$root" = "-" ]; then
     "$PY" -m mcp_security.scanner --kind "$kind" --server "$name" \
-      --out "$OUT/${stem}.md" --version-tag "scan-blast15" || RC=1
+      --scan-dir "$OUT" --out "$OUT/${stem}.md" --version-tag "scan-blast15" || RC=1
   else
     "$PY" -m mcp_security.scanner --kind "$kind" --root "$root" --server "$name" $extra \
-      --out "$OUT/${stem}.md" --version-tag "scan-blast15" || RC=1
+      --scan-dir "$OUT" --out "$OUT/${stem}.md" --version-tag "scan-blast15" || RC=1
   fi
 done
 echo "=== group $GROUP done (rc=$RC) ==="

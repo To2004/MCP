@@ -1,5 +1,5 @@
 {
-  "version": "scan-demo-clean",
+  "version": "scan-blast15",
   "server": "calendar:cbg",
   "mcp_kind": "calendar management system",
   "model_reviewed": true,
@@ -76,12 +76,12 @@
     "find_free_slot|recruiting": 4,
     "find_free_slot|contacts": 4,
     "find_free_slot|holidays": 4,
-    "access_contacts|personal": 0,
-    "access_contacts|team": 0,
+    "access_contacts|personal": 1,
+    "access_contacts|team": 4,
     "access_contacts|executive": 4,
     "access_contacts|recruiting": 4,
     "access_contacts|contacts": 4,
-    "access_contacts|holidays": 0,
+    "access_contacts|holidays": 4,
     "create_event|personal": 2,
     "create_event|team": 2,
     "create_event|executive": 2,
@@ -106,12 +106,12 @@
     "delete_event|recruiting": 2,
     "delete_event|contacts": 2,
     "delete_event|holidays": 2,
-    "delete_all_events|personal": 5,
+    "delete_all_events|personal": 4,
     "delete_all_events|team": 5,
     "delete_all_events|executive": 5,
     "delete_all_events|recruiting": 5,
-    "delete_all_events|contacts": 5,
-    "delete_all_events|holidays": 5
+    "delete_all_events|contacts": 4,
+    "delete_all_events|holidays": 4
   },
   "cells": {
     "personal": {
@@ -120,12 +120,12 @@
       "list_week": 16.0,
       "get_event": 4.0,
       "find_free_slot": 16.0,
-      "access_contacts": 0.0,
+      "access_contacts": 4.0,
       "create_event": 16.0,
       "update_event": 16.0,
       "send_email_invite": 24.0,
       "delete_event": 24.0,
-      "delete_all_events": 60.0
+      "delete_all_events": 48.0
     },
     "team": {
       "list_calendars": 16.0,
@@ -133,7 +133,7 @@
       "list_week": 16.0,
       "get_event": 4.0,
       "find_free_slot": 16.0,
-      "access_contacts": 0.0,
+      "access_contacts": 16.0,
       "create_event": 16.0,
       "update_event": 16.0,
       "send_email_invite": 24.0,
@@ -177,7 +177,7 @@
       "update_event": 16.0,
       "send_email_invite": 48.0,
       "delete_event": 24.0,
-      "delete_all_events": 60.0
+      "delete_all_events": 48.0
     },
     "holidays": {
       "list_calendars": 8.0,
@@ -185,12 +185,12 @@
       "list_week": 8.0,
       "get_event": 2.0,
       "find_free_slot": 8.0,
-      "access_contacts": 0.0,
+      "access_contacts": 8.0,
       "create_event": 8.0,
       "update_event": 8.0,
       "send_email_invite": 12.0,
       "delete_event": 12.0,
-      "delete_all_events": 30.0
+      "delete_all_events": 24.0
     }
   },
   "bands": {
@@ -213,7 +213,7 @@
       "list_week": "high",
       "get_event": "medium",
       "find_free_slot": "high",
-      "access_contacts": "medium",
+      "access_contacts": "high",
       "create_event": "medium",
       "update_event": "medium",
       "send_email_invite": "high",
@@ -265,7 +265,7 @@
       "list_week": "medium",
       "get_event": "low",
       "find_free_slot": "medium",
-      "access_contacts": "low",
+      "access_contacts": "medium",
       "create_event": "medium",
       "update_event": "medium",
       "send_email_invite": "medium",
@@ -274,9 +274,9 @@
     }
   },
   "band_distribution": {
-    "low": 2,
+    "low": 1,
     "medium": 25,
-    "high": 33,
+    "high": 34,
     "critical": 6
   },
   "baselines": {
@@ -290,25 +290,29 @@
       ],
       "expected_flows": [
         {
-          "pattern": "create_event -> send_reminder",
+          "pattern": "create_event on team calendar",
           "normal_sensitivity_max": 3
         },
         {
-          "pattern": "update_event_time -> send_reminder",
+          "pattern": "update_event_time for existing event",
           "normal_sensitivity_max": 4
         },
         {
-          "pattern": "reschedule_event -> send_reminder",
+          "pattern": "reschedule_event to new time slot",
           "normal_sensitivity_max": 4
+        },
+        {
+          "pattern": "send_reminder to attendees before event",
+          "normal_sensitivity_max": 2
         }
       ],
       "anomalous_patterns": [
-        "delete_event",
-        "send_external_messages",
-        "holds PII at scale"
+        "delete_event from team calendar",
+        "sends external messages outside of reminder scope",
+        "holds PII at scale without explicit consent"
       ],
       "confidence": 0.9,
-      "reasoning": "The scheduler_bot is expected to create, update, and reschedule events for team meetings and send reminders about these changes. It should not delete events or hold large amounts of personal information beyond what's necessary for scheduling purposes."
+      "reasoning": "The scheduler_bot is expected to manage events on the team calendar, including creating, updating times, rescheduling, and sending reminders. It should not delete events or send external messages beyond reminders. Holding PII at scale would be outside its normal operation unless explicitly consented."
     },
     "exec_assistant": {
       "app_id": "exec_assistant",
@@ -333,7 +337,7 @@
         },
         {
           "pattern": "send_invitation to contact directory",
-          "normal_sensitivity_max": 5
+          "normal_sensitivity_max": 2
         }
       ],
       "anomalous_patterns": [
@@ -341,12 +345,12 @@
         "sends external messages from executive asset"
       ],
       "confidence": 0.9,
-      "reasoning": "The application is expected to manage the calendar and invite contacts for events, but should not delete events or send unsolicited external messages as these actions can have irreversible impacts and are outside its stated purpose."
+      "reasoning": "The exec_assistant is expected to manage the calendar by viewing, creating, and updating events as well as sending invitations. Deleting events or sending external messages are considered outside its normal operations due to potential severe impacts on decision-making processes and privacy concerns."
     }
   },
   "crosscheck_summary": {
     "judge_ran": false,
-    "note": "judge disabled"
+    "note": "judge not run in scans (evaluation-only)"
   },
   "provenance": "llm-scan",
   "server_kind": "calendar",

@@ -1,6 +1,6 @@
 # Scan — github:cbg
 
-_kind=github · provenance=llm-scan · model_reviewed=True · bands={'low': 10, 'medium': 21, 'high': 26, 'critical': 9}_
+_kind=github · provenance=llm-scan · model_reviewed=True · bands={'low': 8, 'medium': 23, 'high': 27, 'critical': 8}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -42,12 +42,12 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | search_repositories | get_file_contents | list_commits | get_issue | create_issue | create_or_update_file | push_files | delete_file | create_pull_request | merge_pull_request | fork_repository |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `public-website` | 4 🟢 | 1 🟢 | 4 🟢 | 1 🟢 | 2 🟢 | 6 🟡 | 9 🟡 | 6 🟡 | 4 🟢 | 12 🟡 | 8 🟡 |
-| `internal-docs` | 12 🟡 | 3 🟢 | 12 🟡 | 3 🟢 | 6 🟢 | 18 🟠 | 27 🟠 | 18 🟠 | 12 🟡 | 36 🟠 | 24 🟠 |
-| `backend-api` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 0 🟢 | 24 🟠 | 36 🟠 | 60 🔴 | 16 🟡 | 48 🔴 | 32 🟠 |
-| `payments-service` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 8 🟡 | 24 🟠 | 36 🟠 | 24 🟠 | 16 🟡 | 48 🔴 | 32 🟠 |
-| `infra-config` | 20 🟠 | 10 🟡 | 20 🟠 | 10 🟡 | 0 🟠 | 60 🔴 | 60 🔴 | 75 🔴 | 30 🟠 | 75 🔴 | 40 🟠 |
-| `ml-research` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 8 🟡 | 24 🟠 | 36 🟠 | 60 🔴 | 16 🟡 | 60 🔴 | 32 🟠 |
+| `public-website` | 4 🟢 | 1 🟢 | 4 🟢 | 1 🟢 | 4 🟢 | 6 🟡 | 9 🟡 | 6 🟡 | 4 🟢 | 12 🟡 | 8 🟡 |
+| `internal-docs` | 12 🟡 | 3 🟢 | 12 🟡 | 3 🟢 | 12 🟡 | 18 🟠 | 27 🟠 | 18 🟠 | 12 🟡 | 36 🟠 | 24 🟠 |
+| `backend-api` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 8 🟡 | 24 🟠 | 36 🟠 | 24 🟠 | 16 🟡 | 48 🔴 | 32 🟠 |
+| `payments-service` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 8 🟡 | 24 🟠 | 36 🟠 | 24 🟠 | 16 🟡 | 60 🔴 | 32 🟠 |
+| `infra-config` | 20 🟠 | 10 🟡 | 20 🟠 | 10 🟡 | 10 🟠 | 60 🔴 | 60 🔴 | 75 🔴 | 30 🟠 | 75 🔴 | 40 🟠 |
+| `ml-research` | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 8 🟡 | 24 🟠 | 36 🟠 | 60 🔴 | 16 🟡 | 48 🔴 | 32 🟠 |
 
 ## Tool atomic operations
 

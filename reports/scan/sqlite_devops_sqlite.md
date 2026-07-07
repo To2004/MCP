@@ -1,6 +1,6 @@
 # Scan — sqlite:devops_sqlite
 
-_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 4, 'medium': 7, 'high': 12, 'critical': 2}_
+_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 4, 'medium': 9, 'high': 10, 'critical': 2}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -35,8 +35,8 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | list_tables | describe_table | read_query | write_query | insert_row |
 | --- | --- | --- | --- | --- | --- |
-| `users` | 20 🟠 | 20 🟠 | 20 🟠 | 60 🔴 | 20 🟠 |
-| `api_tokens` | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟡 |
+| `users` | 20 🟠 | 10 🟡 | 20 🟠 | 60 🔴 | 20 🟠 |
+| `api_tokens` | 16 🟠 | 8 🟡 | 16 🟠 | 48 🔴 | 16 🟡 |
 | `deployments` | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 12 🟡 |
 | `audit_log` | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟡 |
 | `public_metrics` | 4 🟢 | 4 🟢 | 4 🟢 | 9 🟡 | 4 🟢 |

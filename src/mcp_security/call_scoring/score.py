@@ -11,9 +11,10 @@ reported with an honest status, never a fabricated score:
   extension/file the scan never enumerated.
 
 When a per-tool **parameter rubric** is supplied, the call's input-parameter risk
-(see :mod:`mcp_security.param_scoring`) is computed and **escalates** the resolved
-(tool, asset) band into ``final_band`` — a large/bulk parameter can raise a call's
-risk above the inherent cell risk.
+(see :mod:`mcp_security.param_scoring`) is computed and **amplifies the numeric
+score** into ``final_score`` (``cell_score * param_multiplier``) — a large/bulk
+parameter raises a call's number above the inherent cell score. ``final_score`` is
+what ranking uses; ``band``/``final_band`` are cosmetic labels for visualization.
 """
 
 from __future__ import annotations
@@ -50,6 +51,10 @@ class ScoredCall:
     # Input-parameter dimension (None when no rubric/magnitude parameter applied).
     param_band: str | None
     param_top: str | None
+    param_multiplier: float
+    # final_score is the ranked NUMBER: cell score amplified by parameter risk.
+    # final_band is a cosmetic label only (bands are for visualization).
+    final_score: float | None
     final_band: str
     args_raw: str
 
@@ -57,8 +62,13 @@ class ScoredCall:
     def _of(cls, call: Call, table: StaticTable, param, **overrides) -> ScoredCall:
         band = overrides.get("band", STATUS_UNRESOLVED)
         scorable = overrides.get("scorable", False)
-        # The parameter risk escalates a resolved band; for unscored statuses the
-        # final band is the status itself (no inherent band to escalate).
+        score_val = overrides.get("score")
+        # The parameter risk amplifies the numeric score (final_score) — that is the
+        # value ranking uses. The band escalation is kept only as a cosmetic label.
+        final_score = (
+            round(score_val * param.multiplier, 2)
+            if scorable and score_val is not None else None
+        )
         final_band = param.combined_with(band) if scorable else band
         base = {
             "source": call.source,
@@ -77,6 +87,8 @@ class ScoredCall:
             "reason": "",
             "param_band": param.band,
             "param_top": param.top_param,
+            "param_multiplier": param.multiplier,
+            "final_score": final_score,
             "final_band": final_band,
             "args_raw": call.args_raw,
         }
@@ -90,7 +102,7 @@ def score_call(
     """Score a call against ``table``; never raises and never fabricates.
 
     ``rubric`` is the call's tool's parameter rubric; when given, the call's
-    parameter risk escalates the resolved band into ``final_band``.
+    parameter risk amplifies the resolved score into ``final_score``.
     """
     param = score_call_params(call.args, rubric) if rubric is not None else _NO_PARAM
 

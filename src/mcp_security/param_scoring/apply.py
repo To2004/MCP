@@ -13,7 +13,7 @@ import math
 import re
 from dataclasses import dataclass
 
-from .combine import combine_avg, escalate
+from .combine import combine_avg, escalate, param_multiplier
 from .rubric import ParamRubric, ToolRubric, value_band
 
 _LIMIT_RE = re.compile(r"\blimit\s+(\d+)", re.IGNORECASE)
@@ -28,10 +28,24 @@ class ParamScore:
     details: tuple[dict, ...]
 
     def combined_with(self, tool_asset_band: str) -> str:
-        """Escalate the (tool, asset) band by the parameter risk (never lower it)."""
+        """Escalate the (tool, asset) band by the parameter risk (never lower it).
+
+        Band-space escalation, retained for the cosmetic ``final_band`` label only.
+        Ranking uses :attr:`multiplier` on the numeric score instead.
+        """
         if self.band is None:
             return tool_asset_band
         return escalate(tool_asset_band, self.band)
+
+    @property
+    def multiplier(self) -> float:
+        """Numeric factor this parameter risk applies to the cell score (>= 1.0).
+
+        This is how the parameter dimension enters the NUMBER: ``final_score =
+        cell_score * multiplier``. A ``None``/``low`` parameter risk is 1.0 (no
+        change); higher risk amplifies the score so ranking stays number-driven.
+        """
+        return param_multiplier(self.band)
 
 
 def _extract_value(param: ParamRubric, args: dict) -> float | None:

@@ -1,6 +1,6 @@
 # Scan — calendar:cbg
 
-_kind=calendar · provenance=llm-scan · model_reviewed=True · bands={'low': 2, 'medium': 25, 'high': 33, 'critical': 6}_
+_kind=calendar · provenance=llm-scan · model_reviewed=True · bands={'low': 1, 'medium': 25, 'high': 34, 'critical': 6}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -42,12 +42,12 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | list_calendars | list_events | list_week | get_event | find_free_slot | access_contacts | create_event | update_event | send_email_invite | delete_event | delete_all_events |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `personal` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 0 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
-| `team` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 0 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
+| `personal` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 48 🔴 |
+| `team` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
 | `executive` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
 | `recruiting` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
-| `contacts` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 48 🔴 | 24 🟠 | 60 🔴 |
-| `holidays` | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 8 🟡 | 0 🟢 | 8 🟡 | 8 🟡 | 12 🟡 | 12 🟡 | 30 🟠 |
+| `contacts` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 48 🔴 | 24 🟠 | 48 🔴 |
+| `holidays` | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 12 🟡 | 24 🟠 |
 
 ## Tool atomic operations
 

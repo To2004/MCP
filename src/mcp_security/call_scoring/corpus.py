@@ -23,7 +23,6 @@ from pathlib import Path
 from .loader import load_calls
 from .score import ScoredCall, score_call
 from .tables import (
-    BAND_ORDER,
     STATUS_INVALID,
     STATUS_UNRESOLVED,
     StaticTable,
@@ -59,8 +58,10 @@ SOURCES: tuple[tuple[str, str], ...] = (
 
 _CSV_FIELDS = (
     "rank",
-    "final_band",
+    "final_score",
     "score",
+    "param_multiplier",
+    "final_band",
     "band",
     "param_band",
     "param_top",
@@ -80,14 +81,15 @@ _CSV_FIELDS = (
 )
 
 
-def _rank_key(call: ScoredCall) -> tuple[int, int, float]:
-    """Sort key: scored calls first, then by final band, then numeric score.
+def _rank_key(call: ScoredCall) -> tuple[int, float, float]:
+    """Sort key: scored calls first, then by the NUMBER (final_score).
 
-    The final band (which the parameter risk may have escalated) leads, so a
-    bulk/large-magnitude call outranks an equal-cell call with a small parameter.
+    ``final_score`` = cell score amplified by parameter risk, so a bulk/large-
+    magnitude call outranks an equal-cell call with a small parameter — by number,
+    not by band. The raw cell ``score`` breaks ties. Bands never enter ranking.
     """
-    scored = 1 if call.score is not None else 0
-    return (scored, BAND_ORDER.get(call.final_band, -1), call.score or 0.0)
+    scored = 1 if call.final_score is not None else 0
+    return (scored, call.final_score or 0.0, call.score or 0.0)
 
 
 def score_corpus(
@@ -99,7 +101,8 @@ def score_corpus(
     """Score every configured session against its scan and return calls by risk.
 
     ``rubrics`` maps a scan name to ``{tool_name: ToolRubric}``; when present, the
-    parameter dimension escalates each resolved call's band into ``final_band``.
+    parameter dimension amplifies each resolved call's score into ``final_score``
+    (the value used for ranking). Calls come back ordered by ``final_score``.
     """
     scans = load_scans() if scans is None else scans
     rubrics = load_param_rubrics() if rubrics is None else rubrics
@@ -141,16 +144,21 @@ def write_ranked_markdown(scored: list[ScoredCall], output: Path = DEFAULT_OUTPU
     """Write the ranked calls as a markdown report (summary + ranked table)."""
     output.parent.mkdir(parents=True, exist_ok=True)
     lines = ["# Ranked MCP calls", "", "Each captured call scored against the scanner's "
-             "risk matrix for its server (no design-time table read). **final_band** is the "
-             "(tool, asset) band escalated by the call's input-parameter risk.", "",
-             summarize(scored), "", "## Ranking", "",
-             "| Rank | Final | Cell band | Param | Param risk | Server | Tool | Asset | Persona | "
-             "Category | Reason |",
-             "| ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+             "risk matrix for its server (no design-time table read). Ranking is by "
+             "**final_score** — the cell score amplified by the call's input-parameter "
+             "risk (`score x param_multiplier`). Bands are shown for visualization only.",
+             "", summarize(scored), "", "## Ranking", "",
+             "| Rank | Final score | Cell score | Param x | Final band | Cell band | Param | "
+             "Param risk | Server | Tool | Asset | Persona | Category | Reason |",
+             "| ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- | "
+             "--- | --- |"]
     for rank, call in enumerate(scored, start=1):
         asset = call.asset or "—"
+        fscore = "—" if call.final_score is None else f"{call.final_score:g}"
+        cscore = "—" if call.score is None else f"{call.score:g}"
         lines.append(
-            f"| {rank} | {call.final_band} | {call.band} | {call.param_top or '—'} | "
+            f"| {rank} | {fscore} | {cscore} | {call.param_multiplier:g}x | "
+            f"{call.final_band} | {call.band} | {call.param_top or '—'} | "
             f"{call.param_band or '—'} | {call.server} | `{call.tool}` | `{asset}` | "
             f"{call.persona or '—'} | {call.category or '—'} | {call.reason} |"
         )
@@ -172,16 +180,17 @@ def summarize(scored: list[ScoredCall]) -> str:
     lines.append(f"  {STATUS_UNRESOLVED}: {bands.get(STATUS_UNRESOLVED, 0)} "
                  "(directory/enumeration ops, no-arg calls, or assets not in the scan)")
     lines.append(f"  {STATUS_INVALID}: {bands.get(STATUS_INVALID, 0)} (unknown tools)")
-    escalated = sum(1 for s in scored if s.scorable and s.final_band != s.band)
+    escalated = sum(1 for s in scored if s.scorable and s.param_multiplier > 1.0)
     lines.append("")
-    lines.append(f"Parameter risk escalated the band on {escalated} resolved call(s).")
+    lines.append(f"Parameter risk amplified the score on {escalated} resolved call(s).")
     lines.append("")
-    lines.append("Top 10 riskiest resolved calls (by final band):")
+    lines.append("Top 10 riskiest resolved calls (by final score):")
     ranked = [s for s in scored if s.scorable][:10]
     for rank, call in enumerate(ranked, start=1):
-        mark = f" (cell {call.band}↑ via {call.param_top})" if call.final_band != call.band else ""
+        mark = (f" (cell {call.score:g} x{call.param_multiplier:g} via {call.param_top})"
+                if call.param_multiplier > 1.0 else "")
         lines.append(
-            f"  {rank:>2}. [{call.final_band:>8} {call.score:g}] {call.server}/{call.tool}"
-            f" -> {call.asset}  ({call.category or call.persona}){mark}"
+            f"  {rank:>2}. [{call.final_score:g}] {call.server}/{call.tool}"
+            f" -> {call.asset}  ({call.category or call.persona}){mark}  [{call.final_band}]"
         )
     return "\n".join(lines)

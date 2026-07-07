@@ -1,6 +1,6 @@
 # Scan — slack:cbg
 
-_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 30, 'high': 27, 'critical': 1}_
+_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 28, 'high': 30, 'critical': 0}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -43,16 +43,16 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | slack_list_channels | slack_get_channel_history | slack_get_thread_replies | slack_get_users | slack_get_user_profile | slack_post_message | slack_reply_to_thread | slack_add_reaction |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `general` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 9 🟡 | 4 🟢 | 4 🟢 |
-| `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 0 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
+| `general` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
+| `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
 | `random` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
-| `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 0 🟢 | 18 🟡 | 8 🟡 | 8 🟡 |
-| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `research-team` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `exec-private` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 60 🔴 | 16 🟡 | 16 🟡 |
-| `hr-internal` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 36 🟠 | 16 🟡 | 16 🟡 |
+| `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 18 🟡 | 8 🟡 | 8 🟡 |
+| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `research-team` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `exec-private` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `hr-internal` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 
 ## Tool atomic operations
 

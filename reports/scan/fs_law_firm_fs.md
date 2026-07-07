@@ -1,6 +1,6 @@
 # Scan — fs:law_firm_fs
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 23, 'medium': 149, 'high': 124, 'critical': 12}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 11, 'medium': 146, 'high': 139, 'critical': 12}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -34,7 +34,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `README.md` | 1 |
+| `README.md` | 2 |
 | `billing/timesheets/timesheet_2026-05-01.txt` | 4 |
 | `billing/timesheets/timesheet_2026-05-15.txt` | 4 |
 | `cases/CASE-2026-001/contract.txt` | 4 |
@@ -46,7 +46,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `clients/acme_corp/intake.txt` | 4 |
 | `clients/blue_whale_inc/intake.txt` | 4 |
 | `templates/nda_template.txt` | 4 |
-| `/` | 3 |
+| `/` | 4 |
 | `cases/` | 4 |
 | `cases/CASE-2026-001/` | 4 |
 | `cases/CASE-2026-002/` | 4 |
@@ -61,28 +61,28 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 0 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 4 🟢 | 1 🟢 | 1 🟢 | 0 🟢 |
-| `billing/timesheets/timesheet_2026-05-01.txt` | 4 🟡 | 8 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 16 🟠 | 4 🟡 | 4 🟡 |
-| `billing/timesheets/timesheet_2026-05-15.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 16 🟠 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-001/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-001/correspondence.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-001/signed_agreement.pdf` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-002/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-002/correspondence.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `cases/CASE-2026-002/signed_agreement.pdf` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `clients/acme_corp/intake.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `clients/blue_whale_inc/intake.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `templates/nda_template.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `cases/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `cases/CASE-2026-001/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `cases/CASE-2026-002/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `README.md` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 8 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
+| `billing/timesheets/timesheet_2026-05-01.txt` | 8 🟡 | 8 🟡 | 4 🟡 | 16 🟠 | 36 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 16 🟡 | 16 🟠 | 4 🟡 | 4 🟡 |
+| `billing/timesheets/timesheet_2026-05-15.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 36 🟠 | 24 🟠 | 8 🟡 | 16 🟠 | 4 🟡 | 16 🟠 | 16 🟡 | 16 🟠 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-001/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-001/correspondence.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-001/signed_agreement.pdf` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-002/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-002/correspondence.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `cases/CASE-2026-002/signed_agreement.pdf` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `clients/acme_corp/intake.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `clients/blue_whale_inc/intake.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `templates/nda_template.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `cases/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `cases/CASE-2026-001/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `cases/CASE-2026-002/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
 | `billing/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
 | `billing/timesheets/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `clients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `clients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
 | `clients/acme_corp/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `clients/blue_whale_inc/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `templates/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 |
+| `clients/blue_whale_inc/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `templates/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 18 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 8 🟡 | 8 🟡 | 8 🟡 |
 
 ## Tool atomic operations
 

@@ -33,3 +33,16 @@ def combine_avg(band_a: str, band_b: str) -> str:
 def escalate(band_a: str, band_b: str) -> str:
     """Return the more severe of two bands (parameter escalates inherent risk)."""
     return RANK_BAND[max(_rank(band_a), _rank(band_b))]
+
+
+# Parameter risk amplifies the inherent cell SCORE (the number), never lowers it.
+# The rubric assigns the parameter a band; that band maps to a magnitude multiplier
+# applied to the (tool, asset) score. This is how the parameter dimension enters the
+# NUMBER, so ranking stays score-driven while bands remain display-only labels.
+# critical == x3 mirrors the destructive tool-impact tier.
+PARAM_MULTIPLIER = {"low": 1.0, "medium": 1.5, "high": 2.0, "critical": 3.0}
+
+
+def param_multiplier(band: str | None) -> float:
+    """Numeric magnitude multiplier for a parameter-risk band (1.0 if none/low)."""
+    return PARAM_MULTIPLIER.get(band, 1.0) if band is not None else 1.0

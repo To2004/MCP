@@ -1,6 +1,6 @@
 # Scan — fs:medical_clinic_fs
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 19, 'medium': 143, 'high': 117, 'critical': 15}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 11, 'medium': 148, 'high': 119, 'critical': 16}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -39,7 +39,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `billing/invoices/inv_2026-05-21_bob_martinez.txt` | 4 |
 | `patients/alice_johnson/intake_form.txt` | 5 |
 | `patients/alice_johnson/medical_history.txt` | 5 |
-| `patients/alice_johnson/prescription.txt` | 5 |
+| `patients/alice_johnson/prescription.txt` | 4 |
 | `patients/bob_martinez/intake_form.txt` | 5 |
 | `patients/bob_martinez/medical_history.txt` | 4 |
 | `patients/bob_martinez/prescription.txt` | 4 |
@@ -60,27 +60,27 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 0 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 2 🟢 | 2 🟢 | 0 🟢 |
-| `billing/invoices/inv_2026-05-20_alice_johnson.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 36 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `billing/invoices/inv_2026-05-21_bob_martinez.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `patients/alice_johnson/intake_form.txt` | 5 🟡 | 5 🟡 | 10 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 0 🟠 | 5 🟡 | 5 🟡 | 20 🟠 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
-| `patients/alice_johnson/medical_history.txt` | 5 🟡 | 5 🟡 | 10 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 0 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
-| `patients/alice_johnson/prescription.txt` | 5 🟡 | 5 🟡 | 10 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 0 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
-| `patients/bob_martinez/intake_form.txt` | 5 🟡 | 5 🟡 | 5 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 0 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
-| `patients/bob_martinez/medical_history.txt` | 4 🟡 | 4 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `patients/bob_martinez/prescription.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `policies/hipaa_notice.txt` | 4 🟡 | 4 🟡 | 8 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `scans/alice_johnson_xray.png` | 4 🟡 | 0 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 0 🟡 |
-| `scans/bob_martinez_xray.png` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 0 🟡 |
-| `staff_directory.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 45 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `patients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 60 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `patients/alice_johnson/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 60 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `patients/bob_martinez/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 60 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `billing/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 60 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `billing/invoices/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `scans/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `policies/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `README.md` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
+| `billing/invoices/inv_2026-05-20_alice_johnson.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 36 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `billing/invoices/inv_2026-05-21_bob_martinez.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `patients/alice_johnson/intake_form.txt` | 5 🟡 | 10 🟡 | 10 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 10 🟡 | 5 🟡 | 5 🟡 |
+| `patients/alice_johnson/medical_history.txt` | 5 🟡 | 10 🟡 | 5 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 20 🟠 | 5 🟡 | 5 🟡 |
+| `patients/alice_johnson/prescription.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 16 🟠 | 4 🟡 | 4 🟡 |
+| `patients/bob_martinez/intake_form.txt` | 5 🟡 | 5 🟡 | 5 🟡 | 20 🟠 | 30 🟠 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
+| `patients/bob_martinez/medical_history.txt` | 8 🟡 | 8 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 |
+| `patients/bob_martinez/prescription.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 16 🟠 | 4 🟡 | 4 🟡 |
+| `policies/hipaa_notice.txt` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 |
+| `scans/alice_johnson_xray.png` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `scans/bob_martinez_xray.png` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `staff_directory.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 24 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `patients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `patients/alice_johnson/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `patients/bob_martinez/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `billing/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `billing/invoices/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `scans/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `policies/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
 
 ## Tool atomic operations
 

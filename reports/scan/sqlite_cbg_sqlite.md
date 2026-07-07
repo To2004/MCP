@@ -1,6 +1,6 @@
 # Scan — sqlite:cbg_sqlite
 
-_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 0, 'medium': 14, 'high': 21, 'critical': 0}_
+_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 0, 'medium': 15, 'high': 20, 'critical': 0}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -43,7 +43,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `experiments` | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 |
 | `publications` | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 8 🟡 |
 | `grants` | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟡 |
-| `api_keys` | 20 🟠 | 20 🟠 | 20 🟠 | 40 🟠 | 20 🟠 |
+| `api_keys` | 20 🟠 | 10 🟡 | 20 🟠 | 40 🟠 | 20 🟠 |
 
 ## Tool atomic operations
 

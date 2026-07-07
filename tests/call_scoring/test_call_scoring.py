@@ -249,6 +249,48 @@ def test_score_read_below_write_on_same_asset():
     assert read.score <= write.score
 
 
+def _limit_rubric():
+    """A read_query rubric where a large/unbounded row limit is high risk."""
+    from mcp_security.param_scoring import ToolRubric
+    from mcp_security.param_scoring.rubric import Cutoff, ParamRubric
+
+    return ToolRubric(
+        "read_query",
+        (ParamRubric("query", "medium", "parsed_limit",
+                     (Cutoff(100, "medium"), Cutoff(1000, "high"))),),
+    )
+
+
+def test_param_risk_amplifies_score_numerically():
+    table = _sqlite_scan()
+    # Bulk read of employees: cell score 8.0, param risk high -> x2.0 -> final 16.0.
+    call = Call("t", "1", "read_query", {"query": "SELECT * FROM employees LIMIT 5000"})
+    scored = score_call(call, table, _limit_rubric())
+    assert scored.score == 8.0            # raw cell number unchanged
+    assert scored.band == "medium"        # cell band unchanged (cosmetic)
+    assert scored.param_band == "high"
+    assert scored.param_multiplier == 2.0
+    assert scored.final_score == 16.0     # 8.0 * 2.0 — the number ranking uses
+
+
+def test_ranking_is_by_number_not_band():
+    from mcp_security.call_scoring.corpus import _rank_key
+
+    table = _sqlite_scan()
+    # Plain read of api_keys: score 15, band 'high', no param -> final 15.
+    plain = score_call(Call("t", "1", "read_query", {"query": "SELECT * FROM api_keys LIMIT 1"}),
+                       table, None)
+    # Bulk read of employees: score 8, band 'medium', param x2 -> final 16.
+    bulk = score_call(Call("t", "2", "read_query", {"query": "SELECT * FROM employees LIMIT 5000"}),
+                      table, _limit_rubric())
+    ranked = sorted([plain, bulk], key=_rank_key, reverse=True)
+    # By the NUMBER, the bulk read (16.0) outranks api_keys (15.0) even though its
+    # band ('medium') is lower than the plain call's ('high').
+    assert ranked[0] is bulk
+    assert bulk.final_score > plain.final_score
+    assert bulk.band == "medium" and plain.band == "high"
+
+
 def test_persona_is_carried_through():
     call = Call("t", "1", "read_file", {"path": "/k.pem"}, persona="Mallory (Attacker)")
     scored = score_call(call, _fs_scan())

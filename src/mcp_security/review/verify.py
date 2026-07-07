@@ -26,9 +26,6 @@ TOOL_LISTS = REPO_ROOT / "reports" / "tool_lists"
 RANKED_CSV = REPO_ROOT / "reports" / "ranked_calls.csv"
 
 BANDS = ("low", "medium", "high", "critical")
-# Ordinal used by the call ranker (corpus._rank_key); mirrors call_scoring.BAND_ORDER
-# for the bands a scored call can carry. Higher = riskier = ranked first.
-BAND_ORDER = {"critical": 5, "high": 4, "medium": 3, "low": 2}
 # Source trees that must NEVER *read* the eval-only tables as scoring input. The
 # scanner/scorers work from fresh scans; the committed tables only grade them.
 # (static_scoring is the ground-truth *generator* — it legitimately writes them,
@@ -226,8 +223,9 @@ def check_param_rubrics() -> Check:
 
 def check_ranked_calls() -> Check:
     """Every ranked row is faithful to the scans: scored rows resolve to a real cell
-    with the cell's exact score/band, final_band is the param escalation of that band,
-    and unscored rows carry no fabricated number. Ranking order is non-increasing."""
+    with the cell's exact score/band, final_score is the cell score amplified by the
+    parameter multiplier, and unscored rows carry no fabricated number. Ranking order
+    is non-increasing by final_score (the number, not the band)."""
     if not RANKED_CSV.exists():
         return Check("ranked_calls", False, "reports/ranked_calls.csv missing")
     scans = {p.stem: _load(p) for p in _scan_files()}
@@ -250,18 +248,22 @@ def check_ranked_calls() -> Check:
                 bad.append(f"{ident}: band {r['band']}!=scan {cell}")
             expected_final = escalate(r["band"], r["param_band"]) if r["param_band"] else r["band"]
             if r["final_band"] != expected_final:
-                bad.append(f"{ident}: final {r['final_band']}!=escalate {expected_final}")
+                bad.append(f"{ident}: final_band {r['final_band']}!=escalate {expected_final}")
+            # final_score is the ranked number: cell score x parameter multiplier.
+            expected_score = round(float(r["score"]) * float(r["param_multiplier"]), 2)
+            if abs(float(r["final_score"]) - expected_score) > FORMULA_TOLERANCE:
+                bad.append(f"{ident}: final_score {r['final_score']}!=score*mult {expected_score}")
         else:
             if r["score"] or r["band"] in BANDS:
                 bad.append(f"{ident}: unscored row carries score/band ({r['band']})")
-    # Ranking key mirrors corpus._rank_key: scored-first, then final_band, then score.
-    def _key(r: dict) -> tuple[int, int, float]:
-        scored = 1 if r["score"] else 0
-        return (scored, BAND_ORDER.get(r["final_band"], -1), float(r["score"] or 0.0))
+    # Ranking key mirrors corpus._rank_key: scored-first, then final_score, then score.
+    def _key(r: dict) -> tuple[int, float, float]:
+        scored = 1 if r["final_score"] else 0
+        return (scored, float(r["final_score"] or 0.0), float(r["score"] or 0.0))
 
     keys = [_key(r) for r in rows]
     if keys != sorted(keys, reverse=True):
-        bad.append("rows not ordered by (scored, final_band, score) descending")
+        bad.append("rows not ordered by (scored, final_score, score) descending")
     ok = not bad
     return Check("ranked_calls", ok,
                  f"{len(rows)} rows ({scored} scored) faithful to scans & ordered" if ok
