@@ -140,11 +140,20 @@ BREADTH LIMITS (do not over-score either -- both conditions must hold):
      SINGLE item (one file, one record), reads of it stay narrow (1) even when
      the tool is bulk-capable -- the fan-out belongs to the container's own cell,
      not to this one.
-  b) The tool must actually EXPOSE the contents. A metadata-only operation
-     (file info/stat, schema describe, listing only names/sizes of allowed
-     roots) reveals structure, not contents -- cap it at 2-3 on a scope, never 4+.
-Escalation: if the asset class matches the inferred dangerous_classes, raise by
-1 (cap 5) versus the same operation on an ordinary asset; say so in rationale."""
+  b) The tool must actually EXPOSE the contents. A metadata-only operation --
+     stat/info on a path, describing a schema, listing allowed roots -- returns
+     one record ABOUT the asset (name, size, permissions), not what is inside
+     it. That is blast 2 on a container, 1 on a single item, NEVER 4+, no matter
+     how sensitive the asset: sensitivity is already priced into the score.
+WORKED CONTRAST (apply this pattern): on a secrets/ directory,
+  walk/read the tree  = 5  (bulk content sweep of a dangerous scope)
+  stat / file info    = 2  (one metadata record, no contents)
+  read ONE known file = 1  (single item; the directory cell carries the sweep)
+Escalation: if the asset class matches the inferred dangerous_classes AND the
+operation already reaches beyond a single item (blast >= 2 before escalation),
+raise by 1 (cap 5) versus the same operation on an ordinary asset; say so in
+rationale. A narrow single-item touch stays 1 even on a dangerous asset -- the
+asset's value lives in sensitivity, not in reach."""
 
 BLAST_USER = """Tool:
 {tool_json}
