@@ -68,26 +68,34 @@ Bands are ranked `low=1 · medium=2 · high=3 · critical=4`.
 2. **parameter risk** = average of the parameter's `base_rank` and the `value_band`,
    rounded half-up. This is the user's rule: a `medium` parameter (base) with a
    value that lands `critical` ⇒ average(2, 4) = 3 ⇒ **high**.
-3. **final band** = the parameter risk **escalates** the (tool, asset) band from the
-   scan — the higher of the two wins (a dangerous parameter can raise inherent
-   risk, never lower it):
+3. **final score (the ranked NUMBER)** = the parameter risk **amplifies** the
+   (tool, asset) cell score from the scan. Each parameter-risk band maps to a
+   multiplier (`param_scoring.combine.PARAM_MULTIPLIER`) and can only raise the
+   number, never lower it:
 
    ```
-   final = max( tool_asset_band , parameter_risk )
+   low ×1.0 · medium ×1.5 · high ×2.0 · critical ×3.0
+   final_score = cell_score × multiplier(parameter_risk)
    ```
 
-   When a call has several risky parameters, take the most severe parameter risk.
+   Ranking uses `final_score`. When a call has several risky parameters, take
+   the most severe parameter risk.
+
+4. **final band (visualization only)** = `max(tool_asset_band, parameter_risk)`
+   — the old band escalation, kept purely as a display label. Nothing ranks or
+   gates on it.
 
 ### Example end to end
 
-`create_event` on a shared team calendar (tool×asset band = `medium`), `attendees`
-base_rank `medium`, 20 people → value_band `high`(11-20):
+`create_event` on a shared team calendar (cell score 12, band `medium`),
+`attendees` base_rank `medium`, 20 people → value_band `high` (11-20):
 - parameter risk = average(medium=2, high=3) = 2.5 → round half-up → 3 = **high**
-- final = max(medium, high) = **high**
+- **final_score = 12 × 2.0 = 24** (this is what ranks the call)
+- final band (label) = max(medium, high) = high
 
-(If 50 people: value_band `critical`, parameter risk = average(2,4)=3 = high,
-final = max(medium, high) = high. A `high` base parameter at 50 → average(3,4)=3.5
-→ critical.)
+(If 50 people: value_band `critical`, parameter risk = average(2,4)=3 = high —
+still ×2.0. A `high` base parameter at 50 → average(3,4)=3.5 → critical → ×3.0,
+final_score = 36.)
 
 ## LLM prompt (derivation)
 

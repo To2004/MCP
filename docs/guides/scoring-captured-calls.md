@@ -74,20 +74,23 @@ a warning. Add a session by appending a `(relative_path, scan_stem)` entry to
 - `score.py` — score one call against one matrix.
 - `corpus.py` — map sessions to scans, score, rank, and summarize.
 
-## Input-parameter escalation
+## Input-parameter amplification
 
-On top of the (tool, asset) band, each call's **input-parameter values** are scored
-and can escalate its risk. The LLM derives a per-tool rubric — which parameters
-carry magnitude (a list length, a content size, a SQL `LIMIT`, …), each with a
-`base_rank` and numeric `cutoffs` — written to `reports/scan/<server>_params.json`
-(`python -m mcp_security.param_scoring`). For a call: `value_band` comes from the
-cutoffs, the **parameter risk** is `average(base_rank, value_band)` rounded half-up,
-and `final_band = max(tool_asset_band, parameter_risk)`. So an unbounded
-`read_query` (no `LIMIT`) on a low-sensitivity table escalates to `high`, and a
-bulk `read_multiple_files` escalates by its path count. The rules live in
-`docs/standards/parameter-scoring.md` (which doubles as the LLM prompt); the ranker
-shows `final_band`, the cell band, and the escalating parameter. With no rubric
-present, `final_band` equals the cell band.
+On top of the (tool, asset) cell score, each call's **input-parameter values** are
+scored and can amplify its NUMBER. The LLM derives a per-tool rubric — which
+parameters carry magnitude (a list length, a content size, a SQL `LIMIT`, …), each
+with a `base_rank` and numeric `cutoffs` — written to
+`reports/scan/<server>_params.json` (`python -m mcp_security.param_scoring`). For a
+call: `value_band` comes from the cutoffs, the **parameter risk** is
+`average(base_rank, value_band)` rounded half-up, and the ranked number is
+`final_score = cell_score × multiplier(parameter_risk)` (low ×1.0 · medium ×1.5 ·
+high ×2.0 · critical ×3.0 — amplifies, never lowers). So an unbounded `read_query`
+(no `LIMIT`) on a low-sensitivity table doubles-to-triples its score, and a bulk
+`read_multiple_files` amplifies by its path count. `final_band =
+max(tool_asset_band, parameter_risk)` is kept as a display label only. The rules
+live in `docs/standards/parameter-scoring.md` (which doubles as the LLM prompt);
+the ranker shows `final_score`, the cell score, the multiplier, and the amplifying
+parameter. With no rubric present, `final_score` equals the cell score.
 
 ## Grading the scanner
 
