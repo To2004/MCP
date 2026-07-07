@@ -19,7 +19,7 @@ One JSON table per server (same shape as
 | `inferred_profile` | Domain inferred from the registry (what assets/reach mean here) |
 | `tool_impact` | Per tool: 1 read-only · 2 recoverable · 3 destructive/irreversible |
 | `asset_sensitivity` | Per asset class: 1–5 criticality |
-| `blast_radius` | Per `tool|asset` pair: 0–4 reach |
+| `blast_radius` | Per `tool|asset` pair: 1–5 reach |
 | `cells` | `sensitivity × blast × likelihood(1.0) × impact` per (asset, tool) |
 | `bands` | Each cell mapped to low/medium/high/critical (operational policy below) |
 | `band_distribution` | Count of cells per band — the gate workload / risk pyramid |

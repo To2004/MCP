@@ -108,11 +108,11 @@ Return JSON:
 # --- 3. Blast Radius ---------------------------------------------------------
 
 BLAST_TASK = """
-TASK: Assign BLAST RADIUS (0-5) for one (tool, asset class) pair -- how far this
+TASK: Assign BLAST RADIUS (1-5) for one (tool, asset class) pair -- how far this
 tool reaches into this asset when it acts, per the inferred
-blast_radius_meaning.
-  0 = cannot touch this asset class (N/A cell).
-  1 = narrow / read-only touch of a SINGLE item.
+blast_radius_meaning. Every pair has at least reach 1 -- there is no "N/A" cell:
+if a tool only barely relates to an asset, that is still a minimal touch = 1.
+  1 = narrow / read-only touch of a SINGLE item (the minimum).
   2 = scoped, recoverable modification of a single item.
   3 = broad modification of several items in one scope.
   4 = full overwrite, OR a read/enumeration that spans MANY items at once.
@@ -135,7 +135,7 @@ Asset class:
 {asset_json}
 
 Return JSON:
-{{"tool_name": str, "asset_id": str, "blast_radius": 0-5, "rationale": str,
+{{"tool_name": str, "asset_id": str, "blast_radius": 1-5, "rationale": str,
   "confidence": 0.0-1.0}}"""
 
 

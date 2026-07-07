@@ -57,7 +57,7 @@ class StaticTable:
     server_kind: str
     tool_impact: dict[str, int]
     asset_sensitivity: dict[str, int]
-    blast_radius: dict[str, int]  # "tool|asset" -> 0..4
+    blast_radius: dict[str, int]  # "tool|asset" -> 1..5
     cells: dict[str, dict[str, float]]  # asset -> tool -> score
     bands: dict[str, dict[str, str]]  # asset -> tool -> band label
     band_thresholds: dict[str, float]

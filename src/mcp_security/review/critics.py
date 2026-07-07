@@ -97,7 +97,7 @@ CRITIC_SYSTEM = """{persona}
 
 You are reviewing a defensive MCP (Model Context Protocol) security pipeline. It
 statically scans an MCP server's tools and assets with a local LLM to build a risk
-matrix (tool_impact 1-3 x asset_sensitivity 1-5 x blast_radius 0-4 -> score ->
+matrix (tool_impact 1-3 x asset_sensitivity 1-5 x blast_radius 1-5 -> score ->
 band), derives input-parameter magnitude cutoffs, then ranks captured agent tool
 calls against that matrix so a gateway could throttle/deny risky calls BEFORE
 execution. Threat model: the MCP server is the protected asset; the agent is the

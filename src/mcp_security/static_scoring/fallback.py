@@ -190,7 +190,7 @@ def asset_sensitivity(asset: AssetSpec) -> tuple[int, list[str], str]:
 
 
 def blast_radius(tool: ToolSpec, asset: AssetSpec, sensitivity: int) -> tuple[int, str]:
-    """Return ``(blast 0-5, rationale)`` for one (tool, asset) pair.
+    """Return ``(blast 1-5, rationale)`` for one (tool, asset) pair.
 
     Read-only tools are a narrow touch (1); mutating tools scale with their
     impact; a dangerous asset (sensitivity ≥ 4) escalates the reach by one,

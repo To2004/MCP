@@ -52,8 +52,8 @@ REVIEW_CONFIDENCE = 0.7
 def band_label(sensitivity: int, blast: int, impact: int) -> str:
     """Deterministic operational band for one (asset, tool) cell.
 
-    A pure function of the three primitives (impact, sensitivity, blast on the
-    ``0-5`` scale) — so the band is fully reproducible and a straight function of
+    A pure function of the three primitives (impact 1-3, sensitivity 1-5, blast
+    1-5) — so the band is fully reproducible and a straight function of
     the score. The score is an *upper bound* (likelihood pinned to 1.0), so we do
     not band on the raw number alone; instead explicit **security floors** encode
     the judgement an independent reviewer used to add on top:
@@ -284,7 +284,7 @@ class StaticScorer:
                     )
                 )
                 if isinstance(result, dict) and "blast_radius" in result:
-                    value = _clamp(result["blast_radius"], 0, 5, fb_blast)
+                    value = _clamp(result["blast_radius"], 1, 5, fb_blast)
                     proposed, conf = result, float(result.get("confidence", 0.7))
                 elif self.strict:
                     self._strict_fail("blast_radius", f"{tool.name}|{asset.asset_id}")  # raises
@@ -296,7 +296,7 @@ class StaticScorer:
                 key = f"{tool.name}|{asset.asset_id}"
                 blast[key] = value
                 self._proposals.append(
-                    _Proposal("blast_radius", key, item, proposed, value, 0, 5, conf)
+                    _Proposal("blast_radius", key, item, proposed, value, 1, 5, conf)
                 )
         return blast
 
