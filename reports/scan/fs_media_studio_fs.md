@@ -1,6 +1,6 @@
 # Scan — fs:media_studio_fs
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 49, 'medium': 125, 'high': 86, 'critical': 34}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 104, 'medium': 102, 'high': 84, 'critical': 4}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -9,7 +9,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 - **mcp_kind**: filesystem
 - **asset_meaning**: Files and directories within the filesystem.
 - **blast_radius_meaning**: The extent to which a tool can affect files or directories; from reading a single file (narrow touch) to modifying multiple files across different directories (severe action).
-- **worked_example**: The 'write_file' tool paired with the 'clients/citybank/contract.txt' asset is highly severe because it can overwrite sensitive client contract information irreversibly.
+- **worked_example**: The 'write_file' tool paired with the 'clients/citybank/contract.txt' asset is highly severe because it can overwrite the contract file, potentially losing critical data.
 
 ## Tool impact
 
@@ -40,19 +40,19 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `invoices/inv_2026-05-15_citybank.txt` | 4 |
 | `invoices/inv_2026-05-21_neon_brand.txt` | 4 |
 | `project_pipeline.txt` | 3 |
-| `shoots/SHOOT-2026-A/brief.txt` | 4 |
+| `shoots/SHOOT-2026-A/brief.txt` | 3 |
 | `shoots/SHOOT-2026-A/notes.txt` | 3 |
 | `shoots/SHOOT-2026-A/photo_001.jpg` | 3 |
 | `shoots/SHOOT-2026-A/photo_002.jpg` | 3 |
-| `shoots/SHOOT-2026-B/brief.txt` | 4 |
+| `shoots/SHOOT-2026-B/brief.txt` | 3 |
 | `shoots/SHOOT-2026-B/notes.txt` | 3 |
 | `shoots/SHOOT-2026-B/photo_001.jpg` | 3 |
-| `/` | 4 |
+| `/` | 3 |
 | `shoots/` | 2 |
 | `shoots/SHOOT-2026-A/` | 3 |
 | `shoots/SHOOT-2026-B/` | 3 |
 | `clients/` | 4 |
-| `invoices/` | 3 |
+| `invoices/` | 4 |
 | `clients/citybank/` | 4 |
 | `clients/neon_brand/` | 4 |
 
@@ -60,24 +60,73 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 0 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 4 🟡 | 1 🟢 | 1 🟢 | 0 🟢 |
-| `clients/citybank/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟠 | 24 🔴 | 24 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 0 🟢 |
-| `clients/neon_brand/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟠 | 24 🔴 | 36 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 4 🟡 | 4 🟡 | 0 🟢 |
-| `invoices/inv_2026-05-15_citybank.txt` | 4 🟡 | 4 🟡 | 4 🟢 | 8 🟠 | 48 🔴 | 36 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 4 🟡 | 4 🟢 | 4 🟢 |
-| `invoices/inv_2026-05-21_neon_brand.txt` | 4 🟡 | 4 🟡 | 4 🟢 | 8 🟠 | 48 🔴 | 36 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟢 | 4 🟢 |
-| `project_pipeline.txt` | 3 🟡 | 3 🟡 | 3 🟡 | 3 🟠 | 27 🔴 | 18 🟠 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟡 | 12 🟡 | 3 🟡 | 3 🟢 | 0 🟢 |
-| `shoots/SHOOT-2026-A/brief.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟠 | 36 🔴 | 36 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `shoots/SHOOT-2026-A/notes.txt` | 3 🟡 | 3 🟡 | 3 🟢 | 6 🟠 | 27 🔴 | 27 🔴 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟡 | 12 🟠 | 3 🟡 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-A/photo_001.jpg` | 3 🟡 | 3 🟡 | 3 🟡 | 6 🟠 | 27 🔴 | 9 🟠 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟡 | 18 🟠 | 3 🟡 | 3 🟡 | 0 🟢 |
-| `shoots/SHOOT-2026-A/photo_002.jpg` | 3 🟡 | 3 🟡 | 3 🟡 | 3 🟠 | 27 🔴 | 9 🟠 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟠 | 12 🟡 | 3 🟠 | 3 🟢 | 0 🟢 |
-| `shoots/SHOOT-2026-B/brief.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟠 | 36 🔴 | 36 🔴 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 4 🟡 | 4 🟡 | 0 🟢 |
-| `shoots/SHOOT-2026-B/notes.txt` | 3 🟡 | 3 🟡 | 3 🟢 | 6 🟠 | 27 🔴 | 27 🔴 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟡 | 12 🟠 | 3 🟡 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-B/photo_001.jpg` | 3 🟡 | 3 🟢 | 3 🟡 | 3 🟠 | 36 🔴 | 18 🟠 | 0 🟢 | 3 🟡 | 3 🟡 | 3 🟠 | 18 🟠 | 3 🟡 | 3 🟢 | 0 🟢 |
-| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 12 🟠 | 12 🟠 | 12 🟠 | 24 🟡 | 12 🟠 | 12 🟡 | 12 🟡 |
-| `shoots/` | 6 🟡 | 6 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 4 🟢 | 6 🟡 | 6 🟡 | 6 🟡 | 12 🟡 | 6 🟡 | 6 🟡 | 6 🟡 |
-| `shoots/SHOOT-2026-A/` | 6 🟡 | 6 🟡 | 6 🟡 | 9 🟠 | 36 🔴 | 36 🔴 | 12 🟠 | 9 🟠 | 3 🟢 | 9 🟠 | 18 🟠 | 9 🟠 | 9 🟠 | 9 🟠 |
-| `shoots/SHOOT-2026-B/` | 3 🟡 | 3 🟡 | 3 🟡 | 9 🟠 | 27 🔴 | 27 🔴 | 18 🟠 | 9 🟠 | 9 🟠 | 9 🟠 | 18 🟠 | 9 🟠 | 9 🟠 | 9 🟠 |
-| `clients/` | 12 🟠 | 4 🟡 | 8 🟠 | 12 🟠 | 36 🔴 | 36 🔴 | 16 🟠 | 12 🟠 | 12 🟠 | 12 🟠 | 24 🟠 | 12 🟠 | 12 🟠 | 4 🟡 |
-| `invoices/` | 6 🟡 | 6 🟡 | 6 🟡 | 9 🟠 | 27 🔴 | 27 🔴 | 12 🟠 | 9 🟠 | 9 🟠 | 9 🟠 | 18 🟠 | 9 🟠 | 9 🟠 | 9 🟠 |
-| `clients/citybank/` | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟠 | 48 🔴 | 48 🔴 | 8 🟢 | 12 🟠 | 8 🟡 | 12 🟠 | 32 🟠 | 12 🟠 | 12 🟠 | 8 🟡 |
-| `clients/neon_brand/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟠 | 24 🔴 | 48 🔴 | 8 🟡 | 12 🟠 | 8 🟠 | 12 🟠 | 24 🟠 | 12 🟠 | 12 🟠 | 12 🟠 |
+| `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 0 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 4 🟢 | 1 🟢 | 1 🟢 | 0 🟢 |
+| `clients/citybank/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `clients/neon_brand/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `invoices/inv_2026-05-15_citybank.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `invoices/inv_2026-05-21_neon_brand.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 0 🟢 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `project_pipeline.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/brief.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/photo_002.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/brief.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 0 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 24 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `shoots/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 8 🟡 | 8 🟡 | 8 🟡 |
+| `shoots/SHOOT-2026-A/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 36 🟠 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `shoots/SHOOT-2026-B/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `clients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `invoices/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `clients/citybank/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `clients/neon_brand/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+
+## Tool atomic operations
+
+| tool | atomic op | severity | all ops | source |
+| --- | --- | --- | --- | --- |
+| `read_file` | **READ** | 2 (Low) | READ | rules |
+| `read_text_file` | **READ** | 2 (Low) | READ | rules |
+| `read_media_file` | **READ** | 2 (Low) | READ | rules |
+| `read_multiple_files` | **READ** | 2 (Low) | READ | rules |
+| `write_file` | **OVERWRITE** | 4 (High) | OVERWRITE, WRITE | rules |
+| `edit_file` | **MODIFY** | 3 (Medium) | MODIFY | rules |
+| `create_directory` | **CREATE** | 3 (Medium) | CREATE | rules |
+| `list_directory` | **LIST** | 1 (Low) | LIST | rules |
+| `list_directory_with_sizes` | **LIST** | 1 (Low) | LIST | rules |
+| `directory_tree` | **LIST** | 1 (Low) | LIST | rules |
+| `move_file` | **MOVE** | 3 (Medium) | MOVE | rules |
+| `search_files` | **SEARCH** | 2 (Low) | SEARCH | rules |
+| `get_file_info` | **METADATA** | 1 (Low) | METADATA | rules |
+| `list_allowed_directories` | **LIST** | 1 (Low) | LIST | rules |
+
+## Tool input ranking (risk 1–5 + critical trigger)
+
+| tool | input | risk | critical trigger | why |
+| --- | --- | --- | --- | --- |
+| `read_file` | `path` | 4 | — | can target any file on the server |
+| `read_file` | `tail` | 2 | >= 10000 | limits output to last N lines, but large values can still be |
+| `read_file` | `head` | 2 | >= 10000 | limits output to first N lines, but large values can still b |
+| `read_text_file` | `path` | 4 | — | can target any file on the server |
+| `read_text_file` | `tail` | 2 | >= 10000 | limits output to last N lines, but large values can still be |
+| `read_text_file` | `head` | 2 | >= 10000 | limits output to first N lines, but large values can still b |
+| `read_media_file` | `path` | 4 | — | can be used to access sensitive files within allowed directo |
+| `read_multiple_files` | `paths` | 5 | >= 100 paths | Allows bulk read of files, potentially overwhelming server r |
+| `write_file` | `content` | 5 | — | fully controllable payload can inject malicious code or data |
+| `write_file` | `path` | 4 | — | can target critical system files |
+| `edit_file` | `edits` | 5 | — | fully controlled payload with potential for bulk changes |
+| `edit_file` | `path` | 3 | — | can target sensitive files |
+| `edit_file` | `dryRun` | 1 | — | only previews changes, no actual modification |
+| `create_directory` | `path` | 3 | — | can be used to create directories in sensitive locations |
+| `list_directory` | `path` | 4 | — | can point to sensitive directories |
+| `list_directory_with_sizes` | `path` | 4 | — | can point to sensitive directories |
+| `list_directory_with_sizes` | `sortBy` | 1 | — | only affects sorting, not scope or action |
+| `directory_tree` | `excludePatterns` | 4 | length >= 100 | can be used to exclude large portions of the directory tree, |
+| `directory_tree` | `path` | 3 | — | can target sensitive directories |
+| `move_file` | `destination` | 4 | — | can overwrite critical system files or directories |
+| `move_file` | `source` | 3 | — | can specify arbitrary file paths |
+| `search_files` | `pattern` | 4 | — | allows broad file matching via glob patterns |
+| `search_files` | `path` | 3 | — | can target sensitive directories |
+| `search_files` | `excludePatterns` | 2 | — | limits the scope of search, potentially reducing risk |
+| `get_file_info` | `path` | 4 | — | can target any file or directory, potentially sensitive |
