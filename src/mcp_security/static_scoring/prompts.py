@@ -89,13 +89,24 @@ Return JSON:
 
 ASSET_TASK = """
 TASK: Assign ASSET SENSITIVITY (1-5) -- criticality if this asset class is
-exposed, corrupted, or destroyed. 5=catastrophic/legally-reportable,
-4=high (prod data, source, employee data), 3=medium internal, 2=low, 1=public/
-ephemeral. Escalate classes matching the inferred dangerous_classes. If the org
-supplied a priority, treat it as the primary anchor.
-When torn between two tiers for an asset that could hold secrets, PII, financial,
-or regulated data, choose the HIGHER tier -- under-scoring a crown-jewel asset is
-the costlier error."""
+exposed, corrupted, or destroyed. Use these ANCHORS, judged by what the asset
+CONTAINS (its name/path/columns are evidence of content):
+  5 = crown jewel: secrets/keys/credentials, regulated records (PHI, card/PAN
+      data), money-moving or legally-privileged data. Exposure alone is
+      reportable or directly exploitable.
+  4 = restricted business data: production/customer data, personnel/payroll,
+      financials, proprietary source code, security/audit logs. Serious harm,
+      but not immediately exploitable like a live credential.
+  3 = internal working data: project docs, schemas, internal reports -- meant to
+      stay inside the org, embarrassing but recoverable if leaked.
+  2 = routine/low-value internal: onboarding material, templates, org charts.
+  1 = public or ephemeral: published content, README, scratch data.
+A CONTAINER inherits the sensitivity of the most sensitive content it plausibly
+holds (a directory named secrets/ is 5, not 3). Escalate classes matching the
+inferred dangerous_classes. If the org supplied a priority, treat it as the
+primary anchor. When torn between two adjacent tiers and the asset could hold
+secrets, PII, financial, or regulated data, choose the HIGHER tier --
+under-scoring a crown jewel is the costlier error."""
 
 ASSET_USER = """Asset class entry:
 {asset_json}
@@ -124,7 +135,14 @@ table -- aggregates exposure over every item in that scope. When the asset class
 is a CONTAINER/SCOPE (a directory, a whole table, a channel) and the tool lists,
 walks, searches, or bulk-reads it, the blast radius is broad (>=4), because one
 call exposes everything inside -- even though each individual read is harmless.
-A single-file read stays at 1; it is the FAN-OUT over many items that raises it.
+BREADTH LIMITS (do not over-score either -- both conditions must hold):
+  a) The ASSET must itself be the container being swept. If the asset is a
+     SINGLE item (one file, one record), reads of it stay narrow (1) even when
+     the tool is bulk-capable -- the fan-out belongs to the container's own cell,
+     not to this one.
+  b) The tool must actually EXPOSE the contents. A metadata-only operation
+     (file info/stat, schema describe, listing only names/sizes of allowed
+     roots) reveals structure, not contents -- cap it at 2-3 on a scope, never 4+.
 Escalation: if the asset class matches the inferred dangerous_classes, raise by
 1 (cap 5) versus the same operation on an ordinary asset; say so in rationale."""
 
@@ -166,11 +184,16 @@ Return JSON:
 
 JUDGE_SYSTEM = """You are an independent security reviewer verifying another
 model's misuse-scoring decision. You are given the same inferred domain profile,
-the same item, and the first model's answer. Decide INDEPENDENTLY what the value
-should be, THEN compare.
+the SAME SCORING RULES the first model was instructed to follow, the same item,
+and the first model's answer. Apply the scoring rules yourself, INDEPENDENTLY,
+to decide what the value should be -- THEN compare. You are checking whether the
+rules were applied correctly, not substituting different rules of your own.
 
 INFERRED DOMAIN PROFILE:
 {domain_profile}
+
+SCORING RULES FOR THIS DECISION:
+{scoring_rules}
 
 Be skeptical. The first model may have under-scored a dangerous capability or
 over-scored a benign one. If you disagree, say so and give your own value.

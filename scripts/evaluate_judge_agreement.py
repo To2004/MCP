@@ -52,10 +52,24 @@ def _clamp(value: object, low: int, high: int, default: int) -> int:
         return default
 
 
+FIELD_RULES = {
+    "tool_impact": prompts.TOOL_IMPACT_TASK,
+    "sensitivity": prompts.ASSET_TASK,
+    "blast_radius": prompts.BLAST_TASK,
+}
+
+
 def _judge(field: str, key: str, item_json: dict, proposed_value: int, profile: dict) -> int | None:
-    """Ask the judge to independently re-derive one primitive; None if unusable."""
+    """Ask the judge to independently re-derive one primitive; None if unusable.
+
+    The judge receives the same scoring rules as the proposer, so agreement
+    measures rule application -- not a philosophy mismatch.
+    """
     prompt = (
-        prompts.JUDGE_SYSTEM.format(domain_profile=json.dumps(profile, indent=2))
+        prompts.JUDGE_SYSTEM.format(
+            domain_profile=json.dumps(profile, indent=2),
+            scoring_rules=FIELD_RULES.get(field, ""),
+        )
         + "\n\n"
         + prompts.JUDGE_USER.format(
             field_name=field, item_key=key,

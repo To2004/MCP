@@ -357,9 +357,21 @@ class StaticScorer:
         }
 
     def _judge_one(self, proposal: _Proposal) -> dict | None:
-        """Ask the judge to independently re-derive one proposal's value."""
+        """Ask the judge to independently re-derive one proposal's value.
+
+        The judge gets the SAME scoring rules as the proposer (a fair check of
+        rule application, not a different philosophy).
+        """
+        rules = {
+            "tool_impact": prompts.TOOL_IMPACT_TASK,
+            "sensitivity": prompts.ASSET_TASK,
+            "blast_radius": prompts.BLAST_TASK,
+        }.get(proposal.field, "")
         prompt = (
-            prompts.JUDGE_SYSTEM.format(domain_profile=json.dumps(self.domain_profile, indent=2))
+            prompts.JUDGE_SYSTEM.format(
+                domain_profile=json.dumps(self.domain_profile, indent=2),
+                scoring_rules=rules,
+            )
             + "\n\n"
             + prompts.JUDGE_USER.format(
                 field_name=proposal.field,
