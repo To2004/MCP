@@ -145,10 +145,18 @@ BREADTH LIMITS (do not over-score either -- both conditions must hold):
      one record ABOUT the asset (name, size, permissions), not what is inside
      it. That is blast 2 on a container, 1 on a single item, NEVER 4+, no matter
      how sensitive the asset: sensitivity is already priced into the score.
+ONE-CALL RULE: blast measures what a SINGLE call reaches. A tool whose input
+names ONE item (one path, one id, one file) reaches one item per call -- even
+when the asset is a container, that call touches ONE thing inside it (blast 1,
+or 2 if it writes). Only a tool that enumerates, walks, searches, or bulk-reads
+MANY items in ONE call sweeps the container (>=4). Do not score a container
+cell by imagining many repeated calls.
 WORKED CONTRAST (apply this pattern): on a secrets/ directory,
-  walk/read the tree  = 5  (bulk content sweep of a dangerous scope)
-  stat / file info    = 2  (one metadata record, no contents)
-  read ONE known file = 1  (single item; the directory cell carries the sweep)
+  walk/read the tree      = 5  (bulk content sweep of a dangerous scope, one call)
+  stat / file info        = 2  (one metadata record, no contents)
+  list allowed root names = 2  (names only, no contents)
+  read ONE file (by path) = 1  (single item per call -- even though the asset
+                                is the directory; the walk cell carries the sweep)
 Escalation: if the asset class matches the inferred dangerous_classes AND the
 operation already reaches beyond a single item (blast >= 2 before escalation),
 raise by 1 (cap 5) versus the same operation on an ordinary asset; say so in
