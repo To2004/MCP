@@ -1,6 +1,6 @@
 # Scan — slack:cbg
 
-_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 27, 'medium': 28, 'high': 19, 'critical': 6}_
+_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 30, 'high': 27, 'critical': 1}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -8,8 +8,8 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 - **mcp_kind**: communication platform
 - **asset_meaning**: channels and user profiles within the communication workspace
-- **blast_radius_meaning**: the extent to which a tool can affect messages or users across channels; from viewing limited information in one channel to posting messages that could reach all members of multiple channels
-- **worked_example**: Using 'slack_post_message' on the 'exec-private' channel is high severity because it can disseminate information to a group of executives, potentially causing immediate impact.
+- **blast_radius_meaning**: the extent to which a tool can affect users or content across channels; from viewing messages in one channel to posting messages that could reach all members of the workspace
+- **worked_example**: slack_post_message on exec-private: Posting a message in an executive private channel can have significant impact due to the sensitivity and importance of communications within this group.
 
 ## Tool impact
 
@@ -29,7 +29,7 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | asset | sensitivity |
 | --- | --- |
 | `general` | 1 |
-| `announcements` | 3 |
+| `announcements` | 1 |
 | `random` | 1 |
 | `engineering` | 2 |
 | `incident-response` | 4 |
@@ -43,13 +43,31 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | slack_list_channels | slack_get_channel_history | slack_get_thread_replies | slack_get_users | slack_get_user_profile | slack_post_message | slack_reply_to_thread | slack_add_reaction |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `general` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 0 🟢 | 9 🟡 | 6 🟡 | 4 🟡 |
-| `announcements` | 9 🟢 | 6 🟢 | 6 🟢 | 6 🟡 | 0 🟢 | 36 🟠 | 18 🟡 | 12 🟡 |
-| `random` | 3 🟢 | 2 🟢 | 3 🟢 | 3 🟢 | 0 🟢 | 9 🟡 | 4 🟡 | 4 🟡 |
-| `engineering` | 6 🟢 | 6 🟢 | 6 🟢 | 4 🟡 | 0 🟡 | 18 🟠 | 8 🟡 | 8 🟡 |
-| `incident-response` | 8 🟡 | 8 🟠 | 8 🟡 | 4 🟢 | 0 🟢 | 36 🔴 | 16 🟠 | 16 🟠 |
-| `on-call` | 8 🟡 | 8 🟠 | 8 🟡 | 0 🟢 | 0 🟢 | 36 🔴 | 16 🟠 | 16 🟠 |
-| `research-team` | 8 🟡 | 8 🟠 | 8 🟡 | 4 🟢 | 0 🟢 | 36 🔴 | 16 🟠 | 16 🟠 |
-| `exec-private` | 8 🟡 | 8 🟠 | 8 🟡 | 8 🟡 | 0 🟢 | 48 🔴 | 24 🟠 | 16 🟡 |
-| `hr-internal` | 8 🟡 | 8 🟠 | 8 🟡 | 4 🟢 | 0 🟢 | 48 🔴 | 16 🟠 | 16 🟠 |
-| `team-leads` | 8 🟡 | 8 🟠 | 8 🟠 | 8 🟡 | 4 🟢 | 48 🔴 | 24 🟠 | 16 🟡 |
+| `general` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 9 🟡 | 4 🟢 | 4 🟢 |
+| `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 0 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
+| `random` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
+| `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 0 🟢 | 18 🟡 | 8 🟡 | 8 🟡 |
+| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `research-team` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `exec-private` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 0 🟡 | 60 🔴 | 16 🟡 | 16 🟡 |
+| `hr-internal` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 0 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 36 🟠 | 16 🟡 | 16 🟡 |
+
+## Tool atomic operations
+
+| tool | atomic op | severity | all ops | source |
+| --- | --- | --- | --- | --- |
+| `slack_list_channels` | **LIST** | 1 (Low) | LIST | rules |
+| `slack_get_channel_history` | **READ** | 2 (Low) | READ | rules |
+| `slack_get_thread_replies` | **READ** | 2 (Low) | READ | rules |
+| `slack_get_users` | **READ** | 2 (Low) | READ | rules |
+| `slack_get_user_profile` | **METADATA** | 1 (Low) | METADATA | rules |
+| `slack_post_message` | **BROADCAST** | 4 (High) | BROADCAST, WRITE | rules |
+| `slack_reply_to_thread` | **BROADCAST** | 4 (High) | BROADCAST | rules |
+| `slack_add_reaction` | **BROADCAST** | 4 (High) | BROADCAST, WRITE | rules |
+
+## Tool input ranking (risk 1–5 + critical trigger)
+
+| tool | input | risk | critical trigger | why |
+| --- | --- | --- | --- | --- |
