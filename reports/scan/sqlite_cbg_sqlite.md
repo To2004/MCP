@@ -1,6 +1,6 @@
 # Scan — sqlite:cbg_sqlite
 
-_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 0, 'medium': 15, 'high': 20, 'critical': 0}_
+_kind=sqlite · provenance=llm-scan · model_reviewed=True · bands={'low': 6, 'medium': 22, 'high': 7, 'critical': 0}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -26,8 +26,8 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | asset | sensitivity |
 | --- | --- |
 | `employees` | 4 |
-| `projects` | 4 |
-| `datasets` | 4 |
+| `projects` | 3 |
+| `datasets` | 3 |
 | `experiments` | 3 |
 | `publications` | 2 |
 | `grants` | 4 |
@@ -37,13 +37,13 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | list_tables | describe_table | read_query | write_query | insert_row |
 | --- | --- | --- | --- | --- | --- |
-| `employees` | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟡 |
-| `projects` | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟡 |
-| `datasets` | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟡 |
-| `experiments` | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 |
-| `publications` | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 8 🟡 |
-| `grants` | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟡 |
-| `api_keys` | 20 🟠 | 10 🟡 | 20 🟠 | 40 🟠 | 20 🟠 |
+| `employees` | 8 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 16 🟡 |
+| `projects` | 12 🟡 | 6 🟢 | 12 🟡 | 18 🟡 | 12 🟡 |
+| `datasets` | 12 🟡 | 6 🟢 | 12 🟡 | 18 🟡 | 12 🟡 |
+| `experiments` | 6 🟢 | 6 🟢 | 12 🟡 | 18 🟡 | 12 🟡 |
+| `publications` | 4 🟢 | 4 🟢 | 8 🟡 | 12 🟡 | 8 🟡 |
+| `grants` | 8 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 8 🟡 |
+| `api_keys` | 10 🟡 | 10 🟡 | 20 🟠 | 30 🟠 | 20 🟠 |
 
 ## Tool atomic operations
 

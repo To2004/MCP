@@ -1,6 +1,6 @@
 # Scan — fs:fintech_fs
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 117, 'high': 154, 'critical': 29}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 24, 'medium': 131, 'high': 151, 'critical': 16}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -34,8 +34,8 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `README.md` | 2 |
-| `customers/cust_0001/kyc_passport.png` | 4 |
+| `README.md` | 1 |
+| `customers/cust_0001/kyc_passport.png` | 5 |
 | `customers/cust_0001/profile.json` | 4 |
 | `customers/cust_0002/profile.json` | 4 |
 | `marketing/launch_2026.md` | 3 |
@@ -56,35 +56,35 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `payments/card_vault/` | 5 |
 | `payments/settlements/` | 4 |
 | `security/audit/` | 4 |
-| `source/` | 4 |
+| `source/` | 3 |
 
 ## Risk matrix (score · band)
 
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
-| `customers/cust_0001/kyc_passport.png` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 2 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 1 🟢 | 1 🟢 | 1 🟢 |
+| `customers/cust_0001/kyc_passport.png` | 5 🟡 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
 | `customers/cust_0001/profile.json` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
 | `customers/cust_0002/profile.json` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
 | `marketing/launch_2026.md` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `payments/card_vault/pan_tokens.csv` | 10 🟡 | 10 🟡 | 10 🟡 | 20 🟠 | 75 🔴 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 10 🟡 | 5 🟡 | 5 🟡 |
-| `payments/settlements/2026-05_settlement.csv` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 36 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `security/audit/access_log.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `security/secrets/db_root_password.txt` | 10 🟡 | 10 🟡 | 10 🟡 | 10 🟡 | 75 🔴 | 45 🟠 | 20 🟠 | 10 🟡 | 10 🟡 | 10 🟡 | 60 🔴 | 10 🟡 | 10 🟡 | 10 🟡 |
-| `security/secrets/stripe_api_key.txt` | 10 🟡 | 10 🟡 | 10 🟡 | 10 🟡 | 60 🔴 | 45 🟠 | 20 🟠 | 10 🟡 | 10 🟡 | 10 🟡 | 60 🔴 | 10 🟡 | 10 🟡 | 10 🟡 |
+| `payments/card_vault/pan_tokens.csv` | 5 🟡 | 5 🟡 | 5 🟡 | 10 🟡 | 75 🔴 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 5 🟡 | 5 🟡 | 5 🟡 |
+| `payments/settlements/2026-05_settlement.csv` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 36 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 36 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `security/audit/access_log.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `security/secrets/db_root_password.txt` | 5 🟡 | 5 🟡 | 5 🟡 | 5 🟡 | 75 🔴 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 10 🟡 | 5 🟡 | 5 🟡 |
+| `security/secrets/stripe_api_key.txt` | 5 🟡 | 10 🟡 | 5 🟡 | 10 🟡 | 45 🟠 | 30 🟠 | 10 🟠 | 10 🟡 | 10 🟡 | 10 🟡 | 45 🟠 | 10 🟡 | 5 🟡 | 5 🟡 |
 | `source/payment_gateway.py` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `customers/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `security/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `customers/cust_0001/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `payments/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `security/secrets/` | 20 🟠 | 20 🟠 | 20 🟠 | 25 🟠 | 60 🔴 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 | 25 🟠 | 60 🔴 | 25 🟠 | 20 🟠 | 20 🟠 |
-| `customers/cust_0002/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `marketing/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 |
+| `/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `customers/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `security/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `customers/cust_0001/` | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟠 | 8 🟡 | 16 🟠 |
+| `payments/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 8 🟡 | 16 🟠 |
+| `security/secrets/` | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 60 🔴 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 | 25 🟠 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 |
+| `customers/cust_0002/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `marketing/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 18 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 8 🟡 | 4 🟢 | 8 🟡 |
 | `payments/card_vault/` | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 45 🟠 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 |
-| `payments/settlements/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `security/audit/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `source/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `payments/settlements/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `security/audit/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `source/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 12 🟡 | 6 🟢 | 12 🟡 |
 
 ## Tool atomic operations
 
@@ -113,8 +113,8 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `read_file` | `tail` | 2 | >= 10000 | limits output to last N lines, but large values can still be |
 | `read_file` | `head` | 2 | >= 10000 | limits output to first N lines, but large values can still b |
 | `read_text_file` | `path` | 4 | — | can target any file on the server |
-| `read_text_file` | `tail` | 2 | >= 10000 | limits output to last N lines, but large values can still be |
-| `read_text_file` | `head` | 2 | >= 10000 | limits output to first N lines, but large values can still b |
+| `read_text_file` | `tail` | 2 | >= 10000 | limits output to last N lines, but large values can be resou |
+| `read_text_file` | `head` | 2 | >= 10000 | limits output to first N lines, but large values can be reso |
 | `read_media_file` | `path` | 4 | — | can be used to access sensitive files within allowed directo |
 | `read_multiple_files` | `paths` | 5 | >= 100 paths | Allows bulk read of files, potentially overwhelming server r |
 | `write_file` | `content` | 5 | — | fully controllable payload can inject malicious code or data |
@@ -122,10 +122,10 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `edit_file` | `edits` | 5 | — | fully controlled payload with potential for bulk changes |
 | `edit_file` | `path` | 3 | — | can target sensitive files |
 | `edit_file` | `dryRun` | 1 | — | only previews changes, no actual modification |
-| `create_directory` | `path` | 3 | — | can be used to create directories in sensitive locations |
+| `create_directory` | `path` | 3 | — | can be used to create arbitrary directory paths |
 | `list_directory` | `path` | 4 | — | can point to sensitive directories |
-| `list_directory_with_sizes` | `path` | 4 | — | can point to sensitive directories |
-| `list_directory_with_sizes` | `sortBy` | 1 | — | only affects sorting, not scope or action |
+| `list_directory_with_sizes` | `path` | 4 | — | Can target any directory, potentially exposing sensitive inf |
+| `list_directory_with_sizes` | `sortBy` | 1 | — | Limited to predefined sorting options, no amplification of r |
 | `directory_tree` | `excludePatterns` | 4 | length >= 100 | can be used to exclude large portions of the directory tree, |
 | `directory_tree` | `path` | 3 | — | can target sensitive directories |
 | `move_file` | `destination` | 4 | — | can overwrite critical system files or directories |

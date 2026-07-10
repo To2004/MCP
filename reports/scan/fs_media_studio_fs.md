@@ -1,6 +1,6 @@
 # Scan — fs:media_studio_fs
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 75, 'medium': 130, 'high': 85, 'critical': 4}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 100, 'medium': 110, 'high': 83, 'critical': 1}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -34,21 +34,21 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `README.md` | 2 |
+| `README.md` | 1 |
 | `clients/citybank/contract.txt` | 4 |
 | `clients/neon_brand/contract.txt` | 4 |
 | `invoices/inv_2026-05-15_citybank.txt` | 4 |
 | `invoices/inv_2026-05-21_neon_brand.txt` | 4 |
 | `project_pipeline.txt` | 3 |
-| `shoots/SHOOT-2026-A/brief.txt` | 4 |
+| `shoots/SHOOT-2026-A/brief.txt` | 3 |
 | `shoots/SHOOT-2026-A/notes.txt` | 3 |
 | `shoots/SHOOT-2026-A/photo_001.jpg` | 3 |
 | `shoots/SHOOT-2026-A/photo_002.jpg` | 3 |
-| `shoots/SHOOT-2026-B/brief.txt` | 4 |
+| `shoots/SHOOT-2026-B/brief.txt` | 3 |
 | `shoots/SHOOT-2026-B/notes.txt` | 3 |
 | `shoots/SHOOT-2026-B/photo_001.jpg` | 3 |
 | `/` | 3 |
-| `shoots/` | 2 |
+| `shoots/` | 3 |
 | `shoots/SHOOT-2026-A/` | 3 |
 | `shoots/SHOOT-2026-B/` | 3 |
 | `clients/` | 4 |
@@ -60,27 +60,27 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `README.md` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 8 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
-| `clients/citybank/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `clients/neon_brand/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `invoices/inv_2026-05-15_citybank.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `invoices/inv_2026-05-21_neon_brand.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 2 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 4 🟢 | 1 🟢 | 1 🟢 | 1 🟢 |
+| `clients/citybank/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 8 🟡 | 4 🟡 | 4 🟡 |
+| `clients/neon_brand/contract.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `invoices/inv_2026-05-15_citybank.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `invoices/inv_2026-05-21_neon_brand.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
 | `project_pipeline.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-A/brief.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `shoots/SHOOT-2026-A/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-A/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-A/photo_002.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-B/brief.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `shoots/SHOOT-2026-B/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `shoots/SHOOT-2026-B/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 36 🟠 | 24 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 24 🟠 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `shoots/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 16 🟡 | 8 🟡 | 8 🟡 | 8 🟡 |
-| `shoots/SHOOT-2026-A/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `shoots/SHOOT-2026-B/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
-| `clients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `invoices/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 32 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `clients/citybank/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `clients/neon_brand/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `shoots/SHOOT-2026-A/brief.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 9 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-A/photo_002.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 9 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/brief.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/notes.txt` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `shoots/SHOOT-2026-B/photo_001.jpg` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 9 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 36 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `shoots/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟠 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `shoots/SHOOT-2026-A/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `shoots/SHOOT-2026-B/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 27 🟠 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟡 | 12 🟡 | 12 🟡 | 12 🟡 |
+| `clients/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `invoices/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `clients/citybank/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `clients/neon_brand/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 36 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 16 🟠 | 16 🟠 | 16 🟠 |
 
 ## Tool atomic operations
 

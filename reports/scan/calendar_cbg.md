@@ -1,6 +1,6 @@
 # Scan — calendar:cbg
 
-_kind=calendar · provenance=llm-scan · model_reviewed=True · bands={'low': 1, 'medium': 25, 'high': 34, 'critical': 6}_
+_kind=calendar · provenance=llm-scan · model_reviewed=True · bands={'low': 10, 'medium': 22, 'high': 30, 'critical': 4}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -32,22 +32,22 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | asset | sensitivity |
 | --- | --- |
 | `personal` | 4 |
-| `team` | 4 |
+| `team` | 3 |
 | `executive` | 4 |
 | `recruiting` | 4 |
-| `contacts` | 4 |
-| `holidays` | 2 |
+| `contacts` | 5 |
+| `holidays` | 1 |
 
 ## Risk matrix (score · band)
 
 | asset \ tool | list_calendars | list_events | list_week | get_event | find_free_slot | access_contacts | create_event | update_event | send_email_invite | delete_event | delete_all_events |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `personal` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 48 🔴 |
-| `team` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
-| `executive` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
-| `recruiting` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
-| `contacts` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 48 🔴 | 24 🟠 | 48 🔴 |
-| `holidays` | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 12 🟡 | 24 🟠 |
+| `personal` | 8 🟡 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 48 🔴 |
+| `team` | 12 🟡 | 12 🟡 | 12 🟡 | 3 🟢 | 12 🟡 | 3 🟢 | 12 🟡 | 12 🟡 | 18 🟠 | 18 🟠 | 36 🟠 |
+| `executive` | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 16 🟠 | 4 🟡 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 60 🔴 |
+| `recruiting` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 16 🟠 | 16 🟠 | 16 🟡 | 16 🟡 | 24 🟠 | 24 🟠 | 48 🔴 |
+| `contacts` | 20 🟠 | 20 🟠 | 20 🟠 | 5 🟡 | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 30 🟠 | 30 🟠 | 60 🔴 |
+| `holidays` | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 6 🟡 | 6 🟡 | 12 🟡 |
 
 ## Tool atomic operations
 

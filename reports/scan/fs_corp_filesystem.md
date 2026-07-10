@@ -1,6 +1,6 @@
 # Scan — fs:corp_filesystem
 
-_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 31, 'medium': 75, 'high': 87, 'critical': 17}_
+_kind=filesystem · provenance=llm-scan · model_reviewed=True · bands={'low': 46, 'medium': 80, 'high': 79, 'critical': 5}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -36,16 +36,16 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | --- | --- |
 | `README.md` | 1 |
 | `onboarding/org_chart.png` | 2 |
-| `projects/db_schema.sql` | 4 |
+| `projects/db_schema.sql` | 3 |
 | `projects/known_defects.csv` | 3 |
 | `sensitive/financials/payslips_q1.csv` | 4 |
 | `sensitive/security/audit_log.txt` | 4 |
 | `sensitive/security/private_key.pem` | 5 |
 | `source_code/core.c` | 4 |
-| `/` | 4 |
-| `sensitive/` | 4 |
-| `projects/` | 4 |
-| `sensitive/security/` | 4 |
+| `/` | 5 |
+| `sensitive/` | 5 |
+| `projects/` | 3 |
+| `sensitive/security/` | 5 |
 | `onboarding/` | 2 |
 | `sensitive/financials/` | 4 |
 | `source_code/` | 4 |
@@ -55,20 +55,20 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | asset \ tool | read_file | read_text_file | read_media_file | read_multiple_files | write_file | edit_file | create_directory | list_directory | list_directory_with_sizes | directory_tree | move_file | search_files | get_file_info | list_allowed_directories |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `README.md` | 1 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 6 🟡 | 2 🟢 | 1 🟢 | 1 🟢 | 1 🟢 | 6 🟡 | 1 🟢 | 1 🟢 | 1 🟢 |
-| `onboarding/org_chart.png` | 2 🟢 | 2 🟢 | 2 🟢 | 8 🟡 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
-| `projects/db_schema.sql` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `projects/known_defects.csv` | 3 🟢 | 3 🟢 | 3 🟢 | 12 🟡 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 3 🟢 | 3 🟢 | 3 🟢 |
-| `sensitive/financials/payslips_q1.csv` | 8 🟡 | 8 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 4 🟡 |
-| `sensitive/security/audit_log.txt` | 8 🟡 | 8 🟡 | 8 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 |
-| `sensitive/security/private_key.pem` | 10 🟡 | 10 🟡 | 10 🟡 | 10 🟡 | 75 🔴 | 30 🟠 | 20 🟠 | 10 🟡 | 10 🟡 | 10 🟡 | 60 🔴 | 10 🟡 | 10 🟡 | 5 🟡 |
-| `source_code/core.c` | 4 🟡 | 4 🟡 | 4 🟡 | 16 🟠 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
-| `/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `sensitive/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 20 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `projects/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `sensitive/security/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 20 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `onboarding/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 8 🟡 | 8 🟡 | 8 🟡 |
-| `sensitive/financials/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
-| `source_code/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 48 🔴 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 16 🟠 | 16 🟠 |
+| `onboarding/org_chart.png` | 2 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 12 🟡 | 4 🟢 | 2 🟢 | 2 🟢 | 2 🟢 | 12 🟡 | 2 🟢 | 2 🟢 | 2 🟢 |
+| `projects/db_schema.sql` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `projects/known_defects.csv` | 3 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 18 🟠 | 6 🟢 | 3 🟢 | 3 🟢 | 3 🟢 | 18 🟠 | 3 🟢 | 3 🟢 | 3 🟢 |
+| `sensitive/financials/payslips_q1.csv` | 4 🟡 | 4 🟡 | 4 🟡 | 8 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 |
+| `sensitive/security/audit_log.txt` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `sensitive/security/private_key.pem` | 5 🟡 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 30 🟠 | 10 🟠 | 5 🟡 | 5 🟡 | 5 🟡 | 30 🟠 | 10 🟡 | 5 🟡 | 5 🟡 |
+| `source_code/core.c` | 4 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 24 🟠 | 8 🟡 | 4 🟡 | 4 🟡 | 4 🟡 | 24 🟠 | 4 🟡 | 4 🟡 | 4 🟡 |
+| `/` | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 30 🟠 | 30 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 20 🟠 | 60 🔴 | 20 🟠 | 20 🟠 | 20 🟠 |
+| `sensitive/` | 20 🟠 | 20 🟠 | 20 🟠 | 25 🟠 | 30 🟠 | 45 🟠 | 20 🟠 | 25 🟠 | 25 🟠 | 25 🟠 | 60 🔴 | 25 🟠 | 20 🟠 | 10 🟡 |
+| `projects/` | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 18 🟠 | 27 🟠 | 12 🟡 | 12 🟡 | 12 🟡 | 12 🟡 | 36 🟠 | 12 🟡 | 6 🟢 | 12 🟡 |
+| `sensitive/security/` | 10 🟡 | 20 🟠 | 20 🟠 | 20 🟠 | 45 🟠 | 45 🟠 | 20 🟠 | 25 🟠 | 25 🟠 | 25 🟠 | 60 🔴 | 25 🟠 | 10 🟡 | 10 🟡 |
+| `onboarding/` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 12 🟡 | 12 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 24 🟠 | 8 🟡 | 4 🟢 | 8 🟡 |
+| `sensitive/financials/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 24 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 20 🟠 | 48 🔴 | 16 🟠 | 8 🟡 | 8 🟡 |
+| `source_code/` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 24 🟠 | 36 🟠 | 16 🟡 | 16 🟠 | 16 🟠 | 16 🟠 | 48 🔴 | 16 🟠 | 8 🟡 | 16 🟠 |
 
 ## Tool atomic operations
 

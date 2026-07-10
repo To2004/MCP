@@ -1,15 +1,15 @@
 # Scan — slack:cbg
 
-_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 28, 'high': 30, 'critical': 0}_
+_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 31, 'high': 27, 'critical': 0}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
 ## Inferred domain profile
 
 - **mcp_kind**: communication platform
-- **asset_meaning**: channels and user profiles within the communication workspace
-- **blast_radius_meaning**: the extent to which a tool can affect users or content across channels; from viewing messages in one channel to posting messages that could reach all members of the workspace
-- **worked_example**: slack_post_message on exec-private: Posting a message in an executive private channel can have significant impact due to the sensitivity and importance of communications within this group.
+- **asset_meaning**: channels and user profiles within a communication workspace
+- **blast_radius_meaning**: the extent to which a tool can affect the visibility or content of channels and user data, from read-only operations that do not alter state to actions that modify messages or channel memberships
+- **worked_example**: The tool 'slack_post_message' used on the asset 'exec-private' could lead to unauthorized dissemination of confidential information.
 
 ## Tool impact
 
@@ -43,16 +43,16 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset \ tool | slack_list_channels | slack_get_channel_history | slack_get_thread_replies | slack_get_users | slack_get_user_profile | slack_post_message | slack_reply_to_thread | slack_add_reaction |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `general` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
-| `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 12 🟡 | 4 🟢 | 4 🟢 |
+| `general` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
+| `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
 | `random` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
-| `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 18 🟡 | 8 🟡 | 8 🟡 |
-| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 12 🟡 | 8 🟡 | 8 🟡 |
+| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `research-team` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `exec-private` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `hr-internal` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 
 ## Tool atomic operations
 
