@@ -30,10 +30,13 @@ from mcp_security.static_scoring import prompts  # noqa: F401  (kept for parity/
 REPO = Path(__file__).resolve().parent.parent
 SCAN_DIR = REPO / "reports" / "scan"
 
-SERVERS: dict[str, dict] = {
-    "fs_corp_filesystem": {"kind": "filesystem", "root": "demo/corp_filesystem", "server": "fs:corp_filesystem", "by_file": True},
-    "github_cbg": {"kind": "github", "server": "github:cbg"},
-}
+# The reviewer reads only a scan's own <stem>.json (no registry), so any scan
+# stem present in reports/scan/ can be reviewed; this list is just the default set.
+SERVERS: dict[str, dict] = {s: {} for s in (
+    "fs_corp_filesystem", "fs_fintech_fs", "fs_law_firm_fs", "fs_media_studio_fs",
+    "fs_medical_clinic_fs", "sqlite_cbg_sqlite", "sqlite_devops_sqlite",
+    "github_cbg", "slack_cbg", "calendar_cbg",
+)}
 
 REVIEW_SYSTEM = """You are a security risk reviewer auditing a STATIC risk matrix for
 an MCP server, grounded in standard practice: NIST SP 800-30 (risk = impact x
