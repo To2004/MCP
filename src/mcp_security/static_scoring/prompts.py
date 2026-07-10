@@ -150,15 +150,22 @@ call reaches; never imagine repeated calls.
   Step 1 tool_reach: does ONE call of this tool touch ONE item (input names one
          path/id/file) or MANY items (it enumerates, walks, searches, bulk-reads,
 
-CONSISTENCY (blast depends on REACH, not on the asset's value): blast is a
-property of (this tool's reach pattern) x (this asset's STRUCTURE: a single item
-vs a container it can sweep). It does NOT depend on how sensitive the asset is --
-sensitivity is already a separate factor in the score. Therefore the SAME tool
-must get the SAME blast on assets of the SAME structure: if a tool is blast 2 on
-one single-file asset it is blast 2 on every single-file asset; if it is 4 on one
-directory it is 4 on every comparable directory. Do not let a tool's blast drift
-between 1 and 2 (or 4 and 5) across similar assets, and do not raise blast just
-because an asset is important.
+REACH IS A COUNT, NOT A CONSEQUENCE: blast is HOW MANY items one call touches,
+NOT how bad the outcome is. Deleting ONE file is the same reach whether the file
+is a joke or a private key -- the badness is already carried by sensitivity(1-5)
+x impact(1-3). A destructive op on a single item (delete one file, merge one PR,
+overwrite one record) reaches ONE item on EVERY asset; its blast is fixed (~2),
+low, and identical across assets. NEVER raise an operation's blast because the
+asset is important, critical, or central -- that double-counts sensitivity and is
+the most common error. If you are tempted to give delete/merge/overwrite a higher
+blast on a "critical" asset than on an ordinary one, STOP: keep the count, let the
+score rise through sensitivity.
+CONSISTENCY (follows from the above): blast is (tool reach pattern) x (asset
+STRUCTURE: single item vs sweepable container), never the asset's value. So the
+SAME tool gets the SAME blast on assets of the SAME structure: blast 2 on one
+single-file asset means blast 2 on every single-file asset; 4 on one directory
+means 4 on every comparable directory. Do not let a tool's blast drift (1 vs 2,
+2 vs 5, 4 vs 5) across similar assets.
 RELOCATION: moving or renaming a SINGLE item (move/rename) reaches exactly that
 one item -- score it like a scoped single-item write (2-3), never higher than an
 overwrite/edit of the same asset. Only a move that fans out across many items
