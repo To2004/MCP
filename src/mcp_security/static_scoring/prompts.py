@@ -145,18 +145,24 @@ BREADTH LIMITS (do not over-score either -- both conditions must hold):
      one record ABOUT the asset (name, size, permissions), not what is inside
      it. That is blast 2 on a container, 1 on a single item, NEVER 4+, no matter
      how sensitive the asset: sensitivity is already priced into the score.
-ONE-CALL RULE: blast measures what a SINGLE call reaches. A tool whose input
-names ONE item (one path, one id, one file) reaches one item per call -- even
-when the asset is a container, that call touches ONE thing inside it (blast 1,
-or 2 if it writes). Only a tool that enumerates, walks, searches, or bulk-reads
-MANY items in ONE call sweeps the container (>=4). Do not score a container
-cell by imagining many repeated calls.
-WORKED CONTRAST (apply this pattern): on a secrets/ directory,
-  walk/read the tree      = 5  (bulk content sweep of a dangerous scope, one call)
-  stat / file info        = 2  (one metadata record, no contents)
-  list allowed root names = 2  (names only, no contents)
-  read ONE file (by path) = 1  (single item per call -- even though the asset
-                                is the directory; the walk cell carries the sweep)
+DECISION PROCEDURE -- classify FIRST, then score. Blast measures what a SINGLE
+call reaches; never imagine repeated calls.
+  Step 1 tool_reach: does ONE call of this tool touch ONE item (input names one
+         path/id/file) or MANY items (it enumerates, walks, searches, bulk-reads,
+
+CONSISTENCY (blast depends on REACH, not on the asset's value): blast is a
+property of (this tool's reach pattern) x (this asset's STRUCTURE: a single item
+vs a container it can sweep). It does NOT depend on how sensitive the asset is --
+sensitivity is already a separate factor in the score. Therefore the SAME tool
+must get the SAME blast on assets of the SAME structure: if a tool is blast 2 on
+one single-file asset it is blast 2 on every single-file asset; if it is 4 on one
+directory it is 4 on every comparable directory. Do not let a tool's blast drift
+between 1 and 2 (or 4 and 5) across similar assets, and do not raise blast just
+because an asset is important.
+RELOCATION: moving or renaming a SINGLE item (move/rename) reaches exactly that
+one item -- score it like a scoped single-item write (2-3), never higher than an
+overwrite/edit of the same asset. Only a move that fans out across many items
+(recursive/bulk move of a directory) is broad (>=4).
 Escalation: if the asset class matches the inferred dangerous_classes AND the
 operation already reaches beyond a single item (blast >= 2 before escalation),
 raise by 1 (cap 5) versus the same operation on an ordinary asset; say so in

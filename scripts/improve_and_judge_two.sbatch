@@ -8,7 +8,7 @@
 #SBATCH --output=/home/ovadyat/MCP/reports/improve2-%j.out
 
 # Validate the improved rules on TWO servers only (fs:corp_filesystem, github:cbg):
-#  1) re-scan them with the refined BLAST/ASSET prompts (version scan-rules-v4)
+#  1) re-scan them with the refined BLAST/ASSET prompts (version scan-rules-v5)
 #  2) re-run the judge-agreement eval on just those two, with the now-fair judge
 #     (same scoring rules as the proposer).
 
@@ -35,11 +35,11 @@ cd "$REPO"; PY="$REPO/.venv/bin/python"; RC=0
 echo "=== 1/3 re-scan fs:corp_filesystem (improved rules) ==="
 "$PY" -m mcp_security.scanner --kind filesystem --root demo/corp_filesystem \
   --server fs:corp_filesystem --by-file --scan-dir "$OUT" \
-  --out "$OUT/fs_corp_filesystem.md" --version-tag "scan-rules-v4" || RC=1
+  --out "$OUT/fs_corp_filesystem.md" --version-tag "scan-rules-v5" || RC=1
 
 echo "=== 2/3 re-scan github:cbg (improved rules) ==="
 "$PY" -m mcp_security.scanner --kind github --server github:cbg --scan-dir "$OUT" \
-  --out "$OUT/github_cbg.md" --version-tag "scan-rules-v4" || RC=1
+  --out "$OUT/github_cbg.md" --version-tag "scan-rules-v5" || RC=1
 
 echo "=== 3/3 judge-agreement eval (fair judge, two servers) ==="
 "$PY" scripts/evaluate_judge_agreement.py \
