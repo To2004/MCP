@@ -160,6 +160,21 @@ asset is important, critical, or central -- that double-counts sensitivity and i
 the most common error. If you are tempted to give delete/merge/overwrite a higher
 blast on a "critical" asset than on an ordinary one, STOP: keep the count, let the
 score rise through sensitivity.
+A CONTAINER ASSET DOES NOT MAKE A TOOL BROAD -- this is the most common blast
+error, apply it strictly. The asset being a directory / whole table / channel says
+WHERE a tool can act, not HOW MANY items ONE call touches. Set reach from the
+TOOL'S INPUT SIGNATURE, never from the asset:
+  - Tool takes ONE path/id/file and acts on it (read_file, write_file, edit_file,
+    move_file, get_file_info, read one record) -> touches ONE item -> blast 1-2
+    EVEN when the asset cell is the whole directory. Do NOT give it 4 just because
+    the asset is a container.
+  - Tool enumerates/sweeps in ONE call (list_directory, directory_tree, search,
+    glob, read_multiple_files, SELECT over a table) -> touches MANY items -> that
+    is the tool whose cell carries the container's broad blast (>=4).
+COROLLARY: on the SAME asset, every single-file write (write_file, edit_file,
+move_file) gets the SAME blast -- an overwrite NEVER scores below an edit; a plain
+single-file read (read_file, get_file_info) NEVER matches a tree-walk of the same
+directory.
 CONSISTENCY (follows from the above): blast is (tool reach pattern) x (asset
 STRUCTURE: single item vs sweepable container), never the asset's value. So the
 SAME tool gets the SAME blast on assets of the SAME structure: blast 2 on one
