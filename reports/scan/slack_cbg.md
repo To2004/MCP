@@ -1,6 +1,6 @@
 # Scan — slack:cbg
 
-_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 31, 'high': 27, 'critical': 0}_
+_kind=slack · provenance=llm-scan · model_reviewed=True · bands={'low': 22, 'medium': 28, 'high': 30, 'critical': 0}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Band legend: 🟢 low · 🟡 medium · 🟠 high · 🔴 critical.
 
@@ -47,12 +47,12 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 | `announcements` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
 | `random` | 4 🟢 | 4 🟢 | 4 🟢 | 4 🟢 | 1 🟢 | 6 🟡 | 4 🟢 | 4 🟢 |
 | `engineering` | 8 🟡 | 8 🟡 | 8 🟡 | 8 🟡 | 2 🟢 | 12 🟡 | 8 🟡 | 8 🟡 |
-| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `incident-response` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `on-call` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `research-team` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `exec-private` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 | `hr-internal` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
-| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 8 🟡 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
+| `team-leads` | 16 🟠 | 16 🟠 | 16 🟠 | 16 🟠 | 4 🟡 | 24 🟠 | 16 🟡 | 16 🟡 |
 
 ## Tool atomic operations
 
