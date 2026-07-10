@@ -41,10 +41,15 @@ echo "=== 2/3 re-scan github:cbg (improved rules) ==="
 "$PY" -m mcp_security.scanner --kind github --server github:cbg --scan-dir "$OUT" \
   --out "$OUT/github_cbg.md" --version-tag "scan-rules-v5" || RC=1
 
-echo "=== 3/3 judge-agreement eval (fair judge, two servers) ==="
+echo "=== 3/4 holistic heatmap coherence review (primary validator) ==="
+"$PY" scripts/evaluate_heatmap_review.py \
+  --servers fs_corp_filesystem github_cbg \
+  --out reports/evaluation/heatmap_review_v5.md || RC=1
+
+echo "=== 4/4 per-primitive judge-agreement (secondary) ==="
 "$PY" scripts/evaluate_judge_agreement.py \
   --servers fs_corp_filesystem github_cbg --blast-sample 40 \
-  --out reports/evaluation/judge_agreement_v4.md || RC=1
+  --out reports/evaluation/judge_agreement_v5.md || RC=1
 
 echo "=== done (rc=$RC) ==="
 kill "$SERVE_PID" 2>/dev/null
