@@ -13,12 +13,17 @@ side that does: **dynamic scoring from captured agent logs**.
 - **Dynamic = likelihood / anomaly.** "How abnormal is this call, from *this*
   agent, in *this* session, given its actual input?" — derived from captured
   agent logs (`logs/proxy/sessions/*/calls.csv`), not from a benchmark.
-- **Final score = static ⊗ dynamic**, using the same escalation arithmetic the
-  framework already uses for parameters (`param_scoring/combine.py::escalate`):
-  the dynamic signal can only **raise** a call's risk above its static floor,
-  never lower it. A `write_file` on a low-sensitivity asset is still gated if
-  the agent's behavior around it is anomalous; a scanned-critical cell doesn't
-  get a discount just because the agent behaves normally.
+- **Final score = static ⊗ dynamic.** Two compositions exist side by side:
+  the band signals (baseline / sequence / judge) fuse via the escalation
+  arithmetic the framework already uses for parameters
+  (`param_scoring/combine.py::escalate`) — they can only **raise** a call's
+  risk above its static floor. The **embedding likelihood**
+  (`dynamic/embedding.py`) instead fills the `likelihood(1.0)` slot the v6 scan
+  formula already reserves: `final_risk = static_score × likelihood`, with
+  likelihood in `[0.1, 1.0]` — NIST-style impact × likelihood. Its 0.1 floor
+  bounds the discount: a scanned-critical cell keeps a tenth of its risk even
+  when the call looks demonstrated-normal, and a call with **no** benign
+  history behind it keeps full static risk (likelihood 1.0).
 
 This deliberately does **not** need an external labeled benchmark (see
 `reports/severity_eval/SUMMARY.md` for why one barely exists for this task).
@@ -28,7 +33,19 @@ score separate labeled-benign sessions from labeled-adversarial sessions in the
 synthetic testbed, where static alone does not? See
 `reports/dynamic_eval/SUMMARY.md` for the current result.
 
-## Three signals, cheap → expensive
+## Four signals, cheap → expensive
+
+0. **Embedding likelihood** (`src/mcp_security/dynamic/embedding.py`, no LLM).
+   Embed each call (hashing vectorizer over tool + arg tokens + structural
+   flags), reduce to a latent with TruncatedSVD fit on the server's observed
+   history, score novelty as mean distance to the 5 nearest historical calls,
+   calibrate against the history's own quantiles (q99 → z = 2), and map to a
+   likelihood in `[0.1, 1.0]` that multiplies the static score. Fit on benign
+   history only when labels are curated; on an unlabeled stream a label-free
+   self-trimming pass (`trim_z`) drops the history calls the model itself
+   flags before refitting. Fit < 0.5 s per server, scoring ~0.05 ms per call.
+   Architecture comparison, calibration findings, and the full evaluation:
+   `reports/dynamic_eval/embedding/EMBEDDING_LIKELIHOOD.md`.
 
 1. **Behavioral baseline** (`src/mcp_security/dynamic/baseline.py`, no LLM).
    From an agent's/persona's own call history: which tools it normally calls,
@@ -80,14 +97,17 @@ would take external labeled telemetry the project doesn't have. Instead:
 
 ```
 src/mcp_security/dynamic/
+  embedding.py  embedding novelty -> likelihood factor (static x likelihood)
   baseline.py   per-(persona, server) profile + deviation scoring
   sequence.py   session-level cumulative/pattern risk
   judge.py      optional LLM escalation on normalized/decoded args
   combine.py    fuse static band + all present dynamic signals via escalate()
   __main__.py   CLI: score one session's calls.csv against a scan + baseline
 
-scripts/make_dynamic_testbed.py   multi-company synthetic benign+adversarial logs
-reports/dynamic_eval/             discrimination-test report (benign vs adversarial)
+scripts/make_dynamic_testbed.py       multi-company synthetic benign+adversarial logs
+scripts/eval_embedding_likelihood.py  likelihood eval + stream/test formula CSVs
+reports/dynamic_eval/                 discrimination-test report (benign vs adversarial)
+reports/dynamic_eval/embedding/       likelihood eval report, metrics, formula CSVs
 ```
 
 ## Relationship to `tests/testbed/`
@@ -101,9 +121,11 @@ this round, which stays fully synthetic/offline per project decision.
 
 ## Non-goals
 
-- Not anomaly detection in the ML sense (no trained classifier) — deviation is
-  computed from simple, auditable statistics over the persona's own history,
-  consistent with the framework's existing "no black-box scoring" stance
-  (`docs/project/overview.md`).
+- No *supervised* classifier — nothing is ever trained on attack labels. The
+  embedding likelihood is a novelty model fit on observed history only, and it
+  stays auditable (hashing + SVD + nearest-neighbor distance, a two-line
+  z-to-likelihood ramp), consistent with the framework's "no black-box
+  scoring" stance (`docs/project/overview.md`). The band signals remain plain
+  statistics over the persona's own history.
 - The LLM judge stage is an escalator, never the sole basis for a score — same
   rule the static side already follows for parameters.

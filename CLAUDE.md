@@ -55,7 +55,9 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Highlight most influential inputs | `uv run python scripts/highlight_influential_inputs.py` |
 | Score one session (static + dynamic) | `uv run python -m mcp_security.dynamic --session <calls.csv> --server <scan-stem>` |
 | Generate dynamic testbed (benign+malicious, big-MCP-weighted) | `uv run python scripts/make_dynamic_testbed.py` |
+| Generate insider testbed (2 orgs, mixed personas, no external attackers) | `uv run python scripts/make_insider_testbed.py` |
 | Benign-vs-adversarial separation report | `uv run python scripts/evaluate_dynamic.py` |
+| Embedding likelihood eval (static × likelihood CSVs) | `uv run python scripts/eval_embedding_likelihood.py` |
 | Full pipeline (multi-GPU) | `sbatch scripts/scan_and_rank_multigpu.sbatch` |
 | Grade scanner (vs LLM tables) | `uv run python scripts/evaluate_scanner.py` |
 | Grade scanner (vs oracle panel + inter-rater) | `uv run python scripts/evaluate_vs_human.py` |
