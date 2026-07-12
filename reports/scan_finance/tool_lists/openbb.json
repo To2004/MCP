@@ -1,0 +1,2068 @@
+{
+  "server": "openbb-platform",
+  "kind": "openbb",
+  "source": "live MITM capture logs/proxy/sessions/finance_openbb/captured.jsonl",
+  "tools": [
+    {
+      "name": "install_skill",
+      "description": "Install a skill (SKILL.md + supporting files) into a SkillsDirectoryProvider.\n\nCreates the skill directory if needed, writes all files,\nand registers the new skill with the target provider so it becomes\nimmediately available via list_resources / read_resource.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "skill_name": {
+            "description": "Name of the skill (used as the directory name). Must be a valid directory name (lowercase, underscores).",
+            "type": "string"
+          },
+          "files": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Dictionary of filename -> content for the skill directory. Must include 'SKILL.md' as the main file. May include supporting files such as templates, examples, or configuration snippets (e.g. 'pyproject.toml.template', 'example.py').",
+            "type": "object"
+          },
+          "target": {
+            "default": "bundled",
+            "description": "Target skills provider to install into. Use 'bundled' for the server's built-in skills directory, or a vendor name: 'claude', 'cursor', 'vscode', 'copilot', 'codex', 'gemini', 'goose', 'opencode'.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_name",
+          "files"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "crypto_price_historical",
+      "description": "Get historical price data for cryptocurrency pair(s) within a provider.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format."
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "1m",
+              "2m",
+              "5m",
+              "15m",
+              "30m",
+              "60m",
+              "90m",
+              "1h",
+              "1d",
+              "5d",
+              "1W",
+              "1M",
+              "1Q"
+            ],
+            "title": "yfinance",
+            "description": "Time interval of the data to return. (provider: yfinance)",
+            "default": "1d",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "1m",
+                "2m",
+                "5m",
+                "15m",
+                "30m",
+                "60m",
+                "90m",
+                "1h",
+                "1d",
+                "5d",
+                "1W",
+                "1M",
+                "1Q"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "derivatives_options_chains",
+      "description": "Get the complete options chain for a ticker.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "derivatives_options_surface",
+      "description": "Filter and process the options chains data for volatility.\n\nData posted can be an instance of OptionsChainsData,\na pandas DataFrame, or a list of dictionaries.\nData should contain the fields:\n\n- `expiration`: The expiration date of the option.\n- `strike`: The strike price of the option.\n- `option_type`: The type of the option (call or put).\n- `implied_volatility`: The implied volatility of the option. Or 'target' field.\n- `open_interest`: The open interest of the option.\n- `volume`: The trading volume of the option.\n- `dte` : Optional, days to expiration (DTE) of the option.\n- `underlying_price`: Optional, the price of the underlying asset.\n\nResults from the `/derivatives/options/chains` endpoint are the preferred input.\n\nIf `underlying_price` is not supplied in the data as a field, it must be provided as a parameter.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "title": "Target",
+            "default": "implied_volatility"
+          },
+          "underlying_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Underlying Price"
+          },
+          "option_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "otm",
+                  "itm",
+                  "calls",
+                  "puts"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Type",
+            "default": "otm"
+          },
+          "dte_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dte Min"
+          },
+          "dte_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dte Max"
+          },
+          "moneyness": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moneyness"
+          },
+          "strike_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strike Min"
+          },
+          "strike_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strike Max"
+          },
+          "oi": {
+            "type": "boolean",
+            "title": "Oi",
+            "default": false
+          },
+          "volume": {
+            "type": "boolean",
+            "title": "Volume",
+            "default": false
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "dark",
+              "light"
+            ],
+            "title": "Theme",
+            "default": "dark"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "properties": {},
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Data",
+                  "description": "The OpenBB Standardized Data Model.\n\nThe `Data` class is a flexible Pydantic model designed to accommodate various data structures\nfor OpenBB's data processing pipeline as it's structured to support dynamic field definitions.\n\nThe model leverages Pydantic's powerful validation features to ensure data integrity while\nproviding the flexibility to handle extra fields that are not explicitly defined in the model's\nschema. This makes the `Data` class ideal for working with datasets that may have varying\nstructures or come from heterogeneous sources.\n\nKey Features:\n- Dynamic field support: Can dynamically handle fields that are not pre-defined in the model,\n    allowing for great flexibility in dealing with different data shapes.\n- Alias handling: Utilizes an aliasing mechanism to maintain compatibility with different naming\n    conventions across various data formats.\n\nUsage:\nThe `Data` class can be instantiated with keyword arguments corresponding to the fields of the\nexpected data. It can also parse and validate data from JSON or other serializable formats, and\nconvert them to a `Data` instance for easy manipulation and access.\n\nExample:\n    # Direct instantiation\n    data_record = Data(name=\"OpenBB\", value=42)\n\n    # Conversion from a dictionary\n    data_dict = {\"name\": \"OpenBB\", \"value\": 42}\n    data_record = Data(**data_dict)\n\nThe class is highly extensible and can be subclassed to create more specific models tailored to\nparticular datasets or domains, while still benefiting from the base functionality provided by the\n`Data` class.\n\nAttributes:\n    __alias_dict__ (Dict[str, str]):\n        A dictionary that maps field names to their aliases,\n        facilitating the use of different naming conventions.\n    model_config (ConfigDict):\n        A configuration dictionary that defines the model's behavior,\n        such as accepting extra fields, populating by name, and alias\n        generation."
+                },
+                "type": "array"
+              },
+              {
+                "properties": {},
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Data",
+                "description": "The OpenBB Standardized Data Model.\n\nThe `Data` class is a flexible Pydantic model designed to accommodate various data structures\nfor OpenBB's data processing pipeline as it's structured to support dynamic field definitions.\n\nThe model leverages Pydantic's powerful validation features to ensure data integrity while\nproviding the flexibility to handle extra fields that are not explicitly defined in the model's\nschema. This makes the `Data` class ideal for working with datasets that may have varying\nstructures or come from heterogeneous sources.\n\nKey Features:\n- Dynamic field support: Can dynamically handle fields that are not pre-defined in the model,\n    allowing for great flexibility in dealing with different data shapes.\n- Alias handling: Utilizes an aliasing mechanism to maintain compatibility with different naming\n    conventions across various data formats.\n\nUsage:\nThe `Data` class can be instantiated with keyword arguments corresponding to the fields of the\nexpected data. It can also parse and validate data from JSON or other serializable formats, and\nconvert them to a `Data` instance for easy manipulation and access.\n\nExample:\n    # Direct instantiation\n    data_record = Data(name=\"OpenBB\", value=42)\n\n    # Conversion from a dictionary\n    data_dict = {\"name\": \"OpenBB\", \"value\": 42}\n    data_record = Data(**data_dict)\n\nThe class is highly extensible and can be subclassed to create more specific models tailored to\nparticular datasets or domains, while still benefiting from the base functionality provided by the\n`Data` class.\n\nAttributes:\n    __alias_dict__ (Dict[str, str]):\n        A dictionary that maps field names to their aliases,\n        facilitating the use of different naming conventions.\n    model_config (ConfigDict):\n        A configuration dictionary that defines the model's behavior,\n        such as accepting extra fields, populating by name, and alias\n        generation."
+              }
+            ],
+            "title": "Data"
+          },
+          "chart_params": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chart Params"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "derivatives_futures_historical",
+      "description": "Historical futures prices.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format."
+          },
+          "expiration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration",
+            "description": "Future expiry date with format YYYY-MM"
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "1m",
+              "2m",
+              "5m",
+              "15m",
+              "30m",
+              "60m",
+              "90m",
+              "1h",
+              "1d",
+              "5d",
+              "1W",
+              "1M",
+              "1Q"
+            ],
+            "title": "yfinance",
+            "description": "Time interval of the data to return. (provider: yfinance)",
+            "default": "1d",
+            "yfinance": {
+              "choices": [
+                "1m",
+                "2m",
+                "5m",
+                "15m",
+                "30m",
+                "60m",
+                "90m",
+                "1h",
+                "1d",
+                "5d",
+                "1W",
+                "1M",
+                "1Q"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "derivatives_futures_curve",
+      "description": "Futures Term Structure, current or historical.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date",
+            "description": "A specific date to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_estimates_consensus",
+      "description": "Get consensus price target and recommendation.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_gainers",
+      "description": "Get the top price gainers in the stock market.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_losers",
+      "description": "Get the top price losers in the stock market.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_active",
+      "description": "Get the most actively traded stocks based on volume.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_undervalued_large_caps",
+      "description": "Get potentially undervalued large cap stocks.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_undervalued_growth",
+      "description": "Get potentially undervalued growth stocks.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_aggressive_small_caps",
+      "description": "Get top small cap stocks based on earnings growth.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. Default is all. (provider: yfinance)"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_discovery_growth_tech",
+      "description": "Get top tech stocks based on revenue and earnings growth.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "title": "Sort",
+            "description": "Sort order. Possible values: 'asc', 'desc'. Default: 'desc'.",
+            "default": "desc"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_balance",
+      "description": "Get the balance sheet for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "The number of data entries to return."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "annual",
+              "quarter"
+            ],
+            "title": "yfinance",
+            "description": "Time period of the data to return. (provider: yfinance)",
+            "default": "annual",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "annual",
+                "quarter"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_cash",
+      "description": "Get the cash flow statement for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "The number of data entries to return.",
+            "default": 5
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "annual",
+              "quarter"
+            ],
+            "title": "yfinance",
+            "description": "Time period of the data to return. (provider: yfinance)",
+            "default": "annual",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "annual",
+                "quarter"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_dividends",
+      "description": "Get historical dividend data for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format."
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_income",
+      "description": "Get the income statement for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "The number of data entries to return."
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "annual",
+              "quarter"
+            ],
+            "title": "yfinance",
+            "description": "Time period of the data to return. (provider: yfinance)",
+            "default": "annual",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "annual",
+                "quarter"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_metrics",
+      "description": "Get fundamental metrics for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_fundamental_management",
+      "description": "Get executive management team data for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for."
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_ownership_share_statistics",
+      "description": "Get data about share float for a given company.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_price_quote",
+      "description": "Get the latest quote for a given stock. Quote includes price, volume, and other data.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_price_historical",
+      "description": "Get historical price data for a given stock. This includes open, high, low, close, and volume.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format."
+          },
+          "interval": {
+            "type": "string",
+            "enum": [
+              "1m",
+              "2m",
+              "5m",
+              "15m",
+              "30m",
+              "60m",
+              "90m",
+              "1h",
+              "1d",
+              "5d",
+              "1W",
+              "1M",
+              "1Q"
+            ],
+            "title": "yfinance",
+            "description": "Time interval of the data to return. (provider: yfinance)",
+            "default": "1d",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "1m",
+                "2m",
+                "5m",
+                "15m",
+                "30m",
+                "60m",
+                "90m",
+                "1h",
+                "1d",
+                "5d",
+                "1W",
+                "1M",
+                "1Q"
+              ]
+            }
+          },
+          "extended_hours": {
+            "type": "boolean",
+            "title": "yfinance",
+            "description": "Include Pre and Post market data. (provider: yfinance)",
+            "default": false
+          },
+          "include_actions": {
+            "type": "boolean",
+            "title": "yfinance",
+            "description": "Include dividends and stock splits in results. (provider: yfinance)",
+            "default": true
+          },
+          "adjustment": {
+            "type": "string",
+            "enum": [
+              "splits_only",
+              "splits_and_dividends"
+            ],
+            "title": "yfinance",
+            "description": "The adjustment factor to apply. Default is splits only. (provider: yfinance)",
+            "default": "splits_only",
+            "yfinance": {
+              "choices": [
+                "splits_only",
+                "splits_and_dividends"
+              ]
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_screener",
+      "description": "Screen for companies meeting various criteria.\n\nThese criteria include market cap, price, beta, volume, and dividend yield.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by country. Accepts ISO 3166-1 alpha-2 codes (e.g., 'US', 'DE'), alpha-3 codes (e.g., 'USA'), country names (e.g., 'United States'), or 'all' for all countries. (provider: yfinance)",
+            "default": "us",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "all",
+                "ar",
+                "at",
+                "au",
+                "be",
+                "br",
+                "ca",
+                "ch",
+                "cl",
+                "cn",
+                "cz",
+                "de",
+                "dk",
+                "ee",
+                "eg",
+                "es",
+                "fi",
+                "fr",
+                "gb",
+                "gr",
+                "hk",
+                "hu",
+                "id",
+                "ie",
+                "il",
+                "in",
+                "is",
+                "it",
+                "jp",
+                "kr",
+                "kw",
+                "lk",
+                "lt",
+                "lv",
+                "mx",
+                "my",
+                "nl",
+                "no",
+                "nz",
+                "pe",
+                "ph",
+                "pk",
+                "pl",
+                "pt",
+                "qa",
+                "ro",
+                "ru",
+                "sa",
+                "se",
+                "sg",
+                "sr",
+                "th",
+                "tr",
+                "tw",
+                "us",
+                "ve",
+                "vn",
+                "za"
+              ]
+            }
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ams",
+                  "aqs",
+                  "ase",
+                  "asx",
+                  "ath",
+                  "ber",
+                  "bru",
+                  "bse",
+                  "bts",
+                  "bud",
+                  "bue",
+                  "bvb",
+                  "bvc",
+                  "ccs",
+                  "cnq",
+                  "cph",
+                  "cxe",
+                  "dfm",
+                  "doh",
+                  "dus",
+                  "ebs",
+                  "fka",
+                  "fra",
+                  "ger",
+                  "ham",
+                  "han",
+                  "hel",
+                  "hkg",
+                  "ice",
+                  "iob",
+                  "ise",
+                  "ist",
+                  "jkt",
+                  "jnb",
+                  "jpx",
+                  "kls",
+                  "kuw",
+                  "lis",
+                  "lit",
+                  "lse",
+                  "mce",
+                  "mex",
+                  "mil",
+                  "mun",
+                  "ncm",
+                  "neo",
+                  "ngm",
+                  "nms",
+                  "nsi",
+                  "nyq",
+                  "nze",
+                  "oem",
+                  "oqb",
+                  "oqx",
+                  "osl",
+                  "par",
+                  "pnk",
+                  "pra",
+                  "ris",
+                  "sau",
+                  "ses",
+                  "set",
+                  "sgo",
+                  "shh",
+                  "shz",
+                  "sto",
+                  "stu",
+                  "tai",
+                  "tal",
+                  "tlv",
+                  "tor",
+                  "two",
+                  "van",
+                  "vie",
+                  "vse",
+                  "wse"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by exchange. (provider: yfinance)",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "ams",
+                "aqs",
+                "ase",
+                "asx",
+                "ath",
+                "ber",
+                "bru",
+                "bse",
+                "bts",
+                "bud",
+                "bue",
+                "bvb",
+                "bvc",
+                "ccs",
+                "cnq",
+                "cph",
+                "cxe",
+                "dfm",
+                "doh",
+                "dus",
+                "ebs",
+                "fka",
+                "fra",
+                "ger",
+                "ham",
+                "han",
+                "hel",
+                "hkg",
+                "ice",
+                "iob",
+                "ise",
+                "ist",
+                "jkt",
+                "jnb",
+                "jpx",
+                "kls",
+                "kuw",
+                "lis",
+                "lit",
+                "lse",
+                "mce",
+                "mex",
+                "mil",
+                "mun",
+                "ncm",
+                "neo",
+                "ngm",
+                "nms",
+                "nsi",
+                "nyq",
+                "nze",
+                "oem",
+                "oqb",
+                "oqx",
+                "osl",
+                "par",
+                "pnk",
+                "pra",
+                "ris",
+                "sau",
+                "ses",
+                "set",
+                "sgo",
+                "shh",
+                "shz",
+                "sto",
+                "stu",
+                "tai",
+                "tal",
+                "tlv",
+                "tor",
+                "two",
+                "van",
+                "vie",
+                "vse",
+                "wse"
+              ]
+            }
+          },
+          "sector": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "basic_materials",
+                  "communication_services",
+                  "consumer_cyclical",
+                  "consumer_defensive",
+                  "energy",
+                  "financial_services",
+                  "healthcare",
+                  "industrials",
+                  "real_estate",
+                  "technology",
+                  "utilities"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by sector. (provider: yfinance)",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "basic_materials",
+                "communication_services",
+                "consumer_cyclical",
+                "consumer_defensive",
+                "energy",
+                "financial_services",
+                "healthcare",
+                "industrials",
+                "real_estate",
+                "technology",
+                "utilities"
+              ]
+            }
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by industry. (provider: yfinance)",
+            "yfinance": {
+              "multiple_items_allowed": false,
+              "choices": [
+                "advertising_agencies",
+                "aerospace_defense",
+                "agricultural_inputs",
+                "airlines",
+                "airports_air_services",
+                "aluminum",
+                "apparel_manufacturing",
+                "apparel_retail",
+                "asset_management",
+                "auto_components",
+                "auto_manufacturers",
+                "auto_parts",
+                "auto_truck_dealerships",
+                "automobiles",
+                "banks",
+                "biotechnology",
+                "broadcasting",
+                "building_materials",
+                "building_products",
+                "building_products_equipment",
+                "business_equipment_supplies",
+                "capital_markets",
+                "chemicals",
+                "coking_coal",
+                "commercial_services",
+                "communication_equipment",
+                "computer_hardware",
+                "confectioners",
+                "construction_engineering",
+                "construction_materials",
+                "consulting_services",
+                "consumer_durables",
+                "consumer_electronics",
+                "consumer_services",
+                "copper",
+                "credit_services",
+                "department_stores",
+                "diagnostics_research",
+                "discount_stores",
+                "diversified_financials",
+                "education_training_services",
+                "electrical_equipment",
+                "electrical_equipment_parts",
+                "electronic_components",
+                "electronic_gaming_multimedia",
+                "electronics_computer_distribution",
+                "energy_services",
+                "engineering_construction",
+                "entertainment",
+                "farm_heavy_construction_machinery",
+                "farm_products",
+                "financial_conglomerates",
+                "financial_data_stock_exchanges",
+                "food_distribution",
+                "footwear_accessories",
+                "furnishings_fixtures_appliances",
+                "gambling",
+                "gold",
+                "grocery_stores",
+                "health_information_services",
+                "healthcare_plans",
+                "home_builders",
+                "home_improvement_retail",
+                "household_products",
+                "household_personal_products",
+                "industrial_conglomerates",
+                "industrial_distribution",
+                "information_technology_services",
+                "infrastructure_operations",
+                "insurance",
+                "integrated_freight_logistics",
+                "internet_content_information",
+                "internet_retail",
+                "leisure",
+                "lodging",
+                "lumber_wood_production",
+                "luxury_goods",
+                "machinery",
+                "marine_shipping",
+                "media",
+                "medical_care_facilities",
+                "medical_devices",
+                "medical_distribution",
+                "medical_instruments_supplies",
+                "metal_fabrication",
+                "mortgage_finance",
+                "oil_gas_drilling",
+                "oil_gas_e_p",
+                "oil_gas_equipment_services",
+                "oil_gas_integrated",
+                "oil_gas_midstream",
+                "oil_gas_producers",
+                "oil_gas_refining_marketing",
+                "other_industrial_metals_mining",
+                "other_precious_metals_mining",
+                "packaged_foods",
+                "packaging_containers",
+                "paper_forestry",
+                "paper_paper_products",
+                "personal_services",
+                "pharmaceuticals",
+                "pharmaceutical_retailers",
+                "pollution_treatment_controls",
+                "precious_metals",
+                "publishing",
+                "railroads",
+                "real_estate",
+                "recreational_vehicles",
+                "refiners_pipelines",
+                "rental_leasing_services",
+                "residential_construction",
+                "resorts_casinos",
+                "restaurants",
+                "retailing",
+                "scientific_technical_instruments",
+                "security_protection_services",
+                "semiconductor_equipment_materials",
+                "semiconductors",
+                "shell_companies",
+                "silver",
+                "software_and_services",
+                "solar",
+                "specialty_business_services",
+                "specialty_chemicals",
+                "specialty_industrial_machinery",
+                "specialty_retail",
+                "staffing_employment_services",
+                "steel",
+                "technology_hardware",
+                "telecom_services",
+                "textiles_apparel",
+                "textile_manufacturing",
+                "thermal_coal",
+                "tobacco",
+                "tools_accessories",
+                "traders_distributors",
+                "transportation",
+                "transportation_infrastructure",
+                "travel_services",
+                "trucking",
+                "uranium",
+                "utilities",
+                "waste_management"
+              ]
+            }
+          },
+          "mktcap_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by market cap greater than this value. Default is 500M. (provider: yfinance)",
+            "default": 500000000
+          },
+          "mktcap_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by market cap less than this value. (provider: yfinance)"
+          },
+          "price_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by price greater than this value. Default is, 5 (provider: yfinance)",
+            "default": 5
+          },
+          "price_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by price less than this value. (provider: yfinance)"
+          },
+          "volume_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by volume greater than this value. Default is, 10K (provider: yfinance)",
+            "default": 10000
+          },
+          "volume_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by volume less than this value. (provider: yfinance)"
+          },
+          "beta_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by a beta greater than this value. (provider: yfinance)"
+          },
+          "beta_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Filter by a beta less than this value. (provider: yfinance)"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "yfinance",
+            "description": "Limit the number of results returned. Default is, 200. Set to, 0, for all results. (provider: yfinance)",
+            "default": 200
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "equity_profile",
+      "description": "Get general information about a company. This includes company name, industry, sector and price data.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          }
+        },
+        "required": [
+          "symbol"
+        ]
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "news_company",
+      "description": "Company News. Get news for one or more companies.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "const": "yfinance",
+            "title": "Provider",
+            "default": "yfinance"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol",
+            "description": "Symbol to get data for. Multiple comma separated items allowed for provider(s): yfinance.",
+            "yfinance": {
+              "multiple_items_allowed": true
+            }
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Start date of the data, in YYYY-MM-DD format."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date of the data, in YYYY-MM-DD format."
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "The number of data entries to return."
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "list_prompts",
+      "description": "List all available prompts.\n\nReturns JSON with prompt metadata including name, description,\nand optional arguments.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_prompt",
+      "description": "Get a prompt by name with optional arguments.\n\nReturns the rendered prompt as JSON with a messages array.\nArguments should be provided as a dict mapping argument names\nto values.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "The name of the prompt to get",
+            "type": "string"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional arguments for the prompt"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "list_resources",
+      "description": "List all available resources and resource templates.\n\nReturns JSON with resource metadata. Static resources have a\n'uri' field, while templates have a 'uri_template' field with\nplaceholders like {name}.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": true,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "read_resource",
+      "description": "Read a resource by its URI.\n\nFor static resources, provide the exact URI. For templated\nresources, provide the URI with template parameters filled in.\n\nReturns the resource content as a string. Binary content is\nbase64-encoded.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "uri": {
+            "description": "The URI of the resource to read",
+            "type": "string"
+          }
+        },
+        "required": [
+          "uri"
+        ],
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": true,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    }
+  ]
+}

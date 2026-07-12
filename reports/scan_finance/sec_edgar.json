@@ -1,0 +1,895 @@
+{
+  "server": "sec-edgar-mcp",
+  "kind": "sec_edgar",
+  "provenance": "static-deterministic",
+  "source": "live MITM capture logs/proxy/sessions/finance_sec_edgar/captured.jsonl",
+  "n_tools": 21,
+  "severity_histogram": {
+    "Low": 21
+  },
+  "tools": [
+    {
+      "tool": "get_recent_filings",
+      "description": "Get recent SEC filings for a company or across all companies.      Args:         identifier: Company ticker/CIK (optional, if not provided returns all recent fi",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 4,
+      "top_input": {
+        "name": "days",
+        "type": "integer",
+        "required": false,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "days",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": false,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "form_type",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "compare_periods",
+      "description": "Compare a financial metric across different time periods.      Args:         identifier: Company ticker symbol or CIK number         metric: The financial metri",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 4,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        },
+        {
+          "name": "start_year",
+          "type": "integer",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        },
+        {
+          "name": "end_year",
+          "type": "integer",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_xbrl_concepts",
+      "description": "ADVANCED TOOL: Extract specific XBRL concepts from a filing.      DO NOT USE for general financial data requests. Use get_financials() instead for:     - Cash f",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 4,
+      "top_input": {
+        "name": "concepts",
+        "type": "array",
+        "required": false,
+        "risk": 4,
+        "critical_trigger": "large list (bulk fan-out)",
+        "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "concepts",
+          "type": "array",
+          "required": false,
+          "risk": 4,
+          "critical_trigger": "large list (bulk fan-out)",
+          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+        },
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "form_type",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "discover_xbrl_concepts",
+      "description": "Discover all available XBRL concepts in a filing, including company-specific ones.      Args:         identifier: Company ticker symbol or CIK number         ac",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 4,
+      "top_input": {
+        "name": "namespace_filter",
+        "type": "string",
+        "required": false,
+        "risk": 5,
+        "critical_trigger": "unbounded / no bound on scope",
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "namespace_filter",
+          "type": "string",
+          "required": false,
+          "risk": 5,
+          "critical_trigger": "unbounded / no bound on scope",
+          "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+        },
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "form_type",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_insider_transactions",
+      "description": "Get insider trading transactions for a company from SEC filings.      CRITICAL INSTRUCTIONS FOR LLM RESPONSES:     - ONLY use data from the returned SEC insider",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 4,
+      "top_input": {
+        "name": "form_types",
+        "type": "array",
+        "required": false,
+        "risk": 4,
+        "critical_trigger": "large list (bulk fan-out)",
+        "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "form_types",
+          "type": "array",
+          "required": false,
+          "risk": 4,
+          "critical_trigger": "large list (bulk fan-out)",
+          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+        },
+        {
+          "name": "days",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "get_filing_sections",
+      "description": "Get specific sections from a filing (e.g., business description, risk factors, MD&A).      Args:         identifier: Company ticker symbol or CIK number        ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 3,
+      "top_input": {
+        "name": "accession_number",
+        "type": "string",
+        "required": true,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "form_type",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "analyze_form4_transactions",
+      "description": "Analyze Form 4 filings and extract detailed transaction data including insider names,     transaction amounts, share counts, prices, and ownership details.     ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 3,
+      "top_input": {
+        "name": "days",
+        "type": "integer",
+        "required": false,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "days",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "search_companies",
+      "description": "Search for companies by name.      Args:         query: Search query for company name         limit: Maximum number of results to return (default: 10)      Retu",
+      "primary_op": "SEARCH",
+      "atomic_ops": [
+        "SEARCH"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "query",
+        "type": "string",
+        "required": true,
+        "risk": 5,
+        "critical_trigger": "unbounded / no bound on scope",
+        "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "critical_trigger": "unbounded / no bound on scope",
+          "reason": "free-form query/command \u2014 unbounded reach; the whole payload is attacker-controlled"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        }
+      ]
+    },
+    {
+      "tool": "get_filing_content",
+      "description": "Get the content of a specific SEC filing.      Args:         identifier: Company ticker symbol or CIK number         accession_number: The accession number of t",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "accession_number",
+        "type": "string",
+        "required": true,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "analyze_8k",
+      "description": "Analyze an 8-K filing for specific events and items.      Args:         identifier: Company ticker symbol or CIK number         accession_number: The accession ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 2,
+      "top_input": {
+        "name": "accession_number",
+        "type": "string",
+        "required": true,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "get_financials",
+      "description": "Get financial statements for a company. USE THIS TOOL when users ask for:     - Cash flow, cash flow statement, operating cash flow, investing cash flow, financ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "statement_type",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_segment_data",
+      "description": "Get revenue breakdown by segments (geographic, product, etc.).      Args:         identifier: Company ticker symbol or CIK number         segment_type: Type of ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "segment_type",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_key_metrics",
+      "description": "Get key financial metrics for a company.      Args:         identifier: Company ticker symbol or CIK number         metrics: List of specific metrics to retriev",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "metrics",
+        "type": "array",
+        "required": false,
+        "risk": 4,
+        "critical_trigger": "large list (bulk fan-out)",
+        "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "metrics",
+          "type": "array",
+          "required": false,
+          "risk": 4,
+          "critical_trigger": "large list (bulk fan-out)",
+          "reason": "list/array \u2014 risk scales with its length (bulk reach, mass fan-out)"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "get_insider_summary",
+      "description": "Get a summary of insider trading activity for a company from SEC filings.      CRITICAL INSTRUCTIONS FOR LLM RESPONSES:     - ONLY use data from the returned SE",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "days",
+        "type": "integer",
+        "required": false,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "days",
+          "type": "integer",
+          "required": false,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "get_form4_details",
+      "description": "Get detailed information from a specific Form 4 filing.      Args:         identifier: Company ticker symbol or CIK number         accession_number: The accessi",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 2,
+      "top_input": {
+        "name": "accession_number",
+        "type": "string",
+        "required": true,
+        "risk": 3,
+        "critical_trigger": "large value",
+        "reason": "magnitude/count \u2014 larger value means broader effect"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "accession_number",
+          "type": "string",
+          "required": true,
+          "risk": 3,
+          "critical_trigger": "large value",
+          "reason": "magnitude/count \u2014 larger value means broader effect"
+        },
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "analyze_insider_sentiment",
+      "description": "Analyze insider trading sentiment and trends over time.      Args:         identifier: Company ticker symbol or CIK number         months: Number of months to a",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 2,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_cik_by_ticker",
+      "description": "Get the CIK (Central Index Key) for a company based on its ticker symbol.      Args:         ticker: The ticker symbol of the company (e.g., \"NVDA\", \"AAPL\")    ",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 1,
+      "top_input": {
+        "name": "ticker",
+        "type": "string",
+        "required": true,
+        "risk": 1,
+        "critical_trigger": null,
+        "reason": "minor / structural parameter"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "ticker",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_company_facts",
+      "description": "Get company facts and key financial metrics.      Args:         identifier: Company ticker symbol or CIK number      Returns:         Dictionary containing avai",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 1,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    },
+    {
+      "tool": "get_recommended_tools",
+      "description": "Get recommended tools for analyzing specific form types.      Args:         form_type: The SEC form type (e.g., \"10-K\", \"8-K\", \"4\")      Returns:         Dictio",
+      "primary_op": "READ",
+      "atomic_ops": [
+        "READ"
+      ],
+      "severity": 2,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 1,
+      "top_input": {
+        "name": "form_type",
+        "type": "string",
+        "required": true,
+        "risk": 1,
+        "critical_trigger": null,
+        "reason": "minor / structural parameter"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "form_type",
+          "type": "string",
+          "required": true,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "discover_company_metrics",
+      "description": "Discover available financial metrics for a company.      Args:         identifier: Company ticker symbol or CIK number         search_term: Optional search term",
+      "primary_op": "METADATA",
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "severity": 1,
+      "severity_label": "Low",
+      "op_source": "verb-fallback",
+      "n_params": 2,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        },
+        {
+          "name": "search_term",
+          "type": "string",
+          "required": false,
+          "risk": 1,
+          "critical_trigger": null,
+          "reason": "minor / structural parameter"
+        }
+      ]
+    },
+    {
+      "tool": "get_company_info",
+      "description": "Get detailed information about a company from SEC records.      CRITICAL INSTRUCTIONS FOR LLM RESPONSES:     - ONLY use data returned from SEC records. NEVER ad",
+      "primary_op": "METADATA",
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "severity": 1,
+      "severity_label": "Low",
+      "op_source": "rules",
+      "n_params": 1,
+      "top_input": {
+        "name": "identifier",
+        "type": "string",
+        "required": true,
+        "risk": 2,
+        "critical_trigger": null,
+        "reason": "names the target resource \u2014 selects what the op touches"
+      },
+      "self_read_only_hint": null,
+      "input_ranking": [
+        {
+          "name": "identifier",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "names the target resource \u2014 selects what the op touches"
+        }
+      ]
+    }
+  ]
+}
