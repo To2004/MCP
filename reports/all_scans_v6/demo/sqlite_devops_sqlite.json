@@ -1,0 +1,335 @@
+{
+  "version": "scan-rules-v6",
+  "server": "sqlite:devops_sqlite",
+  "mcp_kind": "SQL database",
+  "model_reviewed": true,
+  "inferred_profile": {
+    "mcp_kind": "SQL database",
+    "asset_meaning": "Database tables containing various types of data such as user information, API tokens, deployment records, audit logs, and public metrics.",
+    "blast_radius_meaning": "The extent to which a tool can affect the integrity or confidentiality of assets. A narrow touch might involve reading from a single table, while severe actions could include modifying critical tables that hold sensitive information.",
+    "dangerous_classes": [
+      "holds secrets",
+      "holds PII at scale",
+      "is executable"
+    ],
+    "irreversible_actions": [
+      "deletes rows",
+      "executes code",
+      "transfers funds"
+    ],
+    "worked_example": "The 'write_query' tool paired with the 'users' asset could lead to severe consequences if used to delete or modify user records, as it impacts sensitive PII data.",
+    "confidence": 0.9,
+    "needs_human_review": false
+  },
+  "formula": "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact",
+  "band_thresholds": {
+    "medium": 8,
+    "high": 24
+  },
+  "tool_impact": {
+    "list_tables": 1,
+    "describe_table": 1,
+    "read_query": 1,
+    "write_query": 3,
+    "insert_row": 2
+  },
+  "asset_sensitivity": {
+    "users": 4,
+    "api_tokens": 5,
+    "deployments": 3,
+    "audit_log": 4,
+    "public_metrics": 1
+  },
+  "blast_radius": {
+    "list_tables|users": 2,
+    "list_tables|api_tokens": 2,
+    "list_tables|deployments": 4,
+    "list_tables|audit_log": 4,
+    "list_tables|public_metrics": 4,
+    "describe_table|users": 2,
+    "describe_table|api_tokens": 2,
+    "describe_table|deployments": 2,
+    "describe_table|audit_log": 2,
+    "describe_table|public_metrics": 2,
+    "read_query|users": 4,
+    "read_query|api_tokens": 4,
+    "read_query|deployments": 4,
+    "read_query|audit_log": 4,
+    "read_query|public_metrics": 4,
+    "write_query|users": 3,
+    "write_query|api_tokens": 3,
+    "write_query|deployments": 3,
+    "write_query|audit_log": 3,
+    "write_query|public_metrics": 3,
+    "insert_row|users": 2,
+    "insert_row|api_tokens": 2,
+    "insert_row|deployments": 2,
+    "insert_row|audit_log": 2,
+    "insert_row|public_metrics": 2
+  },
+  "cells": {
+    "users": {
+      "list_tables": 8.0,
+      "describe_table": 8.0,
+      "read_query": 16.0,
+      "write_query": 36.0,
+      "insert_row": 16.0
+    },
+    "api_tokens": {
+      "list_tables": 10.0,
+      "describe_table": 10.0,
+      "read_query": 20.0,
+      "write_query": 45.0,
+      "insert_row": 20.0
+    },
+    "deployments": {
+      "list_tables": 12.0,
+      "describe_table": 6.0,
+      "read_query": 12.0,
+      "write_query": 27.0,
+      "insert_row": 12.0
+    },
+    "audit_log": {
+      "list_tables": 16.0,
+      "describe_table": 8.0,
+      "read_query": 16.0,
+      "write_query": 36.0,
+      "insert_row": 16.0
+    },
+    "public_metrics": {
+      "list_tables": 4.0,
+      "describe_table": 2.0,
+      "read_query": 4.0,
+      "write_query": 9.0,
+      "insert_row": 4.0
+    }
+  },
+  "bands": {
+    "users": {
+      "list_tables": "medium",
+      "describe_table": "medium",
+      "read_query": "high",
+      "write_query": "high",
+      "insert_row": "medium"
+    },
+    "api_tokens": {
+      "list_tables": "medium",
+      "describe_table": "medium",
+      "read_query": "high",
+      "write_query": "high",
+      "insert_row": "high"
+    },
+    "deployments": {
+      "list_tables": "medium",
+      "describe_table": "low",
+      "read_query": "medium",
+      "write_query": "high",
+      "insert_row": "medium"
+    },
+    "audit_log": {
+      "list_tables": "high",
+      "describe_table": "medium",
+      "read_query": "high",
+      "write_query": "high",
+      "insert_row": "medium"
+    },
+    "public_metrics": {
+      "list_tables": "low",
+      "describe_table": "low",
+      "read_query": "low",
+      "write_query": "medium",
+      "insert_row": "low"
+    }
+  },
+  "band_distribution": {
+    "low": 5,
+    "medium": 11,
+    "high": 9,
+    "critical": 0
+  },
+  "baselines": {
+    "research_portal": {
+      "app_id": "research_portal",
+      "expected_tools": [
+        "read_query"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "SELECT * FROM users WHERE condition",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "SELECT * FROM api_tokens WHERE condition",
+          "normal_sensitivity_max": 4
+        },
+        {
+          "pattern": "SELECT * FROM deployment_records WHERE condition",
+          "normal_sensitivity_max": 2
+        },
+        {
+          "pattern": "SELECT * FROM audit_logs WHERE condition",
+          "normal_sensitivity_max": 3
+        },
+        {
+          "pattern": "SELECT * FROM public_metrics WHERE condition",
+          "normal_sensitivity_max": 1
+        }
+      ],
+      "anomalous_patterns": [
+        "DELETE FROM users WHERE condition",
+        "UPDATE users SET column = value WHERE condition",
+        "INSERT INTO users (column) VALUES (value)",
+        "EXECUTE code_snippet"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The research_portal application is expected to perform read-only operations across various tables, with a focus on SELECT queries. Any attempt to modify data or execute code would be considered anomalous."
+    },
+    "admin_console": {
+      "app_id": "admin_console",
+      "expected_tools": [
+        "insert_row",
+        "update_row"
+      ],
+      "expected_flows": [
+        {
+          "pattern": "insert_row into non-sensitive tables",
+          "normal_sensitivity_max": 2
+        },
+        {
+          "pattern": "update_row in user information table",
+          "normal_sensitivity_max": 4
+        }
+      ],
+      "anomalous_patterns": [
+        "delete_rows from any table",
+        "execute_code on database server",
+        "transfer_funds"
+      ],
+      "confidence": 0.9,
+      "reasoning": "The admin_console is expected to perform administrative tasks such as inserting and updating rows in the SQL database, but should not engage in irreversible actions or operations that could compromise data integrity or confidentiality beyond its scope."
+    }
+  },
+  "crosscheck_summary": {
+    "judge_ran": false,
+    "note": "judge not run in scans (evaluation-only)"
+  },
+  "provenance": "llm-scan",
+  "server_kind": "sqlite",
+  "tool_atomic_ops": {
+    "list_tables": {
+      "atomic_ops": [
+        "LIST"
+      ],
+      "primary_op": "LIST",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "rules"
+    },
+    "describe_table": {
+      "atomic_ops": [
+        "METADATA"
+      ],
+      "primary_op": "METADATA",
+      "severity": 1,
+      "severity_label": "Low",
+      "source": "rules"
+    },
+    "read_query": {
+      "atomic_ops": [
+        "READ"
+      ],
+      "primary_op": "READ",
+      "severity": 2,
+      "severity_label": "Low",
+      "source": "rules"
+    },
+    "write_query": {
+      "atomic_ops": [
+        "DELETE",
+        "EXECUTE",
+        "OVERWRITE",
+        "SCHEMA_MODIFY",
+        "WRITE"
+      ],
+      "primary_op": "EXECUTE",
+      "severity": 5,
+      "severity_label": "Critical",
+      "source": "rules"
+    },
+    "insert_row": {
+      "atomic_ops": [
+        "WRITE"
+      ],
+      "primary_op": "WRITE",
+      "severity": 3,
+      "severity_label": "Medium",
+      "source": "rules"
+    }
+  },
+  "tool_input_ranking": {
+    "list_tables": {
+      "source": "llm",
+      "inputs": []
+    },
+    "describe_table": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "merely names the target"
+        }
+      ]
+    },
+    "read_query": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "sql",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "critical_trigger": "null",
+          "reason": "fully controllable free-form query"
+        }
+      ]
+    },
+    "write_query": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "sql",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "critical_trigger": null,
+          "reason": "fully controllable query with potential for bulk operations"
+        }
+      ]
+    },
+    "insert_row": {
+      "source": "llm",
+      "inputs": [
+        {
+          "name": "values",
+          "type": "string",
+          "required": true,
+          "risk": 5,
+          "critical_trigger": null,
+          "reason": "fully controlled payload by caller"
+        },
+        {
+          "name": "table",
+          "type": "string",
+          "required": true,
+          "risk": 2,
+          "critical_trigger": null,
+          "reason": "merely names the target"
+        }
+      ]
+    }
+  }
+}

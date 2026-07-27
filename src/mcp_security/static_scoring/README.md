@@ -146,3 +146,32 @@ The original two canonical servers:
   classes from the file types in `demo/corp_filesystem`.
 - **sqlite** — the five tools of `logs/proxy/servers/mcp_cbg_sqlite_server.py`,
   asset classes from the live `demo/cbg_sqlite/cbg.db` schema (read-only).
+
+### Mutable-state assets
+
+An asset is *anything a tool call can affect* — change or expose — not only the
+obvious data containers. Every tool must have at least one asset it affects
+(enforced by the `_TOOL_AFFECTS` mapping in
+`tests/static_scoring/test_registries.py`). The declarative registries (slack,
+calendar, github) therefore list three asset layers:
+
+- **scope assets** — the containers the server fronts (channels, calendars,
+  repositories), as before;
+- **mutable-state assets** — every other piece of state the write tools can
+  alter, tagged `kind:mutable-state`. Slack: `channel-messages`,
+  `message-reactions`, `read-markers`, `usergroup-membership`,
+  `agent-channel-membership`. Calendar: `event-records`,
+  `event-attendee-lists`, `outbound-invite-email`, `rsvp-state`,
+  `connected-account-config`. GitHub: `branch-heads`, `issues-and-comments`,
+  `pull-requests-and-reviews`, `org-external-copies`;
+- **read-surface assets** — state no tool mutates but that read tools expose,
+  tagged `kind:read-surface`: slack `user-directory` (member PII) and
+  `channel-directory` (the channel catalog), calendar `free-busy-availability`
+  (cross-user schedule data) and `calendar-directory`, github
+  `platform-user-directory` (public account profiles) and `repository-catalog`
+  (which repos exist — targeting surface for the search tools).
+
+The disk-backed kinds (filesystem, sqlite) already enumerate their full mutable
+surface directly from the store — every file/directory scope and every table —
+so they carry no extra layer. `scripts/scan_real_catalogs.py` reuses these
+registries, so real-catalog scans score the mutable-state assets too.

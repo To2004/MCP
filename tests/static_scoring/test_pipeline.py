@@ -143,3 +143,61 @@ def test_strict_requires_llm():
 
         StaticScorer(_toy_registry(), use_llm=False, strict=True)
 
+
+def test_blast_radius_is_the_models_own_value():
+    """Blast is LLM-only (coverage): cells use the model's blast_radius verbatim."""
+    import mcp_security.static_scoring.pipeline as pipeline_mod
+
+    def fake_query(prompt: str, *a, **k):
+        if "BLAST RADIUS" in prompt or "coverage" in prompt.lower():
+            return {"blast_radius": 4, "coverage_reasoning": "whole asset"}
+        if "TOOL IMPACT" in prompt:
+            return {"tool_impact": 1, "reasoning": "read"}
+        if "ASSET SENSITIVITY" in prompt:
+            return {"sensitivity": 5, "reasoning": "secrets"}
+        if "mcp_kind" in prompt or "domain" in prompt.lower():
+            return {"mcp_kind": "test", "confidence": 0.9, "needs_human_review": False}
+        return {"expected_tools": [], "reasoning": "x", "confidence": 0.8}
+
+    import pytest
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
+    try:
+        table = build_static_table(_toy_registry(), use_llm=True, version="static-test")
+    finally:
+        monkeypatch.undo()
+    # every blast is the model's 4; a single-item read of a crown jewel is now high.
+    assert set(table["blast_radius"].values()) == {4}
+    assert "blast_llm" not in table and "blast_consistency" not in table
+
+
+def test_blast_escape_route_recorded_verbatim():
+    """The model's own escape route is recorded as-is (no coercion): blast is the
+    model's decision, the pipeline only captures it."""
+    import mcp_security.static_scoring.pipeline as pipeline_mod
+
+    def fake_query(prompt: str, *a, **k):
+        if "BLAST RADIUS" in prompt or "coverage" in prompt.lower():
+            return {"blast_radius": 5, "escape": "b", "coverage_reasoning": "reads the key"}
+        if "TOOL IMPACT" in prompt:
+            return {"tool_impact": 3, "reasoning": "read"}
+        if "ASSET SENSITIVITY" in prompt:
+            return {"sensitivity": 5, "reasoning": "secrets"}
+        if "mcp_kind" in prompt or "domain" in prompt.lower():
+            return {"mcp_kind": "test", "confidence": 0.9, "needs_human_review": False}
+        return {"expected_tools": [], "reasoning": "x", "confidence": 0.8}
+
+    import pytest
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(pipeline_mod, "query_ollama", fake_query)
+    try:
+        table = build_static_table(
+            _toy_registry(), use_llm=True, version="static-test", impact_mode="five_level_v2_na"
+        )
+    finally:
+        monkeypatch.undo()
+    # Blast and its route are the model's verbatim: 5 with escape "b", uncoerced.
+    assert set(table["blast_radius"].values()) == {5}
+    assert set(table["blast_escape"].values()) == {"b"}
+

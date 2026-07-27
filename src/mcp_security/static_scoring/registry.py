@@ -102,6 +102,17 @@ class ServerRegistry:
     def tools_json(self) -> list[dict]:
         return [t.to_prompt_json() for t in self.tools]
 
+    def tools_json_compact(self) -> list[dict]:
+        """Name + description only, for the domain-inference prompt.
+
+        Domain inference sees the WHOLE tool set in one context and only needs to
+        recognise the domain, not each tool's parameters — so it drops the input
+        schemas that make a large server's full ``tools_json`` overflow the model's
+        context window (per-tool stages still get the full schema, one tool at a
+        time).
+        """
+        return [{"tool_name": t.name, "description": t.description} for t in self.tools]
+
     def assets_json(self) -> list[dict]:
         return [a.to_prompt_json() for a in self.assets]
 
@@ -366,6 +377,52 @@ _SLACK_TOOLS: list[ToolSpec] = [
     ToolSpec("slack_add_reaction", "Add a reaction emoji to a message.", read_only_hint=False),
 ]
 
+# Mutable-state assets: everything the write tools can CHANGE, beyond the
+# channel containers themselves. "Asset" here means any state a tool call can
+# alter — even non-typical state like reaction emojis or read cursors — because
+# each is its own damage surface at design time. (id, description); tagged
+# kind:mutable-state so downstream consumers can tell them from scope assets.
+_SLACK_MUTABLE_STATE: list[tuple[str, str]] = [
+    (
+        "channel-messages",
+        "message stream of every reachable channel — write tools append messages "
+        "and thread replies seen by all members (spam, phishing, impersonating the org)",
+    ),
+    (
+        "message-reactions",
+        "emoji-reaction state on existing messages — reactions act as ack/approval "
+        "signals, so a forged reaction can spoof a sign-off",
+    ),
+    (
+        "read-markers",
+        "per-conversation read/unread cursors — marking a conversation read can bury "
+        "security alerts or approvals the user never saw",
+    ),
+    (
+        "usergroup-membership",
+        "user-group composition and metadata (@group aliases) — changing who is in a "
+        "group redirects pages, mentions and escalations",
+    ),
+    (
+        "agent-channel-membership",
+        "the agent's own channel join/leave state — joining widens what it can read "
+        "and post; leaving removes it from oversight channels",
+    ),
+]
+
+
+def _mutable_state_assets(entries: list[tuple[str, str]]) -> list[AssetSpec]:
+    """Build mutable-state :class:`AssetSpec`\\ s from ``(id, description)`` pairs."""
+    return [
+        AssetSpec(
+            asset_id=asset_id,
+            description=f"mutable state: {description}",
+            tags=("kind:mutable-state", f"state:{asset_id}"),
+        )
+        for asset_id, description in entries
+    ]
+
+
 # (channel, is_private, category) — straight from the seed script.
 _SLACK_CHANNELS: list[tuple[str, bool, str]] = [
     ("general", False, "public"),
@@ -391,6 +448,30 @@ def load_slack_registry() -> ServerRegistry:
         )
         for name, private, category in _SLACK_CHANNELS
     ]
+    assets.extend(_mutable_state_assets(_SLACK_MUTABLE_STATE))
+    # Read-surface assets: state no tool mutates but that read tools expose —
+    # every tool must have an asset it affects.
+    assets.append(
+        AssetSpec(
+            asset_id="user-directory",
+            description=(
+                "workspace member directory — names, emails, phone numbers and titles "
+                "of every user (PII), exposed by the user-listing/profile tools"
+            ),
+            tags=("kind:read-surface", "category:pii"),
+        )
+    )
+    assets.append(
+        AssetSpec(
+            asset_id="channel-directory",
+            description=(
+                "the channel catalog — which channels exist, their names, topics and "
+                "membership; listing it reveals the org's team structure and where "
+                "sensitive conversations live"
+            ),
+            tags=("kind:read-surface", "category:catalog"),
+        )
+    )
     return ServerRegistry(
         server="slack-mcp-server",
         kind="slack",
@@ -415,40 +496,83 @@ _CALENDAR_TOOLS: list[ToolSpec] = [
     ToolSpec("find_free_slot", "Find a free time slot across attendees.", read_only_hint=True),
     ToolSpec("access_contacts", "Read the contact directory (names, emails).", read_only_hint=True),
     ToolSpec(
-        "create_event", "Create an event with attendees.", read_only_hint=False,
+        "create_event",
+        "Create an event with attendees.",
+        read_only_hint=False,
         input_schema={
             "type": "object",
             "properties": {
                 "title": {"type": "string", "description": "event title"},
                 "date": {"type": "string", "description": "event date"},
                 "calendar": {"type": "string", "description": "target calendar id"},
-                "attendees": {"type": "array",
-                              "description": "attendee usernames/emails invited"},
+                "attendees": {"type": "array", "description": "attendee usernames/emails invited"},
                 "duration_min": {"type": "number", "description": "meeting length in minutes"},
             },
             "required": ["title", "date"],
         },
     ),
     ToolSpec(
-        "update_event", "Modify an existing event.", read_only_hint=False,
+        "update_event",
+        "Modify an existing event.",
+        read_only_hint=False,
         input_schema={
             "type": "object",
             "properties": {
                 "event_id": {"type": "string"},
                 "calendar": {"type": "string", "description": "target calendar id"},
-                "attendees": {"type": "array",
-                              "description": "attendee usernames/emails invited"},
+                "attendees": {"type": "array", "description": "attendee usernames/emails invited"},
                 "duration_min": {"type": "number", "description": "meeting length in minutes"},
             },
             "required": ["event_id"],
         },
     ),
-    ToolSpec("send_email_invite", "Email an invite to external attendees.",
-             read_only_hint=False, destructive_hint=False),
+    ToolSpec(
+        "send_email_invite",
+        "Email an invite to external attendees.",
+        read_only_hint=False,
+        destructive_hint=False,
+    ),
     ToolSpec("delete_event", "Delete one event.", read_only_hint=False, destructive_hint=True),
-    ToolSpec("delete_all_events", "Delete every event on a calendar.",
-             read_only_hint=False, destructive_hint=True),
+    ToolSpec(
+        "delete_all_events",
+        "Delete every event on a calendar.",
+        read_only_hint=False,
+        destructive_hint=True,
+    ),
 ]
+
+# Mutable-state assets for the calendar kind: what the write tools can change,
+# beyond the calendar containers — event bodies, attendee lists, the outbound
+# invite email they trigger, the user's RSVP state, and (in real catalogs with
+# account-management tools) the connected-account configuration itself.
+_CALENDAR_MUTABLE_STATE: list[tuple[str, str]] = [
+    (
+        "event-records",
+        "the events themselves — titles, times, locations and descriptions are "
+        "editable and deletable (meeting sabotage, planted lure links, mass wipe)",
+    ),
+    (
+        "event-attendee-lists",
+        "attendee lists of events — adding an external address forwards the event's "
+        "details and every update outside the org (invite-based exfiltration)",
+    ),
+    (
+        "outbound-invite-email",
+        "invite/notification email sent on the user's behalf — external recipients "
+        "receive attacker-chosen content under the user's identity",
+    ),
+    (
+        "rsvp-state",
+        "the user's accept/decline responses to invitations — a forged RSVP silently "
+        "commits or frees the user's time and signals attendance",
+    ),
+    (
+        "connected-account-config",
+        "which calendar accounts the server is bound to — account-management tools "
+        "can add or switch accounts, changing whose data every other tool touches",
+    ),
+]
+
 
 # (calendar_id, category, note) — the calendar scopes an agent can target.
 _CALENDAR_SCOPES: list[tuple[str, str, str]] = [
@@ -473,6 +597,29 @@ def load_calendar_registry(
         )
         for cal_id, category, note in _CALENDAR_SCOPES
     ]
+    assets.extend(_mutable_state_assets(_CALENDAR_MUTABLE_STATE))
+    # Read-surface asset: free-slot/freebusy tools read availability across
+    # attendees — schedule patterns of OTHER users, not just the caller's.
+    assets.append(
+        AssetSpec(
+            asset_id="free-busy-availability",
+            description=(
+                "cross-user availability (free/busy) data — reveals when, how often "
+                "and with whom every queried attendee meets (schedule surveillance)"
+            ),
+            tags=("kind:read-surface", "category:schedule"),
+        )
+    )
+    assets.append(
+        AssetSpec(
+            asset_id="calendar-directory",
+            description=(
+                "the calendar catalog — which calendars exist and their names; "
+                "listing it maps out where executive, recruiting or team schedules live"
+            ),
+            tags=("kind:read-surface", "category:catalog"),
+        )
+    )
     return ServerRegistry(
         server=server,
         kind="calendar",
@@ -494,17 +641,58 @@ _GITHUB_TOOLS: list[ToolSpec] = [
     ToolSpec("list_commits", "List a repository's commits.", read_only_hint=True),
     ToolSpec("get_issue", "Read an issue and its comments.", read_only_hint=True),
     ToolSpec("create_issue", "Open a new issue.", read_only_hint=False),
-    ToolSpec("create_or_update_file", "Write or overwrite a file in a repo.",
-             read_only_hint=False, destructive_hint=True),
-    ToolSpec("push_files", "Push multiple files in one commit.",
-             read_only_hint=False, destructive_hint=True),
-    ToolSpec("delete_file", "Delete a file from a repo.",
-             read_only_hint=False, destructive_hint=True),
+    ToolSpec(
+        "create_or_update_file",
+        "Write or overwrite a file in a repo.",
+        read_only_hint=False,
+        destructive_hint=True,
+    ),
+    ToolSpec(
+        "push_files",
+        "Push multiple files in one commit.",
+        read_only_hint=False,
+        destructive_hint=True,
+    ),
+    ToolSpec(
+        "delete_file", "Delete a file from a repo.", read_only_hint=False, destructive_hint=True
+    ),
     ToolSpec("create_pull_request", "Open a pull request.", read_only_hint=False),
-    ToolSpec("merge_pull_request", "Merge a pull request into the base branch.",
-             read_only_hint=False, destructive_hint=True),
+    ToolSpec(
+        "merge_pull_request",
+        "Merge a pull request into the base branch.",
+        read_only_hint=False,
+        destructive_hint=True,
+    ),
     ToolSpec("fork_repository", "Fork a repository to another account.", read_only_hint=False),
 ]
+
+# Mutable-state assets for the github kind: state the write tools can change
+# across ANY reachable repo, beyond the repository containers — branch heads,
+# issues/comments, PRs and their reviews/merge state — plus org-external copies
+# (forks, new repositories) that tool calls can bring into existence.
+_GITHUB_MUTABLE_STATE: list[tuple[str, str]] = [
+    (
+        "branch-heads",
+        "branch heads and commit history — file writes, pushes and merges rewrite "
+        "what CI builds and what reviewers see as the current code",
+    ),
+    (
+        "issues-and-comments",
+        "issues, their state and comments — closing real alerts, retitling reports, "
+        "or planting comment instructions that other agents later read and follow",
+    ),
+    (
+        "pull-requests-and-reviews",
+        "pull requests, their reviews and merge state — an approving review plus a "
+        "merge lands unreviewed code on a protected branch",
+    ),
+    (
+        "org-external-copies",
+        "forks and newly created repositories under other accounts — a fork is a "
+        "complete copy of the code outside the org's control (egress + staging ground)",
+    ),
+]
+
 
 # (repo, category, note) — the repositories an agent can target.
 _GITHUB_REPOS: list[tuple[str, str, str]] = [
@@ -529,6 +717,30 @@ def load_github_registry(
         )
         for repo, category, note in _GITHUB_REPOS
     ]
+    assets.extend(_mutable_state_assets(_GITHUB_MUTABLE_STATE))
+    # Read-surface asset: real catalogs expose user search — public account
+    # profiles, low sensitivity but a reconnaissance surface.
+    assets.append(
+        AssetSpec(
+            asset_id="platform-user-directory",
+            description=(
+                "public GitHub user/organization account profiles reachable via user "
+                "search — public data, but enables contributor reconnaissance"
+            ),
+            tags=("kind:read-surface", "category:public"),
+        )
+    )
+    assets.append(
+        AssetSpec(
+            asset_id="repository-catalog",
+            description=(
+                "the repository catalog — which repositories exist plus their names, "
+                "descriptions and visibility; searching it maps the org's codebase "
+                "and singles out secret-bearing or payment repos to target"
+            ),
+            tags=("kind:read-surface", "category:catalog"),
+        )
+    )
     return ServerRegistry(
         server=server,
         kind="github",

@@ -35,6 +35,19 @@ FORMULA = "asset_sensitivity * blast_radius * likelihood(1.0) * tool_impact"
 LIKELIHOOD = 1.0
 BANDS = ("low", "medium", "high", "critical")
 
+# Max tool-impact value per experiment mode -> score_max = 5(sens) * 5(blast) * this.
+# hybrid uses the geometric-mean formula (score = sens*5*sqrt(blast*impact)), whose
+# max is 5*5*sqrt(5*5) = 125 = 25*5, so the same 25*_IMPACT_MAX rule gives 125.
+_IMPACT_MAX = {
+    "baseline": 3, "five_level": 5, "five_level_v2": 5, "five_level_v2_na": 5, "cia": 6,
+    "hybrid": 5, "hybrid_na": 5,
+}
+# Modes that use the geometric-mean formula score = sens * 5 * sqrt(blast * impact).
+_SQRT_MODES = {"hybrid", "hybrid_na"}
+# Modes whose blast stage may mark a (tool, asset) pair N/A (affects_asset=false),
+# so the cell is not scored (blast None -> band "na").
+_NA_MODES = {"hybrid_na", "five_level_v2_na"}
+
 
 class LLMUnavailableError(RuntimeError):
     """Raised in strict (LLM-only) mode when the model cannot score a record.
@@ -139,9 +152,19 @@ class StaticScorer:
 
     def __init__(
         self, registry: ServerRegistry, *, use_llm: bool = True, strict: bool = False,
+        impact_mode: str = "baseline",
     ) -> None:
         self.registry = registry
         self.use_llm = use_llm
+        # impact_mode selects the tool-impact experiment:
+        #   "baseline"   -> current 1-3 damage-ceiling rubric (max score 75)
+        #   "five_level" -> 1-5 metadata..destroy-all scale (max score 125)
+        #   "cia"        -> base(1-3) + one point per violated C/I/A facet (max 150)
+        if impact_mode not in _IMPACT_MAX:
+            raise ValueError(f"unknown impact_mode {impact_mode!r}; choose {list(_IMPACT_MAX)}")
+        self.impact_mode = impact_mode
+        # Per-tool CIA breakdown (only populated in impact_mode="cia"), for the report.
+        self._tool_cia: dict[str, dict] = {}
         # Bands are always the deterministic band_label of the primitives — a pure,
         # reproducible function of the score. The former opt-in LLM band stage and
         # primitive-override judge were removed from the scan path: they made bands
@@ -157,6 +180,8 @@ class StaticScorer:
             raise ValueError("strict mode is LLM-only and requires use_llm=True")
         self._used_fallback = False
         self._proposals: list[_Proposal] = []
+        # Tier-5 escape route per blast cell (five_level_v2_na): "a"/"b"/"c" or "none".
+        self._blast_escape: dict[str, str] = {}
         self._overrides: dict[tuple[str, str], int] = {}
         self._domain_confidence = 0.6
         self.domain_profile: dict = {}
@@ -196,7 +221,7 @@ class StaticScorer:
             prompts.DOMAIN_INFERENCE_SYSTEM
             + "\n\n"
             + prompts.DOMAIN_INFERENCE_USER.format(
-                tools_json=json.dumps(self.registry.tools_json(), indent=2),
+                tools_json=json.dumps(self.registry.tools_json_compact(), indent=2),
                 assets_json=json.dumps(self.registry.assets_json(), indent=2),
             )
         )
@@ -212,30 +237,71 @@ class StaticScorer:
     # -- Stage 1: tool impact -----------------------------------------------
     def score_tools(self) -> dict[str, int]:
         impacts: dict[str, int] = {}
+        hi = _IMPACT_MAX[self.impact_mode]
         for tool in self.registry.tools:
             fb_impact, fb_irrev, fb_reason = fallback.tool_impact(tool)
             item = tool.to_prompt_json()
-            result = self._ask(
-                self._proposer_prompt(
-                    prompts.TOOL_IMPACT_TASK,
-                    prompts.TOOL_IMPACT_USER.format(tool_json=json.dumps(item)),
-                )
-            )
-            if isinstance(result, dict) and "tool_impact" in result:
-                impact = _clamp(result["tool_impact"], 1, 3, fb_impact)
-                proposed, conf = result, float(result.get("confidence", 0.7))
-            elif self.strict:
-                self._strict_fail("tool_impact", tool.name)  # raises; never fabricates
-            else:
-                self._used_fallback = True
-                impact = fb_impact
-                conf = 0.85 if _has_annotation(tool) else 0.6
-                proposed = _fallback_proposed(impact, fb_reason, conf)
+            impact, proposed, conf = self._score_one_impact(tool, item, fb_impact, fb_reason)
             impacts[tool.name] = impact
             self._proposals.append(
-                _Proposal("tool_impact", tool.name, item, proposed, impact, 1, 3, conf)
+                _Proposal("tool_impact", tool.name, item, proposed, impact, 1, hi, conf)
             )
         return impacts
+
+    def _score_one_impact(self, tool, item, fb_impact, fb_reason):
+        """Score one tool's impact under the active impact_mode; returns (impact, proposed, conf)."""
+        if self.impact_mode == "cia":
+            return self._score_cia_impact(tool, item, fb_impact, fb_reason)
+        if self.impact_mode == "five_level":
+            task, user, hi = prompts.TOOL_IMPACT_TASK_5LEVEL, prompts.TOOL_IMPACT_USER_5LEVEL, 5
+        elif self.impact_mode in ("five_level_v2", "five_level_v2_na"):
+            task, user, hi = prompts.TOOL_IMPACT_TASK_5LEVEL_V2, prompts.TOOL_IMPACT_USER_5LEVEL, 5
+        elif self.impact_mode in ("hybrid", "hybrid_na"):
+            task, user, hi = prompts.TOOL_IMPACT_TASK_HYBRID, prompts.TOOL_IMPACT_USER_HYBRID, 5
+        else:
+            task, user, hi = prompts.TOOL_IMPACT_TASK, prompts.TOOL_IMPACT_USER, 3
+        result = self._ask(self._proposer_prompt(task, user.format(tool_json=json.dumps(item))))
+        if isinstance(result, dict) and "tool_impact" in result:
+            impact = _clamp(result["tool_impact"], 1, hi, fb_impact)
+            return impact, result, float(result.get("confidence", 0.7))
+        if self.strict:
+            self._strict_fail("tool_impact", tool.name)  # raises; never fabricates
+        self._used_fallback = True
+        conf = 0.85 if _has_annotation(tool) else 0.6
+        return fb_impact, _fallback_proposed(fb_impact, fb_reason, conf), conf
+
+    def _score_cia_impact(self, tool, item, fb_impact, fb_reason):
+        """CIA experiment: base = the UNCHANGED baseline impact call; CIA facets = a
+        SEPARATE call. Final impact = base + one point per violated C/I/A objective."""
+        item_json = json.dumps(item)
+        base_res = self._ask(
+            self._proposer_prompt(
+                prompts.TOOL_IMPACT_TASK, prompts.TOOL_IMPACT_USER.format(tool_json=item_json)
+            )
+        )
+        flags_res = self._ask(
+            self._proposer_prompt(
+                prompts.CIA_FLAGS_TASK, prompts.CIA_FLAGS_USER.format(tool_json=item_json)
+            )
+        )
+        have_base = isinstance(base_res, dict) and "tool_impact" in base_res
+        have_flags = isinstance(flags_res, dict) and "violates_confidentiality" in flags_res
+        if have_base and have_flags:
+            base = _clamp(base_res["tool_impact"], 1, 3, fb_impact)
+            c = bool(flags_res.get("violates_confidentiality"))
+            i = bool(flags_res.get("violates_integrity"))
+            a = bool(flags_res.get("violates_availability"))
+            impact = base + c + i + a
+            self._tool_cia[tool.name] = {"base": base, "C": c, "I": i, "A": a, "impact": impact}
+            return impact, base_res, float(base_res.get("confidence", 0.7))
+        if self.strict:
+            self._strict_fail("tool_impact/cia", tool.name)  # raises; never fabricates
+        self._used_fallback = True
+        conf = 0.85 if _has_annotation(tool) else 0.6
+        self._tool_cia[tool.name] = {
+            "base": fb_impact, "C": False, "I": False, "A": False, "impact": fb_impact
+        }
+        return fb_impact, _fallback_proposed(fb_impact, fb_reason, conf), conf
 
     # -- Stage 2: asset sensitivity -----------------------------------------
     def score_assets(self) -> dict[str, int]:
@@ -266,8 +332,18 @@ class StaticScorer:
         return sens
 
     # -- Stage 3: blast radius (per tool×asset pair) ------------------------
-    def score_blast(self, sensitivity: dict[str, int]) -> dict[str, int]:
-        blast: dict[str, int] = {}
+    def score_blast(self, sensitivity: dict[str, int]) -> dict[str, int | None]:
+        # hybrid/hybrid_na redefine blast as "reach of consequences". hybrid_na also
+        # lets the model mark a pair N/A (affects_asset=false) -> value is None.
+        if self.impact_mode == "hybrid_na":
+            blast_task, blast_user = prompts.BLAST_TASK_CONSEQUENCES_NA, prompts.BLAST_USER_NA
+        elif self.impact_mode == "five_level_v2_na":
+            blast_task, blast_user = prompts.BLAST_TASK_NA, prompts.BLAST_USER_NA
+        elif self.impact_mode == "hybrid":
+            blast_task, blast_user = prompts.BLAST_TASK_CONSEQUENCES, prompts.BLAST_USER
+        else:
+            blast_task, blast_user = prompts.BLAST_TASK, prompts.BLAST_USER
+        blast: dict[str, int | None] = {}
         for tool in self.registry.tools:
             for asset in self.registry.assets:
                 fb_blast, fb_reason = fallback.blast_radius(
@@ -276,14 +352,25 @@ class StaticScorer:
                 item = {"tool": tool.to_prompt_json(), "asset": asset.to_prompt_json()}
                 result = self._ask(
                     self._proposer_prompt(
-                        prompts.BLAST_TASK,
-                        prompts.BLAST_USER.format(
+                        blast_task,
+                        blast_user.format(
                             tool_json=json.dumps(tool.to_prompt_json()),
                             asset_json=json.dumps(asset.to_prompt_json()),
                         ),
                     )
                 )
-                if isinstance(result, dict) and "blast_radius" in result:
+                na = (
+                    self.impact_mode in _NA_MODES
+                    and isinstance(result, dict)
+                    and (
+                        result.get("affects_asset") is False
+                        or result.get("blast_radius") is None  # null blast -> N/A cell
+                    )
+                )
+                if na:
+                    value, conf = None, float(result.get("confidence", 0.7))  # N/A cell
+                    proposed = result
+                elif isinstance(result, dict) and "blast_radius" in result:
                     value = _clamp(result["blast_radius"], 1, 5, fb_blast)
                     proposed, conf = result, float(result.get("confidence", 0.7))
                 elif self.strict:
@@ -295,8 +382,13 @@ class StaticScorer:
                     proposed = _fallback_proposed(value, fb_reason, conf)
                 key = f"{tool.name}|{asset.asset_id}"
                 blast[key] = value
+                # Record the model's own escape route verbatim (audit only, no
+                # correction): the model decides both the tier and its route.
+                self._blast_escape[key] = (
+                    result.get("escape", "none") if isinstance(result, dict) else "none"
+                )
                 self._proposals.append(
-                    _Proposal("blast_radius", key, item, proposed, value, 1, 5, conf)
+                    _Proposal("blast_radius", key, item, proposed, value or 0, 1, 5, conf)
                 )
         return blast
 
@@ -323,8 +415,10 @@ class StaticScorer:
                     continue
                 reviewed += 1
                 judged = _clamp(verdict.get("judged_value"), p.low, p.high, p.value)
-                agree = bool(verdict.get("agree", judged == p.value))
-                if not agree or judged != p.value:
+                # Agreement is decided HERE, not self-reported. The judge scored the
+                # item blind (it never saw p.value), so an exact match is meaningful
+                # rather than an anchoring artifact of being shown the answer.
+                if judged != p.value:
                     overrides[(p.field, p.key)] = judged
                     disagreements.append(
                         {
@@ -357,10 +451,12 @@ class StaticScorer:
         }
 
     def _judge_one(self, proposal: _Proposal) -> dict | None:
-        """Ask the judge to independently re-derive one proposal's value.
+        """Ask the judge to score one item BLIND and return its verdict.
 
-        The judge gets the SAME scoring rules as the proposer (a fair check of
-        rule application, not a different philosophy).
+        The judge gets the same scoring rules and item as the proposer but is NOT
+        shown the proposer's answer, so its value is anchor-free. Agreement is then
+        computed by the caller by comparing the two values — this keeps the measured
+        agreement rate honest instead of inflated by the judge seeing the answer.
         """
         rules = {
             "tool_impact": prompts.TOOL_IMPACT_TASK,
@@ -377,7 +473,6 @@ class StaticScorer:
                 field_name=proposal.field,
                 item_key=proposal.key,
                 item_json=json.dumps(proposal.item_json, indent=2),
-                proposed_json=json.dumps(proposal.proposed_json),
             )
         )
         result = query_ollama(prompt)
@@ -414,28 +509,32 @@ class StaticScorer:
         # single pass stands alone. judge() remains callable for evaluation only.
         crosscheck = {"judge_ran": False, "note": "judge not run in scans (evaluation-only)"}
 
-        # Bands are always the deterministic band_label of the primitives — a pure,
-        # reproducible function of the score.
-        bands = {
-            asset.asset_id: {
-                tool.name: band_label(
-                    sensitivity[asset.asset_id],
-                    blast[f"{tool.name}|{asset.asset_id}"],
-                    impacts[tool.name],
-                )
-                for tool in self.registry.tools
-            }
-            for asset in self.registry.assets
-        }
-        cells: dict[str, dict[str, float]] = {}
+        # Blast radius is the model's own coverage judgment (LLM-only). A None blast
+        # is an N/A cell (an _NA_MODES run where the tool does not act on this asset)
+        # -> score None, band "na". band_label is a pure function of primitives otherwise.
+        use_sqrt = self.impact_mode in _SQRT_MODES
+        bands: dict[str, dict[str, str]] = {}
+        cells: dict[str, dict[str, float | None]] = {}
         for asset in self.registry.assets:
-            row: dict[str, float] = {}
             s = sensitivity[asset.asset_id]
+            brow: dict[str, str] = {}
+            crow: dict[str, float | None] = {}
             for tool in self.registry.tools:
                 br = blast[f"{tool.name}|{asset.asset_id}"]
                 i = impacts[tool.name]
-                row[tool.name] = round(s * br * LIKELIHOOD * i, 2)
-            cells[asset.asset_id] = row
+                if br is None:  # N/A — tool does not affect this asset
+                    crow[tool.name] = None
+                    brow[tool.name] = "na"
+                elif use_sqrt:
+                    # geometric mean of the two tool-side factors: one weak factor no
+                    # longer annihilates the cell. Max stays 5*5*sqrt(5*5) = 125.
+                    crow[tool.name] = round(s * 5 * (br * i) ** 0.5, 2)
+                    brow[tool.name] = band_label(s, br, i)
+                else:
+                    crow[tool.name] = round(s * br * LIKELIHOOD * i, 2)
+                    brow[tool.name] = band_label(s, br, i)
+            bands[asset.asset_id] = brow
+            cells[asset.asset_id] = crow
 
         if self._used_fallback:
             profile["needs_human_review"] = True
@@ -449,8 +548,12 @@ class StaticScorer:
             "formula": FORMULA,
             "band_thresholds": BAND_THRESHOLDS,
             "tool_impact": impacts,
+            "impact_mode": self.impact_mode,
+            "score_max": 25 * _IMPACT_MAX[self.impact_mode],
+            "tool_cia": self._tool_cia,
             "asset_sensitivity": sensitivity,
             "blast_radius": blast,
+            "blast_escape": self._blast_escape,
             "cells": cells,
             "bands": bands,
             "band_distribution": _band_distribution(bands),
@@ -460,11 +563,14 @@ class StaticScorer:
 
 
 def _band_distribution(bands: dict[str, dict[str, str]]) -> dict[str, int]:
-    """Count cells per band — the risk pyramid for this server (gate workload)."""
-    dist = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+    """Count cells per band — the risk pyramid for this server (gate workload).
+
+    ``na`` counts pairs the tool does not affect (excluded from the risk pyramid).
+    """
+    dist = {"low": 0, "medium": 0, "high": 0, "critical": 0, "na": 0}
     for row in bands.values():
         for band in row.values():
-            dist[band] += 1
+            dist[band] = dist.get(band, 0) + 1
     return dist
 
 
@@ -507,6 +613,7 @@ def build_static_table(
     use_llm: bool = True,
     strict: bool = False,
     version: str = "static-0000-00-00",
+    impact_mode: str = "baseline",
 ) -> dict:
     """Convenience entry point: score ``registry`` and return the table dict.
 
@@ -519,4 +626,6 @@ def build_static_table(
     The scan never runs the judge; bands are always the deterministic
     :func:`band_label`. :meth:`StaticScorer.judge` remains for evaluation only.
     """
-    return StaticScorer(registry, use_llm=use_llm, strict=strict).build_table(version)
+    return StaticScorer(
+        registry, use_llm=use_llm, strict=strict, impact_mode=impact_mode
+    ).build_table(version)

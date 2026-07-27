@@ -32,19 +32,30 @@ from .scan import DEFAULT_SCAN_DIR, scan_server, write_scan
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="mcp_security.scanner", description=__doc__)
     parser.add_argument(
-        "--kind", default="filesystem",
+        "--kind",
+        default="filesystem",
         choices=["filesystem", "sqlite", "slack", "calendar", "github"],
         help="server kind: selects the tool catalog and asset enumerator",
     )
     parser.add_argument("--root", type=Path, help="on-disk store (filesystem dir / sqlite db)")
     parser.add_argument("--server", help="override the scanned server's name")
     parser.add_argument("--by-file", action="store_true", help="(filesystem) per-file assets")
-    parser.add_argument("--tool-list", type=Path, help="explicit saved tools/list json (overrides kind)")
+    parser.add_argument(
+        "--tool-list", type=Path, help="explicit saved tools/list json (overrides kind)"
+    )
     parser.add_argument("--out", type=Path, help="also write a markdown view to this file")
     parser.add_argument(
         "--scan-dir", type=Path, default=DEFAULT_SCAN_DIR, help="where to write the scan artifact"
     )
-    parser.add_argument("--no-llm", action="store_true", help="deterministic baseline (offline only)")
+    parser.add_argument(
+        "--gen-assets",
+        action="store_true",
+        help="generate an affected asset for tools the registry leaves uncovered "
+        "(separate prompt; never part of the normal scan prompts)",
+    )
+    parser.add_argument(
+        "--no-llm", action="store_true", help="deterministic baseline (offline only)"
+    )
     parser.add_argument("--version-tag", default="scan-0000-00-00", help="version stamp")
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     args = parser.parse_args(argv)
@@ -63,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
             tool_list=args.tool_list,
             use_llm=not args.no_llm,
             version=args.version_tag,
+            gen_assets=args.gen_assets,
         )
     except LLMUnavailableError as exc:
         print(f"scan aborted: {exc}", file=sys.stderr)

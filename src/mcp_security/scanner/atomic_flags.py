@@ -37,26 +37,94 @@ class _InputRule:
     reason: str
     name_hints: tuple[str, ...] = ()
     types: tuple[str, ...] = ()
-    trigger: str | None = None  # best-effort critical condition (the rules can't know exact numbers)
+    trigger: str | None = (
+        None  # best-effort critical condition (the rules can't know exact numbers)
+    )
 
 
 _INPUT_RULES: tuple[_InputRule, ...] = (
-    _InputRule(5, "free-form query/command — unbounded reach; the whole payload is attacker-controlled",
-               name_hints=("query", "sql", "command", "cmd", "script", "code", "expression", "filter"),
-               trigger="unbounded / no bound on scope"),
-    _InputRule(4, "list/array — risk scales with its length (bulk reach, mass fan-out)",
-               types=("array",), trigger="large list (bulk fan-out)"),
-    _InputRule(4, "payload content — injection / exfiltration / poisoning vector",
-               name_hints=("content", "body", "data", "payload", "text", "message", "blocks", "attachments")),
-    _InputRule(4, "escalating flag — flips the call to a wider/irreversible mode",
-               name_hints=("recursive", "force", "all", "confirm", "overwrite", "permanent", "cascade", "hard"),
-               trigger="flag set true"),
-    _InputRule(3, "magnitude/count — larger value means broader effect",
-               name_hints=("limit", "count", "max", "depth", "size", "number", "amount", "quantity", "n_", "per_page", "days"),
-               trigger="large value"),
-    _InputRule(2, "names the target resource — selects what the op touches",
-               name_hints=("path", "file", "repo", "owner", "channel", "calendar", "table", "branch", "id",
-                           "name", "url", "email", "recipient", "user", "event", "issue", "pull")),
+    _InputRule(
+        5,
+        "free-form query/command — unbounded reach; the whole payload is attacker-controlled",
+        name_hints=("query", "sql", "command", "cmd", "script", "code", "expression", "filter"),
+        trigger="unbounded / no bound on scope",
+    ),
+    _InputRule(
+        4,
+        "list/array — risk scales with its length (bulk reach, mass fan-out)",
+        types=("array",),
+        trigger="large list (bulk fan-out)",
+    ),
+    _InputRule(
+        4,
+        "payload content — injection / exfiltration / poisoning vector",
+        name_hints=(
+            "content",
+            "body",
+            "data",
+            "payload",
+            "text",
+            "message",
+            "blocks",
+            "attachments",
+        ),
+    ),
+    _InputRule(
+        4,
+        "escalating flag — flips the call to a wider/irreversible mode",
+        name_hints=(
+            "recursive",
+            "force",
+            "all",
+            "confirm",
+            "overwrite",
+            "permanent",
+            "cascade",
+            "hard",
+        ),
+        trigger="flag set true",
+    ),
+    _InputRule(
+        3,
+        "magnitude/count — larger value means broader effect",
+        name_hints=(
+            "limit",
+            "count",
+            "max",
+            "depth",
+            "size",
+            "number",
+            "amount",
+            "quantity",
+            "n_",
+            "per_page",
+            "days",
+        ),
+        trigger="large value",
+    ),
+    _InputRule(
+        2,
+        "names the target resource — selects what the op touches",
+        name_hints=(
+            "path",
+            "file",
+            "repo",
+            "owner",
+            "channel",
+            "calendar",
+            "table",
+            "branch",
+            "id",
+            "name",
+            "url",
+            "email",
+            "recipient",
+            "user",
+            "event",
+            "issue",
+            "pull",
+        ),
+    ),
 )
 _DEFAULT_INPUT_RULE = _InputRule(1, "minor / structural parameter")
 
@@ -68,14 +136,73 @@ _VERB_OPS: tuple[tuple[tuple[str, ...], str], ...] = (
     (("execute", "exec", "invoke", "eval", "shell"), "EXECUTE"),
     (("delete", "remove", "drop", "destroy", "purge", "wipe", "clear"), "DELETE"),
     (("overwrite", "replace", "merge"), "OVERWRITE"),
-    (("send", "post", "publish", "broadcast", "invite", "email", "message", "notify", "reply", "share"), "BROADCAST"),
-    (("update", "edit", "modify", "patch", "mark", "rename", "respond", "manage", "leave", "set"), "MODIFY"),
+    (
+        (
+            "send",
+            "post",
+            "publish",
+            "broadcast",
+            "invite",
+            "email",
+            "message",
+            "notify",
+            "reply",
+            "share",
+        ),
+        "BROADCAST",
+    ),
+    (
+        (
+            "update",
+            "edit",
+            "modify",
+            "patch",
+            "mark",
+            "rename",
+            "respond",
+            "manage",
+            "leave",
+            "set",
+        ),
+        "MODIFY",
+    ),
     (("move", "transfer", "rename"), "MOVE"),
-    (("create", "add", "new", "insert", "push", "upload", "write", "join", "fork", "make"), "CREATE"),
+    (
+        ("create", "add", "new", "insert", "push", "upload", "write", "join", "fork", "make"),
+        "CREATE",
+    ),
     (("search", "find", "query", "lookup"), "SEARCH"),
     (("list", "enumerate"), "LIST"),
-    (("describe", "info", "status", "meta", "freebusy", "current", "colors", "unread", "_me", "profile"), "METADATA"),
-    (("read", "get", "fetch", "download", "view", "show", "history", "content", "reties", "replies"), "READ"),
+    (
+        (
+            "describe",
+            "info",
+            "status",
+            "meta",
+            "freebusy",
+            "current",
+            "colors",
+            "unread",
+            "_me",
+            "profile",
+        ),
+        "METADATA",
+    ),
+    (
+        (
+            "read",
+            "get",
+            "fetch",
+            "download",
+            "view",
+            "show",
+            "history",
+            "content",
+            "reties",
+            "replies",
+        ),
+        "READ",
+    ),
 )
 _FALLBACK_DEFAULT_OP = "READ"
 
@@ -121,7 +248,9 @@ def _classify_one(tool: ToolSpec, taxonomy: list[AtomicOp], op_rank: dict[str, i
     return AtomicFlag([op], op, sev, label, "verb-fallback")
 
 
-def classify_tools_atomic(tools: list[ToolSpec], taxonomy: list[AtomicOp] | None = None) -> dict[str, dict]:
+def classify_tools_atomic(
+    tools: list[ToolSpec], taxonomy: list[AtomicOp] | None = None
+) -> dict[str, dict]:
     """Flag every tool with its atomic operation(s) + max severity from the taxonomy."""
     tax = taxonomy or load_taxonomy(DEFAULT_TAXONOMY)
     op_rank = {op.name: op.rank for op in tax}

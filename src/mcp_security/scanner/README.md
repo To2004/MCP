@@ -38,6 +38,7 @@ heuristic or a checked-in number.
 |------|----------------|
 | `tool_catalog.py` | Load the tool inventory from the Excel catalog → `ToolSpec` list |
 | `scan.py` | Assemble the registry (Excel tools + disk assets), run the LLM understanding, write the scan artifact |
+| `asset_gen.py` | Generate an affected asset per tool from name+description alone (own prompt, never part of the normal scan prompts) |
 | `render.py` | Render a scan artifact as markdown |
 | `__main__.py` | CLI |
 
@@ -54,6 +55,16 @@ sbatch scripts/scan_and_rank_on_gpu.sbatch
 
 # Offline smoke check only (deterministic baseline, NOT a real scan)
 python -m mcp_security.scanner --kind filesystem --no-llm
+
+# Home every tool on an asset, generating generic ones where the registry
+# has none (channels_list -> channel-directory). Separate prompt from the
+# normal scan prompts; the model sees ONLY the tool name + description, no
+# org context, and pure utility tools (clock, colors) generate nothing.
+python -m mcp_security.scanner --kind slack --gen-assets
+
+# Check the generator against the held-out curated tool->asset list
+python -m mcp_security.scanner.asset_gen --eval            # LLM (GPU node)
+python -m mcp_security.scanner.asset_gen --eval --no-llm   # heuristic smoke
 ```
 
 The scan artifact (`reports/scan/<server>.json`) has the same shape as a static

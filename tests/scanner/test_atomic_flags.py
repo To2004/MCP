@@ -64,45 +64,69 @@ def test_input_ranking_deterministic_puts_payload_and_arrays_first():
 
 def test_input_ranking_uses_llm_when_available(monkeypatch):
     # Model ranks owner highest (reversing the heuristic) -> proves the LLM path is used.
-    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
-        {"name": "owner", "risk": 5, "reason": "controls the whole target"},
-        {"name": "content", "risk": 2, "reason": "just text"},
-        {"name": "files", "risk": 1, "reason": "empty here"},
-    ]})
-    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    monkeypatch.setattr(
+        af,
+        "query_ollama",
+        lambda prompt: {
+            "ranking": [
+                {"name": "owner", "risk": 5, "reason": "controls the whole target"},
+                {"name": "content", "risk": 2, "reason": "just text"},
+                {"name": "files", "risk": 1, "reason": "empty here"},
+            ]
+        },
+    )
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)[
+        "push_files"
+    ]
     assert entry["source"] == "llm"
     assert entry["inputs"][0]["name"] == "owner" and entry["inputs"][0]["risk"] == 5
 
 
 def test_llm_ranking_falls_back_to_rules_when_unreachable(monkeypatch):
     monkeypatch.setattr(af, "query_ollama", lambda prompt: None)  # Ollama down
-    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)[
+        "push_files"
+    ]
     assert entry["source"] == "rules-fallback"
     assert {r["name"] for r in entry["inputs"][:2]} == {"content", "files"}
 
 
 def test_llm_ranking_falls_back_when_incomplete(monkeypatch):
     # Model omits a parameter -> untrusted -> fall back to rules.
-    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
-        {"name": "owner", "risk": 5, "reason": "x"}]})
-    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)["push_files"]
+    monkeypatch.setattr(
+        af,
+        "query_ollama",
+        lambda prompt: {"ranking": [{"name": "owner", "risk": 5, "reason": "x"}]},
+    )
+    entry = rank_tool_inputs([_tool("push_files", "Push files", _PUSH_SCHEMA)], use_llm=True)[
+        "push_files"
+    ]
     assert entry["source"] == "rules-fallback"
 
 
 def test_llm_ranking_carries_critical_trigger(monkeypatch):
-    monkeypatch.setattr(af, "query_ollama", lambda prompt: {"ranking": [
-        {"name": "owner", "risk": 2, "critical_trigger": None, "reason": "target"},
-        {"name": "content", "risk": 4, "critical_trigger": None, "reason": "payload"},
-        {"name": "files", "risk": 5, "critical_trigger": ">= 20 files", "reason": "bulk"},
-    ]})
-    inputs = rank_tool_inputs([_tool("push_files", "", _PUSH_SCHEMA)], use_llm=True)["push_files"]["inputs"]
+    monkeypatch.setattr(
+        af,
+        "query_ollama",
+        lambda prompt: {
+            "ranking": [
+                {"name": "owner", "risk": 2, "critical_trigger": None, "reason": "target"},
+                {"name": "content", "risk": 4, "critical_trigger": None, "reason": "payload"},
+                {"name": "files", "risk": 5, "critical_trigger": ">= 20 files", "reason": "bulk"},
+            ]
+        },
+    )
+    inputs = rank_tool_inputs([_tool("push_files", "", _PUSH_SCHEMA)], use_llm=True)["push_files"][
+        "inputs"
+    ]
     files = next(r for r in inputs if r["name"] == "files")
     assert files["critical_trigger"] == ">= 20 files"
 
 
 def test_deterministic_ranking_has_trigger_field():
-    inputs = rank_tool_inputs([_tool("read_query", "", {
-        "type": "object", "properties": {"query": {"type": "string"}}})])["read_query"]["inputs"]
+    inputs = rank_tool_inputs(
+        [_tool("read_query", "", {"type": "object", "properties": {"query": {"type": "string"}}})]
+    )["read_query"]["inputs"]
     assert inputs[0]["name"] == "query"
     assert inputs[0]["critical_trigger"] == "unbounded / no bound on scope"
 

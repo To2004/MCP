@@ -34,9 +34,23 @@ def test_missing_tool_list_raises():
 
 def test_explicit_path(tmp_path):
     path = tmp_path / "x.json"
-    path.write_text(json.dumps({"server": "s", "kind": "k", "tools": [
-        {"name": "t", "description": "d", "input_schema": {"properties": {"n": {"type": "number"}}},
-         "annotations": {"read_only_hint": True}}]}), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            {
+                "server": "s",
+                "kind": "k",
+                "tools": [
+                    {
+                        "name": "t",
+                        "description": "d",
+                        "input_schema": {"properties": {"n": {"type": "number"}}},
+                        "annotations": {"read_only_hint": True},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
     tools = load_tool_list("k", path=path)
     assert tools[0].name == "t" and tools[0].read_only_hint is True
     assert tools[0].parameters()[0]["name"] == "n"

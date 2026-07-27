@@ -75,3 +75,97 @@ def test_take2_surfaces_phi_that_take1_hides():
     # A specific patient record is now its own, highly sensitive asset.
     sens = t2["asset_sensitivity"]
     assert sens["patients/alice_johnson/medical_history.txt"] >= 4
+
+
+# --- mutable-state assets: everything the write tools can change ------------
+def test_declarative_registries_include_mutable_state_assets():
+    from mcp_security.static_scoring.registry import (
+        load_calendar_registry,
+        load_github_registry,
+    )
+
+    expected = {
+        load_slack_registry: {"channel-messages", "message-reactions", "read-markers"},
+        load_calendar_registry: {"event-records", "event-attendee-lists", "rsvp-state"},
+        load_github_registry: {"branch-heads", "pull-requests-and-reviews", "org-external-copies"},
+    }
+    for loader, ids in expected.items():
+        registry = loader()
+        asset_ids = {a.asset_id for a in registry.assets}
+        assert ids <= asset_ids, f"{registry.server} missing mutable-state assets"
+        # Mutable-state assets are tagged so consumers can tell them from scopes.
+        tagged = {a.asset_id for a in registry.assets if "kind:mutable-state" in a.tags}
+        assert ids <= tagged
+
+
+def test_mutable_state_assets_score_offline():
+    # The offline baseline must score the new asset classes without crashing and
+    # produce a full (tool x asset) matrix over them.
+    slack = load_slack_registry()
+    table = build_static_table(slack, use_llm=False, version="t")
+    assert "channel-messages" in table["asset_sensitivity"]
+    # Cells are keyed asset -> {tool: score}; the new asset gets a full tool row.
+    assert set(table["cells"]["channel-messages"]) == set(table["tool_impact"])
+
+
+# Every tool must have at least one asset it affects (reads or mutates). This
+# mapping is the audit record: adding a tool without extending it fails here.
+_TOOL_AFFECTS = {
+    "slack": {
+        "slack_list_channels": "channel-directory",
+        "slack_get_channel_history": "channel-messages",
+        "slack_get_thread_replies": "channel-messages",
+        "slack_get_users": "user-directory",
+        "slack_get_user_profile": "user-directory",
+        "slack_post_message": "channel-messages",
+        "slack_reply_to_thread": "channel-messages",
+        "slack_add_reaction": "message-reactions",
+    },
+    "calendar": {
+        "list_calendars": "calendar-directory",
+        "list_events": "event-records",
+        "list_week": "event-records",
+        "get_event": "event-records",
+        "find_free_slot": "free-busy-availability",
+        "access_contacts": "contacts",
+        "create_event": "event-records",
+        "update_event": "event-attendee-lists",
+        "send_email_invite": "outbound-invite-email",
+        "delete_event": "event-records",
+        "delete_all_events": "event-records",
+    },
+    "github": {
+        "search_repositories": "repository-catalog",
+        "get_file_contents": "branch-heads",
+        "list_commits": "branch-heads",
+        "get_issue": "issues-and-comments",
+        "create_issue": "issues-and-comments",
+        "create_or_update_file": "branch-heads",
+        "push_files": "branch-heads",
+        "delete_file": "branch-heads",
+        "create_pull_request": "pull-requests-and-reviews",
+        "merge_pull_request": "pull-requests-and-reviews",
+        "fork_repository": "org-external-copies",
+    },
+}
+
+
+def test_every_declarative_tool_has_an_affected_asset():
+    from mcp_security.static_scoring.registry import (
+        load_calendar_registry,
+        load_github_registry,
+    )
+
+    loaders = {
+        "slack": load_slack_registry,
+        "calendar": load_calendar_registry,
+        "github": load_github_registry,
+    }
+    for kind, loader in loaders.items():
+        registry = loader()
+        mapping = _TOOL_AFFECTS[kind]
+        asset_ids = {a.asset_id for a in registry.assets}
+        for tool in registry.tools:
+            assert tool.name in mapping, f"{kind}: tool {tool.name} has no affected-asset entry"
+            affected = mapping[tool.name]
+            assert affected in asset_ids, f"{kind}: {tool.name} -> {affected} not in assets"

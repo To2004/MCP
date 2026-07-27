@@ -100,9 +100,7 @@ def build_registry(
     tools = load_tool_list(kind, path=tool_list)
     if kind == "filesystem":
         store = root or _DEFAULT_ROOTS["filesystem"]
-        assets = (
-            reg.filesystem_assets_by_file(store) if by_file else reg.filesystem_assets(store)
-        )
+        assets = reg.filesystem_assets_by_file(store) if by_file else reg.filesystem_assets(store)
         apps = reg.FS_DEFAULT_APPS
         name = server or f"fs:{store.name}"
     elif kind == "sqlite":
@@ -115,6 +113,33 @@ def build_registry(
     return ServerRegistry(server=name, kind=kind, tools=tools, assets=list(assets), apps=apps)
 
 
+def augment_with_generated_assets(registry: ServerRegistry, *, use_llm: bool = True) -> int:
+    """Ensure every tool has an asset it affects, generating missing ones.
+
+    For each tool, :func:`~.asset_gen.generate_asset` names the generic asset the
+    tool reads or changes from its name + description alone (no org context; its
+    prompt is separate from the normal scanner prompts). The generated asset is
+    appended only when nothing close to it already exists in the registry, so
+    curated assets always win. Utility tools (clock, colors) generate nothing.
+    Returns the number of assets added.
+    """
+    # Imported lazily so `python -m mcp_security.scanner.asset_gen` doesn't see
+    # the module pre-imported via the package (runpy double-import warning).
+    from .asset_gen import close_match, generate_asset
+
+    existing = [a.asset_id for a in registry.assets]
+    added = 0
+    for tool in registry.tools:
+        spec = generate_asset(tool.name, tool.description, use_llm=use_llm).to_asset_spec()
+        if spec is None or any(close_match(spec.asset_id, have) for have in existing):
+            continue
+        registry.assets.append(spec)
+        existing.append(spec.asset_id)
+        added += 1
+        logger.info("asset-gen: %s -> new asset %s", tool.name, spec.asset_id)
+    return added
+
+
 def scan_server(
     kind: str,
     *,
@@ -124,6 +149,8 @@ def scan_server(
     tool_list: Path | None = None,
     use_llm: bool = True,
     version: str = "scan-0000-00-00",
+    impact_mode: str = "baseline",
+    gen_assets: bool = False,
 ) -> ScanResult:
     """Run a full static scan: assemble the registry, then derive risk with the LLM.
 
@@ -131,10 +158,13 @@ def scan_server(
     unreachable model raises :class:`LLMUnavailableError` instead of falling back
     to a heuristic. ``use_llm=False`` is offered only for tests and offline smoke
     runs and uses the deterministic baseline (never shipped as a real scan).
+    ``gen_assets`` additionally homes every tool on an asset, generating generic
+    ones (via :func:`augment_with_generated_assets`) where the registry has none.
     """
-    registry = build_registry(
-        kind, root=root, server=server, by_file=by_file, tool_list=tool_list
-    )
+    registry = build_registry(kind, root=root, server=server, by_file=by_file, tool_list=tool_list)
+    if gen_assets:
+        n_generated = augment_with_generated_assets(registry, use_llm=use_llm)
+        logger.info("asset-gen: %d generated asset(s) added", n_generated)
     logger.info(
         "scanning %s (%s): %d tools, %d assets",
         registry.server,
@@ -142,7 +172,9 @@ def scan_server(
         len(registry.tools),
         len(registry.assets),
     )
-    table = build_static_table(registry, use_llm=use_llm, strict=use_llm, version=version)
+    table = build_static_table(
+        registry, use_llm=use_llm, strict=use_llm, version=version, impact_mode=impact_mode
+    )
     # Honest provenance: a real scan is LLM-derived; --no-llm is only a smoke baseline.
     table["provenance"] = "llm-scan" if use_llm else "offline-baseline"
     # Record the registry kind verbatim. The LLM also infers a free-text `mcp_kind`

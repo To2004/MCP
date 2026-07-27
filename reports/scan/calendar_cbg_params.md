@@ -6,14 +6,20 @@ LLM-derived per `docs/standards/parameter-scoring.md`. Each row is a magnitude-b
 
 | parameter | base | extract | cutoffs |
 | --- | --- | --- | --- |
-| `attendees` | medium | list_length | ≥3→low · ≥6→medium · ≥10→high · ≥20→critical |
+| `title` | low | number | — |
+| `date` | low | number | — |
+| `calendar` | low | number | — |
+| `attendees` | medium | list_length | ≥3→low · ≥7→medium · ≥21→high |
+| `duration_min` | low | number | — |
 
 ## `update_event`
 
 | parameter | base | extract | cutoffs |
 | --- | --- | --- | --- |
-| `attendees` | medium | list_length | ≥3→low · ≥7→medium · ≥11→high |
-| `duration_min` | low | number | ≥30→low · ≥60→medium · ≥120→high |
+| `event_id` | low | number | — |
+| `calendar` | low | string | — |
+| `attendees` | medium | list_length | ≥3→low · ≥6→medium · ≥10→high · ≥20→critical |
+| `duration_min` | low | number | — |
 
 ## `send_email_invite`
 
