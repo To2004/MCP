@@ -12,6 +12,8 @@ Rules and conventions for working in the MCP Security project.
 | [data-organization.md](data-organization.md) | Research artifact and data organization |
 | [nist-guidelines.md](nist-guidelines.md) | NIST publications (FIPS 199, SP 800-60/30/83) underpinning the risk model |
 | [scoring-reference.md](scoring-reference.md) | Risk scoring model: Sensitivity × Blast Radius × Likelihood × Irreversibility |
+| [mcp-profile-spec.md](mcp-profile-spec.md) | **MCP Server Profile Spec v1** — how any organization writes the profile the scanner reads: authoring loop, required schema, `Contents` grammar + flags, absolute sensitivity anchors, validation rules, four conformance levels |
+| [mcp-policy-spec.md](mcp-policy-spec.md) | **MCP Server Policy Spec v1** — the realistic-disclosure counterpart: how an org that withholds its per-asset judgement supplies it as rules instead (classification table by adverse impact, asset register with tool homing and structural flags, recognition rules with a fail-closed default) so the scanner derives sensitivity and blast radius itself. Enforced by `scripts/check_policies.py` |
 | [mcp-tool-risk-ratings.csv](mcp-tool-risk-ratings.csv) | Per-tool risk ratings for filesystem, SQLite, GitHub, Slack, Google Drive — scored against MITRE ATT&CK + CVSS |
 | [mcp-primitive-operations.csv](mcp-primitive-operations.csv) | 16 generic primitive operations MCP tools perform (read, write, delete…) with risk rankings |
 | [mcp-primitive-operations-references.md](mcp-primitive-operations-references.md) | Per-operation justification citing MITRE ATT&CK, CVSS v3.1, OWASP AIVSS, and project papers |

@@ -54,3 +54,20 @@ def test_explicit_path(tmp_path):
     tools = load_tool_list("k", path=path)
     assert tools[0].name == "t" and tools[0].read_only_hint is True
     assert tools[0].parameters()[0]["name"] == "n"
+
+
+def test_bare_array_catalog_loads(tmp_path):
+    """Both saved shapes are real: the full tools/list response and just its
+    `tools` array (what an unwrapped capture stores)."""
+    book = tmp_path / "bare.json"
+    book.write_text(
+        json.dumps(
+            [
+                {"name": "git_status", "description": "Shows the working tree status."},
+                {"no_name": "ignored"},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    tools = load_tool_list("generic", path=book)
+    assert [t.name for t in tools] == ["git_status"]

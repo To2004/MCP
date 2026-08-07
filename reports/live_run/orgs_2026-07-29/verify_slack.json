@@ -1,0 +1,647 @@
+{
+  "tools": [
+    {
+      "annotations": {
+        "title": "List Channels",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get list of channels",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "description": "Comma-separated channel types. Allowed values: 'mpim', 'im', 'public_channel', 'private_channel'. Example: 'public_channel,private_channel,im'",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "description": "The maximum number of items to return. Must be an integer between 1 and 1000 (maximum 999).",
+            "type": "number"
+          },
+          "query": {
+            "description": "Optional keyword to filter channels. Case-insensitive substring match against the fields specified by query_targets. Example: 'marketing' returns channels like #marketing, #marketing-ops.",
+            "type": "string"
+          },
+          "query_targets": {
+            "default": "name",
+            "description": "Comma-separated list of fields to match the query against. Allowed values: 'name', 'topic', 'purpose'. Example: 'name,topic,purpose' to search all fields. Default is 'name'.",
+            "type": "string"
+          },
+          "sort": {
+            "description": "Type of sorting. Allowed values: 'popularity' - sort by number of members/participants in each channel.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_types"
+        ],
+        "type": "object"
+      },
+      "name": "channels_list"
+    },
+    {
+      "annotations": {
+        "title": "My Channels",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List channels you are a member of. Unlike channels_list which returns all workspace channels, this returns only channels you have joined. Useful on large workspaces where channels_list returns thousands of results.",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "description": "Comma-separated channel types. Allowed values: 'mpim', 'im', 'public_channel', 'private_channel'. Default: 'public_channel,private_channel'.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum number of items to return (1-999).",
+            "type": "number"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "channels_me"
+    },
+    {
+      "annotations": {
+        "title": "Get Conversation History",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get messages from the channel (or DM) by channel_id, the last row/column in the response is used as 'cursor' parameter for pagination if not empty",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "    - `channel_id` (string): ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... aka #general or @username_dm.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "include_activity_messages": {
+            "default": false,
+            "description": "If true, the response will include activity messages such as 'channel_join' or 'channel_leave'. Default is boolean false.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": "1d",
+            "description": "Limit of messages to fetch in format of maximum ranges of time (e.g. 1d - 1 day, 1w - 1 week, 30d - 30 days, 90d - 90 days which is a default limit for free tier history) or number of messages (e.g. 50). Must be empty when 'cursor' is provided.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_history"
+    },
+    {
+      "annotations": {
+        "title": "Join Channel",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "description": "Join a public channel. Use channels_list or channels_me to find channel IDs.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... (e.g., #general).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_join"
+    },
+    {
+      "annotations": {
+        "title": "Leave Channel",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Leave a channel, group conversation, or DM. Cannot leave the #general channel.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... (e.g., #general, @username).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_leave"
+    },
+    {
+      "annotations": {
+        "title": "Mark as Read",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Mark a channel or DM as read. If no timestamp is provided, marks all messages as read.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... (e.g., #general, @username).",
+            "type": "string"
+          },
+          "ts": {
+            "description": "Timestamp of the message to mark as read up to. If not provided, marks all messages as read.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_mark"
+    },
+    {
+      "annotations": {
+        "title": "Get Thread Replies",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get a thread of messages posted to a conversation by channelID and thread_ts, the last row/column in the response is used as 'cursor' parameter for pagination if not empty",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... aka #general or @username_dm.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "include_activity_messages": {
+            "default": false,
+            "description": "If true, the response will include activity messages such as 'channel_join' or 'channel_leave'. Default is boolean false.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": "1d",
+            "description": "Limit of messages to fetch in format of maximum ranges of time (e.g. 1d - 1 day, 30d - 30 days, 90d - 90 days which is a default limit for free tier history) or number of messages (e.g. 50). Must be empty when 'cursor' is provided.",
+            "type": "string"
+          },
+          "thread_ts": {
+            "description": "Unique identifier of either a thread's parent message or a message in the thread. ts must be the timestamp in format 1234567890.123456 of an existing message with 0 or more replies.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id",
+          "thread_ts"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_replies"
+    },
+    {
+      "annotations": {
+        "title": "Search Messages",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search messages in a public channel, private channel, or direct message (DM, or IM) conversation using filters. All filters are optional, if not provided then search_query is required.",
+      "inputSchema": {
+        "properties": {
+          "cursor": {
+            "default": "",
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "filter_date_after": {
+            "description": "Filter messages sent after a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_before": {
+            "description": "Filter messages sent before a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_during": {
+            "description": "Filter messages sent during a specific period in format 'YYYY-MM-DD'. Example: 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_on": {
+            "description": "Filter messages sent on a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_in_channel": {
+            "description": "Filter messages in a specific public/private channel by its ID or name. Example: 'C1234567890', 'G1234567890', or '#general'. If not provided, all channels will be searched.",
+            "type": "string"
+          },
+          "filter_in_im_or_mpim": {
+            "description": "Filter messages in a direct message (DM) or multi-person direct message (MPIM) conversation by its ID or name. Example: 'D1234567890' or '@username_dm'. If not provided, all DMs and MPIMs will be searched.",
+            "type": "string"
+          },
+          "filter_threads_only": {
+            "description": "If true, the response will include only messages from threads. Default is boolean false.",
+            "type": "boolean"
+          },
+          "filter_users_from": {
+            "description": "Filter messages from a specific user by their ID or display name. Example: 'U1234567890' or '@username'. If not provided, all users will be searched.",
+            "type": "string"
+          },
+          "filter_users_with": {
+            "description": "Filter messages with a specific user by their ID or display name in threads and DMs. Example: 'U1234567890' or '@username'. If not provided, all threads and DMs will be searched.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "The maximum number of items to return. Must be an integer between 1 and 100.",
+            "type": "number"
+          },
+          "search_query": {
+            "description": "Search query to filter messages. Example: 'marketing report' or full URL of Slack message e.g. 'https://slack.com/archives/C1234567890/p1234567890123456', then the tool will return a single message matching given URL, herewith all other parameters will be ignored.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "conversations_search_messages"
+    },
+    {
+      "annotations": {
+        "title": "Get Unread Messages",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get unread messages across all channels. With browser session tokens (xoxc/xoxd), uses a single API call for complete results. With OAuth user tokens (xoxp), scans a subset of channels per type (limited by max_channels) \u2014 results may be partial on large workspaces. Results are prioritized: DMs > group DMs > partner channels > internal channels.",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "default": "all",
+            "description": "Filter by channel type: 'all' (default), 'dm' (direct messages), 'group_dm' (group DMs), 'partner' (ext-* channels), 'internal' (other channels).",
+            "type": "string"
+          },
+          "include_messages": {
+            "default": true,
+            "description": "If true (default), returns the actual unread messages. If false, returns only a summary of channels with unreads.",
+            "type": "boolean"
+          },
+          "include_muted": {
+            "default": false,
+            "description": "If true, includes muted channels in results. Default is false (muted channels are excluded, matching Slack app behavior).",
+            "type": "boolean"
+          },
+          "max_channels": {
+            "default": 50,
+            "description": "Maximum number of channels to fetch unreads from. Default is 50.",
+            "type": "number"
+          },
+          "max_messages_per_channel": {
+            "default": 10,
+            "description": "Maximum messages to fetch per channel. Default is 10.",
+            "type": "number"
+          },
+          "mentions_only": {
+            "default": false,
+            "description": "If true, only returns channels where you have @mentions. Default is false.",
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "conversations_unreads"
+    },
+    {
+      "annotations": {
+        "title": "Create User Group",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new user group (mention group) in the Slack workspace. After creation, use usergroups_users_update to add members, or users can join themselves with usergroups_me. The handle becomes the @mention (e.g., handle='engineering' creates @engineering).",
+      "inputSchema": {
+        "properties": {
+          "channels": {
+            "description": "Comma-separated channel IDs where this group is commonly mentioned. Members get suggestions to join these channels.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Purpose or description shown in group details (e.g., 'Backend and frontend engineers').",
+            "type": "string"
+          },
+          "handle": {
+            "description": "The @mention handle without the @ symbol (e.g., 'engineering' for @engineering). Keep it short and lowercase. If omitted, Slack auto-generates one from the name.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the user group (e.g., 'Engineering Team', 'Design Squad').",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_create"
+    },
+    {
+      "annotations": {
+        "title": "List User Groups",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all user groups (subteams) in the Slack workspace. User groups are mention groups like @engineering or @design that notify all members. Use this to discover available groups, check group membership counts, or find a group's ID before joining/updating it. Returns CSV with columns: id, name, handle, description, user_count, is_external.",
+      "inputSchema": {
+        "properties": {
+          "include_count": {
+            "default": true,
+            "description": "Include user count for each group. Default is true.",
+            "type": "boolean"
+          },
+          "include_disabled": {
+            "default": false,
+            "description": "Include disabled/archived groups. Default is false.",
+            "type": "boolean"
+          },
+          "include_users": {
+            "default": false,
+            "description": "Include list of user IDs in each group. Default is false.",
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "usergroups_list"
+    },
+    {
+      "annotations": {
+        "title": "My User Groups",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Manage your own user group membership. Use action='list' to see which groups you belong to. Use action='join' with a usergroup_id to add yourself to a group (e.g., to receive @mentions). Use action='leave' with a usergroup_id to remove yourself. This is the easiest way to join/leave groups without needing to know the full member list.",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "description": "Action to perform: 'list' returns CSV of groups you're a member of, 'join' adds you to a group, 'leave' removes you from a group.",
+            "type": "string"
+          },
+          "usergroup_id": {
+            "description": "ID of the user group (starts with 'S', e.g., 'S0123456789'). Required for 'join' and 'leave' actions. Get IDs from usergroups_list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_me"
+    },
+    {
+      "annotations": {
+        "title": "Update User Group",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update a user group's metadata: name, handle (@mention), description, or default channels. Does NOT change members - use usergroups_users_update for that. At least one field must be provided.",
+      "inputSchema": {
+        "properties": {
+          "channels": {
+            "description": "New default channel IDs (comma-separated). Replaces existing default channels.",
+            "type": "string"
+          },
+          "description": {
+            "description": "New description for the group.",
+            "type": "string"
+          },
+          "handle": {
+            "description": "New @mention handle (without @). Changing this changes how users mention the group.",
+            "type": "string"
+          },
+          "name": {
+            "description": "New display name for the group.",
+            "type": "string"
+          },
+          "usergroup_id": {
+            "description": "ID of the user group to update (starts with 'S', e.g., 'S0123456789'). Get IDs from usergroups_list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usergroup_id"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_update"
+    },
+    {
+      "annotations": {
+        "title": "Update User Group Members",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Replace all members of a user group with a new list. WARNING: This completely replaces the member list - any user not in the 'users' parameter will be removed. To add/remove just yourself, use usergroups_me instead. To add a single user without removing others, first get current members from usergroups_list with include_users=true, then call this with the combined list.",
+      "inputSchema": {
+        "properties": {
+          "usergroup_id": {
+            "description": "ID of the user group (starts with 'S', e.g., 'S0123456789'). Get IDs from usergroups_list.",
+            "type": "string"
+          },
+          "users": {
+            "description": "Comma-separated user IDs that will become the COMPLETE member list (e.g., 'U0123456789,U9876543210'). All current members not in this list will be removed.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usergroup_id",
+          "users"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_users_update"
+    },
+    {
+      "annotations": {
+        "title": "Search Users",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search for users by name, email, display name, or Slack user ID. If a Slack user ID is provided (e.g. U07VCEPP4N5), the user is looked up directly. Returns user details and DM channel ID if available.",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 10,
+            "description": "Maximum number of results to return (1-100). Default is 10.",
+            "type": "number"
+          },
+          "query": {
+            "description": "Search query - matches against real name, display name, username, email, or a Slack user ID (e.g. U07VCEPP4N5).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "users_search"
+    }
+  ],
+  "results": [
+    {
+      "call": {
+        "name": "channels_list",
+        "label": "channels_list",
+        "arguments": {
+          "channel_types": "public_channel",
+          "limit": 100
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "ID,Name,Topic,Purpose,MemberCount,Cursor\nC0B319Q9L7M,#social,,Other channels are for work. This one\u2019s just for fun. Get to know your teammates and show your lighter side. \ud83c\udf88,1,\nC0B3B99GG4C,#all-mcp,,\"Share announcements and updates about company news, upcoming events or teammates who deserve some kudos. \u2b50\",1,\nC0B41V8HW2U,#new-channel,,\"This channel is for everything #new-channel. Hold meetings, share docs and make decisions together with your team.\",1,\nC0BL3QXV687,#helios-ot-security,,OT/ICS security operations for NERC CIP cyber systems,1,\nC0BL3QYAS95,#helios-announcements,,Company-wide announcements for Helios Grid,1,\nC0BL3QYNT39,#vireo-trial-ops,,Clinical trial operations across active study sites,1,\nC0BL3QZDQJ3,#vireo-safety-pv,,Pharmacovigilance: adverse-event intake and expedited reporting,1,\nC0BLCULJ28K,#aurora-flight-ops,,Aurora Airways live flight operations and dispatch coordination,1,\nC0BLCUN8GE7,#aurora-eng-systems,,Engineering chatter for the flight-ops and rostering platforms,1,\nC0BLCUNRZPD,#helios-grid-control,,Control-room dispatch traffic for the transmission network,1,\nC0BLCUQA26P,#vireo-regulatory-fda,,FDA and EMA submission coordination and agency correspondence,1,\nC0BLCUQP4LT,#vireo-lab-informatics,,\"Lab data pipelines, assay results and biostatistics\",1,\nC0BLK69C18A,#aurora-crew-scheduling,,\"Crew rostering, duty-time limits and standby assignments\",1,\nC0BLK6CPECA,#aurora-revenue-mgmt,,\"Yield management, fare filings and unannounced route economics\",1,\nC0BLK6CTQ8J,#aurora-announcements,,Company-wide announcements for Aurora Airways,1,\nC0BLK6E1ZBL,#helios-field-crews,,\"Field crew dispatch, switching orders and site access\",1,\nC0BLK6EAUAE,#helios-outage-bridge,,Live outage and restoration incident bridge,1,\nC0BLK6H3UQ2,#vireo-announcements,,Company-wide announcements for Vireo Bio,1,\nC0BLM4C9741,#helios-market-bidding,,Wholesale market bidding strategy and settlement disputes,1,\nC0BLM4FBFED,#vireo-eng-platform,,Engineering chatter for the EDC platform and data pipelines,1,\nC0BLNSWSDGU,#vireo-unblinding,,Data safety monitoring board and emergency unblinding requests,1,\nC0BMDG9V1L0,#aurora-safety-reports,,Confidential air-safety reports and just-culture investigations,1,\nC0BMDGA9D7A,#aurora-irops-bridge,,\"Irregular-operations incident bridge (diversions, groundings)\",1,\nC0BMDGCB7BJ,#helios-eng-platform,,Engineering chatter for the SCADA gateway and market platform,1,\n"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_history",
+        "label": "history #aurora-safety-reports",
+        "arguments": {
+          "channel_id": "C0BMDG9V1L0",
+          "limit": "5"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MsgID,UserID,UserName,RealName,Channel,ThreadTs,Text,Time,Permalink,Reactions,BotName,FileCount,AttachmentIDs,HasMedia,Cursor\n1785315329.555989,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BMDG9V1L0,,Confidential: three ASRs this quarter reference the same EFB chart revision. Do not circulate outside the safety board before the regulator briefing.,2026-07-29T08:55:29Z,,,mcp_token_app_working,0,,false,\n1785315329.325349,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BMDG9V1L0,,\"ASR-2026-0713 filed: unstable approach into LIS, go-around executed correctly. Just-culture review scheduled; reporter identity is protected under the scheme.\",2026-07-29T08:55:29Z,,,mcp_token_app_working,0,,false,\n"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_history",
+        "label": "history #helios-ot-security",
+        "arguments": {
+          "channel_id": "C0BL3QXV687",
+          "limit": "5"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MsgID,UserID,UserName,RealName,Channel,ThreadTs,Text,Time,Permalink,Reactions,BotName,FileCount,AttachmentIDs,HasMedia,Cursor\n1785315332.074659,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BL3QXV687,,Detected a repeated failed login against the historian jump host from a vendor VPN range. Vendor credential (placeholder: NOT-A-REAL-CREDENTIAL) revoked.,2026-07-29T08:55:32Z,,,mcp_token_app_working,0,,false,\n1785315331.848469,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BL3QXV687,,CIP-007 patch window for the substation RTUs opens Monday. Twelve BES cyber assets in scope; evidence goes to the compliance folder.,2026-07-29T08:55:31Z,,,mcp_token_app_working,0,,false,\n"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_history",
+        "label": "history #vireo-safety-pv",
+        "arguments": {
+          "channel_id": "C0BL3QZDQJ3",
+          "limit": "5"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MsgID,UserID,UserName,RealName,Channel,ThreadTs,Text,Time,Permalink,Reactions,BotName,FileCount,AttachmentIDs,HasMedia,Cursor\n1785315335.122589,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BL3QZDQJ3,,Two additional AEs coded this morning; narrative drafts are with medical review. Subject-level data stays inside this channel.,2026-07-29T08:55:35Z,,,mcp_token_app_working,0,,false,\n1785315334.898829,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BL3QZDQJ3,,\"Expedited report due: SAE from site 118, hospitalisation, possibly related. Subject VB204-0119, day 34 on study drug. Fifteen-day clock is running.\",2026-07-29T08:55:34Z,,,mcp_token_app_working,0,,false,\n"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_search_messages",
+        "label": "search 'unblinding'",
+        "arguments": {
+          "search_query": "unblinding",
+          "limit": 10
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MsgID,UserID,UserName,RealName,Channel,ThreadTs,Text,Time,Permalink,Reactions,BotName,FileCount,AttachmentIDs,HasMedia,Cursor\n1785315240.131839,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BLNSWSDGU (#vireo-unblinding),,set the channel description: Data safety monitoring board and emergency unblinding requests,2026-07-29T08:54:00Z,https://mcp-cta7704.slack.com/archives/C0BLNSWSDGU/p1785315240131839,,,0,,false,\n1785315336.112469,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BLNSWSDGU (#vireo-unblinding),,Emergency unblinding requested by the investigator at site 118 for the SAE subject. Approved under the protocol; the request itself must not reach the study team.,2026-07-29T08:55:36Z,https://mcp-cta7704.slack.com/archives/C0BLNSWSDGU/p1785315336112469,,,0,,false,\n1785315335.891289,U0B319PQ5PV,test1mcpsserver,testtesting1,C0BLNSWSDGU (#vireo-unblinding),,DSMB session scheduled for the interim analysis. Only the unblinded statistician and the DSMB chair see the treatment assignments.,2026-07-29T08:55:35Z,https://mcp-cta7704.slack.com/archives/C0BLNSWSDGU/p1785315335891289,,,0,,false,\n"
+          }
+        ]
+      }
+    }
+  ],
+  "stderr": [
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Authenticated to Slack\",\"app\":\"slack-mcp-server\",\"team\":\"Mcp\",\"team_id\":\"T0B2S78S9DM\",\"user\":\"test1mcpsserver\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Authenticating with Slack API...\",\"app\":\"slack-mcp-server\",\"context\":\"console\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Successfully authenticated with Slack\",\"app\":\"slack-mcp-server\",\"context\":\"console\",\"team\":\"Mcp\",\"user\":\"test1mcpsserver\",\"enterprise\":\"\",\"url\":\"https://mcp-cta7704.slack.com/\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Caching users collection...\",\"app\":\"slack-mcp-server\",\"context\":\"console\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Loaded users from cache\",\"app\":\"slack-mcp-server\",\"count\":3,\"cache_file\":\"/home/ovadyat/.cache/slack-mcp-server/T0B2S78S9DM_users_cache.json\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Caching channels collection...\",\"app\":\"slack-mcp-server\",\"context\":\"console\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Loaded channels from cache and re-mapped DM names\",\"app\":\"slack-mcp-server\",\"count\":28,\"cache_file\":\"/home/ovadyat/.cache/slack-mcp-server/T0B2S78S9DM_channels_cache_v2.json\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Slack MCP Server is fully ready.\",\"app\":\"slack-mcp-server\",\"context\":\"console\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Starting STDIO server\",\"app\":\"slack-mcp-server\",\"version\":\"v1.3.0-dirty\",\"build_time\":\"2026-05-14T22:55:10Z\",\"commit_hash\":\"a079b3cd4d5836d791c942a9fc107987e7865b37\"}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"channels_list\",\"params\":{\"name\":\"channels_list\",\"arguments\":{\"channel_types\":\"public_channel\",\"limit\":100}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"channels_list\",\"duration\":94220}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"params\":{\"name\":\"conversations_history\",\"arguments\":{\"channel_id\":\"C0BMDG9V1L0\",\"limit\":\"5\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"duration\":440552811}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:08+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"params\":{\"name\":\"conversations_history\",\"arguments\":{\"channel_id\":\"C0BL3QXV687\",\"limit\":\"5\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:09+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"duration\":214535738}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:09+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"params\":{\"name\":\"conversations_history\",\"arguments\":{\"channel_id\":\"C0BL3QZDQJ3\",\"limit\":\"5\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:09+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_history\",\"duration\":203680375}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:09+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_search_messages\",\"params\":{\"name\":\"conversations_search_messages\",\"arguments\":{\"limit\":10,\"search_query\":\"unblinding\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T12:04:09+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_search_messages\",\"duration\":434397714}"
+  ]
+}

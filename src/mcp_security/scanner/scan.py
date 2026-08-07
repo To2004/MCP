@@ -30,6 +30,7 @@ from pathlib import Path
 from mcp_security.static_scoring import registry as reg
 from mcp_security.static_scoring.pipeline import build_static_table
 from mcp_security.static_scoring.registry import ServerRegistry
+from mcp_security.static_scoring.server_profiles import profile_for
 
 from .atomic_flags import enrich_scan
 from .tool_list import load_tool_list
@@ -61,7 +62,12 @@ class ScanResult:
 
     @property
     def n_assets(self) -> int:
-        return len(self.table.get("asset_sensitivity", {}))
+        # Sensitivity-free modes leave `asset_sensitivity` empty, so fall back to the
+        # asset axis of the matrix — the assets are still there, only unscored.
+        sens = self.table.get("asset_sensitivity")
+        if sens:
+            return len(sens)
+        return len(self.table.get("asset_ids") or self.table.get("cells", {}))
 
 
 # Declarative-registry kinds: their assets are server-defined scopes (channels,
@@ -81,6 +87,8 @@ def build_registry(
     server: str | None = None,
     by_file: bool = False,
     tool_list: Path | None = None,
+    use_profile: bool = False,
+    profile_doc: Path | None = None,
 ) -> ServerRegistry:
     """Assemble a :class:`ServerRegistry` from static sources (no live MCP).
 
@@ -89,12 +97,18 @@ def build_registry(
     ``by_file`` selects per-file (take2) filesystem assets. Declarative kinds
     (slack, calendar, github) take both their advertised tool set and their asset
     scopes from the registry, since those servers front no local disk store.
+
+    ``use_profile`` additionally attaches the organization's written profile of
+    this server (``docs/mcp-tools/server-profiles.md``) to the registry, which the
+    description-driven scoring modes require; ``profile_doc`` selects an alternate
+    description document. A missing profile raises.
     """
     if kind in _DECLARATIVE_REGISTRIES:
         base = _DECLARATIVE_REGISTRIES[kind]()
         name = server or base.server
         return ServerRegistry(
-            server=name, kind=kind, tools=base.tools, assets=base.assets, apps=base.apps
+            server=name, kind=kind, tools=base.tools, assets=base.assets, apps=base.apps,
+            description=attach_profile(name, profile_doc=profile_doc) if use_profile else "",
         )
 
     tools = load_tool_list(kind, path=tool_list)
@@ -110,7 +124,25 @@ def build_registry(
         name = server or f"sqlite:{store.parent.name}"
     else:
         raise ValueError(f"unsupported scan kind: {kind!r}")
-    return ServerRegistry(server=name, kind=kind, tools=tools, assets=list(assets), apps=apps)
+    return ServerRegistry(
+        server=name, kind=kind, tools=tools, assets=list(assets), apps=apps,
+        description=attach_profile(name, profile_doc=profile_doc) if use_profile else "",
+    )
+
+
+def attach_profile(server: str, *, profile_doc: Path | None = None) -> str:
+    """The organization's written profile text for ``server`` (raises if absent).
+
+    ``profile_doc`` selects an alternate description document (e.g. the
+    policy-grade ``docs/mcp-tools/server-policies.md``); None keeps the default
+    ``server-profiles.md``.
+    """
+    profile = profile_for(server, doc=profile_doc)
+    logger.info(
+        "org-profile: %s -> %s (tier %s, %d words)",
+        server, profile.name, profile.tier, profile.word_count,
+    )
+    return profile.text
 
 
 def augment_with_generated_assets(registry: ServerRegistry, *, use_llm: bool = True) -> int:
@@ -151,6 +183,8 @@ def scan_server(
     version: str = "scan-0000-00-00",
     impact_mode: str = "baseline",
     gen_assets: bool = False,
+    use_profile: bool = False,
+    profile_doc: Path | None = None,
 ) -> ScanResult:
     """Run a full static scan: assemble the registry, then derive risk with the LLM.
 
@@ -160,8 +194,14 @@ def scan_server(
     runs and uses the deterministic baseline (never shipped as a real scan).
     ``gen_assets`` additionally homes every tool on an asset, generating generic
     ones (via :func:`augment_with_generated_assets`) where the registry has none.
+    ``use_profile`` attaches the organization's written description of the server,
+    which the description-driven ``impact_mode``s require; ``profile_doc`` selects
+    an alternate description document (default: ``server-profiles.md``).
     """
-    registry = build_registry(kind, root=root, server=server, by_file=by_file, tool_list=tool_list)
+    registry = build_registry(
+        kind, root=root, server=server, by_file=by_file, tool_list=tool_list,
+        use_profile=use_profile, profile_doc=profile_doc,
+    )
     if gen_assets:
         n_generated = augment_with_generated_assets(registry, use_llm=use_llm)
         logger.info("asset-gen: %d generated asset(s) added", n_generated)

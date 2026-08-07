@@ -40,6 +40,7 @@ Full command reference: [docs/development/commands.md](docs/development/commands
 | `tests/` | Automated tests (mirrors src/ structure) |
 | `docs/` | Project documentation — [start here](docs/README.md) |
 | `Literature_review/` | Thesis research: 62 papers, reviews, benchmarks |
+| `paper_v5/` | Overleaf-ready paper on the v5 policy-grade experiment — [README](paper_v5/README.md) |
 | `mcp_learning_lab/` | Experimental MCP servers and agents |
 
 ## Documentation

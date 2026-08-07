@@ -4,7 +4,7 @@ Each sheet is that server's full risk table in tidy form (one row per tool x ass
 cell), with tool and asset descriptions joined -- the same columns as the per-MCP
 CSVs. Reuses the join logic in :mod:`export_flv2na_csv` so the two never drift.
 
-Run:  python scripts/export_flv2na_xlsx.py [--out reports/experiments/five_level_v2_fs/all_scores.xlsx]
+Run:  python scripts/export_flv2na_xlsx.py [--out reports/experiments/v1/five_level_v2_fs/all_scores.xlsx]
 """
 
 from __future__ import annotations

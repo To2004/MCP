@@ -13,7 +13,7 @@ including N/A cells. Columns: server, mcp_kind, asset, asset_sensitivity,
 asset_description, tool, tool_impact, tool_description, blast_radius, blast_escape,
 cell_score, band.
 
-Run:  python scripts/export_flv2na_csv.py [--out reports/experiments/five_level_v2_fs/all_scores.csv]
+Run:  python scripts/export_flv2na_csv.py [--out reports/experiments/v1/five_level_v2_fs/all_scores.csv]
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from mcp_security.scanner.tool_list import load_tool_list
 from mcp_security.static_scoring import registry as reg
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-EXP_DIR = REPO_ROOT / "reports" / "experiments" / "five_level_v2_fs"
+EXP_DIR = REPO_ROOT / "reports" / "experiments" / "v1" / "five_level_v2_fs"
 TOOL_LISTS = REPO_ROOT / "reports" / "tool_lists"
 GENERATED_DESC = "(auto-generated asset to home an uncovered tool; description not persisted)"
 

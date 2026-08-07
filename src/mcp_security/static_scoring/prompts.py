@@ -71,6 +71,34 @@ Return JSON:
   "worked_example": str, "confidence": 0.0-1.0, "needs_human_review": bool}}"""
 
 
+# Same inference, but the deploying organization supplied a written description of
+# this server (five_level_v2_desc experiment). The description is authoritative for
+# WHO runs the server and WHAT it is for; the registry stays authoritative for what
+# the tools can actually do, so the model cannot invent an irreversible action the
+# tool set cannot perform.
+DOMAIN_INFERENCE_USER_DESC = """ORGANIZATION'S OWN DESCRIPTION of this MCP server
+-- who deploys it, what agents are supposed to use it for, which assets it holds
+and how severe each one is, and which of confidentiality / integrity / availability
+carries the loss:
+{org_description}
+
+Tool registry (all tools):
+{tools_json}
+
+Sample asset classes:
+{assets_json}
+
+Ground mcp_kind, dangerous_classes and dependency_hubs in the description above
+where it speaks to them; ground irreversible_actions in the TOOL REGISTRY only --
+the description does not license an action no tool here can perform.
+
+Return JSON:
+{{"mcp_kind": str, "asset_meaning": str, "blast_radius_meaning": str,
+  "content_unit": str, "contents_definition": str, "dependency_hubs": [str],
+  "dangerous_classes": [str], "irreversible_actions": [str],
+  "worked_example": str, "confidence": 0.0-1.0, "needs_human_review": bool}}"""
+
+
 # --- Shared preamble for proposers ------------------------------------------
 
 _PROPOSER_BASE = """You are a security classifier for an MCP gateway. The domain
@@ -79,6 +107,43 @@ ground truth for what assets and reach mean here.
 
 INFERRED DOMAIN PROFILE:
 {domain_profile}
+
+Output ONLY valid JSON, no prose, no fences."""
+
+# Preamble when the deploying organization supplied a written profile of the server
+# (five_level_v2_desc). EVERY proposer stage sees it, so the org's stated severity
+# and CIA emphasis is in view for tool impact, blast radius and baselines alike.
+_PROPOSER_BASE_DESC = """You are a security classifier for an MCP gateway. Two
+descriptions of this server are given below. The ORGANIZATION'S DESCRIPTION is
+written by the people who deploy it and is authoritative for CONTEXT: who runs the
+server, what agents are supposed to do with it, how severe each asset is, and which
+of confidentiality / integrity / availability carries the loss. The INFERRED DOMAIN
+PROFILE is derived from the tool registry and is authoritative for MECHANICS: what
+the tools can actually do. Use both. Where they disagree about CAPABILITY trust the
+inferred profile; where they disagree about IMPORTANCE trust the organization.
+
+ORGANIZATION'S DESCRIPTION OF THIS MCP SERVER:
+{org_description}
+
+INFERRED DOMAIN PROFILE:
+{domain_profile}
+
+Output ONLY valid JSON, no prose, no fences."""
+
+
+# Preamble with the org description ONLY — no inferred domain profile at all
+# (five_level_v2_ult_nodom): the profile spec carries content unit, hubs
+# (flags), and irreversible actions itself, so the description is the single
+# source of context.
+_PROPOSER_BASE_DESC_ONLY = """You are a security classifier for an MCP gateway.
+The organization that deploys this server describes it below; trust that
+description as the ground truth for what the server is for, what its assets
+hold and how severe each one is, which items are load-bearing hubs or whole
+populations (the flags), what one content item is, and which actions cannot be
+undone here.
+
+ORGANIZATION'S DESCRIPTION OF THIS MCP SERVER:
+{org_description}
 
 Output ONLY valid JSON, no prose, no fences."""
 
@@ -401,6 +466,60 @@ Return JSON (reason BEFORE you score -- emit these keys in this exact order):
 {{"asset_id": str, "drivers": [str], "reasoning": str,
   "sensitivity": 1-5, "confidence": 0.0-1.0}}"""
 
+# Sensitivity when the ORGANIZATION SUPPLIED A WRITTEN POLICY (the policy scheme of
+# docs/standards/mcp-policy-spec.md: a classification table of class x adverse-impact
+# definition, an asset register, and recognition rules -- but no numbers). The model's
+# job shrinks from "invent a severity" to "classify, then map the class onto the
+# scale", which is how FIPS 199 / SP 800-60 and the university standards (Stanford,
+# Berkeley P1-P4) actually work: the org defines classes by adverse effect, the
+# categorizer assigns the level, and aggregation adjusts it.
+ASSET_TASK_POLICY = """
+TASK: Assign ASSET SENSITIVITY (1-5) -- how bad an incident is if THIS asset is
+exposed, corrupted or destroyed. Judge what it CHARACTERISTICALLY holds, not the
+worst thing it could conceivably hold.
+
+The ORGANIZATION'S POLICY above is authoritative. Work in two steps:
+  1 CLASSIFY. Find this asset in the policy's asset register -- its Description
+    states what it holds. No row? Apply the policy's recognition rules. Still
+    undecided? Use the policy's stated default class.
+  2 MAP that class's adverse-impact definition onto the tiers below (severe /
+    serious / limited adverse effect).
+
+  5 CROWN JEWEL  exposure alone is an emergency -- exploitable or legally
+                 reportable the moment it leaks (live credentials, PHI, card data,
+                 privileged or money-moving records); OR a control plane: losing it
+                 rewires what every other tool can reach (auth/scope configuration,
+                 access-control state), so the damage is not one asset but all of
+                 them.
+  4 RESTRICTED   serious lasting harm one step removed: damages customers, staff or
+                 the company's position, but is not instantly weaponizable.
+  3 INTERNAL     disruptive and embarrassing but recoverable; meant to stay in-org.
+  2 ROUTINE      low-value internal material; exposure is a shrug.
+  1 PUBLIC       already published or disposable -- no confidentiality left to lose.
+
+RULES
+- ABSOLUTE scale, never relative to the other assets here. A whole server sitting
+  at one tier is expected and correct; do NOT spread scores to manufacture contrast.
+- CONTAINER: takes the tier of the most sensitive thing it CHARACTERISTICALLY
+  holds -- its typical payload, not a conceivable one.
+- METADATA-ONLY: an asset holding only about-ness -- names, ids, counts, listings,
+  schema, read/RSVP state, with no bodies -- is reconnaissance, not disclosure:
+  cap it at 2. Exception: the policy says those names themselves identify people,
+  deals or candidates.
+- AGGREGATION: if one asset holds the WHOLE population of a class, or the policy
+  names a combination that reveals more than its parts, raise one tier.
+- PUBLIC OVERRIDE: already-public data is 1 whatever its topic. "Financial" is not
+  "confidential".
+- Torn between two adjacent tiers on NON-public secrets, PII, money-moving or
+  regulated records: take the HIGHER. Never for public data."""
+
+ASSET_USER_POLICY = """Asset class entry:
+{asset_json}
+
+Return JSON (classify BEFORE you score -- emit these keys in this exact order):
+{{"asset_id": str, "policy_class": str, "reasoning": str,
+  "sensitivity": 1-5, "confidence": 0.0-1.0}}"""
+
 
 # --- 3. Blast Radius ---------------------------------------------------------
 
@@ -500,9 +619,7 @@ give the number."""
 
 # Non-N/A modes (baseline / five_level / five_level_v2) have no relevance gate, so
 # a tool that does not act on this asset scores the floor.
-BLAST_TASK = _BLAST_COVERAGE_BODY + (
-    "\nIf the tool does not act on this asset at all, blast = 1."
-)
+BLAST_TASK = _BLAST_COVERAGE_BODY + ("\nIf the tool does not act on this asset at all, blast = 1.")
 
 BLAST_USER = """Tool:
 {tool_json}
@@ -576,11 +693,151 @@ BLAST_TASK_CONSEQUENCES_NA = BLAST_TASK_CONSEQUENCES + "\n" + _NA_RELEVANCE
 # never double-encode the same judgment.
 BLAST_TASK_NA = _BLAST_COVERAGE_BODY + "\n" + _NA_RELEVANCE
 
+# --- 3e. Blast Radius — description-driven, no sensitivity (five_level_v2_desc) --
+# In this mode asset sensitivity is NOT scored as a separate primitive: the score is
+# blast x impact, and how much the asset matters comes from the organization's own
+# written description in the preamble. The coverage body tells the model that
+# "how valuable the data is is priced by sensitivity" -- that sentence is false here
+# (there is no sensitivity factor), so this note corrects it explicitly rather than
+# leaving the model to reconcile a rubric that references a primitive nobody scores.
+_NO_SENS_NOTE = """
+NO SEPARATE SENSITIVITY SCORE IN THIS RUN. The rubric above says value is "priced
+by sensitivity" -- in this run there is no sensitivity factor at all: the final
+score is blast_radius x tool_impact only. This does NOT mean you should smuggle
+value into blast. Blast still prices REACH and REACH ALONE -- how much of the asset,
+how many of its subjects, and what beyond it one call touches. What the asset is
+worth is already stated in the ORGANIZATION'S DESCRIPTION above; use that
+description to decide two things and nothing else:
+  (1) WHICH ASSETS ARE DEPENDENCY HUBS or DANGEROUS-CLASS POPULATIONS here -- the
+      description names them and says why -- since those are what open the tier-5
+      escape routes (b) and (c);
+  (2) WHOSE data and WHICH dependents an asset actually carries, so "reach across
+      subjects and dependents" is judged against the real organization rather than
+      guessed from the asset's name.
+An asset the organization calls critical does NOT get a higher blast for a pinpoint
+touch: one record read from a crown-jewel store is still tier 1-2 reach. Conversely
+an asset the organization calls routine still scores 4 when one call takes all of
+it. Severity enters through impact and through the description, never by inflating
+coverage."""
+
+BLAST_TASK_NA_DESC = _BLAST_COVERAGE_BODY + "\n" + _NA_RELEVANCE + "\n" + _NO_SENS_NOTE
+
+# five_level_v2_ult: sensitivity IS a factor again, but it comes from the org's own
+# per-asset table in the description rather than from an LLM stage. The note keeps
+# blast pure reach (the desc experiment showed value otherwise leaks into blast:
+# read-one-file scored blast 5 on payslips vs 1 on README with identical coverage).
+_PROFILE_SENS_NOTE = """
+SENSITIVITY IS SUPPLIED SEPARATELY IN THIS RUN. Each asset's 1-5 sensitivity is
+taken directly from the organization's own per-asset table in the description
+above and multiplied into the final score (sensitivity x blast x impact) -- you
+do not score it, and you must NOT price it again here. Blast prices REACH and
+REACH ALONE: how much of the asset, how many of its subjects, and what beyond it
+one call touches. Do NOT raise blast because the description calls an asset
+critical -- a pinpoint touch of a crown jewel is still tier 1-2 reach, and a
+routine asset fully covered is still 4. Use the description only to know WHICH
+assets are dependency hubs or dangerous-class populations (tier-5 escape routes b
+and c) and WHOSE data an asset carries when judging reach across subjects."""
+
+BLAST_TASK_NA_PROFILE = _BLAST_COVERAGE_BODY + "\n" + _NA_RELEVANCE + "\n" + _PROFILE_SENS_NOTE
+
+# v3 (ult/pure): explicit bulk-vs-singular guidance. The impact stage scores one
+# tool in isolation, so nothing otherwise forces `create-events` to price at or
+# above `create-event`; these notes teach the rule, and a deterministic bulk-twin
+# pass in assembly backstops it.
+_BULK_IMPACT_NOTE = """
+  - BULK vs SINGULAR VARIANTS: a tool that performs the same operation on MANY
+    items in one call (a pluralized twin, a "multiple"/"bulk"/"batch" variant, an
+    array-of-items parameter) takes AT LEAST its singular twin's tier — and when
+    the bulk description drops a safety the singular has (skips confirmation,
+    conflict or duplicate detection, validation), that loss of recoverability
+    signals the HIGHER tier."""
+
+_ARRAY_REACH_NOTE = """
+BULK PARAMETERS: a tool whose call accepts an ARRAY of items (event lists, file
+lists, batch ids) reaches MANY items in one call by construction — its reach is
+never tier 1, and it must not price below its singular twin on the same asset."""
+
+TOOL_IMPACT_TASK_5LEVEL_V3 = TOOL_IMPACT_TASK_5LEVEL_V2 + _BULK_IMPACT_NOTE
+
+BLAST_TASK_NA_PROFILE_V3 = (
+    _BLAST_COVERAGE_BODY
+    + "\n"
+    + _NA_RELEVANCE
+    + "\n"
+    + _PROFILE_SENS_NOTE
+    + "\n"
+    + _ARRAY_REACH_NOTE
+)
+
 BLAST_USER_NA = """Tool:
 {tool_json}
 
 Asset class:
 {asset_json}
+
+Return JSON (relevance FIRST, then reasoning, then escape route, score LAST). Emit
+blast_radius as null when affects_asset is false, else an integer 1-5; escape is
+"a", "b", or "c" when a tier-5 route fired, else "none":
+{{"tool_name": str, "asset_id": str, "affects_asset": bool,
+  "coverage_reasoning": str, "escape": "a|b|c|none",
+  "blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# --- 3d. Blast Radius — context-first (five_level_v2_ctx experiment) ----------
+# The model first builds an UNDERSTANDING of each tool (its role in this MCP, what
+# one call can reach, why it matters) in a separate per-tool stage; that profile is
+# then injected into every blast decision for the tool. Hypothesis: coverage blast
+# under-scores pinpoint mutations (create/delete one event) because the scorer never
+# considers what the touched item MEANS to the asset's subjects.
+
+TOOL_CONTEXT_TASK = """
+TASK: Build a security UNDERSTANDING of ONE tool in the context of this whole MCP
+server -- you are NOT scoring anything yet. A later stage will judge how far one
+call of this tool reaches; your job is to give that stage the context it needs to
+judge well. Study the tool's description and parameters AGAINST the full tool
+registry and the inferred domain profile, then explain:
+- role: what this tool is FOR in this server's normal workflow, and how central it
+  is relative to the other tools (is it the main read? the only destructive op?).
+- single_call_reach: concretely, the MOST one call can touch given its parameters
+  -- how many items, which scopes, whose data; note parameters that widen reach
+  (bulk lists, recurrence scopes, wildcards, "all" flags).
+- consequence_carriers: WHO and WHAT actually feel the effect of one call -- the
+  people behind the items (an event's attendees, a channel's members, a file's
+  consumers), downstream systems, and whether the effect is visible or silent.
+- worst_realistic_misuse: the single worst thing ONE misused call realistically
+  does in this domain, and what it takes to recover from it.
+- importance: why this tool matters (or does not) for protecting this server --
+  one or two sentences.
+Ground every statement in the description and domain profile; do not invent
+capabilities the description does not support."""
+
+TOOL_CONTEXT_USER = """Tool to understand:
+{tool_json}
+
+Full tool registry of this server (for relative context):
+{tools_json}
+
+Return JSON:
+{{"tool_name": str, "role": str, "single_call_reach": str,
+  "consequence_carriers": str, "worst_realistic_misuse": str,
+  "importance": str, "confidence": 0.0-1.0}}"""
+
+# Same rubric as BLAST_TASK_NA; the user message additionally carries the tool's
+# understanding profile so reach is judged with the tool's meaning in view.
+BLAST_USER_NA_CTX = """Tool:
+{tool_json}
+
+TOOL UNDERSTANDING (from a prior analysis of this MCP and this tool; trust it as
+context): {tool_profile}
+
+Asset class:
+{asset_json}
+
+Judge reach WITH this understanding in view: consequences count for every subject
+and dependent the call's effects actually touch (attendees, members, consumers --
+per consequence_carriers), not only the raw item count; a silent or hard-to-notice
+effect reaches further than a visible one. The rubric's tiers still decide the
+number.
 
 Return JSON (relevance FIRST, then reasoning, then escape route, score LAST). Emit
 blast_radius as null when affects_asset is false, else an integer 1-5; escape is
@@ -664,3 +921,1045 @@ JSON (reason FIRST, value LAST):
 # NOTE: The former LLM band stage (BAND_TASK/BAND_USER) was removed. Bands are now
 # assigned solely by the deterministic band_label() in pipeline.py -- reproducible
 # and immune to the critical-band inflation the LLM band stage produced.
+
+
+# --- v4: standards-grounded, short-form prompts -------------------------------
+# Rewritten against published standards instead of hand-grown prose; see
+# reports/experiments/v4/scoring-prompts.md for the sources and the rationale.
+#   impact -> the MCP tool-annotation vocabulary (readOnly / destructive /
+#             openWorld), scored from the tool JSON ALONE (no org profile, no
+#             inferred domain profile: the v3 `imponly` arm showed the asset
+#             table left 12/13 impacts unchanged).
+#   blast  -> CVSS v4.0's Vulnerable-System vs Subsequent-System split, which
+#             replaced the retired "Scope" metric for exactly the inconsistency
+#             reason we hit; a tier-5 escape now requires a FLAG in the org
+#             table, and the sibling tool/asset lists ride along so reach is
+#             judged comparatively rather than one blind cell at a time.
+
+TOOL_IMPACT_TASK_V4 = """You are classifying one MCP tool. Output ONLY valid JSON,
+no prose, no fences.
+
+TASK: Assign TOOL IMPACT (1-5) -- what ONE call DOES, judged from the tool's
+description and parameters alone. Not how much it touches (that is scored
+separately), not how valuable the target is.
+
+The ladder follows the MCP annotation vocabulary (read-only / destructive /
+open-world) and CVSS integrity-and-availability loss:
+  1 NO EFFECT      the caller learns only that the service is reachable, or facts
+                   about its own session (ping, health, version, whoami, clock).
+  2 METADATA       read-only, and returns only about-ness: names, ids, counts,
+                   sizes, timestamps, permissions, schema, a listing. OR changes
+                   only about-ness: mark read, star, pin, mute, pure rename.
+  3 CONTENT READ   read-only, and returns the substance itself (bodies, values,
+                   file contents, message text, search results with content).
+                   Nothing changes; what was seen cannot be unseen.
+  4 REVERSIBLE WRITE  modifies state in a way the system itself can undo: create,
+                   append, partial/field edit, move, membership or permission
+                   change (grant AND revoke), a message posted where it can still
+                   be edited or deleted.
+  5 IRREVERSIBLE OR OPEN-WORLD  no path back from inside the system: delete, wipe,
+                   drop, purge, or a COMPLETE overwrite that replaces an item's
+                   entire content; executes code; moves money; OR crosses the
+                   system boundary (email/SMS/webhook/public post/external invite),
+                   which is unrecallable once sent.
+
+RULES
+- Score the DESCRIPTION and PARAMETERS, never the name. Annotation hints
+  (readOnlyHint, destructiveHint, openWorldHint) are HINTS ONLY -- corroborating
+  evidence, never overriding a description that says otherwise.
+- A tool spanning tiers takes the HIGHEST it can reach.
+- Scoped edit (leaves the rest intact, reconstructable) = 4. Full overwrite of an
+  item's entire content = 5. A tool that can do either takes 5.
+- A bulk/batch variant takes AT LEAST its singular twin's tier."""
+
+TOOL_IMPACT_USER_V4 = """Tool:
+{tool_json}
+
+Return JSON (reason first): {{"tool_name": str, "reasoning": str,
+"tool_impact": 1-5, "confidence": 0.0-1.0}}"""
+
+
+BLAST_TASK_V4 = """TASK: Assign BLAST RADIUS (1-5) for ONE (tool, asset) pair --
+HOW FAR the consequences of one call reach. This is the CVSS v4.0 question: does
+the impact stay inside this asset (the "vulnerable system"), or does it reach
+systems, identities and data beyond it (a "subsequent system")?
+
+Sensitivity is supplied separately by the organization's table and is ALREADY
+multiplied into the score. Do NOT price value here. Blast prices REACH ONLY.
+
+  1 ONE ITEM      a single item among many; one subject. The asset as a whole is
+                  untouched.
+  2 NARROW SLICE  a few items or one small bounded scope; a handful of subjects.
+                  The overwhelming majority of the asset is unaffected.
+  3 BROAD CUT     most of the asset, or several whole scopes in one call --
+                  serious but still PARTIAL; a substantial part survives.
+  4 TOTAL, CONTAINED   essentially everything the asset holds (CVSS "total loss
+                  ... all information within the Vulnerable System"), including
+                  the whole of a single-item asset -- but the consequences STOP at
+                  the asset's boundary. Full coverage of an ordinary asset is 4.
+  5 ESCAPES       CVSS Subsequent System impact: the consequences do NOT stay
+                  constrained to this asset. Award 5 only via a route the
+                  ORGANIZATION'S TABLE sanctions, and name it:
+                  (a) hub -- the asset is flagged `hub`: other systems
+                      authenticate against it, load config from it, or deploy
+                      from it, and one call discloses, corrupts or removes it
+                      wholesale.
+                  (b) population -- the asset is flagged `population` (or
+                      `self-sufficient`) and one call reaches its ENTIRE set of
+                      subjects at once.
+                  (c) irreversible-total -- the whole asset is destroyed with no
+                      path back, so nothing remains to restore.
+
+DISCIPLINE
+- If the asset carries NO escape flag in the table, the ceiling is 4. Do not
+  infer a population or hub escape from prose adjectives.
+- Reading a listing, names, or metadata is reconnaissance: it exposes no contents
+  and removes nothing, so it cannot exceed the metadata tier.
+- Reach is RELATIVE TO THIS ASSET: touching the only item of a single-item asset
+  is 100% of it. Physical size is a red herring.
+- CONSISTENCY: the sibling lists below are the SAME server. The same kind of call
+  on two comparable assets must not differ by more than one tier without a reason
+  you can state in one sentence.
+
+RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on
+a different class, set affects_asset=false and blast_radius=null (N/A, not a low
+score)."""
+
+BLAST_USER_V4 = """Tool: {tool_json}
+Asset: {asset_json}
+Other tools on this server: {peer_tools}
+Other assets on this server: {peer_assets}
+
+Return JSON: {{"tool_name": str, "asset_id": str, "affects_asset": bool,
+"coverage_reasoning": str, "escape": "a|b|c|none",
+"blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# v5: the same rubric as V4, retargeted at a POLICY-grade organization. Two
+# statements in V4 name an artifact the policy arm does not have -- the org's
+# per-asset sensitivity TABLE. Here sensitivity is derived by the sensitivity
+# stage from the classification policy, and the escape routes are sanctioned by
+# the asset register's Flags column instead. Everything else is V4 verbatim, so a
+# v4-vs-v5 diff stays attributable to the inputs rather than to the rubric.
+BLAST_TASK_V5 = (
+    BLAST_TASK_V4.replace(
+        "Sensitivity is supplied separately by the organization's table and is ALREADY\n"
+        "multiplied into the score.",
+        "Sensitivity is scored separately from the organization's classification\n"
+        "policy and is ALREADY multiplied into the score.",
+    )
+    .replace(
+        "Award 5 only via a route the\n                  ORGANIZATION'S TABLE sanctions",
+        "Award 5 only via a route the\n                  ORGANIZATION'S ASSET REGISTER sanctions"
+        " with a Flags entry",
+    )
+    .replace(
+        "- If the asset carries NO escape flag in the table, the ceiling is 4.",
+        "- If the asset carries NO escape flag in the register, the ceiling is 4.",
+    )
+)
+
+
+# ===========================================================================
+# v5r — shorter prompts, classified by OPERATION TYPE
+# ===========================================================================
+#
+# What changed and why (audit: reports/experiments/v5/PROMPT_ROLES.md):
+#
+# * **Domain inference loses seven of its ten fields.** `dependency_hubs`,
+#   `dangerous_classes` and `irreversible_actions` asked the model to infer what
+#   the organization now STATES: hubs are the register's `Flags` column,
+#   dangerous classes are the classification table, prohibited/irreversible
+#   operations are the policy's operation limits. Inferring them alongside the
+#   policy invited the two to disagree. `asset_meaning`, `blast_radius_meaning`
+#   and `worked_example` were prose no stage consumed, re-serialized into every
+#   later prompt. What survives is what blast actually needs: what this system is
+#   and what one item is here.
+# * **The finance paragraph is gone.** "SEC insider-trade / Form 4 filings,
+#   institutional-holding / 13F filings, central-bank series" was a list of one
+#   domain's document types inside a domain-agnostic prompt, written to stop
+#   over-scoring on the finance corpus. The clause that generalizes — already
+#   published data has nothing left to leak — lives in the sensitivity rubric,
+#   where the decision is actually made.
+# * **Open-world leaves the impact ladder.** Whether a call leaves the
+#   organization is a channel, not an operation; "it is an email" says nothing
+#   about read / write / remove. Sending creates a message, so it is a write.
+#   The dynamic stage prices boundary crossing, where the recipient is known.
+# * **Annotation hints stop bounding anything.** The protocol's own guidance is
+#   that hints "are not guaranteed to faithfully describe tool behavior"; a
+#   server must not be the authority on its own risk score.
+# * **The blast DISCIPLINE block loses three of its four lines** — a ceiling
+#   written to kill one v3 over-read, a sentence using impact vocabulary
+#   ("cannot exceed the metadata tier") that has no referent among the blast
+#   tiers, and a consistency instruction the model cannot follow because each
+#   cell is scored in its own call. Consistency is enforced deterministically by
+#   the alias-twin pass instead.
+
+DOMAIN_INFERENCE_SYSTEM_V5R = """You are calibrating a risk scorer for one MCP server.
+From the tool registry alone, say what this server is and what "one item" means
+here. Nothing else — the deploying organization supplies the rest.
+
+Output ONLY valid JSON, no prose, no fences.
+
+- mcp_kind: what system this MCP fronts (filesystem, SQL database, calendar,
+  chat workspace, source repository, cloud infra, ...).
+- content_unit: what ONE item concretely is here — a file, a row, a message, an
+  event, a record.
+- contents_definition: one sentence — what counts as an item's CONTENTS (bodies,
+  values, message text) as opposed to METADATA about it (ids, counts, sizes,
+  timestamps, permissions, schema).
+
+Set needs_human_review=true, and confidence below 0.7, if the registry is too
+sparse to tell."""
+
+DOMAIN_INFERENCE_USER_V5R = """Tools:
+{tools_json}
+
+Return JSON: {{"mcp_kind": str, "content_unit": str, "contents_definition": str,
+"confidence": 0.0-1.0, "needs_human_review": bool}}"""
+
+
+TOOL_IMPACT_TASK_V5R = """You are classifying one MCP tool. Output ONLY valid JSON,
+no prose, no fences.
+
+TASK: Assign TOOL IMPACT (1-5) — what OPERATION one call performs, judged from
+the tool's description and parameters. Not how much it touches (blast radius
+scores that), not how valuable the target is (sensitivity scores that).
+
+Ask only: does it read, does it write, or does it remove?
+
+  1 NO EFFECT      the caller learns only that the service is reachable, or facts
+                   about its own session: ping, health, version, clock, whoami.
+  2 METADATA       returns or changes only about-ness — names, ids, counts, sizes,
+                   timestamps, permissions, schema, a listing; or consumption
+                   state: mark read, star, pin, mute, rename.
+  3 CONTENT READ or LIMITED WRITE
+                   returns the substance itself (bodies, values, message text), OR
+                   writes a bounded amount and leaves the rest of the item
+                   untouched: append a line, add a comment or a reply, set one
+                   named field, post a short message. HTTP calls this PATCH; CVSS
+                   calls it "the amount of modification is limited".
+  4 WRITE          the ordinary write: the caller supplies what the item says.
+                   Create a record with its fields, update an event, write a file,
+                   overwrite content. HTTP calls this PUT; CVSS calls it a total
+                   loss of integrity for that item.
+  5 REMOVAL or EXECUTION
+                   no path back from inside the system: delete, wipe, drop, purge,
+                   truncate; or it executes code, runs a command, or moves money.
+
+RULES
+- Score the DESCRIPTION and PARAMETERS, never the name alone.
+- The CHANNEL is not the operation. Sending mail, posting externally or invoking a
+  webhook creates a message — that is a write. Whether a specific call actually
+  leaves the organization is a runtime fact, scored elsewhere.
+- Annotation hints (readOnlyHint, destructiveHint, idempotentHint) are HINTS. They
+  may corroborate; they never bound the answer. If a hint contradicts the
+  description, follow the description and say so in your reasoning.
+- A write is an ordinary write (4) unless the declaration says the amount is
+  bounded (3). If it does not say, judge from the parameters: a single
+  content/body field is a whole write; named optional fields are a patch.
+- A tool that can do two of these takes the more consequential one.
+
+Tool:
+{tool_json}
+
+Return JSON (reason first): {{"tool_name": str, "reasoning": str,
+"tool_impact": 1-5, "confidence": 0.0-1.0}}"""
+
+
+BLAST_TASK_V5R = """TASK: Assign BLAST RADIUS (1-5) for ONE (tool, asset) pair —
+HOW FAR the consequences of one call PROPAGATE. What the asset is worth is scored
+separately and already multiplied in; price the SPREAD of the consequence only.
+
+COUNT SUBJECTS AND SYSTEMS, NOT ITEMS. How many rows a call touches is a weak
+proxy and often the wrong one. Reading ONE password file touches one item and
+compromises every system that password opens — that is a 5, not a 1. Creating ONE
+calendar event touches one item and reaches everyone invited to it. Ask: after
+this call, who and what is different?
+
+  1 ALMOST NOBODY  the consequence stops at one item that nothing and nobody
+                   depends on. A colour palette, a scratch record, a static list.
+                   If a person or a system is meaningfully affected, this is not 1.
+  2 A FEW          a handful of subjects, or one small bounded scope.
+  3 A GROUP        the people or systems attached to what the call touched — the
+                   attendees of an event, the members of a channel, the consumers
+                   of a record. **This is the normal case for a call that touches
+                   real organizational data. Start here and move for a reason.**
+  4 THE WHOLE SET  everyone or everything this asset covers, at once — but the
+                   consequence still stops at the asset's boundary.
+  5 BEYOND         the consequence does not stay inside this asset. Award 5 only
+                   via a route the organization's register sanctions, and name it:
+                   (a) hub — the asset is flagged `hub`: other systems
+                       authenticate against it, load configuration from it, or
+                       deploy from it, so changing or reading it reaches them too;
+                   (b) self-sufficient — the asset is flagged `self-sufficient`:
+                       what this call returns is usable ON ITS OWN elsewhere (a
+                       credential, a key, a token), so the consequence LEAVES with
+                       the data even though only one item was touched;
+                   (c) population — the asset is flagged `population` and one call
+                       reaches its ENTIRE set of subjects at once;
+                   (d) irreversible-total — the asset is destroyed outright, with
+                       nothing left to restore.
+
+Reach is relative to THIS asset: touching the only item of a single-item asset is
+all of it.
+
+RELEVANCE FIRST: does this tool act on this asset at all? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score."""
+
+
+# The floors, stated to the model rather than only applied to its answer. The
+# deterministic pass in pipeline.apply_gated_floor still enforces them — this just
+# stops the model producing a number that is about to be overwritten, which made
+# `blast_radius_raw` and `blast_radius` disagree on ~9 cells per server and gave
+# the reasoning trail nothing to say about the correction.
+#
+# The two numbers the floors key on are known before blast runs (sensitivity is
+# scored in stage 2, impact in stage 1), so they are handed over as FACTS. The
+# risk this accepts: a model that can see the sensitivity may anchor reach on
+# value, which is exactly the separation the rubric otherwise enforces — hence
+# the explicit "these are inputs, not things to re-judge".
+_BLAST_FLOORS_V5R = """
+FLOORS — the organization sets these; they are minimums, not targets. The two
+numbers below are already decided, so do not re-judge them:
+  * asset sensitivity 5  ->  blast radius is at least 4
+  * asset sensitivity 4  ->  blast radius is at least 3
+  * tool impact 5        ->  blast radius is at least 3
+Reaching a crown-jewel asset at all is never a pinpoint consequence, and an
+irreversible call is never a pinpoint consequence, whatever the verb. Above the
+floor, judge reach on the evidence as usual. If a floor and your own reading
+disagree, take the floor and say so in one clause."""
+
+BLAST_TASK_V5R_FLOORED = BLAST_TASK_V5R + "\n" + _BLAST_FLOORS_V5R
+
+BLAST_USER_V5R = """Tool: {tool_json}
+Asset: {asset_json}
+Already decided for this pair — tool impact: {tool_impact} · asset sensitivity: {asset_sensitivity}
+Other tools on this server: {peer_tools}
+Other assets on this server: {peer_assets}
+
+Return JSON: {{"tool_name": str, "asset_id": str, "affects_asset": bool,
+"coverage_reasoning": str, "escape": "a|b|c|d|none",
+"blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# The sensitivity stage is the one that measured well (100 % within one tier), so
+# v5r changes exactly one line: the worked finance example comes out. "Financial
+# is not confidential" is an argument with the finance corpus; the principle that
+# generalizes is that publication, not topic, decides.
+ASSET_TASK_POLICY_V5R = ASSET_TASK_POLICY.replace(
+    '- PUBLIC OVERRIDE: already-public data is 1 whatever its topic. "Financial" is not\n'
+    '  "confidential".',
+    "- PUBLISHED, NOT TOPIC: data the organization has already published has no\n"
+    "  confidentiality left to lose and is 1, however sensitive its subject sounds.",
+)
+
+
+# ===========================================================================
+# v5r flag ablation — two arms
+# ===========================================================================
+#
+# The register's `Flags` column is the organization asserting a CONCLUSION
+# (`hub` = reaching this reaches other systems) where the rest of the register
+# states FACTS. That conclusion is the blast question, so a flag lets the org
+# answer what blast is supposed to derive — and an org may simply not supply it.
+#
+#   noflags  — no flags reach the model at all. Tier 5 has to be argued from the
+#              register's own description, and the route is named in free text
+#              instead of being chosen from a closed list.
+#   keyflags — flags kept, but only the three that ever changed a score
+#              (`hub`, `population`, `self-sufficient`). `metadata-only` was
+#              written 12 times and read by nothing, `public` is derivable from
+#              "already published", and `completeness-is-the-asset` has never
+#              been used at all.
+#
+# Neither arm shows the model a TOOL capability flag. Those were always computed
+# for the rules' own use and never entered a prompt; the model reads the
+# parameters directly, which is what the impact rubric already tells it to do.
+
+BLAST_TASK_V5R_NOFLAGS = (
+    BLAST_TASK_V5R[: BLAST_TASK_V5R.index("  5 BEYOND")]
+    + """  5 BEYOND         the consequence does not stay inside this asset. The
+                   register does not label which assets these are, so argue it
+                   from the asset's own description and say which of these it is:
+                   - it is load-bearing for other systems: they authenticate
+                     against it, load configuration from it, or deploy from it,
+                     so reaching it reaches them;
+                   - what this call returns is usable ON ITS OWN elsewhere (a
+                     credential, a key, a token), so the consequence leaves with
+                     the data even though only one item was touched;
+                   - one call reaches the ENTIRE set of subjects the asset covers;
+                   - the asset is destroyed outright, with nothing left to restore.
+                   If the description does not support one of these, it is not a 5.
+
+Reach is relative to THIS asset: touching the only item of a single-item asset is
+all of it.
+
+RELEVANCE FIRST: does this tool act on this asset at all? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score."""
+)
+
+BLAST_TASK_V5R_NOFLAGS_FLOORED = BLAST_TASK_V5R_NOFLAGS + "\n" + _BLAST_FLOORS_V5R
+
+# Same payload as BLAST_USER_V5R, except `escape` is prose: with no closed flag
+# vocabulary there are no letters to pick from, so the model states the reason and
+# a reader can check it against the description.
+BLAST_USER_V5R_NOFLAGS = """Tool: {tool_json}
+Asset: {asset_json}
+Already decided for this pair — tool impact: {tool_impact} · asset sensitivity: {asset_sensitivity}
+Other tools on this server: {peer_tools}
+Other assets on this server: {peer_assets}
+
+Return JSON: {{"tool_name": str, "asset_id": str, "affects_asset": bool,
+"coverage_reasoning": str,
+"escape": "one short clause naming why the consequence leaves this asset, or none",
+"blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# ---------------------------------------------------------------------------
+# A third blast variant: the flag CONCEPTS survive, the flag LABELS do not.
+# ---------------------------------------------------------------------------
+#
+# `noflags` removed the register's Flags column and left tier 5 defined only as
+# "argue it from the description". That throws away something worth keeping: the
+# three flags were not arbitrary, they name the three ways a consequence actually
+# escapes an asset — load-bearing, portable, whole-population. What was wrong was
+# the ORG asserting them per asset, not the concepts themselves.
+#
+# So here the concepts become QUESTIONS the model asks of the description, and
+# the evidence has to be quoted back from the organization's own words. The
+# scaffold guides the reasoning; the register still supplies the facts; nobody
+# hands over a conclusion.
+#
+# Kept separate from BLAST_TASK_V5R and BLAST_TASK_V5R_NOFLAGS — both remain as
+# run, so the three arms stay comparable.
+
+BLAST_TASK_V5R_SELFASSESS = (
+    BLAST_TASK_V5R[: BLAST_TASK_V5R.index("  5 BEYOND")]
+    + """  5 BEYOND         the consequence does not stay inside this asset.
+
+BEFORE AWARDING 5, ask these four questions of the asset's own description. Answer
+each yes or no, and for any yes QUOTE the words in the description that support
+it. A 5 with no quotable support is not a 5 — say so and score 4.
+
+  Q1 LOAD-BEARING   Do other systems depend on this to function — do they
+                    authenticate against it, load configuration from it, or deploy
+                    from it? Then reaching it reaches them.
+  Q2 PORTABLE       Is what this call RETURNS usable on its own somewhere else — a
+                    credential, a key, a token? Then the consequence leaves with
+                    the data even though one item was touched.
+  Q3 WHOLE SET      Does one call reach the ENTIRE population of subjects this
+                    asset covers, rather than some of them?
+  Q4 NOTHING LEFT   Is the asset destroyed outright, with nothing remaining to
+                    restore from?
+
+The organization does not label which assets these are. It describes them, and a
+description that says "the reach of every other tool", "one record per person" or
+"usable alone" is answering one of these questions whether or not it uses the
+word.
+
+Reach is relative to THIS asset: touching the only item of a single-item asset is
+all of it.
+
+RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score."""
+)
+
+BLAST_TASK_V5R_SELFASSESS_FLOORED = BLAST_TASK_V5R_SELFASSESS + "\n" + _BLAST_FLOORS_V5R
+
+# The escape field carries the question that was answered yes, plus the quote —
+# so a reviewer can check the claim against the register without rerunning.
+BLAST_USER_V5R_SELFASSESS = """Tool: {tool_json}
+Asset: {asset_json}
+Already decided for this pair — tool impact: {tool_impact} · asset sensitivity: {asset_sensitivity}
+Other tools on this server: {peer_tools}
+Other assets on this server: {peer_assets}
+
+Return JSON: {{"tool_name": str, "asset_id": str, "affects_asset": bool,
+"coverage_reasoning": str,
+"escape": "EXACTLY ONE of these five strings: Q1, Q2, Q3, Q4, none",
+"escape_evidence": "the words quoted from the asset description, or empty",
+"blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# ---------------------------------------------------------------------------
+# Two further v5r arms, each changing exactly one thing from `selfassess`.
+# ---------------------------------------------------------------------------
+
+# ARM: two-stage framing.
+#
+# The scanner has always been the design-time half of a two-stage system — a
+# runtime scorer prices the actual call — but no prompt ever said so. The model
+# was therefore answering as if its number were the final verdict, which pushes it
+# toward the worst case: it has to cover a possibility it cannot see. Telling it a
+# second stage exists lets it score the STRUCTURE and leave the specifics alone.
+_STATIC_STAGE_FRAMING = """YOU ARE THE STATIC (DESIGN-TIME) STAGE OF A TWO-STAGE SCORER.
+
+You see only what a tool CAN do and what an asset IS. You never see an actual
+call, its arguments, who made it, or what came back. A second DYNAMIC stage scores
+every real call at runtime with exactly those facts in hand, and it can raise a
+score that you left low.
+
+So give the STRUCTURAL direction, not the worst case:
+- Score what this tool and this asset are LIKE, not the most damaging request
+  somebody could conceivably send.
+- Where the answer genuinely depends on the request — which path, which recipient,
+  how many ids, whether a flag was set — score the ordinary structural case and
+  say in one clause that the specifics are runtime facts.
+- Do not inflate to cover a possibility you cannot see. Leaving room for the
+  dynamic stage is correct behaviour here, not under-scoring.
+
+"""
+
+TOOL_IMPACT_TASK_V5R_TWOSTAGE = _STATIC_STAGE_FRAMING + TOOL_IMPACT_TASK_V5R
+BLAST_TASK_V5R_SELFASSESS_TWOSTAGE = (
+    _STATIC_STAGE_FRAMING + BLAST_TASK_V5R_SELFASSESS_FLOORED
+)
+ASSET_TASK_POLICY_V5R_TWOSTAGE = _STATIC_STAGE_FRAMING + ASSET_TASK_POLICY_V5R
+
+
+# ARM: lowered floors.
+#
+# Every floor drops one tier, and any floor that lands below 3 is removed rather
+# than kept as a weak nudge. What survives is a single rule: reaching a
+# crown-jewel asset is not a pinpoint consequence. The sensitivity-4 floor and the
+# impact-5 floor go entirely.
+#
+# The point is to find out how much of the blast number the floors were holding
+# up. With the propagation rubric the model's own answers already cleared the old
+# floors on most cells (calendar went from 17 raised cells to 0), so a floor that
+# almost never fires is a floor worth removing.
+_BLAST_FLOORS_V5R_LOW = """
+FLOOR — the organization sets this one minimum; it is a floor, not a target:
+  * asset sensitivity 5  ->  blast radius is at least 3
+Reaching a crown-jewel asset at all is not a pinpoint consequence. Everywhere
+else, judge reach purely on the evidence. The asset's sensitivity and the tool's
+impact are given below as already-decided facts for context — do not re-judge them
+and do not copy them into your answer."""
+
+BLAST_TASK_V5R_SELFASSESS_LOWFLOOR = BLAST_TASK_V5R_SELFASSESS + "\n" + _BLAST_FLOORS_V5R_LOW
+
+
+# ===========================================================================
+# ARM `scope` — blast tiers by ORGANIZATIONAL SCOPE, and no floors at all
+# ===========================================================================
+#
+# The published scoping of blast radius is organizational, not numerical: cloud
+# incident-response frameworks describe it as individual/system level, then
+# team/service level, then organization-wide — "every asset, identity, dataset and
+# downstream service an attacker can touch from a single point of compromise".
+# The tiers below follow that ladder.
+#
+# One deliberate departure from the brief: tier 5 is defined by REACH, not by how
+# secret the material is. "Executive" or "top secret" is a sensitivity property —
+# it is already priced by the sensitivity factor and multiplied into the same
+# cell. Putting it in blast as well would count it twice, which is the error this
+# rubric family has been trying to remove. What survives from the intent is the
+# other half of the sentence: it does not stay inside the asset, and it
+# propagates.
+#
+# No floors. `lowfloor` showed the whole floor system moved 1 cell and 0.2 % of
+# the total once the model reasons about propagation, so the last rule goes too.
+
+BLAST_TASK_V5R_SCOPE = """TASK: Assign BLAST RADIUS (1-5) for ONE (tool, asset) pair —
+HOW FAR the consequences of one call PROPAGATE. What the asset is worth is scored
+separately and already multiplied in; price the SPREAD of the consequence only.
+
+COUNT SUBJECTS AND SYSTEMS, NOT ITEMS, and count them in ORGANIZATIONAL SCOPE.
+How many rows a call touches is a weak proxy and often the wrong one. Reading ONE
+password file touches one item and reaches every system that password opens.
+Ask: after this call, WHO is different, and how far across the organization do
+they sit?
+
+  1 ONE PERSON OR ITEM   the consequence stops at a single subject, or a single
+                         item nothing and nobody depends on. A colour palette, a
+                         scratch record, one person's own state.
+  2 ONE GROUP            the people or systems attached to what the call touched,
+                         within one team or one bounded scope — the attendees of
+                         an event, the members of a channel, the consumers of one
+                         record. **This is the normal case for a call that touches
+                         real organizational data. Start here and move for a
+                         reason.**
+  3 SEVERAL GROUPS       the consequence crosses team or scope boundaries — an
+                         event spanning several teams, a set of channels, records
+                         belonging to more than one part of the organization.
+  4 ORGANIZATION-WIDE    essentially everyone or everything this asset serves,
+                         at once — but the consequence still stops at the
+                         organization's boundary.
+  5 BEYOND               the consequence does not stay inside this asset or the
+                         organization. It reaches systems, identities or people
+                         outside it, or it cannot be contained once it starts.
+
+BEFORE AWARDING 5, ask these four questions of the asset's own description. Answer
+each yes or no, and for any yes QUOTE the words in the description that support
+it. A 5 with no quotable support is not a 5 — say so and score 4.
+
+  Q1 LOAD-BEARING   Do other systems depend on this to function — do they
+                    authenticate against it, load configuration from it, or deploy
+                    from it? Then reaching it reaches them.
+  Q2 PORTABLE       Is what this call RETURNS usable on its own somewhere else — a
+                    credential, a key, a token? Then the consequence leaves with
+                    the data even though one item was touched.
+  Q3 WHOLE SET      Does one call reach the ENTIRE population of subjects this
+                    asset covers, rather than some of them?
+  Q4 NOTHING LEFT   Is the asset destroyed outright, with nothing remaining to
+                    restore from?
+
+Do NOT award a tier because the material is confidential, executive or otherwise
+sensitive. How valuable it is has already been scored and multiplied into this
+cell. Score only how far the consequence travels.
+
+Reach is relative to THIS asset: touching the only item of a single-item asset is
+all of it.
+
+RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score."""
+
+BLAST_USER_V5R_SCOPE = BLAST_USER_V5R_SELFASSESS
+
+
+# ===========================================================================
+# Three arms attacking the N/A problem, each on top of `scope`
+# ===========================================================================
+#
+# The relevance gate lets the model mark a (tool, asset) pair N/A. Measured
+# against the organization's own register — whose Tools cell states which tools
+# reach each asset — the model and the register agree on 87-93 % of pairs, but the
+# model scores substantially MORE pairs than the register declares (github: 140
+# scored vs 78 declared). And the earlier judge run found 10 of 21 cells the
+# model dismissed did in fact reach the asset.
+#
+# So the gate is wrong in both directions, and there is an obvious authority
+# nobody is consulting: the organization already wrote down what reaches what.
+#
+#   naregister — the register DECIDES. No model call for a pair it does not
+#                declare; no N/A option for a pair it does. Deterministic, uses
+#                the org's own disclosure, needs no flags and no static rules.
+#   naprompt   — the model still decides, but is told what the register says and
+#                must give a reason to contradict it.
+#   nona       — the gate is removed. Every pair gets 1-5, and tier 1 absorbs
+#                "acts on it, but almost nobody is affected".
+
+# The register is authoritative: relevance is settled before the model is asked,
+# so the rubric simply has no N/A branch.
+BLAST_TASK_V5R_SCOPE_NAREGISTER = BLAST_TASK_V5R_SCOPE.replace(
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.""",
+    """RELEVANCE IS ALREADY SETTLED. The organization's register states that this tool
+acts on this asset, so it does. Do not return null and do not set
+affects_asset=false — score the reach.""",
+)
+
+# The model still decides, but the org's statement is put in front of it.
+BLAST_TASK_V5R_SCOPE_NAPROMPT = BLAST_TASK_V5R_SCOPE.replace(
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.""",
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on
+a different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.
+
+The organization's register lists which tools it believes reach this asset; that
+list is given below. It is the org's own statement, not a guess, and it is
+usually right — but it can be incomplete, and a tool it omits may still reach the
+asset through a shared surface. So:
+  * if the register lists this tool, N/A contradicts the organization. You may
+    still say N/A, but state in one clause why the register is wrong.
+  * if the register does not list this tool, that is not by itself a reason for
+    N/A. Score it if the tool genuinely reaches the asset.""",
+)
+
+# No gate at all: tier 1 absorbs the "barely touches it" case.
+BLAST_TASK_V5R_SCOPE_NONA = BLAST_TASK_V5R_SCOPE.replace(
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.""",
+    """EVERY PAIR GETS A NUMBER. There is no N/A in this run: return 1-5 always, never
+null. If the tool barely touches this asset, or touches it only through a shared
+surface, that is a 1 — one item nobody depends on. Reserve your reasoning for how
+far the consequence travels, not for whether to answer.""",
+)
+
+# The naprompt arm needs the register's own tool list in the user message.
+BLAST_USER_V5R_SCOPE_NAPROMPT = """Tool: {tool_json}
+Asset: {asset_json}
+The organization's register says these tools reach this asset: {register_tools}
+Already decided for this pair — tool impact: {tool_impact} · asset sensitivity: {asset_sensitivity}
+Other tools on this server: {peer_tools}
+Other assets on this server: {peer_assets}
+
+Return JSON: {{"tool_name": str, "asset_id": str, "affects_asset": bool,
+"coverage_reasoning": str,
+"escape": "EXACTLY ONE of these five strings: Q1, Q2, Q3, Q4, none",
+"escape_evidence": "the words quoted from the asset description, or empty",
+"blast_radius": "1-5 or null", "confidence": 0.0-1.0}}"""
+
+
+# ===========================================================================
+# ARM `nacombo` — the union of naregister and naprompt
+# ===========================================================================
+#
+# naregister was authoritative in both directions and lost the ability to find a
+# homing the organization forgot. naprompt kept that ability but only moved
+# agreement 90 % -> 92 %. The combination takes the half of each that works:
+#
+#   * where the register DECLARES a pair, it is settled — no N/A, no argument.
+#     The organization is not guessing about its own tools.
+#   * where the register is SILENT, the model decides, and is told plainly that
+#     silence is not evidence of absence.
+#
+# It also names the asymmetry the earlier runs exposed. A wrong N/A and a wrong
+# low score are not equally bad: a wrong low score is visible in the matrix and
+# gets reviewed, a wrong N/A deletes the cell and nobody ever looks at it again.
+# The judge run found 10 of 21 dismissed cells did reach their asset, and none of
+# them were visible to anyone. So the instruction is explicit: when genuinely
+# unsure, score 1 rather than N/A.
+BLAST_TASK_V5R_SCOPE_NACOMBO = BLAST_TASK_V5R_SCOPE.replace(
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.""",
+    """RELEVANCE. The organization's register lists which tools it believes reach this
+asset; that list is given below. Use it like this:
+
+  * IF THE REGISTER LISTS THIS TOOL — relevance is settled. The organization is
+    not guessing about its own surface. Score the reach; do not return null.
+  * IF THE REGISTER DOES NOT LIST IT — you decide, but silence is not evidence of
+    absence. Registers are written by hand and miss shared surfaces. Ask whether
+    this tool genuinely reaches this asset, not whether somebody wrote it down.
+
+N/A IS THE MORE EXPENSIVE MISTAKE. A wrong low score stays in the matrix where a
+reviewer can see it and argue with it. A wrong N/A deletes the cell — nobody ever
+looks at it again, and a real consequence goes unrecorded. They are not
+symmetric. So:
+
+  * return null ONLY when the tool operates on a genuinely different class of
+    thing and could not touch this asset by any route;
+  * when you are unsure, score 1 — "one person or item" — rather than null. An
+    over-scored 1 costs almost nothing; a wrongly hidden cell costs everything.""",
+)
+
+BLAST_USER_V5R_SCOPE_NACOMBO = BLAST_USER_V5R_SCOPE_NAPROMPT
+
+
+# ===========================================================================
+# Sensitivity by SCHEME — does the vocabulary the organization uses change the
+# number we derive?
+# ===========================================================================
+#
+# `ASSET_TASK_POLICY_V5R` asks the model to classify against whatever classes the
+# policy happens to state, in our own words. But an organization does not invent
+# its classification scheme — it inherits one, and there are three the field
+# actually uses (docs/standards/policy-scheme-alignment.md). If our prompt speaks
+# a different dialect from the org's document, the classify step is a translation
+# before it is a judgement.
+#
+# These three arms speak each scheme's own language. Everything else — the tiers,
+# the rules, the return shape — is held identical, so a difference in the derived
+# number is attributable to the vocabulary alone.
+
+_SENS_TIERS = """
+  5 CROWN JEWEL  exposure alone is an emergency — exploitable or legally
+                 reportable the moment it leaks; OR a control plane, where losing
+                 it rewires what every other tool can reach.
+  4 RESTRICTED   serious lasting harm one step removed: damages customers, staff
+                 or the organization's position, but is not instantly weaponizable.
+  3 INTERNAL     disruptive and embarrassing but recoverable; meant to stay in-org.
+  2 ROUTINE      low-value internal material; exposure is a shrug.
+  1 PUBLIC       already published or disposable — no confidentiality left to lose.
+
+RULES
+- ABSOLUTE scale, never relative to the other assets here. A whole server sitting
+  at one tier is expected; do NOT spread scores to manufacture contrast.
+- CONTAINER: takes the tier of the most sensitive thing it CHARACTERISTICALLY
+  holds — its typical payload, not a conceivable one.
+- AGGREGATION: if one asset holds the WHOLE population of a class, or the policy
+  names a combination that reveals more than its parts, raise one tier.
+- PUBLISHED, NOT TOPIC: data the organization has already published has no
+  confidentiality left to lose and is 1, however sensitive its subject sounds."""
+
+# --- ISO/IEC 27001:2022 -----------------------------------------------------
+# A.5.12 states the four criteria verbatim and requires that C, I and A all be
+# considered; A.5.9 supplies the inventory the asset row comes from.
+ASSET_TASK_POLICY_ISO = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) the way ISO/IEC 27001:2022 Annex A 5.12
+asks you to classify information.
+
+Work in two steps.
+
+  1 CLASSIFY, applying A.5.12's four criteria to this asset in turn:
+      * LEGAL REQUIREMENTS — is this material regulated, contractual or subject
+        to a statutory duty?
+      * VALUE — what is it worth to the organization, or to someone else?
+      * CRITICALITY — what stops working, or becomes unknowable, without it?
+      * SENSITIVITY to unauthorised disclosure OR MODIFICATION — A.5.12 names
+        both; do not score disclosure alone.
+    Consider confidentiality, integrity AND availability. The asset's stated loss
+    axis tells you which of the three carries the loss here; an asset whose
+    integrity loss is severe is not "low" because reading it is harmless.
+    Use the organization's own class if its policy names one for this asset;
+    otherwise apply the policy's recognition rules, then its stated default.
+
+  2 MAP that class onto the scale below.
+"""
+    + _SENS_TIERS
+    + """
+- INTEGRITY AND AVAILABILITY COUNT. A.5.12 requires all three axes. An asset that
+  is dull to read but catastrophic to corrupt belongs high on this scale."""
+)
+
+# --- NIST FIPS 199 / SP 800-60 ---------------------------------------------
+# FIPS 199 categorizes as a {C,I,A} triple of LOW/MODERATE/HIGH by adverse
+# effect, and the security category is the high-water mark across the three.
+ASSET_TASK_POLICY_NIST = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) by first categorizing this asset the way
+NIST FIPS 199 does.
+
+Work in three steps.
+
+  1 CATEGORIZE as a TRIPLE. For each of confidentiality, integrity and
+    availability, rate the ADVERSE EFFECT on the organization of a loss:
+      LOW      — limited adverse effect.
+      MODERATE — serious adverse effect.
+      HIGH     — severe or catastrophic adverse effect.
+    Judge the effect, not the topic. SP 800-60 assigns a provisional level from
+    what the information type IS, then adjusts.
+
+  2 TAKE THE HIGH-WATER MARK. The asset's security category is the HIGHEST of the
+    three ratings — FIPS 199 is explicit that the categorization is not an
+    average. Apply SP 800-60's adjustment: aggregation raises the level, because
+    sensitivity is greater in context than in isolation.
+
+  3 MAP the high-water mark onto the scale below:
+      HIGH     -> 5 if a loss is legally reportable, immediately exploitable, or
+                  rewires what other systems can reach; otherwise 4.
+      MODERATE -> 3
+      LOW      -> 2
+      no adverse effect / already published -> 1
+"""
+    + _SENS_TIERS
+    + """
+- The three-level FIPS scale is coarser than this five-level one; step 3 is where
+  that is resolved, and the HIGH split is the only judgement it asks of you."""
+)
+
+# --- CIS Critical Security Controls v8.1, Control 3 -------------------------
+# 3.7 requires a classification scheme sorting data by sensitivity; 3.2 requires
+# a data inventory enumerating sensitivity levels — "at a minimum one to
+# differentiate sensitive data from other data". So a CIS-aligned organization
+# may supply a very coarse scheme, and the recognition rules do the refining.
+ASSET_TASK_POLICY_CIS = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) starting from the organization's data
+classification scheme, in the spirit of CIS Critical Security Control 3.
+
+Work in three steps.
+
+  1 SORT BY SENSITIVITY using the organization's own scheme (CIS Safeguard 3.7).
+    Its scheme may be COARSE — CIS requires only enough levels to tell sensitive
+    data from other data, so an organization may give you two classes where this
+    scale has five. That is normal. Do not refuse to score because the scheme is
+    thin.
+
+  2 REFINE with the policy's recognition rules and the asset's own description.
+    Where the scheme is coarse, the description carries the detail: what the
+    asset characteristically holds, who it is about, and what depends on it. Ask
+    what this data IS, then where it falls between the classes the org named.
+
+  3 MAP onto the scale below.
+"""
+    + _SENS_TIERS
+    + """
+- A COARSE SCHEME IS NOT A LOW SCORE. If the organization only distinguishes
+  "sensitive" from "other", an asset in the sensitive class still spans 3-5 here
+  and the description decides which. Do not collapse everything sensitive to one
+  tier."""
+)
+
+
+# =============================================================================
+# v7 — the framework-NATIVE policy prompts
+# =============================================================================
+# The v5 `_sensiso` / `_sensnist` / `_senscis` prompts above speak a standard's
+# vocabulary at a policy written in OUR register shape: the model is told to
+# reason like ISO/NIST/CIS, but the document it reads knows nothing about them.
+# The v7 arms change the document instead. Each organization publishes a register
+# in its own framework's shape (docs/mcp-tools/server-policies-{iso,nist,cis}.md),
+# which gives these prompts three things the v5 ones could not cite:
+#
+#   1. NATIVE COLUMNS. An ISO A.5.9 owner, a NIST SP 800-60 information type, a
+#      CIS Safeguard 3.7 data category and 3.12 segment — carried into the asset
+#      description by scripts/scan_policy_v5.py::_asset_description.
+#   2. AN AUTHORIZATION SIGNAL. Every native register states which of the tools
+#      that REACH an asset the organization actually SANCTIONS (ISO A.8.3, NIST
+#      AC-3, CIS Safeguard 3.3). The gap between reachable and sanctioned is
+#      evidence about how the organization values the asset — evidence the
+#      baseline register had no column for.
+#   3. NO FLAGS. The native registers drop the flag column entirely, so whatever
+#      a flag used to assert has to be read off the description.
+#
+# What has NOT changed: the organization still states no number. These prompts
+# classify against the published procedure and map the class onto the shared
+# 1-5 ladder, exactly as the v5 policy prompts do.
+
+# The authorization block is identical in all three arms except for the control
+# it cites, because the reasoning it licenses is the same reasoning. It is stated
+# as EVIDENCE, never as an answer: an organization may withhold a tool from an
+# agent because the asset is precious, but also because some other system is
+# authoritative for it, or because the operation is irreversible. Only the first
+# of those is a sensitivity signal.
+_AUTHZ_EVIDENCE = """
+- SANCTIONED VS REACHABLE ({control}). The register states, per asset, which of
+  the tools that can reach it the organization actually authorizes. Read the gap
+  as EVIDENCE, not as an answer:
+    * An asset the organization authorizes NO operation against is one it has
+      decided no agent should touch. That usually means it is precious — but it
+      can also mean another system is authoritative for it, or that the operation
+      cannot be undone. Prefer the reading the asset's own description supports.
+    * An asset that is broadly authorized is rarely a crown jewel, because an
+      organization does not hand out routine access to one.
+    * NEVER score sensitivity from the authorization column alone. It records an
+      access decision; you are classifying the information."""
+
+# --- v7 ISO/IEC 27001:2022 --------------------------------------------------
+# The register is now an A.5.9 inventory: it carries an owner and an A.8.3
+# authorized-operations column, and the section states A.5.12's four criteria as
+# the organization's own published procedure rather than as a rubric we imposed.
+ASSET_TASK_POLICY_V7_ISO = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) by applying the ISO/IEC 27001:2022
+classification procedure THIS ORGANIZATION PUBLISHED, then mapping its class onto
+the scale below.
+
+The policy states its A.5.12 procedure as a table of four criteria, each phrased
+as a question this organization asks. Work through them in that form.
+
+  1 CLASSIFY against the published procedure, taking each criterion in turn:
+      * LEGAL REQUIREMENTS — statutory duty, contract, or employment obligation.
+      * VALUE — worth to the organization, or to someone else.
+      * CRITICALITY — what stops working, or becomes unknowable, without it.
+      * SENSITIVITY to unauthorised disclosure OR MODIFICATION — both; the policy
+        names both and so must you.
+    The class is the HIGHEST any single criterion justifies, never an average.
+    Use the organization's own class names, taken from its classification table.
+    Where the register does not settle it, apply the section's recognition rules
+    and then its stated fail-closed default.
+
+  2 MAP that class onto the scale below.
+"""
+    + _SENS_TIERS
+    + _AUTHZ_EVIDENCE.format(control="A.8.3 information access restriction")
+    + """
+- THE OWNER IS A CUE, NOT A SCORE. A.5.9 requires an identified owner. An asset
+  owned by a security or compliance function is more often Restricted or above
+  than one owned by a workplace-services function — but the owner names
+  accountability, not value. It breaks ties; it does not decide them.
+- INTEGRITY AND AVAILABILITY COUNT. A.5.12 requires all three axes. The register
+  states a loss axis per asset; an asset whose loss axis is modification is not
+  low merely because reading it is harmless.
+- THE REGISTER HAS NO FLAGS. Whether an asset is a control plane, holds a whole
+  population, or is usable on its own is stated in its description. Read it
+  there."""
+)
+
+# --- v7 NIST FIPS 199 / SP 800-60 -------------------------------------------
+# The register is now organized by SP 800-60 information type and split by
+# operation profile, so a type whose read and write categorize differently
+# appears as two rows. The provisional category comes from the TYPE; the special
+# factors adjust it per axis.
+ASSET_TASK_POLICY_V7_NIST = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) by categorizing this register row the way
+FIPS 199 requires and THIS ORGANIZATION PUBLISHED, then mapping the result onto
+the scale below.
+
+The register states an SP 800-60 information type per row, and the section states
+the adverse-effect definitions this organization applies. Use both.
+
+  1 START FROM THE TYPE. SP 800-60 assigns a provisional category from what the
+    information IS. The row names its information type — use it. Rows reading
+    "inherits the type reached" take the type of the most sensitive row the same
+    tool can reach.
+
+  2 CATEGORIZE AS A TRIPLE. Rate the adverse effect of a loss on each of
+    confidentiality, integrity and availability, against the organization's own
+    definitions of HIGH / MODERATE / LOW. Judge the effect, not the topic.
+
+  3 APPLY THE SPECIAL FACTORS the section lists — aggregation, criticality and
+    completeness, reachability beyond the boundary. They adjust PER AXIS and only
+    upward.
+
+  4 TAKE THE HIGH-WATER MARK. The security category is the HIGHEST of the three,
+    never an average. Then map:
+      HIGH     -> 5 if a loss is legally reportable, immediately exploitable, or
+                  rewires what other systems can reach; otherwise 4.
+      MODERATE -> 3
+      LOW      -> 2
+      no adverse effect / already published -> 1
+"""
+    + _SENS_TIERS
+    + _AUTHZ_EVIDENCE.format(control="AC-3 access enforcement, bounded by AC-6")
+    + """
+- THE ROW IS AN OPERATION PROFILE, NOT A FILE. This register splits a type whose
+  read and write categorize differently into two rows. Categorize the row in front
+  of you on the axis its own description and impact driver name — do not average
+  it with its twin, and do not import the twin's category.
+- THE THREE-LEVEL FIPS SCALE IS COARSER THAN THIS FIVE-LEVEL ONE. Step 4 is where
+  that is resolved, and the HIGH split is the only judgement it asks of you.
+- THE REGISTER HAS NO FLAGS. Whether a row is a control plane, holds a whole
+  population, or is usable on its own is stated in its description and reached
+  through the aggregation and reachability special factors."""
+)
+
+# --- v7 CIS Critical Security Controls v8.1, Control 3 ----------------------
+# The register is now a Safeguard 3.2 inventory: coarse by design, carrying the
+# org's own 3.7 category label and its 3.12 segment. The label is STATED here —
+# unlike the ISO and NIST arms — because CIS asks the inventory to record one and
+# two or three levels underdetermine a 1-5 anyway. That underdetermination is the
+# whole point of this arm, so the prompt's real job is to stop the model treating
+# the label as the answer.
+ASSET_TASK_POLICY_V7_CIS = (
+    """
+TASK: Assign ASSET SENSITIVITY (1-5) starting from the data classification scheme
+THIS ORGANIZATION PUBLISHED under CIS Safeguard 3.7, then refining it to a tier.
+
+The register STATES this organization's category for each entry. That category is
+a starting point and nothing more: the scheme has two or three levels where this
+scale has five, so most of the work is still ahead of you.
+
+  1 READ THE STATED CATEGORY off the register row and look up its definition in
+    the organization's scheme. The definition — the harm it describes — is what
+    matters, not the label.
+
+  2 REFINE TO A TIER using the entry's own description, the recognition rules,
+    and the 3.12 segment. Ask what this data IS, who it is about, what depends on
+    it, and how much of it one call reaches. A coarse scheme delegates exactly
+    this judgement to the description; make it.
+
+  3 MAP onto the scale below.
+"""
+    + _SENS_TIERS
+    + _AUTHZ_EVIDENCE.format(control="Safeguard 3.3 data access control lists")
+    + """
+- A COARSE SCHEME IS NOT A LOW SCORE, AND IT IS NOT A HIGH ONE EITHER. The
+  organization's top category spans 3-5 on this scale and its bottom category
+  spans 1-3. Do NOT collapse a category to a single tier, in either direction:
+  two entries carrying the same label are routinely two tiers apart, and the
+  description is what separates them.
+- SAFEGUARD 3.2 MERGES. This inventory enumerates sensitive data individually and
+  lumps the rest into functional groups, so a single row can stand for several
+  distinct surfaces. Score a merged row on the most sensitive thing it
+  CHARACTERISTICALLY holds, exactly as the container rule says — a merge is not a
+  reason to average.
+- THE SEGMENT IS A CUE, NOT A SCORE. Safeguard 3.12 separates processing by
+  sensitivity, so an entry in a restricted segment is rarely a 1 or a 2. But the
+  segment records where data lives, not what it is worth.
+- THE REGISTER HAS NO FLAGS. Whether an entry is a control plane, holds a whole
+  population, or is usable on its own is stated in its description."""
+)

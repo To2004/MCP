@@ -44,7 +44,12 @@ IMPACT_MODE = "five_level_v2_na"
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--no-llm", action="store_true", help="offline baseline (smoke test only)")
-    parser.add_argument("--version-tag", default="scan-fs-five_level_v2_na")
+    parser.add_argument("--version-tag", default=None, help="default: scan-fs-<impact-mode>")
+    parser.add_argument(
+        "--impact-mode", default=IMPACT_MODE,
+        choices=["five_level_v2_na", "five_level_v2_ctx"],
+        help="blast experiment: _na (coverage) or _ctx (per-tool understanding fed into blast)",
+    )
     parser.add_argument(
         "--out-dir",
         type=Path,
@@ -52,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         help="where to write fs_corp.{json,md}",
     )
     args = parser.parse_args(argv)
+    version_tag = args.version_tag or f"scan-fs-{args.impact_mode}"
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -68,8 +74,8 @@ def main(argv: list[str] | None = None) -> int:
             by_file=True,  # per-file + per-directory assets (real names/paths, not ext buckets)
             gen_assets=True,  # home every tool on a concrete asset so none is left uncovered
             use_llm=not args.no_llm,
-            version=args.version_tag,
-            impact_mode=IMPACT_MODE,
+            version=version_tag,
+            impact_mode=args.impact_mode,
         )
     except Exception as exc:  # noqa: BLE001 -- report which server failed, then exit non-zero
         print(f"[FAIL] {SERVER}: {exc}")
@@ -80,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         scan_to_markdown(result.server, result.kind, result.table), encoding="utf-8"
     )
     print(
-        f"[ok] {result.server} ({IMPACT_MODE}): {result.n_tools} tools x "
+        f"[ok] {result.server} ({args.impact_mode}): {result.n_tools} tools x "
         f"{result.n_assets} assets -> {path}"
     )
     return 0

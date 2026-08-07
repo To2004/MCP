@@ -1,0 +1,1339 @@
+{
+  "tools": [
+    {
+      "annotations": {
+        "title": "List Channels",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get list of channels",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "description": "Comma-separated channel types. Allowed values: 'mpim', 'im', 'public_channel', 'private_channel'. Example: 'public_channel,private_channel,im'",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "description": "The maximum number of items to return. Must be an integer between 1 and 1000 (maximum 999).",
+            "type": "number"
+          },
+          "query": {
+            "description": "Optional keyword to filter channels. Case-insensitive substring match against the fields specified by query_targets. Example: 'marketing' returns channels like #marketing, #marketing-ops.",
+            "type": "string"
+          },
+          "query_targets": {
+            "default": "name",
+            "description": "Comma-separated list of fields to match the query against. Allowed values: 'name', 'topic', 'purpose'. Example: 'name,topic,purpose' to search all fields. Default is 'name'.",
+            "type": "string"
+          },
+          "sort": {
+            "description": "Type of sorting. Allowed values: 'popularity' - sort by number of members/participants in each channel.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_types"
+        ],
+        "type": "object"
+      },
+      "name": "channels_list"
+    },
+    {
+      "annotations": {
+        "title": "My Channels",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List channels you are a member of. Unlike channels_list which returns all workspace channels, this returns only channels you have joined. Useful on large workspaces where channels_list returns thousands of results.",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "description": "Comma-separated channel types. Allowed values: 'mpim', 'im', 'public_channel', 'private_channel'. Default: 'public_channel,private_channel'.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 100,
+            "description": "Maximum number of items to return (1-999).",
+            "type": "number"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "channels_me"
+    },
+    {
+      "annotations": {
+        "title": "Send Message",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Add a message to a public channel, private channel, or direct message (DM, or IM) conversation by channel_id and thread_ts.",
+      "inputSchema": {
+        "properties": {
+          "blocks": {
+            "description": "Raw Slack Block Kit JSON array for rich message formatting (rich_text lists, code blocks, etc.). When provided, this takes precedence over text/content_type for rendering. The text parameter becomes the notification fallback text.",
+            "type": "string"
+          },
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... aka #general or @username_dm.",
+            "type": "string"
+          },
+          "content_type": {
+            "default": "text/markdown",
+            "description": "Content type of the message. Default is 'text/markdown'. Allowed values: 'text/markdown', 'text/plain'. Ignored when blocks is provided.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Message text in specified content_type format. Example: 'Hello, world!' for text/plain or '# Hello, world!' for text/markdown.",
+            "type": "string"
+          },
+          "thread_ts": {
+            "description": "Unique identifier of either a thread's parent message or a message in the thread_ts must be the timestamp in format 1234567890.123456 of an existing message with 0 or more replies. Optional, if not provided the message will be added to the channel itself, otherwise it will be added to the thread.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_add_message"
+    },
+    {
+      "annotations": {
+        "title": "Get Conversation History",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get messages from the channel (or DM) by channel_id, the last row/column in the response is used as 'cursor' parameter for pagination if not empty",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "    - `channel_id` (string): ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... aka #general or @username_dm.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "include_activity_messages": {
+            "default": false,
+            "description": "If true, the response will include activity messages such as 'channel_join' or 'channel_leave'. Default is boolean false.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": "1d",
+            "description": "Limit of messages to fetch in format of maximum ranges of time (e.g. 1d - 1 day, 1w - 1 week, 30d - 30 days, 90d - 90 days which is a default limit for free tier history) or number of messages (e.g. 50). Must be empty when 'cursor' is provided.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_history"
+    },
+    {
+      "annotations": {
+        "title": "Join Channel",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "description": "Join a public channel. Use channels_list or channels_me to find channel IDs.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... (e.g., #general).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_join"
+    },
+    {
+      "annotations": {
+        "title": "Leave Channel",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Leave a channel, group conversation, or DM. Cannot leave the #general channel.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... (e.g., #general, @username).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_leave"
+    },
+    {
+      "annotations": {
+        "title": "Mark as Read",
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Mark a channel or DM as read. If no timestamp is provided, marks all messages as read.",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... (e.g., #general, @username).",
+            "type": "string"
+          },
+          "ts": {
+            "description": "Timestamp of the message to mark as read up to. If not provided, marks all messages as read.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_mark"
+    },
+    {
+      "annotations": {
+        "title": "Get Thread Replies",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get a thread of messages posted to a conversation by channelID and thread_ts, the last row/column in the response is used as 'cursor' parameter for pagination if not empty",
+      "inputSchema": {
+        "properties": {
+          "channel_id": {
+            "description": "ID of the channel in format Cxxxxxxxxxx or its name starting with #... or @... aka #general or @username_dm.",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "include_activity_messages": {
+            "default": false,
+            "description": "If true, the response will include activity messages such as 'channel_join' or 'channel_leave'. Default is boolean false.",
+            "type": "boolean"
+          },
+          "limit": {
+            "default": "1d",
+            "description": "Limit of messages to fetch in format of maximum ranges of time (e.g. 1d - 1 day, 30d - 30 days, 90d - 90 days which is a default limit for free tier history) or number of messages (e.g. 50). Must be empty when 'cursor' is provided.",
+            "type": "string"
+          },
+          "thread_ts": {
+            "description": "Unique identifier of either a thread's parent message or a message in the thread. ts must be the timestamp in format 1234567890.123456 of an existing message with 0 or more replies.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id",
+          "thread_ts"
+        ],
+        "type": "object"
+      },
+      "name": "conversations_replies"
+    },
+    {
+      "annotations": {
+        "title": "Search Messages",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search messages in a public channel, private channel, or direct message (DM, or IM) conversation using filters. All filters are optional, if not provided then search_query is required.",
+      "inputSchema": {
+        "properties": {
+          "cursor": {
+            "default": "",
+            "description": "Cursor for pagination. Use the value of the last row and column in the response as next_cursor field returned from the previous request.",
+            "type": "string"
+          },
+          "filter_date_after": {
+            "description": "Filter messages sent after a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_before": {
+            "description": "Filter messages sent before a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_during": {
+            "description": "Filter messages sent during a specific period in format 'YYYY-MM-DD'. Example: 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_date_on": {
+            "description": "Filter messages sent on a specific date in format 'YYYY-MM-DD'. Example: '2023-10-01', 'July', 'Yesterday' or 'Today'. If not provided, all dates will be searched.",
+            "type": "string"
+          },
+          "filter_in_channel": {
+            "description": "Filter messages in a specific public/private channel by its ID or name. Example: 'C1234567890', 'G1234567890', or '#general'. If not provided, all channels will be searched.",
+            "type": "string"
+          },
+          "filter_in_im_or_mpim": {
+            "description": "Filter messages in a direct message (DM) or multi-person direct message (MPIM) conversation by its ID or name. Example: 'D1234567890' or '@username_dm'. If not provided, all DMs and MPIMs will be searched.",
+            "type": "string"
+          },
+          "filter_threads_only": {
+            "description": "If true, the response will include only messages from threads. Default is boolean false.",
+            "type": "boolean"
+          },
+          "filter_users_from": {
+            "description": "Filter messages from a specific user by their ID or display name. Example: 'U1234567890' or '@username'. If not provided, all users will be searched.",
+            "type": "string"
+          },
+          "filter_users_with": {
+            "description": "Filter messages with a specific user by their ID or display name in threads and DMs. Example: 'U1234567890' or '@username'. If not provided, all threads and DMs will be searched.",
+            "type": "string"
+          },
+          "limit": {
+            "default": 20,
+            "description": "The maximum number of items to return. Must be an integer between 1 and 100.",
+            "type": "number"
+          },
+          "search_query": {
+            "description": "Search query to filter messages. Example: 'marketing report' or full URL of Slack message e.g. 'https://slack.com/archives/C1234567890/p1234567890123456', then the tool will return a single message matching given URL, herewith all other parameters will be ignored.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "conversations_search_messages"
+    },
+    {
+      "annotations": {
+        "title": "Get Unread Messages",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Get unread messages across all channels. With browser session tokens (xoxc/xoxd), uses a single API call for complete results. With OAuth user tokens (xoxp), scans a subset of channels per type (limited by max_channels) \u2014 results may be partial on large workspaces. Results are prioritized: DMs > group DMs > partner channels > internal channels.",
+      "inputSchema": {
+        "properties": {
+          "channel_types": {
+            "default": "all",
+            "description": "Filter by channel type: 'all' (default), 'dm' (direct messages), 'group_dm' (group DMs), 'partner' (ext-* channels), 'internal' (other channels).",
+            "type": "string"
+          },
+          "include_messages": {
+            "default": true,
+            "description": "If true (default), returns the actual unread messages. If false, returns only a summary of channels with unreads.",
+            "type": "boolean"
+          },
+          "include_muted": {
+            "default": false,
+            "description": "If true, includes muted channels in results. Default is false (muted channels are excluded, matching Slack app behavior).",
+            "type": "boolean"
+          },
+          "max_channels": {
+            "default": 50,
+            "description": "Maximum number of channels to fetch unreads from. Default is 50.",
+            "type": "number"
+          },
+          "max_messages_per_channel": {
+            "default": 10,
+            "description": "Maximum messages to fetch per channel. Default is 10.",
+            "type": "number"
+          },
+          "mentions_only": {
+            "default": false,
+            "description": "If true, only returns channels where you have @mentions. Default is false.",
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "conversations_unreads"
+    },
+    {
+      "annotations": {
+        "title": "Create User Group",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new user group (mention group) in the Slack workspace. After creation, use usergroups_users_update to add members, or users can join themselves with usergroups_me. The handle becomes the @mention (e.g., handle='engineering' creates @engineering).",
+      "inputSchema": {
+        "properties": {
+          "channels": {
+            "description": "Comma-separated channel IDs where this group is commonly mentioned. Members get suggestions to join these channels.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Purpose or description shown in group details (e.g., 'Backend and frontend engineers').",
+            "type": "string"
+          },
+          "handle": {
+            "description": "The @mention handle without the @ symbol (e.g., 'engineering' for @engineering). Keep it short and lowercase. If omitted, Slack auto-generates one from the name.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the user group (e.g., 'Engineering Team', 'Design Squad').",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_create"
+    },
+    {
+      "annotations": {
+        "title": "List User Groups",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "List all user groups (subteams) in the Slack workspace. User groups are mention groups like @engineering or @design that notify all members. Use this to discover available groups, check group membership counts, or find a group's ID before joining/updating it. Returns CSV with columns: id, name, handle, description, user_count, is_external.",
+      "inputSchema": {
+        "properties": {
+          "include_count": {
+            "default": true,
+            "description": "Include user count for each group. Default is true.",
+            "type": "boolean"
+          },
+          "include_disabled": {
+            "default": false,
+            "description": "Include disabled/archived groups. Default is false.",
+            "type": "boolean"
+          },
+          "include_users": {
+            "default": false,
+            "description": "Include list of user IDs in each group. Default is false.",
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "usergroups_list"
+    },
+    {
+      "annotations": {
+        "title": "My User Groups",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Manage your own user group membership. Use action='list' to see which groups you belong to. Use action='join' with a usergroup_id to add yourself to a group (e.g., to receive @mentions). Use action='leave' with a usergroup_id to remove yourself. This is the easiest way to join/leave groups without needing to know the full member list.",
+      "inputSchema": {
+        "properties": {
+          "action": {
+            "description": "Action to perform: 'list' returns CSV of groups you're a member of, 'join' adds you to a group, 'leave' removes you from a group.",
+            "type": "string"
+          },
+          "usergroup_id": {
+            "description": "ID of the user group (starts with 'S', e.g., 'S0123456789'). Required for 'join' and 'leave' actions. Get IDs from usergroups_list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_me"
+    },
+    {
+      "annotations": {
+        "title": "Update User Group",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update a user group's metadata: name, handle (@mention), description, or default channels. Does NOT change members - use usergroups_users_update for that. At least one field must be provided.",
+      "inputSchema": {
+        "properties": {
+          "channels": {
+            "description": "New default channel IDs (comma-separated). Replaces existing default channels.",
+            "type": "string"
+          },
+          "description": {
+            "description": "New description for the group.",
+            "type": "string"
+          },
+          "handle": {
+            "description": "New @mention handle (without @). Changing this changes how users mention the group.",
+            "type": "string"
+          },
+          "name": {
+            "description": "New display name for the group.",
+            "type": "string"
+          },
+          "usergroup_id": {
+            "description": "ID of the user group to update (starts with 'S', e.g., 'S0123456789'). Get IDs from usergroups_list.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usergroup_id"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_update"
+    },
+    {
+      "annotations": {
+        "title": "Update User Group Members",
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Replace all members of a user group with a new list. WARNING: This completely replaces the member list - any user not in the 'users' parameter will be removed. To add/remove just yourself, use usergroups_me instead. To add a single user without removing others, first get current members from usergroups_list with include_users=true, then call this with the combined list.",
+      "inputSchema": {
+        "properties": {
+          "usergroup_id": {
+            "description": "ID of the user group (starts with 'S', e.g., 'S0123456789'). Get IDs from usergroups_list.",
+            "type": "string"
+          },
+          "users": {
+            "description": "Comma-separated user IDs that will become the COMPLETE member list (e.g., 'U0123456789,U9876543210'). All current members not in this list will be removed.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "usergroup_id",
+          "users"
+        ],
+        "type": "object"
+      },
+      "name": "usergroups_users_update"
+    },
+    {
+      "annotations": {
+        "title": "Search Users",
+        "readOnlyHint": true,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Search for users by name, email, display name, or Slack user ID. If a Slack user ID is provided (e.g. U07VCEPP4N5), the user is looked up directly. Returns user details and DM channel ID if available.",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 10,
+            "description": "Maximum number of results to return (1-100). Default is 10.",
+            "type": "number"
+          },
+          "query": {
+            "description": "Search query - matches against real name, display name, username, email, or a Slack user ID (e.g. U07VCEPP4N5).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "users_search"
+    }
+  ],
+  "results": [
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-flight-ops",
+        "arguments": {
+          "channel_id": "C0BLCULJ28K",
+          "payload": "Dispatch handover 06:00Z \u2014 AU418 LHR-JFK slipped 40m on a flow restriction, AU221 swapped to tail N7742A after a nosewheel finding. Fuel uplift approved.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCULJ28K (ts=1785315328.415709)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-flight-ops",
+        "arguments": {
+          "channel_id": "C0BLCULJ28K",
+          "payload": "Diversion watch: thunderstorm cell over MAD, three arrivals holding. Alternate is BCN, crew duty on AU905 expires 19:10Z.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCULJ28K (ts=1785315328.631439)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-crew-scheduling",
+        "arguments": {
+          "channel_id": "C0BLK69C18A",
+          "payload": "Roster publication for August is locked. Two standby FOs short on the Atlantic fleet; reserve callouts go to the seniority list in order.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK69C18A (ts=1785315328.854209)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-crew-scheduling",
+        "arguments": {
+          "channel_id": "C0BLK69C18A",
+          "payload": "Duty-time exceedance flagged for crew id CR-40921 \u2014 FTL breach if the AU905 rotation extends past 19:10Z. Legal-to-fly check needed before release.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK69C18A (ts=1785315329.088569)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-safety-reports",
+        "arguments": {
+          "channel_id": "C0BMDG9V1L0",
+          "payload": "ASR-2026-0713 filed: unstable approach into LIS, go-around executed correctly. Just-culture review scheduled; reporter identity is protected under the scheme.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDG9V1L0 (ts=1785315329.325349)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-safety-reports",
+        "arguments": {
+          "channel_id": "C0BMDG9V1L0",
+          "payload": "Confidential: three ASRs this quarter reference the same EFB chart revision. Do not circulate outside the safety board before the regulator briefing.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDG9V1L0 (ts=1785315329.555989)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-irops-bridge",
+        "arguments": {
+          "channel_id": "C0BMDGA9D7A",
+          "payload": "IROPS bridge open \u2014 ATC systems outage at the hub, 61 flights affected. Ops director on the line, comms drafting a passenger statement.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDGA9D7A (ts=1785315329.786659)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-irops-bridge",
+        "arguments": {
+          "channel_id": "C0BMDGA9D7A",
+          "payload": "Recovery plan: cancel the last two banks, protect the transatlantic waves. Ops-portal service account is being rotated (old value: PLACEHOLDER-NOT-A-REAL-SECRET).",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDGA9D7A (ts=1785315330.016479)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-revenue-mgmt",
+        "arguments": {
+          "channel_id": "C0BLK6CPECA",
+          "payload": "Q3 yield model shows we can hold a 6% fare premium on the new Nordic routes before the competitor's schedule filing goes public. Embargoed until the filing.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6CPECA (ts=1785315330.246169)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-revenue-mgmt",
+        "arguments": {
+          "channel_id": "C0BLK6CPECA",
+          "payload": "Unannounced route economics for the two Asia additions attached to the deck; these numbers move the share price \u2014 internal distribution only.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6CPECA (ts=1785315330.471399)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-eng-systems",
+        "arguments": {
+          "channel_id": "C0BLCUN8GE7",
+          "payload": "Rostering service deploy went out at 14:05, p99 down to 180ms. Flight-ops platform still pinned to the previous release pending the safety sign-off.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUN8GE7 (ts=1785315330.696299)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-eng-systems",
+        "arguments": {
+          "channel_id": "C0BLCUN8GE7",
+          "payload": "Anyone seen the intermittent timeout between the dispatch API and the ops gateway? Tracking it in the flight-ops-platform repo.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUN8GE7 (ts=1785315330.919549)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #aurora-announcements",
+        "arguments": {
+          "channel_id": "C0BLK6CTQ8J",
+          "payload": "Aurora Airways: summer schedule now live, 14 new destinations. All-hands Thursday 15:00 in the hangar auditorium and on stream.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6CTQ8J (ts=1785315331.150109)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-grid-control",
+        "arguments": {
+          "channel_id": "C0BLCUNRZPD",
+          "payload": "Control room handover: 41.2 GW load, reserve margin 8.4%. North interconnector at 92% \u2014 watch the thermal limit on circuit 4B.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUNRZPD (ts=1785315331.383949)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-grid-control",
+        "arguments": {
+          "channel_id": "C0BLCUNRZPD",
+          "payload": "Switching order SO-2261 authorised: take 400kV Line 12 out for the tower repair at 02:00. Confirm the SCADA point is tagged before the crew arrives.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUNRZPD (ts=1785315331.615419)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-ot-security",
+        "arguments": {
+          "channel_id": "C0BL3QXV687",
+          "payload": "CIP-007 patch window for the substation RTUs opens Monday. Twelve BES cyber assets in scope; evidence goes to the compliance folder.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QXV687 (ts=1785315331.848469)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-ot-security",
+        "arguments": {
+          "channel_id": "C0BL3QXV687",
+          "payload": "Detected a repeated failed login against the historian jump host from a vendor VPN range. Vendor credential (placeholder: NOT-A-REAL-CREDENTIAL) revoked.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QXV687 (ts=1785315332.074659)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-outage-bridge",
+        "arguments": {
+          "channel_id": "C0BLK6EAUAE",
+          "payload": "Outage bridge: fault on the 132kV feeder, 34,000 customers off supply. Two crews rolling, estimated restoration 04:30.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6EAUAE (ts=1785315332.305509)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-outage-bridge",
+        "arguments": {
+          "channel_id": "C0BLK6EAUAE",
+          "payload": "Restoration staged \u2014 first 18,000 back on. Regulator notification clock started at the fault time, reportable if we pass eight hours.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6EAUAE (ts=1785315332.549709)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-market-bidding",
+        "arguments": {
+          "channel_id": "C0BLM4C9741",
+          "payload": "Day-ahead strategy: bid the peaking fleet 30/MWh above the marginal unit for the evening ramp. This is market-sensitive; do not repeat outside the desk.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLM4C9741 (ts=1785315332.771859)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-market-bidding",
+        "arguments": {
+          "channel_id": "C0BLM4C9741",
+          "payload": "Settlement dispute with the market operator over the 14 July imbalance volumes. Legal has the position file; exposure is in the low millions.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLM4C9741 (ts=1785315333.000729)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-field-crews",
+        "arguments": {
+          "channel_id": "C0BLK6E1ZBL",
+          "payload": "Crew 7 has site access for the substation at 08:00, permit-to-work signed. Bring the spare CT and the earth set.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6E1ZBL (ts=1785315333.239129)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-field-crews",
+        "arguments": {
+          "channel_id": "C0BLK6E1ZBL",
+          "payload": "Reminder: no live-line work above 33kV without the second authorised person on site.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6E1ZBL (ts=1785315333.470729)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-eng-platform",
+        "arguments": {
+          "channel_id": "C0BMDGCB7BJ",
+          "payload": "SCADA gateway build is green. The protocol adapter refactor is behind a flag, still not enabled in the control-room path.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDGCB7BJ (ts=1785315333.756429)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-eng-platform",
+        "arguments": {
+          "channel_id": "C0BMDGCB7BJ",
+          "payload": "Market bidding engine backtest finished \u2014 results in the repo, review welcome.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BMDGCB7BJ (ts=1785315333.983649)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #helios-announcements",
+        "arguments": {
+          "channel_id": "C0BL3QYAS95",
+          "payload": "Helios Grid: the winter readiness review is complete and published on the intranet. Company town hall next Wednesday.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QYAS95 (ts=1785315334.213099)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-trial-ops",
+        "arguments": {
+          "channel_id": "C0BL3QYNT39",
+          "payload": "VB-204 Phase III: 41 of 60 sites activated, screening ahead of plan. Site 118 has two protocol deviations pending CAPA before the next monitoring visit.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QYNT39 (ts=1785315334.439869)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-trial-ops",
+        "arguments": {
+          "channel_id": "C0BL3QYNT39",
+          "payload": "Enrolment update \u2014 612 subjects randomised. Site 044 is under a partial hold until the IRB re-approval lands.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QYNT39 (ts=1785315334.671259)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-safety-pv",
+        "arguments": {
+          "channel_id": "C0BL3QZDQJ3",
+          "payload": "Expedited report due: SAE from site 118, hospitalisation, possibly related. Subject VB204-0119, day 34 on study drug. Fifteen-day clock is running.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QZDQJ3 (ts=1785315334.898829)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-safety-pv",
+        "arguments": {
+          "channel_id": "C0BL3QZDQJ3",
+          "payload": "Two additional AEs coded this morning; narrative drafts are with medical review. Subject-level data stays inside this channel.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BL3QZDQJ3 (ts=1785315335.122589)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-regulatory-fda",
+        "arguments": {
+          "channel_id": "C0BLCUQA26P",
+          "payload": "Pre-NDA meeting request goes to the agency Friday. Briefing book sections 2 and 5 still need the biostat tables.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUQA26P (ts=1785315335.357459)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-regulatory-fda",
+        "arguments": {
+          "channel_id": "C0BLCUQA26P",
+          "payload": "Agency correspondence received on the CMC module \u2014 response due in 30 days. Do not forward outside regulatory affairs.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUQA26P (ts=1785315335.653009)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-unblinding",
+        "arguments": {
+          "channel_id": "C0BLNSWSDGU",
+          "payload": "DSMB session scheduled for the interim analysis. Only the unblinded statistician and the DSMB chair see the treatment assignments.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLNSWSDGU (ts=1785315335.891289)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-unblinding",
+        "arguments": {
+          "channel_id": "C0BLNSWSDGU",
+          "payload": "Emergency unblinding requested by the investigator at site 118 for the SAE subject. Approved under the protocol; the request itself must not reach the study team.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLNSWSDGU (ts=1785315336.112469)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-lab-informatics",
+        "arguments": {
+          "channel_id": "C0BLCUQP4LT",
+          "payload": "Central lab feed for the biomarker panel is loading cleanly again after the vendor schema change. Reconciliation script is in the biostat repo.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUQP4LT (ts=1785315336.335919)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-lab-informatics",
+        "arguments": {
+          "channel_id": "C0BLCUQP4LT",
+          "payload": "Assay QC flagged four samples out of range; re-run requested from the lab.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLCUQP4LT (ts=1785315336.562849)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-eng-platform",
+        "arguments": {
+          "channel_id": "C0BLM4FBFED",
+          "payload": "EDC platform release candidate is in staging; audit-trail migration validated against the Part 11 checklist.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLM4FBFED (ts=1785315336.781669)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-eng-platform",
+        "arguments": {
+          "channel_id": "C0BLM4FBFED",
+          "payload": "Data pipeline nightly job time is down to 22 minutes after the partitioning change.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLM4FBFED (ts=1785315337.024429)"
+          }
+        ]
+      }
+    },
+    {
+      "call": {
+        "name": "conversations_add_message",
+        "label": "post -> #vireo-announcements",
+        "arguments": {
+          "channel_id": "C0BLK6H3UQ2",
+          "payload": "Vireo Bio: VB-204 has passed its interim futility analysis. Company update call Thursday; please hold external comment until the release.",
+          "content_type": "text/markdown"
+        }
+      },
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Successfully posted message to channel C0BLK6H3UQ2 (ts=1785315337.263009)"
+          }
+        ]
+      }
+    }
+  ],
+  "stderr": [
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BL3QZDQJ3\",\"content_type\":\"text/markdown\",\"payload\":\"Two additional AEs coded this morning; narrative drafts are with medical review. Subject-level data stays inside this channel.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":229965936}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLCUQA26P\",\"content_type\":\"text/markdown\",\"payload\":\"Pre-NDA meeting request goes to the agency Friday. Briefing book sections 2 and 5 still need the biostat tables.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":228409827}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLCUQA26P\",\"content_type\":\"text/markdown\",\"payload\":\"Agency correspondence received on the CMC module \u2014 response due in 30 days. Do not forward outside regulatory affairs.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":302485495}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:35+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLNSWSDGU\",\"content_type\":\"text/markdown\",\"payload\":\"DSMB session scheduled for the interim analysis. Only the unblinded statistician and the DSMB chair see the treatment assignments.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":229304266}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLNSWSDGU\",\"content_type\":\"text/markdown\",\"payload\":\"Emergency unblinding requested by the investigator at site 118 for the SAE subject. Approved under the protocol; the request itself must not reach the study team.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":220393616}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLCUQP4LT\",\"content_type\":\"text/markdown\",\"payload\":\"Central lab feed for the biomarker panel is loading cleanly again after the vendor schema change. Reconciliation script is in the biostat repo.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":225742868}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLCUQP4LT\",\"content_type\":\"text/markdown\",\"payload\":\"Assay QC flagged four samples out of range; re-run requested from the lab.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":221640781}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLM4FBFED\",\"content_type\":\"text/markdown\",\"payload\":\"EDC platform release candidate is in staging; audit-trail migration validated against the Part 11 checklist.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":218872436}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:36+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLM4FBFED\",\"content_type\":\"text/markdown\",\"payload\":\"Data pipeline nightly job time is down to 22 minutes after the partitioning change.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:37+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":257352487}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:37+03:00\",\"message\":\"Request received\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"params\":{\"name\":\"conversations_add_message\",\"arguments\":{\"channel_id\":\"C0BLK6H3UQ2\",\"content_type\":\"text/markdown\",\"payload\":\"Vireo Bio: VB-204 has passed its interim futility analysis. Company update call Thursday; please hold external comment until the release.\"}}}",
+    "{\"level\":\"info\",\"timestamp\":\"2026-07-29T11:55:37+03:00\",\"message\":\"Request finished\",\"app\":\"slack-mcp-server\",\"tool\":\"conversations_add_message\",\"duration\":221125553}"
+  ]
+}

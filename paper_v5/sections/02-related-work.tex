@@ -1,0 +1,98 @@
+\section{Related Work}
+\label{sec:related}
+
+\textbf{MCP Server Security and Risk Assessment.}
+Prior work surveys security risks across the MCP
+ecosystem~\cite{hou2026mcp} and audits open-source MCP servers for
+software weaknesses, MCP-specific vulnerabilities, and maintainability
+problems~\cite{hasan2025firstglance}. Several studies examine attacks in which
+a malicious server, tool description, or external input influences the
+agent~\cite{invariant2025toolpoisoning,shi2025toolhijacker,
+zhao2025parasites}. We study the opposite direction: an agent sends a call that
+may harm the MCP server or an organizational resource reached through it.
+Server-to-agent attacks are outside our scope. We assume only that each tool
+performs the operation represented by its declared interface and resource
+mapping.
+
+Other work examines the capabilities and weaknesses of MCP servers. Li et al.
+analyze 2,562 MCP applications and measure their use of file, network, system,
+and memory APIs~\cite{li2025privilege}. Huang et al. combine static pattern
+matching with sandboxed execution to detect capabilities such as file access,
+network requests, and command execution~\cite{huang2026auditing}. MCP-in-SoS
+scans 222 server repositories for code weaknesses, maps them to CWE and CAPEC
+entries, and derives repository-level risk from the likelihood and severity
+those catalogs assign~\cite{kumar2026mcpinsos}. All three assess the server as
+an artifact, independently of the resources a given installation holds, so the
+same server receives the same assessment wherever it is deployed.
+
+ConLeash checks whether an MCP call stays within an approved consent
+boundary~\cite{li2026conleash}. However, it does not estimate the risk or
+possible impact of a call that is already allowed. Our work addresses this gap
+by assessing the risk of each invocation from the server side.
+
+\textbf{Defenses for MCP and tool-using agents.}
+IGAC checks whether an MCP invocation and its arguments remain within the
+user's stated intent, while MTGuard compares invocation parameters, runtime
+behavior, and results against safety policies~\cite{zhu2026igac,mtguard2026}.
+Progent and MiniScope enforce least-privilege authorization, whereas
+AgentGuardian learns admissible tool inputs and invocation sequences from
+normal executions~\cite{shi2025progent,zhu2025miniscope,abaev2026agentguardian}.
+These systems check whether a tool call follows the user's request, the
+security policy, or the agent's normal behavior. However, a call can pass all
+these checks and still cause serious damage. For example, an agent may be
+allowed to delete files, but deleting a temporary file and deleting a critical
+production file do not have the same risk; our work measures this difference at
+the MCP server.
+
+\textbf{Access control.}
+RBAC assigns permissions through roles, while ABAC evaluates attributes of the
+caller, resource, requested action, and environment
+conditions~\cite{sandhu1996rbac,hu2014abac}. These models can express
+fine-grained policies, but they do not directly estimate the possible
+consequence of a permitted request.
+
+Risk-adaptive access control adds a calculated risk value to the authorization
+decision~\cite{cheng2007fuzzymls}. Kandala et al. place risk within an
+attribute-based framework, but leave the concrete risk-calculation method
+outside their scope~\cite{kandala2011radac}. Ni et al. use fuzzy rules over
+subject and object security information to estimate the risk of an access
+operation~\cite{ni2010fuzzy}. Shaikh et al. dynamically calculate trust and
+risk for each subject--object pair from the user's past
+behavior~\cite{shaikh2012dynamic}. Atlam et al. survey the wider family of
+risk-based access-control models~\cite{atlam2020riskbased}.
+
+For agentic systems, Fleming et al. use an LLM judge to create a task policy,
+combine static risk values for its tools and resources, and estimate
+uncertainty~\cite{fleming2025tbac}. A limitation is that risk is computed for
+the whole task and is not updated for each call. For example, reading one
+database record and exporting a full table may use the same tool risk value.
+Our work instead scores each MCP invocation using its runtime details.
+
+\textbf{Risk scoring for MCP and agents.}
+CVSS scores the severity of software vulnerabilities. A study of 196 evaluators
+applying CVSS v3.1 found differences between evaluators, and a follow-up found
+that 68\% assigned a different severity level to vulnerabilities they had
+scored before~\cite{first2023cvss,wunder2024cvss}. AIVSS extends vulnerability
+scoring to agentic AI systems~\cite{owasp2026aivss}. These frameworks score
+vulnerabilities rather than concrete tool calls.
+
+FIPS 199 and NIST SP 800-60 classify information types and systems by the
+potential impact of losing confidentiality, integrity, or
+availability~\cite{nist2004fips199,nist2008sp80060}. These classifications
+provide an organizational view of consequence that our method uses when
+assessing the resource affected by a call.
+
+Work closer to our setting studies risk at different stages. MCP-in-SoS scores
+weaknesses in an MCP server repository~\cite{kumar2026mcpinsos}, while
+AgenTRIM assigns risk levels to tools and applies stronger checks to riskier
+ones~\cite{betser2026agentrim}. STARS scores proposed skill invocations using
+the request, capability, and runtime context before
+execution~\cite{zhang2026stars}. Owiredu-Ashley instead grades the harm of
+actions recorded after execution~\cite{owireduashley2026severity}. Together,
+these methods answer different risk questions: they assess server weaknesses,
+tool capabilities, invocation safety, or harm after execution. They do not
+provide a common measure of the consequence to the organization affected by
+the call. For example, deleting a temporary cache and deleting payroll records
+may use the same tool and both be irreversible, but their organizational impact
+is very different. Our work connects each MCP call to the organization's
+resource policy and estimates its risk before execution.

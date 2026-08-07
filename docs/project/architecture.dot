@@ -1,0 +1,199 @@
+// MCP security scoring — static + dynamic architecture.
+// Render: dot -Tsvg architecture.dot -o architecture.svg
+//
+// Reading guide (also in the legend):
+//   folder   = external INPUT — exactly ONE thing per node
+//   rounded  = PROCESS — exactly ONE operation per node
+//   cylinder = DATA ARTIFACT (a file the pipeline writes/reads)
+//   octagon  = DECISION OUTPUT (what the gateway acts on)
+//   BOLD edges = the main scoring path; gray/dashed = optional or parallel.
+//   DOTTED gold = specified in docs/standards/mcp-profile-spec.md, NOT yet wired.
+// An arrow leaving a box border (not a node) carries every input in that box.
+// Threat direction: the MCP server is the protected asset; the agent is the threat.
+digraph mcp_security {
+    rankdir=LR;
+    compound=true;
+    fontname="Helvetica"; fontsize=11;
+    node  [fontname="Helvetica", fontsize=10, style="rounded,filled", shape=box,
+           fillcolor=white, margin="0.12,0.06"];
+    edge  [fontname="Helvetica", fontsize=9, color="#666666"];
+
+    // ================= legend =================
+    subgraph cluster_legend {
+        label="Legend"; fontsize=10; style=filled; fillcolor="#fafafa";
+        l_in   [label="external input", shape=folder,   fillcolor="#fff6d9"];
+        l_proc [label="process",        shape=box,      fillcolor="#e8f2e8"];
+        l_data [label="data artifact",  shape=cylinder, fillcolor="#efe6fa"];
+        l_out  [label="gate decision",  shape=octagon,  fillcolor="#ffd9d9"];
+    }
+
+    // ================= INPUTS — one thing per node =================
+
+    // -- the tool surface --
+    subgraph cluster_in_tools {
+        label="TOOL SURFACE"; style=filled; fillcolor="#fffbee"; fontsize=10;
+        in_tool_cat [label="Tool catalog\n(tools/list)", shape=folder, fillcolor="#fff6d9"];
+        in_tool_par [label="Tool parameters\n(input schema)", shape=folder, fillcolor="#fff6d9"];
+        in_tool_ann [label="Tool annotations\n(read-only / destructive hints)", shape=folder, fillcolor="#fff6d9"];
+    }
+
+    // -- what the server fronts; one node per store kind --
+    subgraph cluster_in_store {
+        label="SERVER CONTENTS"; style=filled; fillcolor="#fffbee"; fontsize=10;
+        in_tree   [label="File tree", shape=folder, fillcolor="#fff6d9"];
+        in_schema [label="DB schema", shape=folder, fillcolor="#fff6d9"];
+        in_scopes [label="Channels · calendars · repos", shape=folder, fillcolor="#fff6d9"];
+    }
+
+    // -- the org profile, split into the distinct judgements it carries --
+    subgraph cluster_in_org {
+        label="ORG PROFILE (human-written)"; style=filled; fillcolor="#fff4dc"; fontsize=10;
+        in_owner    [label="Owner", shape=folder, fillcolor="#ffedb8"];
+        in_purpose  [label="Purpose", shape=folder, fillcolor="#ffedb8"];
+        in_use      [label="Expected agent use", shape=folder, fillcolor="#ffedb8"];
+        in_cia      [label="CIA priority", shape=folder, fillcolor="#ffedb8"];
+        in_unit     [label="Content unit", shape=folder, fillcolor="#ffedb8"];
+        in_sens     [label="Asset sensitivity 1-5", shape=folder, fillcolor="#ffe3a0"];
+        in_contents [label="Asset contents", shape=folder, fillcolor="#ffe3a0"];
+        in_flags    [label="Asset flags", shape=folder, fillcolor="#ffe3a0"];
+    }
+
+    // -- runtime --
+    subgraph cluster_in_run {
+        label="RUNTIME"; style=filled; fillcolor="#fff0f0"; fontsize=10;
+        in_call    [label="Tool call", shape=folder, fillcolor="#ffe3e3"];
+        in_args    [label="Call arguments", shape=folder, fillcolor="#ffe3e3"];
+        in_persona [label="Caller persona", shape=folder, fillcolor="#ffe3e3"];
+        in_history [label="Persona's past calls", shape=folder, fillcolor="#ffe3e3"];
+    }
+
+    // ================= AUTHORING (before any scan) =================
+    st_skel [label="Emit profile skeleton\n(pre-fills Asset + Contents)",
+             fillcolor="#f7f0dc", color="#b8860b", style="rounded,filled,dashed"];
+
+    // ================= STATIC SCAN — one operation per node =================
+    subgraph cluster_static {
+        label="STATIC SCAN — design-time, once per server (qwen2.5:32b, temp 0, seed 0) · five_level_v2_ult";
+        style=filled; fillcolor="#eefbee";
+
+        st_enum [label="Enumerate assets", fillcolor="#e3f3e3"];
+        st_gen  [label="④ Home uncovered tools\n(LLM)", fillcolor="#eaf5ea",
+                 color="#8fbc8f", style="rounded,filled,dashed"];
+        st_dom  [label="① Infer domain\n(LLM · 1 per server)", fillcolor="#d9efd9"];
+        st_imp  [label="② Score tool impact 1-5\n(LLM · 1 per tool)", fillcolor="#d9efd9"];
+        st_bla  [label="③ Score blast radius 1-5 / N-A\n(LLM · 1 per cell)", fillcolor="#d9efd9"];
+
+        st_read  [label="Read sensitivity table\n(no LLM)", fillcolor="#f5e9c9"];
+        st_cover [label="Check profile coverage\n(abort if a row is missing)", fillcolor="#f5e9c9"];
+
+        st_alias [label="Unify alias twins", fillcolor="#c9e6c9"];
+        st_floor [label="Apply gated blast floor", fillcolor="#c9e6c9"];
+        st_score [label="Multiply\nsens × blast × impact", fillcolor="#c9e6c9", penwidth=1.5];
+        st_band  [label="Assign band\n(band_label_v5)", fillcolor="#c9e6c9"];
+    }
+
+    a_scan   [label="Static risk table", shape=cylinder, fillcolor="#efe6fa"];
+    a_raw    [label="blast_radius_raw\n(audit trail)", shape=cylinder, fillcolor="#efe6fa",
+              fontcolor="#555555", color="#999999"];
+    a_params [label="Param rubrics", shape=cylinder, fillcolor="#efe6fa",
+              fontcolor="#555555", color="#999999"];
+
+    // ================= DYNAMIC — one operation per node =================
+    subgraph cluster_dynamic {
+        label="DYNAMIC SCORING — runtime, per session"; style=filled; fillcolor="#fdf3ea";
+        dy_resolve [label="Resolve args → asset", fillcolor="#fbe9d7"];
+        dy_lookup  [label="Look up the cell", fillcolor="#fbe9d7"];
+        dy_base    [label="Baseline signals\n(no LLM)", fillcolor="#fbe9d7"];
+        dy_seq     [label="Sequence signals\n(no LLM)", fillcolor="#fbe9d7"];
+        dy_fuse    [label="Fuse — escalate only\n(max)", fillcolor="#f8ddba", penwidth=1.5];
+    }
+
+    out [label="GATE DECISION\nallow · throttle · review · deny", shape=octagon,
+         fillcolor="#ffd9d9", penwidth=1.5];
+
+    // ---- secondary (de-emphasized) ----
+    sec_judge  [label="Decode obfuscated args\n(LLM, optional)", fontcolor="#777777",
+                color="#aaaaaa", style="rounded,filled,dashed"];
+    sec_embed  [label="Novelty likelihood\n(eval only)", fontcolor="#777777",
+                color="#aaaaaa", style="rounded,filled,dashed"];
+    sec_review [label="Re-derive every artifact\n(review)", fontcolor="#777777",
+                color="#aaaaaa", style="rounded,filled,dashed"];
+
+    // ================= EDGES =================
+    // Cluster-border arrows carry every input in the box (compound=true).
+
+    // -- authoring loop: the store pre-fills the profile, a human judges it --
+    in_tree -> st_skel [ltail=cluster_in_store, label="walk", style=dashed, color="#b8860b"];
+    st_skel -> in_contents [lhead=cluster_in_org, label="pre-filled rows",
+                            style=dashed, color="#b8860b", constraint=false];
+
+    // -- assets come from the store --
+    in_tree  -> st_enum [ltail=cluster_in_store, penwidth=2, color="#2d6a2d"];
+    st_enum  -> st_dom  [label="asset list", penwidth=2, color="#2d6a2d"];
+    st_enum  -> st_bla  [label="one asset", penwidth=2, color="#2d6a2d"];
+    st_enum  -> st_cover [style=dashed, color="#8a6508", constraint=false];
+
+    // -- ④ widens the asset axis; it sees tool text only, no org context --
+    in_tool_cat -> st_gen [style=dashed, color="#8fbc8f", constraint=false];
+    st_gen -> st_enum [label="+ homing assets", style=dashed, color="#8fbc8f", constraint=false];
+
+    // -- the tool surface feeds the two tool-side judgements --
+    in_tool_cat -> st_dom [ltail=cluster_in_tools, label="all tools", penwidth=2, color="#2d6a2d"];
+    in_tool_cat -> st_imp [ltail=cluster_in_tools, label="one tool", penwidth=2, color="#2d6a2d"];
+    in_tool_cat -> st_bla [ltail=cluster_in_tools, label="one tool", penwidth=2, color="#2d6a2d"];
+
+    // -- prose context rides in every LLM prompt --
+    in_owner -> st_dom [ltail=cluster_in_org, label="context", penwidth=2, color="#b8860b"];
+    in_owner -> st_imp [ltail=cluster_in_org, label="context", penwidth=2, color="#b8860b"];
+    in_owner -> st_bla [ltail=cluster_in_org, label="context", penwidth=2, color="#b8860b"];
+
+    // -- the domain profile is context for the two per-item judgements --
+    st_dom -> st_imp [label="domain profile", style=dashed, color="#2d6a2d"];
+    st_dom -> st_bla [label="domain profile", style=dashed, color="#2d6a2d"];
+
+    // -- sensitivity is READ, never scored --
+    in_sens -> st_read [penwidth=2.5, color="#b8860b"];
+    in_sens -> st_cover [style=dashed, color="#8a6508", constraint=false];
+    st_read -> st_score [label="sensitivity", penwidth=2.5, color="#b8860b"];
+    st_read -> st_floor [style=dashed, color="#b8860b", constraint=false];
+    st_cover -> st_read [label="ok", style=dashed, color="#8a6508", constraint=false];
+
+    // -- SPECIFIED, NOT WIRED: blast still reads the enumerated description --
+    in_contents -> st_bla [label="L3 — spec only", style=dotted, color="#b8860b",
+                           fontcolor="#8a6508"];
+    in_flags    -> st_bla [label="L3 — spec only", style=dotted, color="#b8860b",
+                           fontcolor="#8a6508"];
+
+    // -- deterministic assembly, one step per node --
+    st_imp   -> st_score [label="impact", penwidth=2, color="#2d6a2d"];
+    st_bla   -> a_raw    [style=dashed, color="#999999"];
+    st_bla   -> st_alias [label="raw blast", penwidth=2, color="#2d6a2d"];
+    st_alias -> st_floor [penwidth=2, color="#2d6a2d"];
+    st_floor -> st_score [label="blast", penwidth=2, color="#2d6a2d"];
+    st_score -> st_band  [penwidth=2, color="#2d6a2d"];
+    st_band  -> a_scan   [penwidth=2, color="#2d6a2d"];
+
+    st_imp -> a_params [style=dashed, color="#999999"];
+
+    // -- runtime --
+    a_scan     -> dy_lookup  [penwidth=2, color="#b45309"];
+    in_call    -> dy_resolve [ltail=cluster_in_run, penwidth=2, color="#b45309"];
+    dy_resolve -> dy_lookup  [penwidth=2, color="#b45309"];
+    dy_lookup  -> dy_base    [penwidth=2, color="#b45309"];
+    dy_lookup  -> dy_seq     [penwidth=2, color="#b45309"];
+    dy_lookup  -> dy_fuse    [label="static band = floor", penwidth=2, color="#b45309"];
+    dy_base    -> dy_fuse    [penwidth=2, color="#b45309"];
+    dy_seq     -> dy_fuse    [penwidth=2, color="#b45309"];
+    dy_fuse    -> out        [penwidth=2.5, color="#b91c1c"];
+
+    in_use     -> dy_base [label="the sanctioned baseline", style=dashed, color="#b8860b", constraint=false];
+    in_history -> dy_base [style=dashed, constraint=false];
+    a_params   -> dy_lookup [style=dashed, label="× multiplier"];
+
+    // -- secondary --
+    dy_resolve -> sec_judge  [style=dashed];
+    sec_judge  -> dy_fuse    [style=dashed];
+    dy_lookup  -> sec_embed  [style=dashed];
+    sec_embed  -> out        [style=dashed, label="score × likelihood"];
+    a_scan     -> sec_review [style=dashed];
+}

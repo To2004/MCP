@@ -1,0 +1,282 @@
+% ---------------------------------------------------------------------------
+% Section 5 -- Evaluation
+%
+% Budget: 1,600-1,900 words + 5 tables (WRITING-GUIDE section 5).
+% Structure: ~400 words of setup, then one 100-150 word reading per table.
+% Bold run-in headings, no \subsection -- vertical space is the scarce resource.
+%
+% EVERY number here is copied verbatim from GROUND-TRUTH.md. Nothing is
+% rounded, aggregated, or re-derived.
+%
+% Terminology: "resource" throughout, matching Sec.1, Sec.3 and Sec.4. The
+% register rows the policy carries ARE the resources; GROUND-TRUTH.md calls
+% them "assets", which is the artifact's word, not the paper's.
+% ---------------------------------------------------------------------------
+\section{Evaluation}
+\label{sec:eval}
+
+Four questions organise the evaluation. \textbf{RQ1}: can an organization's own
+severity judgements be recovered from its policy prose alone? \textbf{RQ2}: do
+the deterministic impact rules suffice, or does tool impact need a model?
+\textbf{RQ3}: does the request-time signal add discrimination over the
+design-time baseline? \textbf{RQ4}: does the calibration survive contact with
+real traffic?
+
+\textbf{Three corpora, one per question group.} RQ1 and RQ2 run on three vendor
+MCP servers: a calendar server, GitHub, and Slack. Their tool catalogs are
+genuine, captured from the live vendor servers through the protocol's own
+\texttt{tools/list} call~\cite{mcp2026spec}, and are used exactly as returned
+--- 13 tools for calendar, 26 for GitHub, 16 for Slack, 55 in total. RQ3 runs on
+a different corpus: a session testbed spanning ten server profiles, whose
+catalogs and whose sessions alike were written for this study, so RQ3 sits
+entirely on the synthesized side of the accounting below and shares no catalog
+with RQ1 or RQ2. RQ4 runs on a further server, a live \texttt{mcp-server-git}
+driven over stdio, and is the one genuinely real execution trace in the section.
+
+\textbf{What is synthesized.} Everything the captured catalogs do not supply.
+The organizational policy document, the registers that name the resources behind
+each of the three vendor servers (16, 20 and 20 resources, 56 in total), and the
+ten RQ3 server profiles together with the invocation scenarios over them were
+all written for this study. This is therefore an \emph{evaluation setting}, not
+a benchmark, and we do not present it as one. It exists because graded
+per-action severity ground truth for MCP invocations barely exists: we know of
+no external benchmark that supplies it, which is also why RQ3 has no external
+comparison point.
+
+\textbf{Protocol for RQ1 and RQ2.} The scorer is given exactly two documents:
+the captured tool catalog and the relevant section of the organizational policy.
+The per-resource sensitivity table that ships with each server profile is
+\emph{held out} and never enters the pipeline; it is the ground truth. That
+table is the organization's own 1--5 rating of each register row, and the policy
+document from which we derive our rating states no number anywhere. We report
+mean absolute error, exact agreement, and agreement to within one tier. The
+within-one column is reported because the sensitivity rating is not consumed on
+its own: it is one of three 1--5 primitives whose product spans 1--125 before
+banding (\S\ref{sec:framework}), so we evaluate each primitive against the
+organization's judgement at the resolution the primitive is actually
+authored at.
+
+\textbf{RQ1: policy text recovers the organization's severities.}
+Table~\ref{tab:sensitivity} gives the result per server. Across all 56
+resources, 50 match the organization's own rating exactly, and \emph{none is off
+by more than one tier} on any of the three servers. Mean absolute error is 0.125
+on calendar and 0.10 on both GitHub and Slack. The uniform 100\% within-one
+column is the load-bearing number: a derivation that reads only prose does not
+merely correlate with the withheld table, it lands on it or immediately beside
+it, everywhere. Exact agreement of 88--90\% is the weaker claim and the more
+honest headline, because six resources do move.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{RQ1 --- derived resource sensitivity against the organization's
+    held-out per-resource table. The derivation reads the policy document only.}
+  \label{tab:sensitivity}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Server & Resources & MAE & Exact & Within 1 \\
+    \midrule
+    calendar & 16 & 0.125 & 88\% & \textbf{100\%} \\
+    github   & 20 & 0.10  & 90\% & \textbf{100\%} \\
+    slack    & 20 & 0.10  & 90\% & \textbf{100\%} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Where it drifts.} Table~\ref{tab:misses} lists all six misses. Every one
+is adjacent-tier and every one has a readable cause, which is the useful part.
+Two are register-layout effects: \texttt{account-directory} inherits severity
+from the Restricted-class account configuration it sits beside, and
+\texttt{repository-catalog} is rated up because a full catalog enumeration maps
+the estate. Two are classification-language effects: \texttt{infra-config} is
+read as serious lasting harm rather than as control plane, and
+\texttt{calendar-records} is read as a bare attribute listing. Two follow the
+policy's own qualifiers: \texttt{incident-response} carries a
+\texttt{self-sufficient} flag and credentials pasted mid-incident, and
+\texttt{research-team} holds unpublished research read as competitively
+damaging.
+The misses run in both directions, the majority above the organization's own
+rating rather than below --- the direction a security control should err in ---
+though six cases establish a reading, not a calibrated bias.
+
+\begin{table}[t]
+  \centering
+  \footnotesize
+  \caption{RQ1 --- all six disagreements. Every miss is one tier, and every miss
+    is traceable to a specific reading of the policy text.}
+  \label{tab:misses}
+  % \raggedright is applied per cell and rows end with \tabularnewline, so the
+  % narrow text column does not need the array package (acmart does not load it).
+  \begin{tabular}{@{}llrrp{2.6cm}@{}}
+    \toprule
+    Resource & Srv. & Ours & Org & Reading \tabularnewline
+    \midrule
+    \texttt{account-directory} & cal & 5 & 4 & \raggedright sits beside the Restricted-class account configuration \tabularnewline
+    \texttt{calendar-records}  & cal & 2 & 3 & \raggedright read as a bare attribute listing \tabularnewline
+    \texttt{infra-config}      & gh  & 4 & 5 & \raggedright serious lasting harm, not control plane \tabularnewline
+    \texttt{repository-catalog}& gh  & 3 & 2 & \raggedright full enumeration maps the estate \tabularnewline
+    \texttt{incident-response} & sl  & 5 & 4 & \raggedright \texttt{self-sufficient} flag, credentials mid-incident \tabularnewline
+    \texttt{research-team}     & sl  & 4 & 3 & \raggedright unpublished research, competitively damaging \tabularnewline
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{RQ2: the impact ladder needed no model.} Tool impact is the one stage
+where a model is optional by construction --- the rules answer, and the model is
+consulted only when the rules abstain (\S\ref{sec:framework}).
+Table~\ref{tab:impact} reports what happened. The deterministic ladder decided
+all 55 tools across the three servers and the LLM fallback was invoked zero
+times. Compared against an earlier arm in which tool impact was scored by the
+LLM, the ladder agrees on 51 of 55 tools (93\%), and all four disagreements are
+one tier: \texttt{get\_pull\_request\_files} (3 vs.\ 2), \texttt{search\_users}
+(3 vs.\ 2), \texttt{conversations\_leave} (4 vs.\ 5) and \texttt{usergroups\_me}
+(5 vs.\ 4). The consequence is that the tool axis can be decided without a model
+call, at 93\% agreement with the LLM arm it replaces and with every
+disagreement confined to one tier.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{RQ2 --- tool impact. The rules answered every tool; the LLM fallback
+    never fired. Agreement is against an earlier arm in which the LLM scored
+    tool impact.}
+  \label{tab:impact}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Server & Tools & Ladder & LLM & Agrees \\
+    \midrule
+    calendar & 13 & 13 & 0 & 13/13 \\
+    github   & 26 & 26 & 0 & 24/26 \\
+    slack    & 16 & 16 & 0 & 14/16 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{An honesty constraint on RQ2.} The fallback did not fire, and the reason
+matters more than the result. Every one of the 55 tools matched a tier verb, so
+every rule confidence was 0.8. The 0.95 value was unreachable, because none of
+the three vendor catalogs declares MCP tool annotations; and no tool fell to the
+0.35 abstention value that would have handed it to the model
+(\S\ref{sec:handoff}). On this corpus the rules-to-model hand-off is therefore
+covered by unit tests only. We claim that the ladder was sufficient here; we do
+not claim the hybrid was exercised.
+
+\textbf{RQ3: the request-time signal adds discrimination.} The scenario
+generator partitions sessions three ways. Adversarial sessions are the target
+class; benign sessions are the population that must not be disturbed; and
+\emph{misuse} sessions are accidental-insider behaviour, constructed to sit
+between the two, which gives the measurement an interior class rather than only
+a separable pair. The ten server profiles contribute 86--498 benign and 4--20
+adversarial sessions each, 88 adversarial sessions in total.
+Table~\ref{tab:dynamic} reports the two operating thresholds an organization
+would realistically choose, high and critical. Each session is scored twice ---
+static only, and static combined with the request-time signal --- so the
+difference is exactly what the dynamic layer contributes; a session takes the
+band of its riskiest call.
+
+The critical row is the result. Holding benign fall-out fixed at 9\%,
+adversarial recall rises from 56\% to 81\%, and 22 of the 88 adversarial
+sessions are caught \emph{only} by the dynamic signal. That is 25 points of
+recall bought at no cost in false alarms, which is the shape an operator needs:
+the static scorer alone reaches comparable recall only by dropping to the
+permissive threshold, where it recovers 91\% but flags 49\% of benign sessions.
+At that permissive threshold the dynamic layer still helps and is merely
+saturated, 91\% to 100\% recall with 8 of 88 caught only dynamically.
+
+\textbf{The interior class does not move at the strict threshold.} We built
+misuse in as the hard case, so its row is the one to read honestly. At the
+critical threshold the dynamic layer buys nothing on it --- 24\% flagged by the
+static scorer, 24\% by the combined one --- in the same sweep where adversarial
+recall gains 25 points. Misuse improves only at the permissive threshold, 63\%
+to 71\%. On this testbed the request-time signal separates deliberate
+adversarial behaviour and leaves accidental-insider behaviour where the static
+scorer left it. We did not run the ablation that would attribute this to a
+particular signal, so we report it as a bound on the claim rather than explain
+it away: the layer buys adversarial recall, not insider recall.
+
+Mean session band-rank (low\,=\,1 to critical\,=\,4) moves from static to
+combined as follows: adversarial 3.47 to 3.81, misuse 2.84 to 2.92, benign 2.41
+to 2.41. Benign sessions are unchanged on both measures, band-rank and
+fall-out, which is the property an operator needs before turning the layer on.
+Two design constraints bound how far the layer can move anything at all: the
+band signals can only raise risk above the static floor, and the likelihood
+multiplier is bounded below at 0.1, so no amount of apparent normality discounts
+a critical cell to nothing.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{RQ3 --- session-level discrimination, static versus static combined
+    with the request-time signal, over ten synthesized server profiles (86--498
+    benign and 4--20 adversarial sessions each).}
+  \label{tab:dynamic}
+  \begin{tabular}{lrrr}
+    \toprule
+    Scorer & Recall (adv.) & Flagged (misuse) & Fall-out (benign) \\
+    \midrule
+    \multicolumn{4}{@{}l}{\emph{Flag threshold = high}} \\
+    static   & 91\%           & 63\% & 49\% \\
+    combined & \textbf{100\%} & 71\% & 49\% \\
+    \midrule
+    \multicolumn{4}{@{}l}{\emph{Flag threshold = critical}} \\
+    static   & 56\%          & 24\% & 9\% \\
+    combined & \textbf{81\%} & 24\% & \textbf{9\%} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{RQ4: the calibration transfers to real traffic.} Everything in RQ3 is
+synthetic, so we repeated the calibration check on genuinely real MCP traffic.
+We drove a live \texttt{mcp-server-git} over stdio against the implementation's
+own repository (223 real commits) and captured 400 real tool calls, of which 399
+executed without error, exercising 12 git tools and 106 distinct call
+signatures. Arguments come from the repository's actual history: real 40-char
+SHAs, real paths, real branch names. All 400 captured calls are benign by
+construction, being script-driven replay against that history; the only
+non-benign items in RQ4 are three calls we injected. We fitted on the first 70\%
+of the calls chronologically and scored the held-out 30\%. The false-positive
+rate on benign traffic was 0.8\%, against a design target of 1--2\%, and the
+mean held-out likelihood was 0.107 --- essentially everything sits on the
+multiplier's 0.1 floor, which is the intended behaviour for traffic that looks
+like its own history. The three injected calls were a 200-char commit message, a
+bare \texttt{git\_reset}, and a fabricated \texttt{exfiltrate\_all} carrying a
+payload; all three scored high, against held-out benign traffic sitting on that
+floor. The q99 quantile-anchored ramp was tuned on the synthetic calendar,
+GitHub and Slack corpus and transferred to real git traffic with no adjustment.
+
+\textbf{Limitations of the measurement.} Blast radius is the noisy stage.
+Table~\ref{tab:blast} compares the (tool, resource) cells produced with and
+without the policy context: 19--22\% of cells move, with roughly half the
+movement being the relevance gate flipping a cell into or out of
+not-applicable. An earlier arm measured 23--35 cells per server of pure
+run-to-run variance with the prompt held fixed. Calendar's 40 changed cells sit
+just above that band, but GitHub's 100 and Slack's 72 are well above it, so on
+the two larger servers the movement cannot be attributed to run-to-run variance
+alone; we nonetheless do not read individual cell changes as signal. The
+movement is not a uniform discount either: summed scores rise on calendar (2280
+to 2697) and Slack (3779 to 4096) and fall on GitHub (6340 to 5328). Three
+further limits bound the claims. The RQ3 labels are synthetic by construction
+--- the benign, misuse and adversarial partition is a property of the generator,
+not an independent annotation --- so RQ3 measures separation under a known
+generative model, and RQ4 only checks that the calibration holds elsewhere. The
+optional LLM judge in the request-time layer was wired but not run in these
+experiments. And the static result rests on one policy document over three
+servers, so cross-organization generalisation is untested; beyond catalog
+capture, the vendor servers themselves were not driven live.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Blast radius is the noisy stage: (tool, resource) cells that changed
+    between arms under the same rubric and the same resource identifiers.}
+  \label{tab:blast}
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    Server & Cells & Diff. & Raised & Lower. & $\to$N/A & N/A$\to$ \\
+    \midrule
+    calendar & 208 & 40  & 11 & 3  & 15 & 11 \\
+    github   & 520 & 100 & 26 & 21 & 32 & 21 \\
+    slack    & 320 & 72  & 30 & 18 & 16 & 8  \\
+    \bottomrule
+  \end{tabular}
+\end{table}

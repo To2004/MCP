@@ -79,10 +79,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--impact-mode", default="baseline",
         choices=["baseline", "five_level", "five_level_v2", "five_level_v2_na",
-                 "cia", "hybrid", "hybrid_na"],
+                 "cia", "hybrid", "hybrid_na", "five_level_v2_ctx"],
         help="tool-impact experiment: baseline (1-3), five_level (1-5), "
              "five_level_v2 (noop/meta/read/write/delete), five_level_v2_na "
-             "(generalized 5-level + N/A cells), or cia (base+CIA sum)",
+             "(generalized 5-level + N/A cells), cia (base+CIA sum), or "
+             "five_level_v2_ctx (_na + per-tool understanding fed into blast)",
     )
     parser.add_argument(
         "--out-dir", type=Path, default=REPO_ROOT / "reports" / "scan",

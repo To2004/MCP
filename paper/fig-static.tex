@@ -1,0 +1,80 @@
+% Static (design-time) scoring figure.
+%
+% Drop-in for main.tex:   \input{fig-static}
+%
+% Requires only what main.tex already loads:
+%   \usepackage{amsmath,amssymb,xcolor,tikz}
+%   \usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+% (no `calc`, no external image, no colour dependency).
+%
+% Visual encoding uses two ORTHOGONAL channels so it survives greyscale print
+% and colour-blind readers:
+%   fill shading  -> the number is produced by deterministic rules
+%   dashed border -> the number is produced by the language model
+% The tool scanner carries both, because it is rules-first with a model fallback
+% only where no ladder verb matches. Verified against
+% reports/experiments/v5/five_level_v2_policy_v5r_nacombo/.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  >={Stealth[length=1.6mm]},
+  doc/.style  ={draw,rounded corners=1.5pt,minimum height=6mm,minimum width=26mm,
+                align=center,inner xsep=1pt,font=\scriptsize},
+  scan/.style ={draw,dashed,rounded corners=1.5pt,minimum height=12mm,
+                minimum width=24mm,align=center,inner xsep=0pt,font=\scriptsize},
+  det/.style  ={fill=black!12},
+  mat/.style  ={draw,very thick,fill=black!12,rounded corners=1.5pt,
+                minimum height=8.5mm,minimum width=76mm,align=center,font=\scriptsize},
+  tag/.style  ={font=\tiny,inner sep=1pt}
+]
+
+% --- three scanners -------------------------------------------------------
+\node[scan,det] (ts) at (0mm,0mm)
+  {\textbf{Tool}\\[-1.5pt]{\tiny rules\,$\to$\,LLM on gaps}\\[1pt]$i_t\!\in\![1,5]$};
+\node[scan]     (bs) at (26mm,0mm)
+  {\textbf{Blast}\\[-1.5pt]{\tiny reach of one call}\\[1pt]$b_{t,a}\!\in\![1,5]\,\cup\,\varnothing$};
+\node[scan]     (as) at (52mm,0mm)
+  {\textbf{Asset}\\[-1.5pt]{\tiny classify vs.\ policy}\\[1pt]$s_a\!\in\![1,5]$};
+
+\begin{scope}[on background layer]
+  \node[draw,dotted,rounded corners=2pt,inner sep=2mm,fit=(ts)(bs)(as)] (grp) {};
+\end{scope}
+
+% --- inputs ---------------------------------------------------------------
+\node[doc,above=8mm of ts] (cat) {Tool catalog\\[-2pt]{\tiny\itshape tools/list}};
+\node[doc,above=8mm of as] (pol) {Org policy\\[-2pt]{\tiny\itshape classes $\cdot$ asset register}};
+
+% --- severity matrix ------------------------------------------------------
+\node[mat,below=8mm of bs] (mx)
+  {\textbf{Severity matrix}\\[1.5pt]$R_{t,a}=s_a\cdot b_{t,a}\cdot i_t\ \in[1,125]$};
+
+% --- edges ----------------------------------------------------------------
+\draw[->] (cat.south) -- (ts.north);
+\draw[->] (pol.south) -- (as.north);
+\draw[->] (cat.south east) -- ([xshift=-3mm]bs.north);
+\draw[->] (pol.south west) -- ([xshift=3mm]bs.north);
+\draw[->] (ts.south) -- ([xshift=-24mm]mx.north);
+\draw[->] (bs.south) -- (mx.north);
+\draw[->] (as.south) -- ([xshift=24mm]mx.north);
+
+% --- legend ---------------------------------------------------------------
+\node[tag,below=1.8mm of mx.south] {%
+  \tikz[baseline=-1.6pt]\node[draw,fill=black!12,minimum width=3.6mm,
+        minimum height=2.4mm,inner sep=0]{};~rule-based
+  \qquad
+  \tikz[baseline=-1.6pt]\node[draw,dashed,minimum width=3.6mm,
+        minimum height=2.4mm,inner sep=0]{};~model-assisted};
+
+\end{tikzpicture}
+\caption{Static (design-time) scoring. Two documents---the server's advertised
+tool catalog and the organization's written policy---feed three scanners, each
+producing exactly one primitive: tool impact $i_t$ over the $T$ tools, asset
+sensitivity $s_a$ over the $A$ assets, and blast radius $b_{t,a}$ over all
+$T\!\times\!A$ pairs. Their product is the severity matrix. Since $i$ and $s$ are
+each indexed by a single dimension, $b$ is what distinguishes a cell from others
+in its row; $b_{t,a}=\varnothing$ marks a tool that cannot reach an asset and
+removes the cell. The organization states no severity number: $s_a$ is derived by
+classifying each asset against the policy's own classes.}
+\label{fig:static}
+\end{figure}

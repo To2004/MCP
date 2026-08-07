@@ -58,6 +58,24 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Generate insider testbed (2 orgs, mixed personas, no external attackers) | `uv run python scripts/make_insider_testbed.py` |
 | Benign-vs-adversarial separation report | `uv run python scripts/evaluate_dynamic.py` |
 | Embedding likelihood eval (static × likelihood CSVs) | `uv run python scripts/eval_embedding_likelihood.py` |
+| Scan with the org description, no asset sensitivity | `sbatch --job-name=mcp-desc scripts/scan_desc.sbatch <stems>` |
+| Scan with the org POLICY (realistic disclosure, 11 servers) | `sbatch scripts/scan_policy.sbatch <stems>` |
+| **v5 scan** (policy-derived sensitivity, static impact + LLM fallback) | `sbatch scripts/scan_v5.sbatch [<stem>] [overwrite]` |
+| **v5r scan** (rewritten prompts + operation-type impact ladder) | `uv run python scripts/scan_policy_v5.py --impact-mode five_level_v2_v5r` |
+| Validate the policy document against the spec | `uv run python scripts/check_policies.py` |
+| Refresh the real-world policy examples (bad/medium/good ladder) | `uv run python scripts/fetch_real_policy_examples.py` |
+| Score v5 vs the org's own numbers and vs v4 | `uv run python scripts/evaluate_policy_v5.py` |
+| Grade each policy-scheme arm (ISO/NIST/CIS) vs held-out org numbers | `uv run python scripts/compare_sens_schemes.py` |
+| **v7 scan** (policy written in the framework's own shape: ISO / NIST / CIS) | `sbatch scripts/scan_v7.sbatch <iso\|nist\|cis> [<stems>] [overwrite]` |
+| Compare the v7 framework arms against the v5r nacombo baseline | `uv run python scripts/compare_v7_frameworks.py` |
+| **v8 binding eval** (runtime asset resolution, no LLM, zero per-server config) | `uv run python scripts/evaluate_binding.py` |
+| v8 full tool x asset matrix (synthetic calls, keys given) | `uv run python scripts/evaluate_binding_synthetic.py [--held-out]` |
+| Package the scanner + all its inputs as a self-contained zip | `uv run python scripts/bundle_v5_scanner.py --arm nacombo --verify` |
+| v5 scan for a large server (flash attention off; see script header) | `sbatch --export=ALL,MODE=<mode> scripts/scan_v5_bigserver.sbatch <stem> overwrite` |
+| **CIA loss-vector scoring** (v6, offline: no product, high-water mark) | `uv run python scripts/cia_risk_rescore.py` |
+| CIA misuse signal — selectivity measurement (v6) | `uv run python scripts/cia_signal_selectivity.py` |
+| Re-price the matrices with CIA as a facet selector (v6, superseded) | `uv run python scripts/cia_facet_rescore.py` |
+| Export the v5 scanner inputs into the experiment folder | `uv run python scripts/export_v5_inputs.py` |
 | Full pipeline (multi-GPU) | `sbatch scripts/scan_and_rank_multigpu.sbatch` |
 | Grade scanner (vs LLM tables) | `uv run python scripts/evaluate_scanner.py` |
 | Grade scanner (vs oracle panel + inter-rater) | `uv run python scripts/evaluate_vs_human.py` |

@@ -1,0 +1,126 @@
+% ---------------------------------------------------------------------------
+% Section 3 -- Problem Setting and Threat Model
+%
+% Job: make the setting precise enough that Section 4 can be formal.
+%   (a) the MCP mechanics,          (b) actors and who is protected from whom,
+%   (c) how harm arises,            (d) the server's observation set,
+%   (e) assumptions and scope,      (f) the decision problem, stated formally.
+%
+% Budget: ~650 words + one small table.
+%
+% TERMINOLOGY: "resource" is reserved for r, the thing a call touches. The
+% server is the "protected party", never "the protected resource", and the word
+% "asset" does not appear here. Sec.4/5 still say "asset register" and
+% "(tool, asset) cell" -- one sweep would make the paper uniform.
+%
+% THE ROUTES-TO-HARM LIST is now ONE sentence with grouped citations: Sec.1 P2
+% and Sec.2 P1/P2 already carry the same six keys, and this was the third
+% telling of the same list.
+%
+% Sec.4.7 (sec:enforcement) currently re-states the risk-adaptive AC pattern
+% with the same three keys. This section now establishes it, so that sentence
+% in Sec.4.7 can be reduced to a back-reference.
+% ---------------------------------------------------------------------------
+\section{Problem Setting and Threat Model}
+\label{sec:threat}
+
+\textbf{The setting.} An MCP server publishes a catalog of tools over a uniform
+JSON-RPC channel. A client issues \texttt{tools/list} to obtain it --- each
+tool's name, natural-language description, and JSON argument schema --- then
+invokes one with concrete
+arguments~\cite{anthropic2024mcp,mcp2026spec}. The tools are an interface, not
+the resource: behind them sit the organization's own repositories, calendars,
+message histories and payment rails, and the server, not the agent, is the
+process that touches them. Every invocation is an action the server performs on
+its own resources at an agent's request.
+
+\textbf{Actors.} The \emph{server} is the protected party: it absorbs the
+consequence of anything done to those resources. The \emph{agent}
+is the risk source, an LLM-driven client choosing which tool to call and with
+which arguments. The \emph{organization} deploys the server, owns the
+resources, and publishes the policy that states what losing them would mean. The
+calling population is open where it counts: a deployment authorises a
+connection, not an implementation, so the server can inspect neither the model
+nor the plan behind a request.
+
+\textbf{How harm arises.} Harm arises even though the agent is authenticated and
+authorised for the tool it calls --- through hallucinated calls, risk the agent
+can articulate but does not act on, capability exceeding what the task
+needs, injected content, and objectives that diverge from the
+principal's~\cite{yin2025reasoningtrap,tang2025riskknowledge,li2025privilege,%
+huang2026auditing,zhan2024injecagent,lynch2025misalignment}. These differ in
+cause but not on the wire: each produces a well-formed, schema-conforming,
+authenticated call from a permitted agent to a permitted tool, and no
+protocol-level check separates them. What varies is what executing it would do.
+The opposite direction, a malicious server attacking the agent, is out of scope.
+
+\textbf{What the server observes.} At decision time --- after a call arrives,
+before it executes --- the server sees the caller's identity, already consumed by
+authorization, and the five quantities in Table~\ref{tab:observables} that
+describe the invocation itself. Identity is absent from the five because it does
+not separate the cases: a correct agent, a mistaken one and a manipulated one
+present the same credentials over the same
+interface~\cite{huang2026caller,mellafe2026capability}. Nor does the server
+observe \emph{intent}: it cannot see the user's instruction, and cannot tell
+whether an argument naming, say, a \$1{,}000{,}000 transfer is a typo, an
+injection, or a sanctioned operation. The score below is therefore a function of
+those five alone, never of what the agent meant.
+
+\begin{table}[t]
+  \caption{What an MCP server can observe about an invocation before executing
+  it. Intent is not among them.}
+  \label{tab:observables}
+  \begin{tabular}{@{}cl@{}}
+    \toprule
+    & Observable \\
+    \midrule
+    $t$ & the tool named in the request \\
+    $r$ & the resource(s) that request resolves to \\
+    $a$ & the argument values, valid against the tool's schema \\
+    $x$ & session context: the calls already made on this connection \\
+    $h$ & the calling agent's own history of prior invocations \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Assumptions.} \emph{(i)} Authentication and transport security are
+sound and orthogonal: identity is given, and we ask only what that caller may
+safely do. \emph{(ii)} The organization publishes a written
+classification policy of the kind security categorization standards
+define~\cite{nist2004fips199,nist2008sp80060} --- named classes defined by
+adverse impact, plus rules for recognising a resource's class --- and registers
+the resources its server touches while assigning a sensitivity number to none of
+them. We take this to be the realistic case; rules, unlike an inventory, still
+classify resources created after the policy was written. \emph{(iii)} A call
+resolves to rows of that register by its tool and, where several are reachable,
+by its arguments. \emph{(iv)} The server can refuse or hold a call, so
+enforcement is in-band rather than advisory.
+
+\textbf{The decision problem.} Write an invocation as the whole tuple
+$c = \langle t, r, a, x, h \rangle$ --- not the tool alone. Access control
+supplies a predicate $\mathrm{perm}(c) \in \{0,1\}$ and already refuses what it
+rejects, so the population of interest is exactly the calls with
+$\mathrm{perm}(c) = 1$. The problem is to compute a graded
+consequence score $\rho(c)$ that orders them by how much damage executing them
+could do, and to gate on it against thresholds $\theta_{r} \le \theta_{d}$ the
+deploying organization sets --- conditioning authorization on a computed risk
+value, as risk-adaptive access
+control does~\cite{cheng2007fuzzymls,kandala2011radac,atlam2020riskbased}:
+\begin{equation}
+  d(c) =
+  \begin{cases}
+    \textsf{allow}  & \rho(c) < \theta_{r} \\
+    \textsf{review} & \theta_{r} \le \rho(c) < \theta_{d} \\
+    \textsf{deny}   & \rho(c) \ge \theta_{d}.
+  \end{cases}
+  \label{eq:decision}
+\end{equation}
+With $\rho$ reported as a discrete band the thresholds sit on adjacent bands and
+\textsf{review} is the band at $\theta_{r}$; \S\ref{sec:eval} operates a single
+flag threshold, swept across bands. Two properties make $\rho$, not
+$d$, the object to design. It must be ordinal rather than binary, so an operator
+sets where escalation falls instead of inheriting the designer's cut
+point~\cite{cao2024mad}; and it must be auditable, decomposed into named factors
+a security team can argue with, since $\theta_{r}$ and $\theta_{d}$ are an
+organizational judgement, not a tuned hyperparameter.
+Section~\ref{sec:framework} constructs $\rho$.

@@ -1,0 +1,155 @@
+% ---------------------------------------------------------------------------
+% Section 1 -- Introduction (short paper: FLAT, no subsections)
+%
+% Author's text, compressed from 1,230 to ~1,000 words. Nothing was cut from
+% the argument -- the reductions are merges and removed restatement:
+%   * P3 and P4 merged (the "In all these cases" opener restated P3's close)
+%   * P7 and P8 merged (vulnerability scoring folded into the same point)
+%   * the three-factor paragraph keeps its three claims, loses two of three
+%     illustrative lists (the payment/path/scope list and the transfer example,
+%     which paragraph 3 already carries)
+%   * "We therefore introduce" and "We implement this" merged
+%   * contributions tightened; all three claims intact
+%
+% Author's softenings preserved: "Much recent research", "has accompanied the
+% growth", "not by itself sufficient", "do not, however, express".
+% ---------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+AI agents no longer only generate text; they act. They read data, modify files,
+update databases, and call external services for their users. The Model Context
+Protocol (MCP)~\cite{anthropic2024mcp} standardizes this exchange: a server
+publishes tools, and a connected agent discovers and invokes them over
+JSON-RPC~\cite{mcp2026spec}. The public server ecosystem is growing
+quickly~\cite{hou2026mcp}, and a study of 1{,}899 open-source servers found
+recurring security weaknesses~\cite{hasan2025firstglance}. An agent's decision
+now lands directly on the systems and resources behind those tools. MCP does
+carry a risk vocabulary, but a coarse one: a tool descriptor may declare
+\texttt{readOnlyHint}, \texttt{destructiveHint}, \texttt{idempotentHint} and
+\texttt{openWorldHint}~\cite{mcp2026spec}. These are booleans, declared per tool
+rather than per call, and asserted by the server about itself; the specification
+tells clients to treat them as untrusted unless the server is trusted. Its
+remaining answer to risk is a human who can deny the invocation. A hint labels a
+capability. It says nothing about which resource a given call
+reaches~\cite{hou2026mcp,buhler2026agentbound}.
+
+Most MCP and agent security work studies the agent's side: how a malicious or
+compromised server subverts the agent connecting to
+it~\cite{invariant2025toolpoisoning,shi2025toolhijacker}. A smaller line of work
+defends the server. Before deployment, static analysis maps implementation
+weaknesses to attack patterns and scores a repository~\cite{kumar2026mcpinsos},
+or audits declared capabilities for over-privilege~\cite{huang2026auditing}. At
+runtime, access control has been expressed as a capability manifest enforced by
+a sandbox~\cite{buhler2026agentbound}, and hybrid analysis pairs a call's
+parameters with its observed execution~\cite{he2026mtguard}. Where these methods
+score, the unit is a server or a capability, never an invocation. They also
+defend the opposite direction: a capability sandbox confines a faulty or
+malicious server to protect the host~\cite{buhler2026agentbound}, while the
+assets at stake here are the ones the server itself owns.
+
+We study \emph{misuse}: the inappropriate use of a legitimate capability. Misuse
+needs no malicious agent and no malicious server. It starts with an operator who
+states a task loosely, delegates too broadly, or grants more permission than the
+task needs; measurements of MCP servers report broad system access and
+over-privileged tools~\cite{li2025privilege,huang2026auditing}. It starts with
+the model, which can pick an available but wrong tool~\cite{yin2025reasoningtrap},
+or know a risk in the abstract and still miss it in a live
+trace~\cite{tang2025riskknowledge}. It needs no single harmful call: legitimate
+tools chain into a workflow that is harmful in combination, driven by
+instructions hidden in data the agent reads during an ordinary
+task~\cite{zhao2026parasites}. Prompt injection~\cite{zhan2024injecagent} and
+agentic misalignment~\cite{lynch2025misalignment} reach the same place by other
+routes, but are not our subject. We do not ask why the agent issued the call. We
+ask what the call would do. The same \texttt{read\_file} is routine against a
+build log and a disclosure against a credentials store. Our unit of analysis is
+the whole invocation: the tool, the resource it reaches, the arguments, the
+execution context, and the agent's recent activity.
+
+Access control decides whether a principal may reach a resource. Role- and
+attribute-based models~\cite{sandhu1996rbac,hu2014abac} decide whether an
+operation is permitted; they attach no magnitude to a permitted one. MCP widens
+the gap: servers hold authorization as persistent state instead of re-checking
+each call~\cite{huang2026caller}, and agent frameworks expose a capability
+without re-authorizing the concrete call it emits~\cite{mellafe2026capability}.
+Authentication says who is calling, authorization says what they may do. Neither
+says what this call costs.
+
+Adding a computed risk value to that decision is not new. Quantified
+risk-adaptive access control appeared in 2007~\cite{cheng2007fuzzymls} and was
+folded into attribute-based models in 2011~\cite{kandala2011radac}. The family
+is surveyed~\cite{atlam2020riskbased,cheimonidis2023dynamic}, deployed where a
+numeric trust value gates access~\cite{bradatsch2024zerotrust}, and recently
+extended to agents, where an {LLM} judge weighs target-resource risk against its
+own uncertainty~\cite{fleming2025tbac}. These models score a subject--object
+pair: this principal, this resource, this context. Two calls to the same tool by
+the same agent score alike.
+
+No existing method estimates what a concrete MCP invocation would cost. Most MCP
+and agent defenses return an enforcement decision, allow or
+block~\cite{xing2025mcpguard,jing2025mcip,shi2025progent,zhu2025miniscope,abaev2026agentguardian}.
+Recent systems return richer outcomes --- consent levels, verdict classes,
+calibrated detector
+scores~\cite{li2026conleash,yang2026agenttrust,zhang2026stars,hossain2026nexus}
+--- but a containment level, an action class and a detection confidence are not
+magnitudes. Others validate calls at runtime~\cite{betser2026agentrim}, learn
+access-control policies~\cite{abaev2026agentguardian}, infer risk from
+logs~\cite{fu2025riskcue}, or check arguments against a declared
+intent~\cite{zhu2026igac,rahman2026rolestratified}; none prices the resource the
+call reaches. Vulnerability scoring does not either: CVSS and AIVSS rate a
+vulnerability or a system, not a live
+call~\cite{spring2021time,bahar2024validity,owasp2025aivss}. A magnitude matters
+because it separates calls to allow, calls to review, and calls to
+refuse~\cite{cao2024mad}.
+
+Risk belongs to a (tool, resource) pair, not to the tool: \texttt{read\_file} is
+low risk on a public document and high risk on regulated data. A baseline must
+combine tool impact, resource sensitivity, and \emph{blast radius} --- how far
+one call reaches. Arguments move that baseline, and the same call reads
+differently against different histories.
+
+We compute a graded risk score at two times. At design time we score every
+(tool, resource) pair a server exposes, from tool impact, resource sensitivity,
+and blast radius. Sensitivity comes from the organization's own
+information-classification policy, not from a number assigned without
+one~\cite{nist2004fips199,nist2008sp80060}. At request time we adjust that
+baseline with the actual arguments, the execution context, and the agent's
+recent activity. The score is compared against organizational thresholds, so a
+call is approved, sent for human review, or refused (\S\ref{sec:framework}).
+Deciding when an agent proceeds alone and when control passes to a person is the
+central question of adjustable autonomy~\cite{pynadath2002adjustable}; the score
+makes that threshold computable. We implement this as an enforcement framework
+and evaluate it on tool catalogs captured from real vendor MCP servers, paired
+with organizational policies, resource inventories, and invocation scenarios
+(\S\ref{sec:eval}).
+
+This paper makes three contributions. First, a \textbf{risk-analysis methodology}
+for assessing the misuse risk of an MCP invocation from tool impact, resource
+sensitivity, blast radius, runtime arguments, execution context, and the agent's
+recent activity, deriving resource sensitivity from organizational policy rather
+than from a fully labeled asset inventory. Second, an \textbf{enforcement
+framework} that combines the design-time and request-time assessments and uses
+them to make risk-based access-control decisions for MCP servers. Third, an
+\textbf{evaluation setting} that pairs tool catalogs from real vendor MCP servers
+with synthesized organizational policies, resource inventories, and invocation
+scenarios, used to measure whether the calculated risk levels match
+organizational judgment and whether runtime arguments and behavioral history
+affect the score as intended.
+
+% ---------------------------------------------------------------------------
+% IF IT MUST GO BELOW 900 -- the next cuts all cost something:
+%   * The three-factor paragraph (~95w) duplicates contribution 1. Cutting it
+%     loses the read_file example, which is the only concrete illustration of
+%     why risk is a (tool, resource) property.
+%   * Paragraph 2 (~55w) can fold into paragraph 3, but the reverse-direction
+%     statement is the paper's positioning and reads better standing alone.
+%   * The graded-estimate sentence (~30w) can go, but it is the justification
+%     for producing a score rather than a verdict.
+%
+% CONTRIBUTIONS AS A LIST -- six of six sampled AAMAS papers use one:
+%   \begin{enumerate}[leftmargin=*,itemsep=1pt,topsep=2pt]
+%     \item A \textbf{risk-analysis methodology} ...
+%     \item An \textbf{enforcement framework} ...
+%     \item An \textbf{evaluation setting} ...
+%   \end{enumerate}
+% ---------------------------------------------------------------------------

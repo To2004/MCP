@@ -1,0 +1,615 @@
+{
+  "server": "sec-edgar-mcp",
+  "kind": "sec_edgar",
+  "source": "live MITM capture logs/proxy/sessions/finance_sec_edgar/captured.jsonl",
+  "tools": [
+    {
+      "name": "get_cik_by_ticker",
+      "description": "\n    Get the CIK (Central Index Key) for a company based on its ticker symbol.\n\n    Args:\n        ticker: The ticker symbol of the company (e.g., \"NVDA\", \"AAPL\")\n\n    Returns:\n        Dictionary containing the CIK number or error message\n    ",
+      "input_schema": {
+        "properties": {
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker"
+        ],
+        "title": "get_cik_by_tickerArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_company_info",
+      "description": "\n    Get detailed information about a company from SEC records.\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY use data returned from SEC records. NEVER add external information.\n    - ALWAYS include any filing reference information if provided.\n    - Be completely deterministic - same query should always give same response.\n    - If information is not in SEC records, say \"Not available in SEC records\".\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n\n    Returns:\n        Dictionary containing company information from SEC records including name, CIK, SIC, exchange, etc.\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_company_infoArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "search_companies",
+      "description": "\n    Search for companies by name.\n\n    Args:\n        query: Search query for company name\n        limit: Maximum number of results to return (default: 10)\n\n    Returns:\n        Dictionary containing list of matching companies\n    ",
+      "input_schema": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          },
+          "limit": {
+            "default": 10,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "search_companiesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_company_facts",
+      "description": "\n    Get company facts and key financial metrics.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n\n    Returns:\n        Dictionary containing available financial metrics\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_company_factsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_recent_filings",
+      "description": "\n    Get recent SEC filings for a company or across all companies.\n\n    Args:\n        identifier: Company ticker/CIK (optional, if not provided returns all recent filings)\n        form_type: Specific form type to filter (e.g., \"10-K\", \"10-Q\", \"8-K\")\n        days: Number of days to look back (default: 30)\n        limit: Maximum number of filings to return (default: 50)\n\n    Returns:\n        Dictionary containing list of recent filings\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "default": null,
+            "title": "Identifier",
+            "type": "string"
+          },
+          "form_type": {
+            "default": null,
+            "title": "Form Type",
+            "type": "string"
+          },
+          "days": {
+            "default": 30,
+            "title": "Days",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 40,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "get_recent_filingsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_filing_content",
+      "description": "\n    Get the content of a specific SEC filing.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: The accession number of the filing\n\n    Returns:\n        Dictionary containing filing content and metadata\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "title": "Accession Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "accession_number"
+        ],
+        "title": "get_filing_contentArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "analyze_8k",
+      "description": "\n    Analyze an 8-K filing for specific events and items.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: The accession number of the 8-K filing\n\n    Returns:\n        Dictionary containing analysis of 8-K items and events\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "title": "Accession Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "accession_number"
+        ],
+        "title": "analyze_8kArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_filing_sections",
+      "description": "\n    Get specific sections from a filing (e.g., business description, risk factors, MD&A).\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: The accession number of the filing\n        form_type: The type of form (e.g., \"10-K\", \"10-Q\")\n\n    Returns:\n        Dictionary containing available sections from the filing\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "title": "Accession Number",
+            "type": "string"
+          },
+          "form_type": {
+            "title": "Form Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "accession_number",
+          "form_type"
+        ],
+        "title": "get_filing_sectionsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_financials",
+      "description": "\n    Get financial statements for a company. USE THIS TOOL when users ask for:\n    - Cash flow, cash flow statement, operating cash flow, investing cash flow, financing cash flow\n    - Income statement, revenue, net income, earnings, profit/loss, operating income\n    - Balance sheet, assets, liabilities, equity, cash and cash equivalents\n    - Any financial statement data or financial metrics\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY use data from the returned SEC filing. NEVER add external information.\n    - ALWAYS include the filing reference information with clickable SEC URL in your response.\n    - NEVER estimate, calculate, or interpret data beyond what is explicitly in the filing.\n    - PRESERVE EXACT NUMERIC PRECISION - NO ROUNDING! Show exact values like $37,044,000,000 not $37.0B.\n    - ALWAYS state the exact filing date and form type when presenting data.\n    - Be completely deterministic - same query should always give same response.\n    - If data is not in the filing, say \"Not available in this filing\" - DO NOT guess.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        statement_type: Type of statement (\"income\", \"balance\", \"cash\", or \"all\")\n\n    Returns:\n        Dictionary containing financial statement data extracted directly from SEC EDGAR filings,\n        including filing_reference with source URLs and disclaimer.\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "statement_type": {
+            "default": "all",
+            "title": "Statement Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_financialsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_segment_data",
+      "description": "\n    Get revenue breakdown by segments (geographic, product, etc.).\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        segment_type: Type of segment analysis (default: \"geographic\")\n\n    Returns:\n        Dictionary containing segment revenue data\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "segment_type": {
+            "default": "geographic",
+            "title": "Segment Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_segment_dataArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_key_metrics",
+      "description": "\n    Get key financial metrics for a company.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        metrics: List of specific metrics to retrieve (optional)\n\n    Returns:\n        Dictionary containing requested financial metrics\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "metrics": {
+            "default": null,
+            "items": {},
+            "title": "Metrics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_key_metricsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "compare_periods",
+      "description": "\n    Compare a financial metric across different time periods.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        metric: The financial metric to compare (e.g., \"Revenues\", \"NetIncomeLoss\")\n        start_year: Starting year for comparison\n        end_year: Ending year for comparison\n\n    Returns:\n        Dictionary containing period comparison data and growth analysis\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "start_year": {
+            "title": "Start Year",
+            "type": "integer"
+          },
+          "end_year": {
+            "title": "End Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identifier",
+          "metric",
+          "start_year",
+          "end_year"
+        ],
+        "title": "compare_periodsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "discover_company_metrics",
+      "description": "\n    Discover available financial metrics for a company.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        search_term: Optional search term to filter metrics\n\n    Returns:\n        Dictionary containing list of available metrics\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "search_term": {
+            "default": null,
+            "title": "Search Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "discover_company_metricsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_xbrl_concepts",
+      "description": "\n    ADVANCED TOOL: Extract specific XBRL concepts from a filing.\n\n    DO NOT USE for general financial data requests. Use get_financials() instead for:\n    - Cash flow statements, income statements, balance sheets\n    - Revenue, net income, assets, liabilities, cash data\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY report values found in the specific SEC filing. NEVER add context from other sources.\n    - ALWAYS include the filing reference information with clickable SEC URL (date, accession number, SEC URL).\n    - NEVER estimate or calculate values not explicitly present in the filing.\n    - PRESERVE EXACT NUMERIC PRECISION - NO ROUNDING! Show exact values like $37,044,000,000 not $37.0B.\n    - ALWAYS specify the exact period/context for each value from the filing.\n    - Be completely deterministic - identical queries must give identical responses.\n    - If a concept is not found in the filing, state \"Not found in this filing\" - DO NOT guess.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: Optional specific filing accession number\n        concepts: Optional list of specific concepts to extract (e.g., [\"Revenues\", \"Assets\"])\n        form_type: Form type if no accession number provided (default: \"10-K\")\n\n    Returns:\n        Dictionary containing extracted XBRL concepts with filing_reference and source URLs.\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "default": null,
+            "title": "Accession Number",
+            "type": "string"
+          },
+          "concepts": {
+            "default": null,
+            "items": {},
+            "title": "Concepts",
+            "type": "array"
+          },
+          "form_type": {
+            "default": "10-K",
+            "title": "Form Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_xbrl_conceptsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "discover_xbrl_concepts",
+      "description": "\n    Discover all available XBRL concepts in a filing, including company-specific ones.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: Optional specific filing accession number\n        form_type: Form type if no accession number provided (default: \"10-K\")\n        namespace_filter: Optional filter to show only concepts from specific namespace\n\n    Returns:\n        Dictionary containing all discovered XBRL concepts, namespaces, and company-specific tags\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "default": null,
+            "title": "Accession Number",
+            "type": "string"
+          },
+          "form_type": {
+            "default": "10-K",
+            "title": "Form Type",
+            "type": "string"
+          },
+          "namespace_filter": {
+            "default": null,
+            "title": "Namespace Filter",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "discover_xbrl_conceptsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_insider_transactions",
+      "description": "\n    Get insider trading transactions for a company from SEC filings.\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY use data from the returned SEC insider filings. NEVER add external information.\n    - ALWAYS include the filing reference information with clickable SEC URLs in your response.\n    - NEVER estimate or calculate values not explicitly present in the filings.\n    - PRESERVE EXACT DATES AND VALUES - NO ROUNDING! Show exact values from filings.\n    - ALWAYS specify the exact filing date and accession number for each transaction.\n    - Be completely deterministic - same query should always give same response.\n    - If data is not in the filing, say \"Not available in this filing\" - DO NOT guess.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        form_types: List of form types to include (default: [\"3\", \"4\", \"5\"])\n        days: Number of days to look back (default: 90)\n        limit: Maximum number of transactions to return (default: 50)\n\n    Returns:\n        Dictionary containing insider transactions with direct SEC URLs for verification\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "form_types": {
+            "default": null,
+            "items": {},
+            "title": "Form Types",
+            "type": "array"
+          },
+          "days": {
+            "default": 90,
+            "title": "Days",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_insider_transactionsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_insider_summary",
+      "description": "\n    Get a summary of insider trading activity for a company from SEC filings.\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY use data from the returned SEC insider filings. NEVER add external information.\n    - ALWAYS include the filing reference information with SEC URLs in your response.\n    - PRESERVE EXACT COUNTS AND DATES - NO ROUNDING OR ESTIMATES!\n    - Be completely deterministic - same query should always give same response.\n    - If data is not in the filing, say \"Not available in filings\" - DO NOT guess.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        days: Number of days to analyze (default: 180)\n\n    Returns:\n        Dictionary containing insider trading summary from SEC filings\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "days": {
+            "default": 180,
+            "title": "Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "get_insider_summaryArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_form4_details",
+      "description": "\n    Get detailed information from a specific Form 4 filing.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        accession_number: The accession number of the Form 4\n\n    Returns:\n        Dictionary containing detailed Form 4 information\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "accession_number": {
+            "title": "Accession Number",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "accession_number"
+        ],
+        "title": "get_form4_detailsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "analyze_form4_transactions",
+      "description": "\n    Analyze Form 4 filings and extract detailed transaction data including insider names,\n    transaction amounts, share counts, prices, and ownership details.\n\n    USE THIS TOOL when users ask for detailed insider transaction analysis, transaction tables,\n    or specific transaction amounts from Form 4 filings.\n\n    CRITICAL INSTRUCTIONS FOR LLM RESPONSES:\n    - ONLY use data from the returned SEC Form 4 filings. NEVER add external information.\n    - ALWAYS include the filing reference information with clickable SEC URLs.\n    - PRESERVE EXACT NUMERIC VALUES - NO ROUNDING! Show exact share counts and prices.\n    - ALWAYS specify the exact filing date and accession number for each transaction.\n    - Present data in table format when requested by users.\n    - Be completely deterministic - same query should always give same response.\n    - If data is not in the filing, say \"Not available in this filing\" - DO NOT guess.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        days: Number of days to look back (default: 90)\n        limit: Maximum number of filings to analyze (default: 50)\n\n    Returns:\n        Dictionary containing detailed Form 4 transaction analysis with exact values from SEC filings\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "days": {
+            "default": 90,
+            "title": "Days",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "analyze_form4_transactionsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "analyze_insider_sentiment",
+      "description": "\n    Analyze insider trading sentiment and trends over time.\n\n    Args:\n        identifier: Company ticker symbol or CIK number\n        months: Number of months to analyze (default: 6)\n\n    Returns:\n        Dictionary containing sentiment analysis and trends\n    ",
+      "input_schema": {
+        "properties": {
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "months": {
+            "default": 6,
+            "title": "Months",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "analyze_insider_sentimentArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    },
+    {
+      "name": "get_recommended_tools",
+      "description": "\n    Get recommended tools for analyzing specific form types.\n\n    Args:\n        form_type: The SEC form type (e.g., \"10-K\", \"8-K\", \"4\")\n\n    Returns:\n        Dictionary containing recommended tools and usage tips\n    ",
+      "input_schema": {
+        "properties": {
+          "form_type": {
+            "title": "Form Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form_type"
+        ],
+        "title": "get_recommended_toolsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "read_only_hint": null,
+        "destructive_hint": null,
+        "idempotent_hint": null
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ from mcp_security.call_scoring.score import ScoredCall
 from mcp_security.param_scoring.combine import escalate
 
 from .baseline import AgentBaseline, score_deviation
+from .cia import OFF_AXIS_BAND, score_cia
 from .sequence import score_sequence
 
 JudgeFn = Callable[[str, dict], "tuple[str, str] | None"]
@@ -35,6 +36,10 @@ class DynamicVerdict:
     sequence_reason: str
     judge_band: str | None
     judge_reason: str
+    # CIA signal: does this call attack the objective the org protects on this
+    # asset? None when the signal was not enabled for this run.
+    cia_band: str | None
+    cia_reason: str
     final_band: str
 
 
@@ -43,6 +48,8 @@ def score_session(
     baselines: dict[str, AgentBaseline],
     *,
     judge_fn: JudgeFn | None = None,
+    asset_axes: dict[str, frozenset[str]] | None = None,
+    tool_ops: dict[str, list[str]] | None = None,
 ) -> list[DynamicVerdict]:
     """Score one ordered session's calls, combining static + all dynamic signals.
 
@@ -50,7 +57,13 @@ def score_session(
     is optional (e.g. :func:`mcp_security.dynamic.judge.judge_call`); when
     omitted, the LLM escalation stage is skipped entirely (never silently
     treated as "clean" — callers should record that it was skipped).
+
+    ``asset_axes`` (from :func:`mcp_security.dynamic.cia.load_asset_axes`) and
+    ``tool_ops`` (the scan artifact's ``tool_atomic_ops``) enable the CIA signal.
+    Both must be supplied together; with either missing the signal is skipped and
+    ``cia_band`` stays ``None``, so existing callers are unaffected.
     """
+    cia_enabled = asset_axes is not None and tool_ops is not None
     sequence_verdicts = score_sequence(session_calls)
     session_size = len(session_calls)
     verdicts: list[DynamicVerdict] = []
@@ -66,9 +79,27 @@ def score_session(
             if result is not None:
                 judge_band, judge_reason = result
 
+        cia_band: str | None = None
+        cia_reason = ""
+        if cia_enabled:
+            cia_band, cia_reason = score_cia(call, asset_axes, tool_ops)
+
         static_band = call.final_band
-        final_band = escalate(static_band, baseline_band)
-        final_band = escalate(final_band, seq_verdict.band)
+        # CIA QUALIFIES the behavioural signals rather than adding to them. A
+        # persona deviating from its baseline, or an odd call ordering, is only
+        # evidence of misuse if the call attacks an objective this asset actually
+        # protects: reading an exec channel is the loss that channel exists to
+        # prevent, marking it read is not. Measured as an escalator the signal
+        # fires on 46-64% of cells, which would swamp the bands; as a qualifier it
+        # can only withhold an escalation, never invent one, so the static floor
+        # still stands and precision goes up instead of volume.
+        if cia_band == OFF_AXIS_BAND:
+            final_band = static_band
+        else:
+            final_band = escalate(static_band, baseline_band)
+            final_band = escalate(final_band, seq_verdict.band)
+        # The judge inspects the actual arguments, so it is independent of the
+        # objective analysis and is never withheld.
         if judge_band is not None:
             final_band = escalate(final_band, judge_band)
 
@@ -82,6 +113,8 @@ def score_session(
                 sequence_reason=seq_verdict.reason,
                 judge_band=judge_band,
                 judge_reason=judge_reason,
+                cia_band=cia_band,
+                cia_reason=cia_reason,
                 final_band=final_band,
             )
         )

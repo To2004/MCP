@@ -70,6 +70,19 @@ annotations + the shared `mcp_security.sensitivity` anchors, plus crown-jewel
 name escalation) are in `fallback.py`. Any table built with a fallback in play
 is flagged `model_reviewed=false` / `needs_human_review=true`.
 
+### Where the org's own documents enter
+
+| Module | Document | What it supplies |
+|---|---|---|
+| `server_profiles.py` | `docs/mcp-tools/server-profiles.md` | the inventory-grade profile: prose + a per-asset `Sens.` table. Modes in `_PROFILE_SENS_MODES` take sensitivity straight from it, so stage 2 never runs. |
+| `server_policies.py` | `docs/mcp-tools/server-policies.md` | the policy-grade variant: a classification table (adverse impact per class, **no numbers**), an asset register (`Asset · Description · Tools · Flags · CIA`) and recognition rules. Modes in `_POLICY_SENS_MODES` run stage 2 as a classify-then-map decision against it. |
+
+`static_impact.py` is the third source: the impact ladder expressed as
+deterministic rules over the tool's own declaration. `five_level_v2_v4_static`
+uses it for every tool; `five_level_v2_v5` uses it first and calls the model only
+where it abstains (`STATIC_IMPACT_MIN_CONFIDENCE`), recording the scorer per tool
+in `tool_impact_source`.
+
 **No judge in a scan — the base model stands alone.** Earlier versions ran a
 stage-5 judge (an independent reviewer that re-derived every primitive and
 *overrode* the proposer) plus an LLM band stage. Both were removed from the scan

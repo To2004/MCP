@@ -1,0 +1,274 @@
+% ---------------------------------------------------------------------------
+% Section 4 -- The Framework
+%
+% Budget: 1,400-1,700 words (WRITING-GUIDE.md Sec.5). Largest prose section.
+%
+% Narrative contract inherited from the Introduction:
+%   * tension 1 "the inventory does not exist"  -> paid off in Sec.4.2
+%   * tension 3 "is the model just guessing?"   -> set up in Sec.4.3/4.4,
+%     paid off by the 55/55 result in the Evaluation, NOT here.
+%
+% Every number below appears verbatim in GROUND-TRUTH.md. Citations are sparse
+% by design (WRITING-GUIDE.md Sec.6: method sections cite only what grounds a
+% design decision).
+%
+% Terminology: "resource" throughout, matching Sec.1 and Sec.3 (Table
+% tab:observables writes the resource r). The policy's inventory of resources
+% is "the register".
+%
+% NOTE for the next build pass: this section resolves \ref{sec:threat},
+% \ref{eq:decision} and \ref{sec:eval}, so 03-05 must all be \input in
+% main.tex before the cross-references typeset.
+% ---------------------------------------------------------------------------
+\section{The Framework}
+\label{sec:framework}
+
+\framework{} computes the score $\rho(c)$ of \S\ref{sec:threat} in two layers.
+A static layer builds a baseline for every (tool, resource) pairing a server
+exposes; a dynamic layer refines it with the concrete arguments,
+the session, and the calling agent's own history. The output is an ordinal
+band.
+
+\subsection{Overview}
+
+The static layer reads exactly two documents: the tool catalog the server
+advertises over \texttt{tools/list}, and the section of the organization's
+policy that covers this server. Neither is a \framework{}-specific artifact:
+the server already publishes the catalog, and a security team already maintains
+the policy. The policy supplies a register of the resources behind the server
+and the tools that touch them, named classes, and
+the rules by which the organization's own staff recognise them; it states no
+severity number anywhere. The organization's per-resource sensitivity table
+never reaches the scorer. Here it is an evaluation instrument only --- the
+artifact a deployment would not have, which is what lets it serve as an oracle.
+\S\ref{sec:eval} separates the real captures from what was written for this
+study.
+
+Three primitives, each on a 1--5 scale, are estimated and multiplied:
+\begin{equation}
+\mathrm{score} = \mathrm{sensitivity} \times \mathrm{blast} \times
+                 \mathrm{impact}, \qquad \mathrm{score} \in [1, 125].
+\label{eq:score}
+\end{equation}
+The three ask deliberately different questions: impact is about the verb, what
+one call does; sensitivity about the noun, what the call touches; blast radius
+about the quantifier, how far the consequence travels. Multiplying rather than
+averaging keeps a low factor influential: a destructive tool aimed at a
+worthless resource cannot reach the top of the range, since only a call severe
+on every axis gets there.
+
+A scan issues four \emph{kinds} of prompt: stage~0 infers the server's domain
+once, fixing the vocabulary for what follows; stage~1 assigns tool impact per
+tool, rules first and the model only on abstention; stage~2 assigns resource
+sensitivity per register row; stage~3 assigns blast radius per (tool, resource)
+cell. The last stage dominates a scan's prompt count --- 26 tools over 20
+resources is 520 cells. Everything afterwards is deterministic. An assembly pass reconciles
+twin tools (a bulk variant of a singular tool, or a deprecated alias of a
+canonical one, is tied to its twin so neither can be priced below the other)
+and applies a blast floor; a banding function then maps the product onto
+$\{\textrm{low}, \textrm{medium}, \textrm{high}, \textrm{critical}\}$. Banding
+is not a raw threshold: it encodes explicit security floors --- any
+irreversible operation is at least medium --- derived by measuring where an LLM
+reviewer systematically disagreed with raw thresholds. Determinism buys exactly
+one thing, and we claim only that: band boundaries, twin reconciliation and the
+floor do not drift between runs. The residual run-to-run variance sits in the
+LLM stages, and \S\ref{sec:eval} quantifies it for blast radius, the noisiest
+of them.
+
+\subsection{The Static Layer}
+\label{sec:static}
+
+The static layer runs once per server, before any agent connects. It scores
+every (tool, resource) pairing the catalog exposes, producing the baseline
+that the dynamic layer later refines. Its three primitives are estimated
+independently and combined by Eq.~\ref{eq:score}.
+
+\subsubsection{Deriving Sensitivity from Policy}
+\label{sec:sensitivity}
+
+The input a risk model most wants is the one an organization is least able to
+publish. A per-resource sensitivity inventory is expensive to build, sensitive
+in itself --- filenames can be protected health information --- and stale the
+moment a new resource appears. What organizations do publish is a data
+classification policy.
+
+\framework{} therefore derives sensitivity by \emph{classify-then-map},
+splitting the labour so neither party does the other's job. The organization
+states each class's consequence of loss in its own words ---
+statutory breach, patient injury, privilege waiver, recoverable embarrassment
+--- and writes no numbers. \framework{} owns the 1--5 scale, maps that
+adverse-impact language onto it, and classifies each register row into one of
+the organization's classes, using the row's description and the policy's own
+recognition and aggregation rules. Classify-then-map follows the security
+categorization procedure of FIPS~199 and
+SP~800-60~\cite{nist2004fips199,nist2008sp80060} --- impact language first,
+category second --- applied to a document the organization already maintains
+rather than to a labelled inventory. A rule, unlike an inventory row, still
+classifies a resource created after the policy was written --- a property of
+the construction, not a result we measure.
+
+\subsubsection{Tool Impact: A Deterministic Ladder}
+\label{sec:impact}
+
+Tool impact asks one question of a tool's own declaration: is this operation a
+read, a write, or a removal? Table~\ref{tab:ladder} is the resulting ladder,
+matched by a vocabulary of 281 patterns --- 16 for \emph{none}, 52 metadata, 46
+read, 122 write, 45 remove --- plus 119 ambiguous single words matched against
+the tool name only, 10 generic read verbs, and 9 parameter detectors. That last
+scoping matters: matched across a description instead, the ambiguous words make
+a listing tool look destructive.
+
+\begin{table}[t]
+\caption{The tool-impact ladder. One question --- read, write, or removal ---
+decides the tier.}
+\label{tab:ladder}
+\small
+\begin{tabular}{@{}cp{0.80\columnwidth}@{}}
+\toprule
+Tier & Operation \\
+\midrule
+1 & \textbf{none} --- the server talks about itself: ping, health, version,
+    whoami \\
+2 & \textbf{metadata} --- names, ids, counts, sizes, timestamps, permissions,
+    schema, listings; consumption state \\
+3 & \textbf{content read or limited write} --- append a line, add a comment,
+    set one named field \\
+4 & \textbf{ordinary write} --- the caller supplies what the item says \\
+5 & \textbf{removal or execution} --- delete, wipe, drop, purge, truncate;
+    execute code; move money \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The tier 3/4 boundary --- limited write against ordinary write --- is not
+invented here: two published standards draw it in the same place. HTTP
+separates \texttt{PATCH}, a partial modification leaving unmentioned fields
+untouched~\cite{dusseault2010patch}, from \texttt{PUT}, where the client sends
+the complete representation~\cite{fielding2022http}; CVSS~v4.0 separates
+integrity impact \texttt{VI:L}, ``the amount of modification is limited'', from
+\texttt{VI:H}, ``a total loss of integrity''~\cite{first2023cvss4}. Writing a
+file is a 4; writing one sentence into it is a 3.
+
+Breadth is deliberately absent from the ladder: how many items a call reaches
+is coverage, which blast radius scores, so the rules read no breadth vocabulary
+(\emph{all}, \emph{every}, \emph{bulk}, \emph{batch}), no glob and no recursion
+switch. Parameter detectors are recorded as capability
+flags but never move a tier: what a caller \emph{could} pass is not what a call
+\emph{does} pass, which the dynamic layer sees and the static layer cannot. MCP tool annotations are
+recorded the same way, as evidence and never as a
+bound~\cite{mcp2026spec} --- an annotation is a component's self-assessment
+rather than an independent measurement, and no component sets the ceiling on
+its own risk score.
+
+\subsubsection{The Rules-to-Model Hand-off}
+\label{sec:handoff}
+
+The rules report a confidence with every tier: \textbf{0.35} when no tier verb
+matched, \textbf{0.8} when a verb fired, and \textbf{0.95} when a verb fired and
+an MCP annotation corroborated it. The model is consulted only below
+\textbf{0.5}. An annotation therefore raises confidence, and can suppress the
+model's review, but never sets or caps the tier itself.
+
+The model is asked where the rules do not know --- a write whose declaration
+never says whether it is bounded --- not where two rules disagree, which the
+precedence order settles. What the
+arrangement buys is attributability rather than call volume: stages~2 and~3
+already spend a prompt per cell, so the tool axis is not where a scan's prompt
+volume lives. Every tier the rules decide traces to a named pattern, and a per-tool
+field records which scorer decided, so no tier is unattributable. On the
+catalogs we evaluate the fallback never fired; \S\ref{sec:eval} reports that
+result and what it stops us claiming.
+
+\subsubsection{Blast Radius}
+\label{sec:blast}
+
+Blast radius is scored per (tool, resource) pairing: how far one call's
+consequences propagate, which subjects and systems are different afterwards.
+The rubric numbers that propagation. (1)~Almost nobody depends on what was
+touched; (2)~a few subjects; (3)~a group, the people or systems
+attached to what was touched, and the normal case; (4)~the whole population
+inside the resource boundary, the subjects the register says one resource
+holds; (5)~beyond that boundary. Tier~5 requires a route the organization's own
+register sanctions: the resource is a hub other systems
+authenticate against, what the call returns is usable on its own elsewhere, one
+call reaches the resource's entire population, or the resource is destroyed
+with nothing left to restore. Counting items would break on the obvious case:
+reading one credential file touches one item and compromises every system that
+credential opens.
+
+One deterministic pass then acts on the number: a floor ties blast radius to
+the sensitivity of the resource and to irreversible operations. That breaks the
+primitives' independence on purpose, in one direction only --- sensitivity can
+raise blast, never lower it --- because a call reaching a crown-jewel resource
+is not a pinpoint consequence whatever its verb. An earlier version also
+applied a roof; it was removed, because a roof can only
+ever under-score. Blast radius remains the noisiest of the three stages, which
+\S\ref{sec:eval} quantifies rather than hides.
+
+\subsection{The Dynamic Layer}
+\label{sec:dynamic}
+
+The static table answers how bad a call would be if it happened; it cannot see
+the agent, the session, or the arguments actually supplied. The dynamic layer
+answers how abnormal this call is, from this agent, in this session, given its
+actual input, using four signals ordered cheap to expensive.
+
+\textbf{(0) Embedding likelihood.} A hashing vectorizer over the tool name,
+argument tokens and structural flags, reduced with TruncatedSVD fit on the
+server's observed history; novelty is the mean distance to the 5 nearest
+historical calls, calibrated against the history's own quantiles.
+\textbf{(1) Behavioral baseline.} Deviation from the calling agent's own
+history: a tool it has never called, a first touch of a high-sensitivity
+resource, a burst above its normal rate.
+\textbf{(2) Session sequence risk.} Cumulative sensitivity within a session,
+plus a flag for a sensitive read followed by an external write in a window ---
+a pattern no per-call view can see.
+\textbf{(3) LLM judge.} Decodes and normalizes arguments (base64, hex, shell
+expansion) and classifies intent --- the only signal that uses a model, and it
+is optional.
+
+Three of the four are LLM-free, which keeps the layer's compute cost
+negligible: fitting takes under 0.5\,s per server and scoring roughly 0.05\,ms
+per call. The judge is wired but not exercised here.
+
+Two compositions coexist, entering at different points. The embedding
+likelihood fills a likelihood slot,
+\begin{equation}
+\mathrm{final\_risk}(c) = \mathrm{score}(c) \times \mathrm{likelihood}(c),
+\qquad \mathrm{likelihood} \in [0.1, 1.0],
+\label{eq:dynamic}
+\end{equation}
+so that demonstrated-normal behaviour discounts risk rather than erasing it.
+The 0.1 floor makes that safe: a cell the scan called critical keeps a tenth of
+its risk however routine the call looks, and a call with no benign history
+keeps full static risk at likelihood 1.0, so an agent never observed is never
+silently discounted. The three band signals $s_{1}, s_{2}, s_{3}$ --- signals
+(1)--(3) above --- then fuse by escalation on top of the banded result, each
+able only to \emph{raise} it; none can argue a dangerous capability down.
+Banding first and escalating second gives the quantity \S\ref{sec:threat}
+asked for:
+\begin{equation}
+\rho(c) = \mathrm{escalate}\bigl(\mathrm{band}(\mathrm{final\_risk}(c)),\,
+          s_{1}(c),\, s_{2}(c),\, s_{3}(c)\bigr),
+\label{eq:rho}
+\end{equation}
+an ordinal band over the same four labels.
+
+\subsection{Enforcement}
+\label{sec:enforcement}
+
+Enforcement instantiates Eq.~\ref{eq:decision}: $\rho(c)$ is the band just
+defined and $\theta_{r} \le \theta_{d}$ are the organization's own, so each is
+an operating point rather than a redesign. \S\ref{sec:eval} measures the
+flag/no-flag boundary at both a \emph{high} and a \emph{critical} setting, and
+reports the benign fall-out each costs. The intermediate \textsf{review}
+outcome --- holding a call for human verification rather than refusing it ---
+belongs to the design and is not evaluated here.
+
+The decision is auditable in the organization's own terms. A refusal decomposes
+into the three primitives of Eq.~\ref{eq:score}, the policy class the resource
+was mapped to (\S\ref{sec:sensitivity}), the operation tier and the scorer that
+produced it (\S\ref{sec:handoff}), and the likelihood that scaled the result.
+Two of the three primitives are model-assigned, so this is not a model-free
+audit trail; what the decomposition gives an operator is a named class and a
+named operation to dispute, in place of a single opaque number.
