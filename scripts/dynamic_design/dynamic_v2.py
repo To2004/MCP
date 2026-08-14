@@ -1,17 +1,24 @@
-"""The runtime layer, v2: one bounded factor over per-call breadth.
+"""The runtime layer: two independent factors over one call.
 
-    R(c) = min(score_max, cell(tool, asset) x D(c))
+    R(c) = min(SCORE_MAX, cell(tool, asset) x B(c) x L(c))
 
-    D = 0.8  every quantity in this call is ordinary for this organization
-    D = 1.0  no quantity could be judged (no breadth argument, or no basis yet)
-    D = 1.3  some quantity is unusually large for this organization
+    B  how far this call's ARGUMENTS depart from what this deployment asks for
+       0.70 narrower than anything seen before ... 1.00 ordinary ... 1.30 far wider
 
-Replaces ``likelihood x escalation``. The likelihood term was keyed on
-``(company, tool)`` and therefore constant across every call to one tool by one
-company, so it could not order calls within a tool at all; it also measured
-net-negative on all three servers. What remains is per-call and stateless: D depends
-only on this call's arguments and on the distribution of that argument seen before.
-No session state, no clock, no rate — a call scored twice scores the same both times.
+    L  how unusual this TOOL is for this deployment
+       0.85 called constantly ... 1.00 the median tool ... 1.30 never called
+
+B reads only argument values and L only tool counts, so neither can double-count the
+other and each can be evaluated on its own. Both are earned against the deployment's own
+history: no absolute threshold appears anywhere, because "how big is too big" is a
+property of an organization, not of a tool.
+
+With no history at all both are exactly 1.0 and the static cell stands untouched. That is
+the honest abstention -- inventing a runtime adjustment from no evidence is the one answer
+that cannot be right.
+
+Full walkthrough, with diagrams and worked examples:
+docs/project/dynamic-layer-explained.md
 
 The split of responsibility is the point:
 
@@ -301,17 +308,16 @@ class BreadthScorer:
         return max(levels) if levels else DEFAULT_BREADTH
 
     def _relative_weight(self, server: str, tool: str, spec: dict) -> float:
-        """How much this quantity's deviation counts, relative to the tool's widest input.
+        """How much this quantity's deviation counts, against the tool's most central
+        argument that a quantity can actually be read from.
 
-        Absolute weighting would say a row limit counts the same everywhere. It does not.
-        On a tool whose widest parameter is that same row limit, the limit *is* the call's
-        reach and deserves full influence. On a tool that also takes a glob path, the
-        limit governs a corner of what the call can touch, and the part that dominates is
-        one the runtime cannot measure at all — so what it can measure should count for
-        less, not be reported as though it were the whole story.
+        Absolute weighting would say a row limit counts the same everywhere. It does not:
+        on a tool whose most central argument IS that limit, the limit is the call's reach
+        and deserves full influence; on a tool that also takes a page of results, it
+        governs a corner of what the call touches.
 
-        This is how an unmeasurable parameter still has an effect: not by contributing a
-        ramp of its own, but by lowering the standing of the ones that can.
+        The reference deliberately excludes arguments no quantity can be read from -- see
+        :meth:`widest_reach` for why counting them collapsed this to a constant 0.50.
         """
         level = spec.get("breadth") or DEFAULT_BREADTH
         most_central = BREADTH_WEIGHT.get(self.widest_reach(server, tool), 0.0)
@@ -431,7 +437,7 @@ class BreadthScorer:
         return B_MIN + (1.0 - B_MIN) * position, "narrow"
 
     def breadth_factor(self, server: str, tool: str, args: dict) -> tuple[float, list[str]]:
-        """``B`` for one call: how much narrower than the priced worst case it is.
+        """``B`` for one call: how far its arguments depart from this deployment's range.
 
         Each argument's deviation is scaled by how much that argument can reach, relative
         to the most central input on its tool — an unusual value on a minor argument counts
@@ -464,9 +470,11 @@ class BreadthScorer:
     def likelihood_factor(self, server: str, tool: str) -> tuple[float, str]:
         """``L`` for one call: how usual this tool is for this deployment.
 
-        The neutral point is even usage — the share a tool would hold if the deployment
-        spread its calls equally over the tools the server exposes. No absolute threshold
-        is chosen: "rare" means rare relative to how this deployment actually spreads.
+        The neutral point is the MEDIAN tool this deployment actually calls. No absolute
+        threshold is chosen: "rare" means rare relative to how this deployment spreads its
+        own traffic. Anchoring instead on an even split over the whole exposed catalog put
+        every tool a deployment really uses above "even", so every call was discounted and
+        nothing could sit at 1.0.
 
         Unlike ``B`` this moves both ways, but asymmetrically. A tool nobody calls raises
         risk to ``L_MAX``; one called constantly lowers it only to ``L_MIN``. Commonness
@@ -525,10 +533,10 @@ class BreadthScorer:
 def load_specs() -> dict[str, dict]:
     """``{server: {tool: {arg: spec}}}`` from the scanner's ``tool_breadth`` output.
 
-    The scan answers three things per input, none of them a threshold: whether it is a
-    quantity (``kind``), whether it selects *which* thing the call acts on (``targets``),
-    and where it sits in the model's ordering of that tool's inputs (``rank``). The
-    numbers — how large is large here — are built at runtime from traffic.
+    The scan answers two things per input, neither of them a threshold: whether a quantity
+    can be read from it and in what form (``kind``), and how central it is to the asset the
+    call acts on (``breadth``, 1-5). The numbers -- how large is large *here* -- are built
+    at runtime from traffic, never at scan time.
     """
     specs: dict[str, dict] = {}
     for server, stem in _CATALOG.items():

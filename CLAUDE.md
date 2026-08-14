@@ -97,6 +97,7 @@ Full command reference: [docs/development/commands.md](docs/development/commands
 | Section | Path |
 |---------|------|
 | Project | [docs/project/](docs/project/) |
+| **Dynamic layer, explained** | [docs/project/dynamic-layer-explained.md](docs/project/dynamic-layer-explained.md) |
 | Development | [docs/development/](docs/development/) |
 | Standards | [docs/standards/](docs/standards/) |
 | Claude | [docs/claude/](docs/claude/) |
