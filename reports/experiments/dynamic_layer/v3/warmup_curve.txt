@@ -1,0 +1,29 @@
+Noise floor against warm-up length, and the cold-start guard.
+Same corpus (github_helios_org_100k.csv), same 5,000 scored calls, only the warm-up
+length changes. p95 spread is over byte-identical repeated calls: calls that should
+score identically and do not, because L's reference is still moving.
+
+ warm calls   p95 before   p95 after    D range
+        250        0.086       0.086      0.515
+        500        0.071       0.063      0.515
+      1,000        0.075       0.056      0.522
+      5,000        0.031       0.033      0.522
+     20,000        0.012       0.012      0.526
+     60,000        0.004       0.004      0.525
+
+"before" and "after" are without and with the confidence shrinkage on L. The shrinkage
+fixes what a fresh deployment CLAIMS -- it no longer escalates 6.4% on nine calls -- but
+it does not shrink the spread, because the spread is the baseline adapting over a
+5,000-call window, not an error. Any adaptive reference moves; the question is whether it
+moves less than the signal.
+
+Cold start, first calls a fresh deployment ever sees (with the shrinkage):
+
+  after   tool                        D       L    why
+      0   get_pull_request_files  1.000   1.000    held back to 0% on 1 call
+      9   get_pull_request_status 1.002   1.001    0.80x the median, held back to 2%
+     99   list_pull_requests      0.991   0.989    1.78x the median, held back to 17%
+    499   get_file_contents       0.934   0.934    9.61x the median, held back to 49%
+   1999   list_pull_requests      0.912   0.911    (full confidence)
+
+Without the shrinkage the same run read 1.091 at call 9 and 0.945 at call 99.

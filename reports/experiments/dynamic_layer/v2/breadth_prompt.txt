@@ -1,0 +1,81 @@
+You are analysing the input parameters of one API tool.
+
+Answer two questions about each parameter. Judge what the parameter MEANS, not how it is
+declared — a declared type is often wider or narrower than what the value carries.
+
+
+(1) "kind" — if a caller supplied a LARGER value, how is "larger" expressed?
+
+    count      the value is a collection, and what matters is how many items it holds
+               (including a collection encoded inside one string with a separator)
+               e.g. a list of file paths; "a,b,c" where the commas separate targets
+
+    magnitude  the value is a single number, and a bigger number means more work done or
+               more data returned (including a number written as text, with or without a
+               unit suffix)
+               e.g. a page size; a row limit; "30d" meaning thirty days
+
+    range      the value is one endpoint of an interval, and the SIZE of the interval
+               between it and its partner parameter is what matters
+               e.g. a window start, whose partner is the window end
+
+    none       the value names or selects one particular thing, switches a mode on or
+               off, or is free-form content being written
+               e.g. a record id; a sort order; the body of a message
+
+    A value that identifies something is "none" even when it is numeric: one identifier
+    is not larger than another.
+
+
+(2) "breadth" — 1 to 5. HOW CENTRAL IS THIS PARAMETER TO THE ASSET the call acts on?
+
+    Answer this INDEPENDENTLY of question (1). An identifier has no larger or smaller
+    value, so its "kind" is none — but it may be the very thing that names the asset, and
+    that is what this question is about. Judge what the parameter decides, not whether a
+    number can be read from it.
+
+    Do not reason from the wording of this tool's domain. Apply one test to every
+    parameter: hold every other parameter fixed, change only this value, and ask what
+    changes about the STORED DATA the call acts on.
+
+    5  a different stored thing is acted on
+       The value selects, names or matches the unit of stored data itself. Changing it
+       points the call somewhere else entirely. This includes any value that selects
+       SEVERAL such units at once — a list, or a pattern that matches an open-ended set.
+
+    4  the same stored thing, but materially different contents are read or written
+       The value decides which parts of that unit are affected, or turns the operation
+       from a limited one into a far-reaching one within it.
+
+    3  the same contents, in a different amount or slice
+       The value only sizes or bounds what is already selected. Removing it leaves a
+       call that does essentially the same thing to essentially the same data.
+
+    2  the same data, presented differently
+       The value shapes the request or the reply rather than what is reached — the same
+       information arrives in another order, form, or instalment.
+
+    1  nothing about the stored data changes
+       The value concerns execution, bookkeeping or presentation only.
+
+    Four rules override any intuition from the parameter's name:
+      - a list, array or pattern that selects stored things is 5, however few entries it
+        happens to carry: what matters is that each entry is another one
+      - a value that narrows or filters within something already selected is 3, however
+        powerful the filter
+      - centrality is not sensitivity. A parameter naming a mundane unit of stored data
+        is still 5; a parameter carrying highly confidential content that is merely
+        written into an already-chosen destination is not raised for it
+      - if two levels seem to fit, choose the lower one
+
+
+Tool: {tool}
+Description: {desc}
+
+Parameters:
+{params}
+
+Reply with ONLY a JSON object. Include every parameter exactly once, using its name
+exactly as written, in the order given:
+{{"inputs": [{{"name": <parameter name>, "kind": "none|count|magnitude|range",
+"breadth": 1, "why": "<one short clause>"}}]}}

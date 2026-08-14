@@ -1,0 +1,53 @@
+==============================================================================
+calendar_aurora_org_100k.csv   server=calendar   n=100,000
+==============================================================================
+
+ablation on 1200 scored calls (13 tools)
+
+                                           tau-b  tied pairs
+  ranking agreement with the full score D = B x L
+    D vs L alone (is B decorative?)       +0.702         0%
+    D vs B alone (is L decorative?)       +0.539        63%
+
+  ranking agreement with trivial baselines
+    D vs 'rank by tool rarity'            +0.666         0%
+    D vs 'flag every write'               +0.392        75%
+
+  B moved on 266/1200 calls (22.2%); its median is 1.0000
+
+sensitivity: one real call, one argument swept, noise floor 0.007
+
+  widen the window  (list-events.timeMax)
+      2026-08-21  D=0.8695  delta=+0.0000
+      2026-11-14  D=0.9999  delta=+0.1304  <- first detected
+      2027-08-14  D=0.9999  delta=+0.1304
+      2036-08-14  D=0.9999  delta=+0.1304
+      2126-08-14  D=0.9999  delta=+0.1304
+    -> detected at 2026-11-14T00:00:00Z
+
+  fan out calendars  (list-events.calendarId)
+               1  D=0.8695  delta=+0.0000
+               5  D=0.9854  delta=+0.1159  <- first detected
+              50  D=1.1304  delta=+0.2609
+             500  D=1.1304  delta=+0.2609
+            5000  D=1.1304  delta=+0.2609
+    -> detected at 5
+
+
+poisoning L: normalising the rarest tool, manage-accounts
+  it has 313 calls; the median tool has 2048
+
+   cover calls sent        L   verdict
+                  0   1.2527   escalated
+                250   1.2163   escalated
+                500   1.1799   escalated
+              1,000   1.1071   escalated
+              2,000   1.0000   ORDINARY
+
+  cost of hiding a rare tool ~ the median tool's volume (2048 calls).
+  Past that the tool is scored BELOW 1.0: the attacker ends up better placed
+  than an ordinary caller, because commonness is treated as evidence.
+
+poisoning B: MAX_HISTORY=4000 bounds how long any argument remembers,
+  so an argument's quartiles can be owned outright with that many calls. It buys
+  nothing here only because B cannot escalate in the first place.

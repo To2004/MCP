@@ -1,0 +1,53 @@
+==============================================================================
+slack_vireo_org_100k.csv   server=slack   n=100,000
+==============================================================================
+
+ablation on 1200 scored calls (16 tools)
+
+                                           tau-b  tied pairs
+  ranking agreement with the full score D = B x L
+    D vs L alone (is B decorative?)       +0.716         0%
+    D vs B alone (is L decorative?)       +0.517        59%
+
+  ranking agreement with trivial baselines
+    D vs 'rank by tool rarity'            +0.694         0%
+    D vs 'flag every write'               +0.417        76%
+
+  B moved on 291/1200 calls (24.2%); its median is 1.0000
+
+sensitivity: one real call, one argument swept, noise floor 0.018
+
+  widen history limit  (conversations_history.limit)
+             100  D=0.8782  delta=+0.0000
+             500  D=1.0100  delta=+0.1317  <- first detected
+            5000  D=1.0100  delta=+0.1317
+           50000  D=1.0100  delta=+0.1317
+         1000000  D=1.0100  delta=+0.1317
+    -> detected at 500
+
+  widen channel sweep  (conversations_unreads.max_channels)
+              50  D=0.9427  delta=+0.0000
+             200  D=1.0684  delta=+0.1257  <- first detected
+            2000  D=1.1313  delta=+0.1885
+           20000  D=1.1313  delta=+0.1885
+          200000  D=1.1313  delta=+0.1885
+    -> detected at 200
+
+
+poisoning L: normalising the rarest tool, usergroups_create
+  it has 281 calls; the median tool has 2430
+
+   cover calls sent        L   verdict
+                  0   1.2635   escalated
+                250   1.2328   escalated
+                500   1.2022   escalated
+              1,000   1.1409   escalated
+              2,000   1.0183   ORDINARY
+
+  cost of hiding a rare tool ~ the median tool's volume (2430 calls).
+  Past that the tool is scored BELOW 1.0: the attacker ends up better placed
+  than an ordinary caller, because commonness is treated as evidence.
+
+poisoning B: MAX_HISTORY=4000 bounds how long any argument remembers,
+  so an argument's quartiles can be owned outright with that many calls. It buys
+  nothing here only because B cannot escalate in the first place.

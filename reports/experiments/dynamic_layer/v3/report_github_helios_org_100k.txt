@@ -1,0 +1,52 @@
+==============================================================================
+github_helios_org_100k.csv
+==============================================================================
+
+100,000 calls, 26 distinct tools
+  head get_file_contents 17.61%   tail fork_repository 0.21%   ratio 83x
+  writes 10.8% of volume
+
+D over 50,000 scored calls
+  min 0.738  p25 0.867  median 0.882  p75 0.925  max 1.423
+  B: min 0.850  median 1.000  max 1.300   fires on 10.9% of calls
+  L: min 0.866  median 0.882  max 1.263   fires on 98.2% of calls
+
+noise floor, from 910 byte-identical repeated calls
+  median spread 0.001   p95 0.021   = 3% of the whole range
+  single worst (an outlier, not the floor): get_issue n=17 D 0.925..1.204
+
+tool                                  n   D med      L   B med  kind
+fork_repository                     106   1.261  1.261   1.000  write
+create_repository                   154   1.249  1.250   1.000  write
+search_users                        179   1.235  1.234   1.000  read
+create_issue                        226   1.226  1.229   1.000  write
+update_pull_request_branch          289   1.205  1.204   1.000  write
+merge_pull_request                  307   1.193  1.184   1.000  write
+search_repositories                 318   1.188  1.178   1.000  read
+update_issue                        359   1.184  1.176   1.000  write
+push_files                          385   1.166  1.161   1.000  write
+create_pull_request                 409   1.165  1.164   1.000  write
+create_or_update_file               655   1.077  1.071   1.000  write
+create_pull_request_review          753   1.053  1.061   1.000  write
+get_pull_request_reviews            856   1.025  1.016   1.000  read
+create_branch                       886   1.000  1.000   1.000  write
+add_issue_comment                   879   0.996  0.995   1.000  write
+get_pull_request_comments           975   0.982  0.979   1.000  read
+search_issues                      1666   0.932  0.933   1.000  read
+get_issue                          1767   0.926  0.922   1.000  read
+search_code                        2046   0.915  0.915   1.000  read
+list_issues                        2331   0.907  0.908   1.000  read
+get_pull_request                   2714   0.898  0.898   1.000  read
+list_pull_requests                 2984   0.895  0.896   1.000  read
+get_pull_request_files             4196   0.882  0.882   1.000  read
+list_commits                       7670   0.868  0.869   1.000  read
+get_pull_request_status            8042   0.868  0.868   1.000  read
+get_file_contents                  8848   0.866  0.866   1.000  read
+
+(noise floor 0.021: any two tools closer than this are not distinguishable)
+
+write vs read, on D
+  writes n=5,408 median 1.075
+  reads  n=44,592 median 0.868
+  gap +0.207  (above the noise floor)
+  P(write scores above read) = 0.946   (0.5 = no separation)

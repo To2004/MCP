@@ -1,0 +1,61 @@
+==============================================================================
+github_helios_org_100k.csv   server=github   n=100,000
+==============================================================================
+
+ablation on 1200 scored calls (26 tools)
+
+                                           tau-b  tied pairs
+  ranking agreement with the full score D = B x L
+    D vs L alone (is B decorative?)       +0.787         0%
+    D vs B alone (is L decorative?)       +0.420        78%
+
+  ranking agreement with trivial baselines
+    D vs 'rank by tool rarity'            +0.729         0%
+    D vs 'flag every write'               +0.400        81%
+
+  B moved on 142/1200 calls (11.8%); its median is 1.0000
+
+sensitivity: one real call, one argument swept, noise floor 0.009
+
+  widen page size  (list_issues.per_page)
+              30  D=0.9078  delta=+0.0000
+             100  D=0.9078  delta=+0.0000
+            1000  D=1.0440  delta=+0.1362  <- first detected
+           10000  D=1.0440  delta=+0.1362
+         1000000  D=1.0440  delta=+0.1362
+    -> detected at 1000
+
+  deepen paging  (list_commits.page)
+               1  D=0.8689  delta=+0.0000
+              10  D=0.9992  delta=+0.1303  <- first detected
+             100  D=0.9992  delta=+0.1303
+            1000  D=0.9992  delta=+0.1303
+          100000  D=0.9992  delta=+0.1303
+    -> detected at 10
+
+  fan out a batch  (push_files.files)
+               1  D=1.1591  delta=+0.0000
+               5  D=1.1591  delta=+0.0000
+              50  D=1.3330  delta=+0.1739  <- first detected
+             500  D=1.3330  delta=+0.1739
+            5000  D=1.3330  delta=+0.1739
+    -> detected at 50
+
+
+poisoning L: normalising the rarest tool, fork_repository
+  it has 105 calls; the median tool has 882
+
+   cover calls sent        L   verdict
+                  0   1.2614   escalated
+                250   1.1773   escalated
+                500   1.0932   escalated
+              1,000   0.9739   DISCOUNTED - better than average
+              2,000   0.9158   DISCOUNTED - better than average
+
+  cost of hiding a rare tool ~ the median tool's volume (882 calls).
+  Past that the tool is scored BELOW 1.0: the attacker ends up better placed
+  than an ordinary caller, because commonness is treated as evidence.
+
+poisoning B: MAX_HISTORY=4000 bounds how long any argument remembers,
+  so an argument's quartiles can be owned outright with that many calls. It buys
+  nothing here only because B cannot escalate in the first place.

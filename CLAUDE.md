@@ -53,11 +53,17 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Param rubrics (LLM) | `uv run python -m mcp_security.param_scoring --kind filesystem --server fs:corp_filesystem` |
 | Rank calls vs scan | `uv run python -m mcp_security.call_scoring` |
 | Highlight most influential inputs | `uv run python scripts/highlight_influential_inputs.py` |
-| Score one session (static + dynamic) | `uv run python -m mcp_security.dynamic --session <calls.csv> --server <scan-stem>` |
 | Generate dynamic testbed (benign+malicious, big-MCP-weighted) | `uv run python scripts/make_dynamic_testbed.py` |
 | Generate insider testbed (2 orgs, mixed personas, no external attackers) | `uv run python scripts/make_insider_testbed.py` |
-| Benign-vs-adversarial separation report | `uv run python scripts/evaluate_dynamic.py` |
-| Embedding likelihood eval (static × likelihood CSVs) | `uv run python scripts/eval_embedding_likelihood.py` |
+| **Dynamic layer — rank misuse** (Gen 2: `cell × likelihood × escalation`, floored) | `python3 scripts/dynamic_design/rank_eval.py` |
+| Live corpus on a realistic org distribution (1k calls, any of the 3 servers) | `python3 scripts/dynamic_design/make_org_live.py --server github\|slack\|calendar [--skip-writes]` |
+| Synthetic corpus, same distribution and assets (100k calls) | `python3 scripts/dynamic_design/make_org_synthetic.py` |
+| Score a corpus: shape, noise floor, write-vs-read separation | `python3 scripts/dynamic_design/report_org_run.py --server <s> --corpus <csv>` |
+| Evaluate the runtime layer (ablation, sensitivity, poisoning) | `python3 scripts/dynamic_design/evaluate_dynamic.py --server <s> --corpus <csv> --floor <f>` |
+| Capture real MCP traffic with per-call caller identity (headers via mitmdump) | `uv run python logs/proxy/scripts/run_mitm_finance.py --only yahoo_finance` |
+| Rebuild the realistic-misuse corpora | `python3 scripts/dynamic_design/make_realistic_misuse.py` |
+| Rebuild the catalog prior (synthetic static corpus) | `python3 scripts/dynamic_design/gen_static_corpus.py` |
+| Breadth classification (which inputs are quantities) — ships in the scan as `tool_breadth` | `sbatch scripts/dynamic_design/breadth_llm.sbatch` |
 | Scan with the org description, no asset sensitivity | `sbatch --job-name=mcp-desc scripts/scan_desc.sbatch <stems>` |
 | Scan with the org POLICY (realistic disclosure, 11 servers) | `sbatch scripts/scan_policy.sbatch <stems>` |
 | **v5 scan** (policy-derived sensitivity, static impact + LLM fallback) | `sbatch scripts/scan_v5.sbatch [<stem>] [overwrite]` |
@@ -73,7 +79,6 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Package the scanner + all its inputs as a self-contained zip | `uv run python scripts/bundle_v5_scanner.py --arm nacombo --verify` |
 | v5 scan for a large server (flash attention off; see script header) | `sbatch --export=ALL,MODE=<mode> scripts/scan_v5_bigserver.sbatch <stem> overwrite` |
 | **CIA loss-vector scoring** (v6, offline: no product, high-water mark) | `uv run python scripts/cia_risk_rescore.py` |
-| CIA misuse signal — selectivity measurement (v6) | `uv run python scripts/cia_signal_selectivity.py` |
 | Re-price the matrices with CIA as a facet selector (v6, superseded) | `uv run python scripts/cia_facet_rescore.py` |
 | Export the v5 scanner inputs into the experiment folder | `uv run python scripts/export_v5_inputs.py` |
 | Full pipeline (multi-GPU) | `sbatch scripts/scan_and_rank_multigpu.sbatch` |
