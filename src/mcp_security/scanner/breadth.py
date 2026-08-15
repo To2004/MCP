@@ -24,28 +24,30 @@ Two passes, asked different questions:
   Whether a string is a date endpoint or an identifier, and whether a number counts rows
   or names a pull request, is meaning rather than structure.
 
-Each input also carries two things the older ``tool_input_ranking`` was reaching for,
-asked in the same prompt because both are meaning questions:
+v1 of this prompt also asked for two things the older ``tool_input_ranking`` was reaching
+for. Neither survived, and this module emits neither field now
+(``tests/scanner/test_breadth.py::test_no_ordering_and_no_pointwise_risk_score_are_emitted``
+asserts ``"rank" not in entry`` and ``"targets" not in entry`` for every input):
 
-* ``targets`` — does this value decide *which* stored thing the call acts on, rather than
-  how much of it? An argument that selects the container, record or path is the one that
-  can reach a different asset.
-* ``rank`` — the model's ordering of a tool's inputs by **how much of the system the call
-  can be made to touch** by changing that one parameter. It is the **position in the
-  reply**, not a score: asking for a 1-5 per input would be pointwise ranking, which the
-  LLM-ranking literature finds least reliable, since scores produced in isolation need
-  heavy calibration while one ordered list judges the candidates against each other.
+* ``rank`` — a listwise ordering of a tool's inputs by how much of the system the call can
+  be made to touch, most first. It failed its own stability test: reversing the order
+  inputs are presented in and asking again should not change an answer that is about the
+  inputs and not about the prompt, but measured over 24 tools it agreed with itself at
+  Kendall's tau **0.538 mean**, and went **negative** on the two largest tools —
+  `create-event` (23 inputs, τ = −0.37) and `update-event` (20 inputs, τ = −0.47), worse
+  than a coin flip on exactly the tools where getting the order right matters most
+  (``reports/experiments/breadth_spec/rank_stability.json``). Positional bias in listwise
+  LLM ranking is architectural — causal attention couples a candidate's score to where it
+  sat in the prompt — so this is not a prompt-wording problem.
+* ``targets`` — whether a value decides *which* stored thing the call acts on. Not
+  unstable, but redundant with a job this module already isn't responsible for: which
+  asset a call can reach is priced into the static cell, and folding it into a runtime
+  volume factor would double-count it there.
 
-  The criterion is stated in two parts because a call widens in two ways and only one of
-  them is obvious. More can come back from a single thing, *and* more distinct things can
-  be reached — a page size on a listing tool multiplies the containers reached, not the
-  rows within one. An ordering criterion left as "what the call reaches or does" is read
-  as selectivity instead, and then weighting anything by it inverts.
-
-  Positional bias is architectural in autoregressive models, so the ordering an input list
-  is presented in leaks into the answer. Inputs are presented in one deterministic order,
-  which makes the ranking reproducible but not unbiased; repetition over shuffled
-  presentations is the published mitigation and costs a call per repeat.
+``breadth`` replaced ``rank``: each input is scored **independently against the fixed 1-5
+rubric below**, so nothing about grading one input depends on where another one sat in the
+prompt. That is what actually fixed the instability, not a smaller prompt or a stricter
+retry.
 
 An input nobody could classify is recorded as ``kind: "none"`` — not a quantity — since
 that is what the runtime must do with it regardless, and most inputs genuinely are not

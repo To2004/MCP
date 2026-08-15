@@ -85,6 +85,33 @@ another) and `breadth: 5` (it names the asset). Neither fact implies the other. 
 together pushed 66% of inputs into the bucket that weighs nothing purely because no number
 could be read from them.
 
+**Why not weight by `rank` instead of `breadth`?** An earlier version of this classifier
+asked a third question: a listwise ordering of a tool's inputs by reach, largest first.
+That field does not exist any more — `tool_breadth` carries only `kind` and `breadth`, and
+[`tests/scanner/test_breadth.py`](../../tests/scanner/test_breadth.py)`::test_no_ordering_and_no_pointwise_risk_score_are_emitted`
+asserts `"rank" not in entry` for every input the classifier produces.
+
+It was dropped because it failed its own stability test. Reversing the order inputs are
+presented in and asking again should not change an answer that is really about the inputs
+rather than about the prompt — but measured over 24 tools, the ranking agreed with itself
+at Kendall's tau **0.538 mean** under reversal, and went **negative** on the two largest
+tools in the sample: `create-event` (23 inputs, τ = −0.37) and `update-event` (20 inputs,
+τ = −0.47) — worse than a coin flip, on exactly the tools where getting the order right
+matters most (`reports/experiments/breadth_spec/rank_stability.json`). Positional bias in
+listwise LLM ranking is architectural — causal attention couples a candidate's score to
+where it sat in the prompt — so a smaller prompt or a stricter retry does not fix this.
+
+`breadth` fixes it by construction, not by being a better ranker: each input is scored
+*independently* against the fixed 1-5 rubric above, so nothing about grading one input
+depends on where another one sat. `_relative_weight()` in §3.3 below is therefore built
+entirely on `breadth`. `rank` contributes nothing to `B` — there is no field left to weight
+by, and no code path in `dynamic_v2.py` that reads one.
+
+(A related field, `targets` — whether a value decides *which* stored thing a call acts on —
+was dropped alongside it for a different reason: not instability, but scope. Which asset a
+call can reach is priced into the static `cell`; folding it into `B` as well would
+double-count it.)
+
 ## 3 · The runtime, stage by stage
 
 Real example throughout — GitHub `list_issues`, warmed on 50,000 calls:
@@ -306,6 +333,36 @@ per_page=100->1.00(b3,w0.67,ordinary); L=0.91(2.64x the median tool)
 
 Scoring a call also **records** it — history updates strictly after the score is computed,
 so a call is never graded against itself.
+
+### 3.7 How much of the declared surface actually warms up
+
+The scan can label an input `breadth`-graded and measurable; whether it ever reaches
+`MIN_HISTORY` observations in practice is a separate question, decided by what the corpus
+actually sends. Measured on the three 100,000-call corpora, warmed on the first 50,000:
+
+| server | measurable inputs declared | reached `MIN_HISTORY` |
+|---|---:|---:|
+| github | 29 | 21 (72%) |
+| slack | 22 | 11 (50%) |
+| calendar | 44 | **4 (9%)** |
+
+Calendar's gap is not spread thin across many tools — it concentrates on write tools.
+`update-event` declares 11 measurable arguments (`attendees`, `reminders`, `recurrence`,
+`conferenceData`, …); across 1,770 calls to it, **every one of the 11 is present in zero
+calls**. `create-event` shows the same pattern. The cause is in the traffic generator, not
+the runtime: `build_calendar_args()` in `org_traffic.py` populates only `calendarId`,
+`eventId`, `summary` and `sendUpdates` for these tools, because those are what a
+plausible write call needs — the schema exposes far more than any one call realistically
+uses at once. `B` is doing exactly what it should with what it is given: an argument
+nobody ever sends stays `no history`, excluded rather than guessed at.
+
+The consequence for evaluation is direct. Every result in
+[Evaluating the Dynamic Layer](evaluating-the-dynamic-layer.md) that touches Calendar's
+write tools is running on the ~9% of that server's declared surface the generator actually
+exercises — not on the schema's full richness. This is a property of the corpus, and it
+belongs in the same category as the deviation sets in E3: something a genuinely
+independent corpus, or arguments authored by someone other than the person who wrote the
+generator, would need to confirm rather than assume.
 
 ## 4 · Every constant
 
