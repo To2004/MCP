@@ -61,6 +61,8 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Score a corpus: shape, noise floor, write-vs-read separation | `python3 scripts/dynamic_design/report_org_run.py --server <s> --corpus <csv>` |
 | Evaluate the runtime layer (ablation, sensitivity, poisoning) | `python3 scripts/dynamic_design/evaluate_dynamic.py --server <s> --corpus <csv> --floor <f>` |
 | Capture real MCP traffic with per-call caller identity (headers via mitmdump) | `uv run python logs/proxy/scripts/run_mitm_finance.py --only yahoo_finance` |
+| **Gateway** — observe-only proxy in front of an external MCP (records every message) | `uv run python -m mcp_security.gateway.proxy --config src/mcp_security/gateway/routes.example.json` |
+| Score a gateway log offline (`cell × B × L`, re-runnable) | `uv run python -m mcp_security.gateway.score --config <routes.json> --route <r>` |
 | Rebuild the realistic-misuse corpora | `python3 scripts/dynamic_design/make_realistic_misuse.py` |
 | Rebuild the catalog prior (synthetic static corpus) | `python3 scripts/dynamic_design/gen_static_corpus.py` |
 | Breadth classification (which inputs are quantities) — ships in the scan as `tool_breadth` | `sbatch scripts/dynamic_design/breadth_llm.sbatch` |
