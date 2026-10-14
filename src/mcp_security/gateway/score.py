@@ -1,8 +1,9 @@
-"""Score a gateway log offline: pair each ``tools/call`` with its result, then ``cell × B × L``.
+"""Score a gateway log offline: pair each ``tools/call`` with its result, then score it.
 
-Nothing here touches the network or the running gateway, so it can be re-run at any time —
-after a new scan, or a change to the runtime factor — and gives the same numbers for the
-same log. Routes without a scan are listed with their calls but no score.
+The scoring is ``framework.RouteScorer``, the same object the gateway runs live before
+forwarding, fed the calls in the same order — so re-scoring a log gives the numbers the
+gateway logged, and re-scoring it after a new scan shows what that scan changes. Nothing
+here touches the network. Routes without a scan are listed with their calls but no score.
 
     uv run python -m mcp_security.gateway.score --config src/mcp_security/gateway/routes.json \
         --route github
@@ -13,17 +14,12 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import sys
 from pathlib import Path
-from types import ModuleType
 
-from mcp_security.binding.scoring import MatrixScorer
-from mcp_security.gateway.proxy import TO_AGENT, TO_SERVER, load_config
+from mcp_security.gateway.framework import RouteScorer, load_artifacts
+from mcp_security.gateway.proxy import load_config
+from mcp_security.gateway.wire_log import TO_AGENT, TO_SERVER, read_log
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DYNAMIC_DIR = REPO_ROOT / "scripts" / "dynamic_design"
-DEFAULT_SCORE_MAX = 125.0
-GATEWAY_ORG = "gateway"
 COLUMNS = [
     "ts",
     "agent",
@@ -32,20 +28,21 @@ COLUMNS = [
     "args",
     "outcome",
     "latency_s",
-    "cell",
     "asset",
     "basis",
+    "sensitivity",
+    "impact",
+    "blast",
+    "band",
+    "cell",
     "factor",
     "risk",
+    "input_level",
+    "input_set_by",
+    "score_us",
     "reasons",
 ]
 TOP_N = 10
-
-
-def read_log(path: Path) -> list[dict]:
-    """Every record in a gateway JSONL log, in the order it was written."""
-    with path.open(encoding="utf-8") as handle:
-        return [json.loads(line) for line in handle if line.strip()]
 
 
 def pair_calls(records: list[dict]) -> list[dict]:
@@ -54,13 +51,14 @@ def pair_calls(records: list[dict]) -> list[dict]:
     pending: dict[tuple, dict] = {}
     for record in records:
         message = record.get("message") or {}
-        key = (record["agent"], record["session"], message.get("id"))
-        if record["direction"] == TO_SERVER and message.get("method") == "tools/call":
+        key = (record["gateway.agent"], record.get("mcp.session.id"), message.get("id"))
+        direction = record["gateway.direction"]
+        if direction == TO_SERVER and message.get("method") == "tools/call":
             params = message.get("params") or {}
             call = {
                 "ts": record["ts"],
-                "agent": record["agent"],
-                "session": record["session"],
+                "agent": record["gateway.agent"],
+                "session": record.get("mcp.session.id"),
                 "tool": params.get("name"),
                 "args": params.get("arguments") or {},
                 "outcome": "no_response",
@@ -68,7 +66,7 @@ def pair_calls(records: list[dict]) -> list[dict]:
             }
             calls.append(call)
             pending[key] = call
-        elif record["direction"] == TO_AGENT and key in pending:
+        elif direction == TO_AGENT and key in pending:
             call = pending.pop(key)
             call["outcome"] = _outcome(message)
             call["latency_s"] = round(record["ts"] - call["ts"], 3)
@@ -81,55 +79,11 @@ def _outcome(message: dict) -> str:
     return "tool_error" if (message.get("result") or {}).get("isError") else "ok"
 
 
-def score_calls(
-    calls: list[dict], *, scan: dict | None, specs: dict, route: str, kind: str | None
-) -> list[dict]:
-    """Add ``cell``, ``factor`` (B × L) and ``risk`` to each call, replayed in order."""
-    if scan is None:
-        return [
-            {
-                **call,
-                "cell": None,
-                "asset": None,
-                "basis": None,
-                "factor": None,
-                "risk": None,
-                "reasons": "route not scanned",
-            }
-            for call in calls
-        ]
-
-    gate_runtime = _gate_runtime()
-    matrix = MatrixScorer(scan["cells"], scan["bands"])
-    gate = gate_runtime.GateScorer(specs)
-    connection = gate_runtime.Connection(org_id=GATEWAY_ORG, server_id=route, kind=kind or route)
-    score_max = float(scan.get("score_max", DEFAULT_SCORE_MAX))
-    rows = []
-    for call in calls:
-        cell = matrix.score(call["tool"], call["args"])
-        factor, reasons = gate.score(connection, call["tool"], call["args"])
-        known = cell.basis != "no-cells"
-        rows.append(
-            {
-                **call,
-                "cell": cell.severity if known else None,
-                "asset": cell.driver,
-                "basis": cell.basis,
-                "factor": round(factor, 3),
-                "risk": round(min(score_max, cell.severity * factor), 3) if known else None,
-                "reasons": "; ".join(reasons) if known else "tool not in scan",
-            }
-        )
-    return rows
-
-
-def _gate_runtime() -> ModuleType:
-    """The runtime factor lives in ``scripts/dynamic_design`` (stdlib-only scripts)."""
-    if str(DYNAMIC_DIR) not in sys.path:
-        sys.path.insert(0, str(DYNAMIC_DIR))
-    import gate_runtime  # noqa: PLC0415 — path is only valid after the insert above
-
-    return gate_runtime
+def score_calls(calls: list[dict], scorer: RouteScorer | None) -> list[dict]:
+    """Each call with its score, in order; a route without a scan gets no score."""
+    if scorer is None:
+        return [{**call, "reasons": "route not scanned"} for call in calls]
+    return [{**call, **scorer.score(call["tool"], call["args"], call["ts"])} for call in calls]
 
 
 def write_csv(rows: list[dict], path: Path) -> None:
@@ -152,14 +106,18 @@ def main() -> None:
     upstream = config.upstreams[args.route]
     log_path = config.log_dir / f"{args.route}.jsonl"
     calls = pair_calls(read_log(log_path))
-    scan = json.loads(Path(upstream.scan).read_text(encoding="utf-8")) if upstream.scan else None
-    specs = _gate_runtime().load_gate_specs() if scan else {}
-    rows = score_calls(calls, scan=scan, specs=specs, route=args.route, kind=upstream.kind)
+    artifacts = load_artifacts(
+        args.route, upstream.scan, upstream.breadth, upstream.rules, upstream.kind
+    )
+    rows = score_calls(calls, RouteScorer(args.route, artifacts) if artifacts else None)
 
     out = log_path.with_name(f"{args.route}_scored.csv")
     write_csv(rows, out)
     print(f"{len(rows)} tool calls from {log_path} -> {out}")
-    ranked = sorted((r for r in rows if r["risk"] is not None), key=lambda r: -r["risk"])
+    timed = sorted(row["score_us"] for row in rows if "score_us" in row)
+    if timed:
+        print(f"scoring time per call: median {timed[len(timed) // 2]} us, max {timed[-1]} us")
+    ranked = sorted((r for r in rows if r.get("risk") is not None), key=lambda r: -r["risk"])
     for row in ranked[:TOP_N]:
         print(
             f"  R={row['risk']:>7.2f}  cell={row['cell']:>5.1f}  x{row['factor']:.2f}  "

@@ -3,7 +3,12 @@
 The agent is configured with the gateway's URL instead of the server's. Each request is
 logged, forwarded with the upstream credential the gateway holds, and the reply is streamed
 back byte for byte as it arrives — no headers added, no body rewritten — so the model on the
-other side sees exactly what the upstream sent. Scoring happens later, offline (``score.py``).
+other side sees exactly what the upstream sent.
+
+On a scanned route every ``tools/call`` is scored by the whole framework (``framework.py``:
+static cell, runtime factor, input level) *before* it is forwarded, and the verdict is
+logged; nothing is ever blocked. A tool list the route's scan was not run on is saved under
+``<log_dir>/catalogs/`` for the static scan. ``score.py`` re-scores a saved log offline.
 
     uv run python -m mcp_security.gateway.proxy --config src/mcp_security/gateway/routes.json
 """
@@ -15,7 +20,6 @@ import hashlib
 import json
 import os
 import sys
-import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field, replace
@@ -28,6 +32,23 @@ from starlette.requests import Request
 from starlette.responses import Response, StreamingResponse
 from starlette.routing import Route
 
+from mcp_security.gateway.framework import RouteScorer, load_artifacts
+from mcp_security.gateway.wire_log import (
+    CALL_METHOD,
+    FROM_GATEWAY,
+    TO_AGENT,
+    TO_SERVER,
+    Exchange,
+    MessageLog,
+    SessionBook,
+    build_record,
+    catalog_bytes,
+    client_info_of,
+    decision_record,
+    notice_record,
+    requests_in,
+)
+
 #: Headers that describe one network hop, never the message (RFC 9110 §7.6.1).
 HOP_BY_HOP = frozenset(
     "connection keep-alive proxy-authenticate proxy-authorization te trailer "
@@ -39,12 +60,11 @@ NOT_SENT_UPSTREAM = HOP_BY_HOP | {"host", "content-length", "authorization", "ac
 #: Everything else the upstream says is passed down untouched, including Mcp-Session-Id.
 NOT_SENT_DOWNSTREAM = HOP_BY_HOP
 SESSION_HEADER = "mcp-session-id"
+PROTOCOL_HEADER = "mcp-protocol-version"
 ANONYMOUS = "anonymous"
 CONNECT_TIMEOUT_S = 10.0
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
-TO_SERVER = "agent->server"
-TO_AGENT = "server->agent"
 METHODS = ["GET", "POST", "DELETE"]
 
 
@@ -59,6 +79,8 @@ class Upstream:
     key_prefix: str = "Bearer "
     scan: str | None = None  # scan artifact (cells/bands); None = record only
     kind: str | None = None  # breadth-spec kind for the runtime factor
+    breadth: str | None = None  # breadth spec file for this catalog; None = the kind's default
+    rules: str | None = None  # stage-2 input rules (<server>.json); None = no input level
 
 
 @dataclass(frozen=True)
@@ -131,45 +153,6 @@ def _sse_messages(frame: bytes) -> list[dict]:
     return parse_messages(b"\n".join(data))
 
 
-class MessageLog:
-    """Append-only JSONL, one file per route. A write failure is reported, never raised:
-    the log must not be able to break the agent's session."""
-
-    def __init__(self, log_dir: Path) -> None:
-        self._dir = log_dir
-
-    def write(self, route: str, record: dict) -> None:
-        try:
-            self._dir.mkdir(parents=True, exist_ok=True)
-            with (self._dir / f"{route}.jsonl").open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(record, ensure_ascii=False) + "\n")
-        except OSError as exc:
-            print(f"gateway: log write failed for {route}: {exc}", file=sys.stderr)
-
-
-@dataclass(frozen=True)
-class Exchange:
-    """What every log line of one HTTP request shares. Add a log field here."""
-
-    route: str
-    agent: str
-    session: str | None
-    method: str
-
-    def line(self, direction: str, status: int | None, message: dict | None) -> dict:
-        """One log record for one JSON-RPC message (``None`` for a bodiless request)."""
-        return {
-            "ts": time.time(),
-            "route": self.route,
-            "agent": self.agent,
-            "session": self.session,
-            "direction": direction,
-            "http": self.method,
-            "status": status,
-            "message": message,
-        }
-
-
 class Gateway:
     """The request handler: identify the agent, log, forward, relay and log the reply."""
 
@@ -177,6 +160,19 @@ class Gateway:
         self.config = config
         self.client = client
         self.log = MessageLog(config.log_dir)
+        self.sessions = SessionBook()
+        self.scorers: dict[str, RouteScorer] = {}
+        for name, upstream in config.upstreams.items():
+            artifacts = load_artifacts(
+                name, upstream.scan, upstream.breadth, upstream.rules, upstream.kind
+            )
+            if artifacts:
+                self.scorers[name] = RouteScorer(name, artifacts)
+        # Tool lists already accounted for: the one each route's scan was run on.
+        self.catalogs: dict[str, set[str]] = {
+            name: {s.artifacts.scanned_catalog} if s.artifacts.scanned_catalog else set()
+            for name, s in self.scorers.items()
+        }
 
     async def handle(self, request: Request) -> Response:
         upstream = self.config.upstreams.get(request.path_params["route"])
@@ -187,11 +183,12 @@ class Gateway:
             return Response(status_code=401)
 
         body = await request.body()
-        exchange = Exchange(
-            upstream.name, agent, request.headers.get(SESSION_HEADER), request.method
-        )
-        for message in parse_messages(body) or [None]:  # a bodiless GET/DELETE still shows up
-            self._log(exchange, TO_SERVER, None, message)
+        messages = parse_messages(body)
+        exchange = _exchange(request, upstream.name, agent, messages)
+        for message in messages or [None]:  # a bodiless GET/DELETE still shows up
+            record = self._log(exchange, TO_SERVER, None, message)
+            if message and message.get("method") == CALL_METHOD:
+                self._decide(exchange, message, record["ts"])  # before it is forwarded
         try:
             reply = await self.client.send(
                 self.client.build_request(
@@ -203,11 +200,13 @@ class Gateway:
                 stream=True,
             )
         except httpx.TransportError as exc:
-            self._log(exchange, "gateway", None, {"error": f"upstream unreachable: {exc}"})
+            self._log(exchange, FROM_GATEWAY, None, {"error": f"upstream unreachable: {exc}"})
             return Response(status_code=502)
 
         # The server assigns the session on `initialize`; carry it onto the reply's lines.
         session = reply.headers.get(SESSION_HEADER) or exchange.session
+        if session and exchange.client_info:
+            self.sessions.start(session, exchange.client_info)
         headers = {k: v for k, v in reply.headers.items() if k.lower() not in NOT_SENT_DOWNSTREAM}
         relay = self._relay(reply, replace(exchange, session=session))
         return StreamingResponse(relay, status_code=reply.status_code, headers=headers)
@@ -219,11 +218,17 @@ class Gateway:
             async for chunk in reply.aiter_raw():
                 yield chunk
                 for message in tap.feed(chunk):
-                    self._log(exchange, TO_AGENT, reply.status_code, message)
+                    self._watch_catalog(
+                        exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
+                    )
             for message in tap.close():
-                self._log(exchange, TO_AGENT, reply.status_code, message)
+                self._watch_catalog(
+                    exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
+                )
         finally:
             await reply.aclose()
+            if exchange.http_method == "DELETE":  # the client ended the session
+                self.sessions.end(exchange.session)
 
     def _identify(self, request: Request) -> str | None:
         if not self.config.agents:
@@ -235,8 +240,66 @@ class Gateway:
 
     def _log(
         self, exchange: Exchange, direction: str, status: int | None, message: dict | None
-    ) -> None:
-        self.log.write(exchange.route, exchange.line(direction, status, message))
+    ) -> dict:
+        record = build_record(exchange, self.sessions, direction, status, message)
+        self.log.write(exchange.route, record)
+        return record
+
+    def _decide(self, exchange: Exchange, call: dict, ts: float) -> None:
+        """Score one tools/call with the route's framework and log the verdict."""
+        scorer = self.scorers.get(exchange.route)
+        if scorer is None:
+            return
+        params = call.get("params") or {}
+        try:
+            decision = scorer.score(params.get("name"), params.get("arguments") or {}, ts)
+        except Exception as exc:  # noqa: BLE001 — a scoring bug must never break the agent's call; it is logged, not hidden
+            decision = {"error": f"{type(exc).__name__}: {exc}"}
+        decision["artifacts"] = scorer.artifacts.digests
+        record = decision_record(
+            exchange, self.sessions, call, decision, scorer.artifacts.scanned_catalog, ts
+        )
+        self.log.write(exchange.route, record)
+
+    def _watch_catalog(self, exchange: Exchange, record: dict) -> None:
+        """Save a tool list this route's scan was not run on, once, for the static scan."""
+        digest = record.get("gateway.catalog_sha256")
+        known = self.catalogs.setdefault(exchange.route, set())
+        if not digest or digest in known:
+            return
+        known.add(digest)
+        path = self.config.log_dir / "catalogs" / f"{exchange.route}-{digest[:12]}.json"
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(catalog_bytes({"tools": record["message"]["result"]["tools"]}))
+        except OSError as exc:
+            print(f"gateway: could not save catalog {path}: {exc}", file=sys.stderr)
+        notice = notice_record(
+            exchange,
+            "catalog_not_scanned",
+            **{"gateway.catalog_sha256": digest, "gateway.catalog_file": str(path)},
+        )
+        self.log.write(exchange.route, notice)
+
+
+def _exchange(request: Request, route: str, agent: str, messages: list[dict]) -> Exchange:
+    """What the wire says about one request: who sent it, from where, in which session."""
+    init = next((m for m in messages if m.get("method") == "initialize"), {})
+    version = request.headers.get(PROTOCOL_HEADER) or (init.get("params") or {}).get(
+        "protocolVersion"
+    )
+    return Exchange(
+        route=route,
+        agent=agent,
+        session=request.headers.get(SESSION_HEADER),
+        http_method=request.method,
+        client_address=request.client.host if request.client else None,
+        client_port=request.client.port if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+        protocol_version=version,
+        client_info=client_info_of(messages),
+        requests=requests_in(messages),
+    )
 
 
 def _target_url(base: str, request: Request) -> str:

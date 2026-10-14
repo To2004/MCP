@@ -187,6 +187,20 @@ aligned to the policy register's asset ids — so the comparison reports movemen
 and agreement instead. See
 [`reports/experiments/v7/README.md`](../../reports/experiments/v7/README.md).
 
+## Gateway (agents → gateway → external MCP, static + dynamic)
+
+The observe-only gateway sits in front of an external Streamable-HTTP MCP server, records
+every message, and scores what it saw. How it fits together:
+[`src/mcp_security/gateway/README.md`](../../src/mcp_security/gateway/README.md).
+
+| Command | Description |
+|---------|-------------|
+| `uv run python -m mcp_security.gateway.proxy --config <routes.json>` | Start the gateway on 127.0.0.1:8765; scanned routes are scored live, before forwarding |
+| `uv run python scripts/gateway_replay_corpus.py [--limit N] [--writes skip\|scratch]` | Replay the org corpus through it, one session per persona |
+| `uv run python -m mcp_security.gateway.catalog --config <routes.json> --route <r>` | The server's tool list, from the log, in `static-scan`'s input shape |
+| `sbatch --export=ALL,NAME=github_remote scripts/gateway_static_scan.sbatch` | Static side on 1 GPU: `static-scan`, breadth pass, levels → cells |
+| `uv run python -m mcp_security.gateway.score --config <routes.json> --route <r>` | Re-score a saved log with the same scorer → `<route>_scored.csv` |
+
 ## Testing
 
 ```bash
