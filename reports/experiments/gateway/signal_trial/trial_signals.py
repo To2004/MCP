@@ -16,7 +16,7 @@ from pathlib import Path
 from mcp_security.gateway.proxy import load_config
 from mcp_security.gateway.framework import RouteScorer, load_artifacts
 from mcp_security.gateway.score import pair_calls, score_calls
-from mcp_security.gateway.wire_log import read_log
+from mcp_security.gateway.log_file import read_log
 
 HERE = Path(__file__).parent
 ROUTES = Path("src/mcp_security/gateway/routes.example.json")

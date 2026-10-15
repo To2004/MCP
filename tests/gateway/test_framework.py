@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -15,7 +16,8 @@ from starlette.routing import Route
 from mcp_security.gateway.framework import RouteScorer, load_artifacts
 from mcp_security.gateway.proxy import GatewayConfig, Upstream, create_app
 from mcp_security.gateway.score import pair_calls, score_calls
-from mcp_security.gateway.wire_log import FROM_GATEWAY, catalog_digest, read_log
+from mcp_security.gateway.log_file import read_log
+from mcp_security.gateway.wire_log import FROM_GATEWAY, catalog_digest
 
 SESSION_ID = "sess-1"
 UPSTREAM_URL = "http://upstream/mcp"
@@ -70,7 +72,7 @@ class Upstream_:
             lines = read_log(self.log_path) if self.log_path.exists() else []
             self.scored_before_arrival.append(
                 any(
-                    "gateway.decision" in r and r.get("jsonrpc.request.id") == message["id"]
+                    "gateway.decision" in r and r.get("jsonrpc.request.id") == str(message["id"])
                     for r in lines
                 )
             )
@@ -173,3 +175,79 @@ async def test_a_scoring_failure_is_logged_and_the_call_still_goes_through(
 
     assert upstream.scored_before_arrival == [True]
     assert _decisions(config)[0]["gateway.decision"]["error"] == "ValueError: scan is corrupt"
+
+
+def _remote_scorer(history: str) -> RouteScorer:
+    scan, breadth, rules = (
+        "reports/experiments/gateway/github_remote/github_remote.cells.json",
+        "reports/experiments/breadth_spec/github_remote_scan.json",
+        "reports/experiments/gateway/github_remote/rules/github_remote.json",
+    )
+    artifacts = load_artifacts("github", scan, breadth, rules, "github_remote")
+    return RouteScorer("github", artifacts, history=history)
+
+
+def _traffic(n: int) -> list[tuple[str, dict, str]]:
+    repos = ["MCP", "workreddit", "helios-ot-runbooks", "RubicCube"]
+    return [
+        (
+            "list_commits",
+            {"owner": "To2004", "repo": repos[i % 4], "perPage": 10 + i % 90},
+            f"a{i % 3}",
+        )
+        for i in range(n)
+    ]
+
+
+def test_per_caller_history_keeps_callers_apart() -> None:
+    shared, per_caller = _remote_scorer("route"), _remote_scorer("caller")
+    for i, (tool, args, caller) in enumerate(_traffic(300)):
+        shared.score(tool, args, float(i), caller=caller)
+        per_caller.score(tool, args, float(i), caller=caller)
+    assert set(per_caller.snapshot_all()) == {"a0", "a1", "a2"}
+    assert set(shared.snapshot_all()) == {"gateway"}
+
+
+def test_a_restored_scorer_continues_exactly_where_the_saved_one_stopped() -> None:
+    first, traffic = _remote_scorer("caller"), _traffic(400)
+    for i, (tool, args, caller) in enumerate(traffic[:300]):
+        first.score(tool, args, float(i), caller=caller)
+    restored = _remote_scorer("caller")
+    restored.restore_all(json.loads(json.dumps(first.snapshot_all())))  # through JSON, as on disk
+    for i, (tool, args, caller) in enumerate(traffic[300:], start=300):
+        assert (
+            restored.score(tool, args, float(i), caller=caller)["factor"]
+            == first.score(tool, args, float(i), caller=caller)["factor"]
+        )
+
+
+async def test_a_restarted_gateway_continues_the_dynamic_history(tmp_path: Path) -> None:
+    calls = [_call(i, "repo-a" if i % 3 else "repo-b") for i in range(2, 42)]
+
+    def gateway(where: Path, state: Path | None) -> tuple[httpx.AsyncClient, Starlette]:
+        where.mkdir(parents=True, exist_ok=True)
+        upstream = Upstream_(where / "logs" / "github.jsonl", SCANNED_TOOLS)
+        route = replace(_route_files(where), state_file=str(state) if state else None)
+        config = GatewayConfig(upstreams={"github": route}, log_dir=where / "logs")
+        app = create_app(
+            config, client=httpx.AsyncClient(transport=httpx.ASGITransport(app=upstream.app()))
+        )
+        return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gw"), app
+
+    def factors(where: Path) -> list[float]:
+        lines = read_log(where / "logs" / "github.jsonl")
+        return [r["gateway.decision"]["factor"] for r in lines if "gateway.decision" in r]
+
+    straight, _ = gateway(tmp_path / "straight", None)
+    await _session(straight, calls)
+
+    state = tmp_path / "state.json"
+    first, first_app = gateway(tmp_path / "first", state)
+    await _session(first, calls[:20])
+    first_app.state.gateway.save_state()  # what shutdown does
+    second, _ = gateway(tmp_path / "second", state)  # a new process would restore the same way
+    await _session(second, calls[20:])
+
+    assert factors(tmp_path / "first") + factors(tmp_path / "second") == factors(
+        tmp_path / "straight"
+    )

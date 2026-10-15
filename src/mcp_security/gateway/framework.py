@@ -20,6 +20,7 @@ import hashlib
 import json
 import sys
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -79,24 +80,47 @@ def load_artifacts(
     )
 
 
-class RouteScorer:
-    """Scores one route's calls in arrival order, with state carried from call to call."""
+HISTORY_SCOPES = ("route", "caller")
+#: The asset lookup is a pure function of (tool, arguments) and 85% of a call's cost
+#: (measured: ~180 us of ~210 us); repeated calls are common, so it is cached, bounded.
+CELL_CACHE_SIZE = 65_536
 
-    def __init__(self, route: str, artifacts: Artifacts) -> None:
-        runtime = gate_runtime()
+
+class RouteScorer:
+    """Scores one route's calls in arrival order, with state carried from call to call.
+
+    ``history`` says whose past the runtime factor compares a call with: ``route`` keeps
+    one history for everyone on the route; ``caller`` keeps one per caller, using the
+    dynamic layer's own isolation unit (its ``Connection`` scope), so no logic changes.
+    """
+
+    def __init__(self, route: str, artifacts: Artifacts, history: str = "route") -> None:
+        if history not in HISTORY_SCOPES:
+            raise ValueError(f"history must be one of {HISTORY_SCOPES}, not {history!r}")
+        self._runtime = gate_runtime()
         self.artifacts = artifacts
+        self.route = route
+        self.history = history
         self._matrix = MatrixScorer(artifacts.scan["cells"], artifacts.scan["bands"])
-        self._gate = runtime.GateScorer(artifacts.specs)
-        self._connection = runtime.Connection(
-            org_id=GATEWAY_ORG, server_id=route, kind=artifacts.kind
-        )
+        self._gate = self._runtime.GateScorer(artifacts.specs)
+        self._connections: dict[str, object] = {}
+        self._cells: OrderedDict[tuple[str, str], object] = OrderedDict()
         self._score_max = float(artifacts.scan.get("score_max", DEFAULT_SCORE_MAX))
 
-    def score(self, tool: str, args: dict, ts: float) -> dict:
+    def connection(self, caller: str | None):  # -> gate_runtime.Connection
+        """The dynamic layer's scope for this call: the route, or the caller on it."""
+        owner = caller if self.history == "caller" and caller else GATEWAY_ORG
+        if owner not in self._connections:
+            self._connections[owner] = self._runtime.Connection(
+                org_id=owner, server_id=self.route, kind=self.artifacts.kind
+            )
+        return self._connections[owner]
+
+    def score(self, tool: str, args: dict, ts: float, caller: str | None = None) -> dict:
         """Static cell, runtime factor, risk and input level for one call; learns from it."""
         started = time.perf_counter()
-        cell = self._matrix.score(tool, args)
-        factor, reasons = self._gate.score(self._connection, tool, args)
+        cell = self._cell(tool, args)
+        factor, reasons = self._gate.score(self.connection(caller), tool, args)
         level = self._input_level(tool, args, ts)
         elapsed = time.perf_counter() - started
         scan = self.artifacts.scan
@@ -120,6 +144,45 @@ class RouteScorer:
                 "blast": scan.get("blast_radius", {}).get(f"{tool}|{cell.driver}"),
             }
         return result
+
+    def snapshot_all(self) -> dict[str, dict]:
+        """Every history owner's state, in ``GateScorer.snapshot`` format, in one pass.
+
+        ``GateScorer.snapshot`` rescans all keys for each owner, so saving N callers that
+        way costs N × keys (11.5 s at 1,000 callers, measured); this walks the state once.
+        """
+        gate = self._gate
+        owner_of = {conn.scope: owner for owner, conn in self._connections.items()}
+        out = {
+            owner: {"history": {}, "arrival": {}, "tool_calls": dict(gate.tool_calls[conn.scope])}
+            for owner, conn in self._connections.items()
+        }
+        for key, values in gate.history.items():
+            scope, tool, arg = key
+            if scope in owner_of:
+                payload, combo = out[owner_of[scope]], f"{tool}\x1f{arg}"
+                payload["history"][combo] = list(values)
+                # .get, not [], so saving never adds empty entries to the live state
+                payload["arrival"][combo] = list(gate.arrival.get(key, ()))
+        return out
+
+    def restore_all(self, snapshots: dict[str, dict]) -> None:
+        """Load ``snapshot_all`` output back, so a restart continues where it stopped."""
+        for owner, payload in snapshots.items():
+            caller = None if owner == GATEWAY_ORG else owner
+            self._gate.rehydrate(self.connection(caller), payload)
+
+    def _cell(self, tool: str, args: dict):  # -> binding.scoring result
+        """The matrix lookup, memoised: same (tool, arguments), same answer."""
+        key = (tool, json.dumps(args, sort_keys=True, default=str))
+        hit = self._cells.get(key)
+        if hit is not None:
+            self._cells.move_to_end(key)
+            return hit
+        cell = self._cells[key] = self._matrix.score(tool, args)
+        if len(self._cells) > CELL_CACHE_SIZE:
+            self._cells.popitem(last=False)
+        return cell
 
     def _input_level(self, tool: str, args: dict, ts: float) -> CallLevel | None:
         rules = self.artifacts.rules

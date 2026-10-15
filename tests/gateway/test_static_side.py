@@ -167,6 +167,16 @@ def test_a_call_to_a_tool_the_session_never_saw_listed_is_flagged() -> None:
 def test_tool_error_and_rpc_error_are_told_apart() -> None:
     ex = Exchange("github", "alice", "s", "POST", requests={"2": ("tools/call", "read")})
     tool_error = {"jsonrpc": "2.0", "id": 2, "result": {"content": [], "isError": True}}
-    rpc_error = {"jsonrpc": "2.0", "id": 2, "error": {"code": -32602, "message": "bad args"}}
+    bad_args = {"jsonrpc": "2.0", "id": 2, "error": {"code": -32602, "message": "bad args"}}
+    crashed = {"jsonrpc": "2.0", "id": 2, "error": {"code": -32603, "message": "internal"}}
+
     assert build_record(ex, SessionBook(), TO_AGENT, 200, tool_error)["error.type"] == "tool_error"
-    assert build_record(ex, SessionBook(), TO_AGENT, 200, rpc_error)["error.type"] == "-32602"
+    # OpenTelemetry: -32602 is the caller's mistake, not an error; the code is still logged.
+    caller_mistake = build_record(ex, SessionBook(), TO_AGENT, 200, bad_args)
+    assert caller_mistake["rpc.response.status_code"] == "-32602"
+    assert "error.type" not in caller_mistake
+    server_error = build_record(ex, SessionBook(), TO_AGENT, 200, crashed)
+    assert (server_error["rpc.response.status_code"], server_error["error.type"]) == (
+        "-32603",
+        "-32603",
+    )

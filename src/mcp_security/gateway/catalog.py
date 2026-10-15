@@ -21,8 +21,8 @@ from mcp_security.gateway.wire_log import (
     TO_SERVER,
     catalog_bytes,
     catalog_digest,
-    read_log,
 )
+from mcp_security.gateway.log_file import read_log
 
 
 def extract_catalog(records: list[dict]) -> dict:

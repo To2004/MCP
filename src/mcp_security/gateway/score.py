@@ -18,7 +18,8 @@ from pathlib import Path
 
 from mcp_security.gateway.framework import RouteScorer, load_artifacts
 from mcp_security.gateway.proxy import load_config
-from mcp_security.gateway.wire_log import TO_AGENT, TO_SERVER, read_log
+from mcp_security.gateway.log_file import read_log
+from mcp_security.gateway.wire_log import CALL_METHOD, TO_AGENT, TO_SERVER, TOOL_ERROR
 
 COLUMNS = [
     "ts",
@@ -43,24 +44,29 @@ COLUMNS = [
     "reasons",
 ]
 TOP_N = 10
+ARGS_NOT_LOGGED = "arguments not logged (log_bodies: none)"
 
 
 def pair_calls(records: list[dict]) -> list[dict]:
-    """One row per ``tools/call``, in request order, with how the server answered it."""
+    """One row per ``tools/call``, in request order, with how the server answered it.
+
+    Works from the line's own fields, so a log kept without reply bodies still pairs; a
+    call whose request body was not kept (``log_bodies: none``) has ``args`` None.
+    """
     calls: list[dict] = []
     pending: dict[tuple, dict] = {}
     for record in records:
-        message = record.get("message") or {}
-        key = (record["gateway.agent"], record.get("mcp.session.id"), message.get("id"))
+        message = record.get("message")
+        key = (record.get("gateway.agent"), record.get("mcp.session.id"), _request_id(record))
         direction = record["gateway.direction"]
-        if direction == TO_SERVER and message.get("method") == "tools/call":
-            params = message.get("params") or {}
+        if direction == TO_SERVER and _method(record) == CALL_METHOD:
+            params = (message or {}).get("params") or {}
             call = {
                 "ts": record["ts"],
-                "agent": record["gateway.agent"],
+                "agent": record.get("gateway.agent"),
                 "session": record.get("mcp.session.id"),
-                "tool": params.get("name"),
-                "args": params.get("arguments") or {},
+                "tool": params.get("name") or record.get("gen_ai.tool.name"),
+                "args": (params.get("arguments") or {}) if message is not None else None,
                 "outcome": "no_response",
                 "latency_s": None,
             }
@@ -68,22 +74,44 @@ def pair_calls(records: list[dict]) -> list[dict]:
             pending[key] = call
         elif direction == TO_AGENT and key in pending:
             call = pending.pop(key)
-            call["outcome"] = _outcome(message)
+            call["outcome"] = _outcome(record)
             call["latency_s"] = round(record["ts"] - call["ts"], 3)
     return calls
 
 
-def _outcome(message: dict) -> str:
+def _request_id(record: dict) -> object:
+    """The JSON-RPC id: the line's field (v2, v3), else the message's own (v1)."""
+    if "jsonrpc.request.id" in record:
+        return record["jsonrpc.request.id"]
+    return (record.get("message") or {}).get("id")
+
+
+def _method(record: dict) -> str | None:
+    return record.get("mcp.method.name") or (record.get("message") or {}).get("method")
+
+
+def _outcome(record: dict) -> str:
+    message = record.get("message")
+    if message is None:  # body not kept: the line's fields say how it ended
+        if "rpc.response.status_code" in record:
+            return "rpc_error"
+        return TOOL_ERROR if record.get("error.type") == TOOL_ERROR else "ok"
     if "error" in message:
         return "rpc_error"
-    return "tool_error" if (message.get("result") or {}).get("isError") else "ok"
+    return TOOL_ERROR if (message.get("result") or {}).get("isError") else "ok"
 
 
 def score_calls(calls: list[dict], scorer: RouteScorer | None) -> list[dict]:
-    """Each call with its score, in order; a route without a scan gets no score."""
+    """Each call with its score, in order; a route without a scan gets no score, and nor
+    does a call whose arguments were not logged (the live decision line still has it)."""
     if scorer is None:
         return [{**call, "reasons": "route not scanned"} for call in calls]
-    return [{**call, **scorer.score(call["tool"], call["args"], call["ts"])} for call in calls]
+    return [
+        {**call, **scorer.score(call["tool"], call["args"], call["ts"])}
+        if call["args"] is not None
+        else {**call, "reasons": ARGS_NOT_LOGGED}
+        for call in calls
+    ]
 
 
 def write_csv(rows: list[dict], path: Path) -> None:
@@ -92,7 +120,8 @@ def write_csv(rows: list[dict], path: Path) -> None:
         writer = csv.DictWriter(handle, fieldnames=COLUMNS)
         writer.writeheader()
         for row in rows:
-            writer.writerow({**row, "args": json.dumps(row["args"], ensure_ascii=False)})
+            args = None if row["args"] is None else json.dumps(row["args"], ensure_ascii=False)
+            writer.writerow({**row, "args": args})
 
 
 def main() -> None:

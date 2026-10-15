@@ -10,42 +10,70 @@ static cell, runtime factor, input level) *before* it is forwarded, and the verd
 logged; nothing is ever blocked. A tool list the route's scan was not run on is saved under
 ``<log_dir>/catalogs/`` for the static scan. ``score.py`` re-scores a saved log offline.
 
+Refused requests are logged too (OWASP: authentication failures, unexpected requests): a
+bad or missing token as ``auth_failed`` in the route's log, an unknown route in
+``_gateway.jsonl``. A session used by an agent other than the one that opened it is logged
+as ``session_agent_mismatch`` — still forwarded, as the gateway never blocks.
+
     uv run python -m mcp_security.gateway.proxy --config src/mcp_security/gateway/routes.json
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import hashlib
 import json
 import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import httpx
 import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
+from mcp_security.gateway.config import (
+    ANONYMOUS,
+    GatewayConfig,
+    Identity,
+    Upstream,
+    identity_of,
+    load_config,
+    token_hash,
+)
+from mcp_security.gateway.effects import EffectMap
 from mcp_security.gateway.framework import RouteScorer, load_artifacts
+from mcp_security.gateway.http_wire import (
+    MessageTap,
+    Network,
+    client_behind,
+    decode_header_value,
+    parse_messages,
+    parse_networks,
+)
+from mcp_security.gateway.log_file import MessageLog
+from mcp_security.gateway.oauth import NO_TOKEN, AuthError, TokenVerifier, looks_like_jwt
+from mcp_security.gateway.pseudonym import Pseudonymizer
 from mcp_security.gateway.wire_log import (
     CALL_METHOD,
-    FROM_GATEWAY,
     TO_AGENT,
     TO_SERVER,
     Exchange,
-    MessageLog,
+    LogPolicy,
     SessionBook,
     build_record,
     catalog_bytes,
     client_info_of,
     decision_record,
+    gateway_record,
     notice_record,
+    protocol_of,
     requests_in,
 )
 
@@ -61,113 +89,54 @@ NOT_SENT_UPSTREAM = HOP_BY_HOP | {"host", "content-length", "authorization", "ac
 NOT_SENT_DOWNSTREAM = HOP_BY_HOP
 SESSION_HEADER = "mcp-session-id"
 PROTOCOL_HEADER = "mcp-protocol-version"
-ANONYMOUS = "anonymous"
+METHOD_HEADER = "mcp-method"
+NAME_HEADER = "mcp-name"
+ORIGIN_HEADER = "origin"
+FORWARDED_HEADER = "x-forwarded-for"
+GATEWAY_FILE = "_gateway"  # log file for requests that match no route
+MAX_ROUTE_CHARS = 100  # an unknown route name is the caller's text: logged, but cut
+DIGEST_CHARS = 12
 CONNECT_TIMEOUT_S = 10.0
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8765
 METHODS = ["GET", "POST", "DELETE"]
 
 
-@dataclass(frozen=True)
-class Upstream:
-    """One external MCP server, reached at ``/{name}`` on the gateway."""
-
-    name: str
-    url: str
-    key_env: str | None = None  # env var holding the upstream credential; never the value
-    key_header: str = "Authorization"
-    key_prefix: str = "Bearer "
-    scan: str | None = None  # scan artifact (cells/bands); None = record only
-    kind: str | None = None  # breadth-spec kind for the runtime factor
-    breadth: str | None = None  # breadth spec file for this catalog; None = the kind's default
-    rules: str | None = None  # stage-2 input rules (<server>.json); None = no input level
-
-
-@dataclass(frozen=True)
-class GatewayConfig:
-    """Routes, known agents (by SHA-256 of their gateway token), and where logs go."""
-
-    upstreams: dict[str, Upstream]
-    agents: dict[str, str] = field(default_factory=dict)  # empty = no agent auth (demo)
-    log_dir: Path = Path("runs/gateway")
-
-
-def load_config(path: Path) -> GatewayConfig:
-    """Read the routes file. Fails loudly on a route without a URL."""
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    upstreams = {}
-    for name, entry in raw["upstreams"].items():
-        if not entry.get("url"):
-            raise ValueError(f"upstream {name!r} has no url")
-        upstreams[name] = Upstream(name=name, **entry)
-    return GatewayConfig(
-        upstreams=upstreams,
-        agents=dict(raw.get("agents", {})),
-        log_dir=Path(raw.get("log_dir", "runs/gateway")),
-    )
-
-
-def token_hash(token: str) -> str:
-    """How an agent token is stored in the config: its SHA-256, never the token."""
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
-def parse_messages(raw: bytes) -> list[dict]:
-    """JSON-RPC messages in a body: one object, a batch, or nothing. Garbage is kept visible."""
-    if not raw.strip():
-        return []
-    try:
-        parsed = json.loads(raw)
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return [{"unparsed": raw.decode("utf-8", errors="replace")}]
-    items = parsed if isinstance(parsed, list) else [parsed]
-    return [item for item in items if isinstance(item, dict)]
-
-
-class MessageTap:
-    """Reads JSON-RPC messages out of a response body fed chunk by chunk.
-
-    SSE frames are emitted as soon as each one is complete, so a long-lived stream is logged
-    while it is open; a plain JSON body is parsed once it ends.
-    """
-
-    def __init__(self, content_type: str) -> None:
-        self._sse = content_type.startswith("text/event-stream")
-        self._buffer = b""
-
-    def feed(self, chunk: bytes) -> list[dict]:
-        self._buffer += chunk
-        if not self._sse:
-            return []
-        self._buffer = self._buffer.replace(b"\r\n", b"\n")
-        *frames, self._buffer = self._buffer.split(b"\n\n")
-        return [message for frame in frames for message in _sse_messages(frame)]
-
-    def close(self) -> list[dict]:
-        rest, self._buffer = self._buffer, b""
-        return _sse_messages(rest) if self._sse else parse_messages(rest)
-
-
-def _sse_messages(frame: bytes) -> list[dict]:
-    data = [line[5:].lstrip() for line in frame.split(b"\n") if line.startswith(b"data:")]
-    return parse_messages(b"\n".join(data))
-
-
 class Gateway:
     """The request handler: identify the agent, log, forward, relay and log the reply."""
 
-    def __init__(self, config: GatewayConfig, client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        config: GatewayConfig,
+        client: httpx.AsyncClient,
+        verifier: TokenVerifier | None = None,
+    ) -> None:
         self.config = config
         self.client = client
+        self.verifier = verifier or (TokenVerifier(config.oauth) if config.oauth else None)
+        self.agent_names: dict[str, str] = {}  # identity key -> agent name, for notices
         self.log = MessageLog(config.log_dir)
         self.sessions = SessionBook()
+        self.identities = {digest: identity_of(e, digest) for digest, e in config.agents.items()}
+        self.trusted: tuple[Network, ...] = parse_networks(config.trusted_proxies)
+        pseudonyms = Pseudonymizer.from_env(config.hash_key_env)
+        self.refusals = LogPolicy(pseudonyms=pseudonyms)
+        self.policies = {name: _policy(u, pseudonyms) for name, u in config.upstreams.items()}
+        if not pseudonyms.keyed and any(u.log_bodies != "all" for u in config.upstreams.values()):
+            print(
+                f"gateway: {config.hash_key_env} is not set; pseudonyms are unkeyed SHA-256 "
+                "and low-entropy values (recipients, repository names) can be guessed",
+                file=sys.stderr,
+            )
         self.scorers: dict[str, RouteScorer] = {}
         for name, upstream in config.upstreams.items():
             artifacts = load_artifacts(
                 name, upstream.scan, upstream.breadth, upstream.rules, upstream.kind
             )
-            if artifacts:
-                self.scorers[name] = RouteScorer(name, artifacts)
+            if artifacts and upstream.scoring != "off":
+                self.scorers[name] = RouteScorer(name, artifacts, history=upstream.history)
+                self._restore_state(upstream)
+        self._scored: dict[str, int] = {}
         # Tool lists already accounted for: the one each route's scan was run on.
         self.catalogs: dict[str, set[str]] = {
             name: {s.artifacts.scanned_catalog} if s.artifacts.scanned_catalog else set()
@@ -175,20 +144,34 @@ class Gateway:
         }
 
     async def handle(self, request: Request) -> Response:
-        upstream = self.config.upstreams.get(request.path_params["route"])
+        route = request.path_params["route"]
+        upstream = self.config.upstreams.get(route)
         if upstream is None:
+            self._refuse(request, GATEWAY_FILE, route[:MAX_ROUTE_CHARS], "unknown_route")
             return Response(status_code=404)
-        agent = self._identify(request)
-        if agent is None:
-            return Response(status_code=401)
+        try:
+            identity = await self._identify(request, route)
+        except AuthError as refused:
+            self._refuse(request, route, route, "auth_failed", **{"gateway.reason": refused.reason})
+            return self._unauthorized(route, refused.reason)
+        self.agent_names[identity.key] = (  # who to name when another agent takes the session
+            f"{identity.agent} ({identity.user})" if identity.user else identity.agent
+        )
 
         body = await request.body()
         messages = parse_messages(body)
-        exchange = _exchange(request, upstream.name, agent, messages)
+        exchange = _exchange(request, upstream.name, identity, messages, self.trusted)
+        if exchange.session and (owner := self.sessions.claim(exchange.session, identity.key)):
+            fields = {
+                "gateway.session_owner": self.agent_names.get(owner, owner),
+                "gateway.session_owner_id": owner,
+                "gateway.session_ended": self.sessions.ended(exchange.session) or None,
+            }
+            self._notice(exchange, "session_agent_mismatch", **fields)
         for message in messages or [None]:  # a bodiless GET/DELETE still shows up
             record = self._log(exchange, TO_SERVER, None, message)
             if message and message.get("method") == CALL_METHOD:
-                self._decide(exchange, message, record["ts"])  # before it is forwarded
+                self._schedule(upstream, exchange, message, record["ts"])
         try:
             reply = await self.client.send(
                 self.client.build_request(
@@ -200,11 +183,14 @@ class Gateway:
                 stream=True,
             )
         except httpx.TransportError as exc:
-            self._log(exchange, FROM_GATEWAY, None, {"error": f"upstream unreachable: {exc}"})
+            fields = {"error.type": type(exc).__name__, "gateway.error": str(exc)}
+            self._notice(exchange, "upstream_unreachable", **fields)
             return Response(status_code=502)
 
         # The server assigns the session on `initialize`; carry it onto the reply's lines.
         session = reply.headers.get(SESSION_HEADER) or exchange.session
+        if session and session != exchange.session:
+            self.sessions.claim(session, identity.key)  # a new session belongs to its opener
         if session and exchange.client_info:
             self.sessions.start(session, exchange.client_info)
         headers = {k: v for k, v in reply.headers.items() if k.lower() not in NOT_SENT_DOWNSTREAM}
@@ -214,36 +200,99 @@ class Gateway:
     async def _relay(self, reply: httpx.Response, exchange: Exchange) -> AsyncIterator[bytes]:
         """Yield upstream bytes unchanged; log each complete message on the side."""
         tap = MessageTap(reply.headers.get("content-type", ""))
+        logged = False
         try:
             async for chunk in reply.aiter_raw():
                 yield chunk
                 for message in tap.feed(chunk):
+                    logged = True
                     self._watch_catalog(
                         exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
                     )
             for message in tap.close():
+                logged = True
                 self._watch_catalog(
                     exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
                 )
+            if not logged:  # 202 to a notification, a DELETE's answer: the status still counts
+                self._log(exchange, TO_AGENT, reply.status_code, None)
         finally:
             await reply.aclose()
             if exchange.http_method == "DELETE":  # the client ended the session
                 self.sessions.end(exchange.session)
 
-    def _identify(self, request: Request) -> str | None:
-        if not self.config.agents:
+    async def _identify(self, request: Request, route: str) -> Identity:
+        """Who sent the request: a token listed in ``agents``, or an access token the
+        identity provider signed. ``AuthError`` says why neither holds."""
+        if not self.identities and self.verifier is None:
             return ANONYMOUS
         scheme, _, token = request.headers.get("authorization", "").partition(" ")
         if scheme.lower() != "bearer" or not token:
-            return None
-        return self.config.agents.get(token_hash(token))
+            raise AuthError(NO_TOKEN)
+        listed = self.identities.get(token_hash(token))
+        if listed:
+            return listed
+        if self.verifier and looks_like_jwt(token):  # may fetch keys: off the event loop
+            return await asyncio.to_thread(self.verifier.verify, token, route)
+        raise AuthError("unknown_token")
+
+    def _unauthorized(self, route: str, reason: str) -> Response:
+        """401, pointing a client to where it can sign in when OAuth is on (MCP, RFC 9728)."""
+        if self.verifier is None:
+            return Response(status_code=401)
+        return Response(
+            status_code=401, headers={"WWW-Authenticate": self.verifier.challenge(route, reason)}
+        )
+
+    async def resource_metadata(self, request: Request) -> Response:
+        """A route's Protected Resource Metadata (RFC 9728): which provider issues its tokens."""
+        route = request.path_params["route"]
+        if self.verifier is None or route not in self.config.upstreams:
+            return Response(status_code=404)
+        return JSONResponse(self.verifier.metadata(route))
 
     def _log(
         self, exchange: Exchange, direction: str, status: int | None, message: dict | None
     ) -> dict:
-        record = build_record(exchange, self.sessions, direction, status, message)
+        policy = self.policies[exchange.route]
+        record = build_record(exchange, self.sessions, direction, status, message, policy)
         self.log.write(exchange.route, record)
         return record
+
+    def _notice(self, exchange: Exchange, notice: str, **fields: object) -> None:
+        policy = self.policies[exchange.route]
+        self.log.write(exchange.route, notice_record(exchange, notice, policy, **fields))
+
+    def _refuse(
+        self, request: Request, file: str, route: str, notice: str, **fields: object
+    ) -> None:
+        """A request the gateway turned away: who tried, from where — never the token."""
+        exchange = _exchange(request, route, None, [], self.trusted)
+        self.log.write(file, notice_record(exchange, notice, self.refusals, **fields))
+
+    def announce(self, notice: str) -> None:
+        """A start or stop line in every route's log: what this run is, so a reader can tell
+        a restart (session state reset, new config, new scan) from a quiet period."""
+        for name, upstream in self.config.upstreams.items():
+            scorer, policy = self.scorers.get(name), self.policies[name]
+            fields = {
+                "gateway.config_sha256": _config_digest(upstream),
+                "gateway.artifacts": scorer.artifacts.digests if scorer else None,
+                "gateway.effects_sha256": policy.effects.digest if policy.effects else None,
+                "gateway.log_bodies": policy.bodies,
+                "gateway.pseudonyms_keyed": policy.pseudonyms.keyed,
+                "gateway.agents": len(self.identities),
+                "gateway.oauth_issuer": self.config.oauth.issuer if self.config.oauth else None,
+            }
+            self.log.write(name, gateway_record(name, notice, **fields))
+
+    def _schedule(self, upstream: Upstream, exchange: Exchange, call: dict, ts: float) -> None:
+        """Inline: score now, before forwarding. Background: score once the call is on its
+        way upstream, on the same event loop, in arrival order (FIFO)."""
+        if upstream.scoring == "background":
+            asyncio.get_running_loop().call_soon(self._decide, exchange, call, ts)
+        else:
+            self._decide(exchange, call, ts)
 
     def _decide(self, exchange: Exchange, call: dict, ts: float) -> None:
         """Score one tools/call with the route's framework and log the verdict."""
@@ -252,14 +301,50 @@ class Gateway:
             return
         params = call.get("params") or {}
         try:
-            decision = scorer.score(params.get("name"), params.get("arguments") or {}, ts)
+            decision = scorer.score(
+                params.get("name"),
+                params.get("arguments") or {},
+                ts,
+                caller=exchange.agent_id or exchange.agent,
+            )
         except Exception as exc:  # noqa: BLE001 — a scoring bug must never break the agent's call; it is logged, not hidden
             decision = {"error": f"{type(exc).__name__}: {exc}"}
         decision["artifacts"] = scorer.artifacts.digests
         record = decision_record(
-            exchange, self.sessions, call, decision, scorer.artifacts.scanned_catalog, ts
+            exchange,
+            self.sessions,
+            call,
+            decision,
+            scorer.artifacts.scanned_catalog,
+            ts,
+            self.policies[exchange.route],
         )
         self.log.write(exchange.route, record)
+        upstream = self.config.upstreams[exchange.route]
+        self._scored[exchange.route] = done = self._scored.get(exchange.route, 0) + 1
+        if upstream.state_every and done % upstream.state_every == 0:
+            self.save_state(exchange.route)
+
+    def save_state(self, route: str | None = None) -> None:
+        """Write each scored route's dynamic history to its ``state_file`` (atomic replace)."""
+        for name, scorer in self.scorers.items():
+            path = self.config.upstreams[name].state_file
+            if not path or (route and name != route):
+                continue
+            target = Path(path)
+            try:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                partial = target.with_suffix(target.suffix + ".partial")
+                partial.write_text(json.dumps(scorer.snapshot_all()), encoding="utf-8")
+                partial.replace(target)
+            except OSError as exc:
+                print(f"gateway: could not save state for {name}: {exc}", file=sys.stderr)
+
+    def _restore_state(self, upstream: Upstream) -> None:
+        """Continue the route's dynamic history where the last run stopped, if it was saved."""
+        if upstream.state_file and Path(upstream.state_file).exists():
+            snapshot = json.loads(Path(upstream.state_file).read_text(encoding="utf-8"))
+            self.scorers[upstream.name].restore_all(snapshot)
 
     def _watch_catalog(self, exchange: Exchange, record: dict) -> None:
         """Save a tool list this route's scan was not run on, once, for the static scan."""
@@ -274,30 +359,54 @@ class Gateway:
             path.write_bytes(catalog_bytes({"tools": record["message"]["result"]["tools"]}))
         except OSError as exc:
             print(f"gateway: could not save catalog {path}: {exc}", file=sys.stderr)
-        notice = notice_record(
-            exchange,
-            "catalog_not_scanned",
-            **{"gateway.catalog_sha256": digest, "gateway.catalog_file": str(path)},
-        )
-        self.log.write(exchange.route, notice)
+        fields = {"gateway.catalog_sha256": digest, "gateway.catalog_file": str(path)}
+        self._notice(exchange, "catalog_not_scanned", **fields)
 
 
-def _exchange(request: Request, route: str, agent: str, messages: list[dict]) -> Exchange:
+def _policy(upstream: Upstream, pseudonyms: Pseudonymizer) -> LogPolicy:
+    effects = EffectMap.load(Path(upstream.importance)) if upstream.importance else None
+    return LogPolicy(bodies=upstream.log_bodies, effects=effects, pseudonyms=pseudonyms)
+
+
+def _config_digest(upstream: Upstream) -> str:
+    """Digest of one route's config (env var *names* only — no secret is in it)."""
+    canonical = json.dumps(asdict(upstream), sort_keys=True)
+    return hashlib.sha256(canonical.encode()).hexdigest()[:DIGEST_CHARS]
+
+
+def _exchange(
+    request: Request,
+    route: str,
+    identity: Identity | None,
+    messages: list[dict],
+    trusted: tuple[Network, ...] = (),
+) -> Exchange:
     """What the wire says about one request: who sent it, from where, in which session."""
-    init = next((m for m in messages if m.get("method") == "initialize"), {})
-    version = request.headers.get(PROTOCOL_HEADER) or (init.get("params") or {}).get(
-        "protocolVersion"
-    )
+    peer = request.client.host if request.client else None
+    address = client_behind(peer, request.headers.get(FORWARDED_HEADER), trusted)
+    forwarded = address != peer
     return Exchange(
         route=route,
-        agent=agent,
+        agent=identity.agent if identity else None,
+        agent_id=identity.id if identity else None,
+        auth=identity.auth if identity else None,
+        issuer=identity.issuer if identity else None,
+        scopes=identity.scopes if identity else (),
+        token_id=identity.token_id if identity else None,
+        actors=identity.actors if identity else (),
+        user=identity.user if identity else None,
+        app=identity.app if identity else None,
         session=request.headers.get(SESSION_HEADER),
         http_method=request.method,
-        client_address=request.client.host if request.client else None,
-        client_port=request.client.port if request.client else None,
+        client_address=address,
+        client_port=None if forwarded or not request.client else request.client.port,
+        peer_address=peer if forwarded else None,
         user_agent=request.headers.get("user-agent"),
-        protocol_version=version,
+        origin=request.headers.get(ORIGIN_HEADER),
+        protocol_version=request.headers.get(PROTOCOL_HEADER) or protocol_of(messages),
         client_info=client_info_of(messages),
+        method_header=request.headers.get(METHOD_HEADER),
+        name_header=decode_header_value(request.headers.get(NAME_HEADER)),
         requests=requests_in(messages),
     )
 
@@ -318,28 +427,44 @@ def _upstream_headers(request: Request, upstream: Upstream) -> dict[str, str]:
     return headers
 
 
-def create_app(config: GatewayConfig, client: httpx.AsyncClient | None = None) -> Starlette:
-    """The gateway as an ASGI app. Pass ``client`` to point it at a test upstream."""
+def create_app(
+    config: GatewayConfig,
+    client: httpx.AsyncClient | None = None,
+    verifier: TokenVerifier | None = None,
+) -> Starlette:
+    """The gateway as an ASGI app. Pass ``client`` to point it at a test upstream, and
+    ``verifier`` to check tokens against fixed keys instead of the provider's JWKS."""
     owns_client = client is None
     http = client or httpx.AsyncClient(
         timeout=httpx.Timeout(CONNECT_TIMEOUT_S, read=None),  # SSE streams stay open
         follow_redirects=False,  # a redirect is the upstream's answer; relay it as-is
     )
-    gateway = Gateway(config, http)
+    gateway = Gateway(config, http, verifier)
 
     @asynccontextmanager
     async def lifespan(_app: Starlette) -> AsyncIterator[None]:
+        gateway.announce("gateway_started")
         yield
+        gateway.save_state()
+        gateway.announce("gateway_stopped")
+        gateway.log.close()
         if owns_client:
             await http.aclose()
 
-    return Starlette(
+    app = Starlette(
         routes=[
+            Route(
+                "/.well-known/oauth-protected-resource/{route}",
+                gateway.resource_metadata,
+                methods=["GET"],
+            ),
             Route("/{route}", gateway.handle, methods=METHODS),
             Route("/{route}/{rest:path}", gateway.handle, methods=METHODS),
         ],
         lifespan=lifespan,
     )
+    app.state.gateway = gateway  # for operations and tests: save_state(), scorers
+    return app
 
 
 def main() -> None:
@@ -352,7 +477,15 @@ def main() -> None:
     config = load_config(args.config)
     for name, upstream in config.upstreams.items():
         print(f"gateway: http://{args.host}:{args.port}/{name}  ->  {upstream.url}")
-    uvicorn.run(create_app(config), host=args.host, port=args.port, log_level="warning")
+    # proxy_headers off: uvicorn would otherwise believe X-Forwarded-For from 127.0.0.1 by
+    # default, letting any local agent pick its logged address; trusted_proxies decides instead.
+    uvicorn.run(
+        create_app(config),
+        host=args.host,
+        port=args.port,
+        log_level="warning",
+        proxy_headers=False,
+    )
 
 
 if __name__ == "__main__":

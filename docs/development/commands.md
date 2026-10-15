@@ -200,6 +200,8 @@ every message, and scores what it saw. How it fits together:
 | `uv run python -m mcp_security.gateway.catalog --config <routes.json> --route <r>` | The server's tool list, from the log, in `static-scan`'s input shape |
 | `sbatch --export=ALL,NAME=github_remote scripts/gateway_static_scan.sbatch` | Static side on 1 GPU: `static-scan`, breadth pass, levels → cells |
 | `uv run python -m mcp_security.gateway.score --config <routes.json> --route <r>` | Re-score a saved log with the same scorer → `<route>_scored.csv` |
+| `uv run python -m mcp_security.gateway.log_view <log.jsonl> [--grouped] [--out view.txt]` | Render a log for reading: one line per event with agent id, user id, session and request columns (`--grouped`: by session, request → verdict → reply) |
+| `uv run python -m mcp_security.gateway.log_file verify <log.jsonl>...` | Check each log's hash chain; exit 1 and the line numbers where it breaks |
 
 ## Testing
 
