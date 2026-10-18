@@ -349,8 +349,8 @@ uv run python -m mcp_security.scanner --kind github
 # the v5 configuration, on the cluster
 sbatch scripts/scan_v5.sbatch <stem>
 
-# score one captured session (static + dynamic)
-uv run python -m mcp_security.dynamic --session <calls.csv> --server <stem>
+# rank misuse with the dynamic layer (Gen 2)
+python3 scripts/dynamic_design/rank_eval.py
 
 # evaluate v5 against the held-out organizational table
 uv run python scripts/evaluate_policy_v5.py

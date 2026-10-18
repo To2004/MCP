@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -22,8 +21,11 @@ from mcp_security.gateway.pseudonym import Pseudonymizer
 from mcp_security.gateway.framework import Artifacts, RouteScorer
 from mcp_security.gateway.score import ARGS_NOT_LOGGED, pair_calls, score_calls
 from mcp_security.gateway.log_file import read_log, verify_chain
+from tests.gateway.tokens import APP, OAUTH, mint, verifier
 
-AGENT_TOKEN = "agent-token"
+#: Signed in at the (test) identity provider: tokens name the callers, nothing else does.
+AGENT_TOKEN = mint(sub="alice-sub")
+BOB_TOKEN = mint(sub="bob-sub")
 UPSTREAM_KEY = "upstream-secret"
 UPSTREAM_URL = "http://upstream/mcp"
 SESSION_ID = "sess-1"
@@ -79,10 +81,10 @@ def gateway(
         upstreams={
             "github": Upstream(name="github", url=UPSTREAM_URL, key_env="TEST_UPSTREAM_KEY")
         },
-        agents={hashlib.sha256(AGENT_TOKEN.encode()).hexdigest(): "alice"},
         log_dir=tmp_path,
+        oauth=OAUTH,
     )
-    app = create_app(config, client=upstream_client)
+    app = create_app(config, client=upstream_client, verifier=verifier())
     return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gw")
 
 
@@ -134,7 +136,7 @@ async def test_log_has_both_directions_with_session_and_no_secrets(
         ("agent->server", 2),
         ("server->agent", 2),
     ]
-    assert {r["gateway.agent"] for r in records} == {"alice"}
+    assert {(r["gateway.agent"], r["user.id"]) for r in records} == {(APP, "alice-sub")}
     session = Pseudonymizer().of(SESSION_ID)  # logged as a pseudonym, never as sent
     assert records[1]["mcp.session.id"] == session  # assigned by the server on initialize
     assert records[2]["mcp.session.id"] == session
@@ -285,17 +287,16 @@ def test_v1_lines_are_read_with_v2_names(tmp_path: Path) -> None:
 
 # ---- gateway-log/3: refusals, identity, sessions, proxies, run markers, bodies ----
 
-BOB_TOKEN = "bob-token"
 
-
-def _hash(token: str) -> str:
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
-def _app(tmp_path: Path, upstream_client: httpx.AsyncClient, **fields: Any) -> Starlette:
+def _app(
+    tmp_path: Path, upstream_client: httpx.AsyncClient, signed_in: bool = False, **fields: Any
+) -> Starlette:
+    """A gateway; ``signed_in`` puts the test identity provider in front of it."""
     route = Upstream(name="github", url=UPSTREAM_URL, **fields.pop("route", {}))
+    if signed_in:
+        fields["oauth"] = OAUTH
     config = GatewayConfig(upstreams={"github": route}, log_dir=tmp_path, **fields)
-    return create_app(config, client=upstream_client)
+    return create_app(config, client=upstream_client, verifier=verifier() if signed_in else None)
 
 
 def _client(app: Starlette) -> httpx.AsyncClient:
@@ -314,7 +315,7 @@ async def test_refused_requests_are_logged_without_the_token(
     await gateway.post("/nowhere", json=CALL, headers=_as_agent())
 
     refused = _notices(tmp_path / "github.jsonl", "auth_failed")
-    assert [r["gateway.reason"] for r in refused] == ["unknown_token", "no_bearer_token"]
+    assert [r["gateway.reason"] for r in refused] == ["invalid_token", "no_bearer_token"]
     assert all(r["client.address"] and "gateway.agent" not in r for r in refused)
     assert "stolen-guess" not in (tmp_path / "github.jsonl").read_text()
     [unknown] = _notices(tmp_path / "_gateway.jsonl", "unknown_route")
@@ -324,8 +325,7 @@ async def test_refused_requests_are_logged_without_the_token(
 async def test_a_session_used_by_another_agent_is_flagged_and_still_forwarded(
     tmp_path: Path, upstream_client: httpx.AsyncClient
 ) -> None:
-    agents = {_hash(AGENT_TOKEN): "alice", _hash(BOB_TOKEN): "bob"}
-    gateway = _client(_app(tmp_path, upstream_client, agents=agents))
+    gateway = _client(_app(tmp_path, upstream_client, signed_in=True))
     await gateway.post("/github", json=INITIALIZE, headers=_as_agent())  # alice opens it
     bob = {"authorization": f"Bearer {BOB_TOKEN}", "mcp-session-id": SESSION_ID}
 
@@ -333,30 +333,7 @@ async def test_a_session_used_by_another_agent_is_flagged_and_still_forwarded(
 
     assert reply.status_code == 200  # observe-only: logged, never blocked
     [notice] = _notices(tmp_path / "github.jsonl", "session_agent_mismatch")
-    assert (notice["gateway.agent"], notice["gateway.session_owner"]) == ("bob", "alice")
-
-
-async def test_an_agent_entry_with_user_and_app_is_on_every_line(
-    tmp_path: Path, upstream_client: httpx.AsyncClient
-) -> None:
-    agents = {
-        _hash(AGENT_TOKEN): {"agent": "ci", "user": "u-0417", "app": "ci-bot"},
-        _hash(BOB_TOKEN): {"id": "agt-17", "agent": "bob"},
-    }
-    gateway = _client(_app(tmp_path, upstream_client, agents=agents))
-    await gateway.post("/github", json=CALL, headers=_as_agent())
-    await gateway.post("/github", json=CALL, headers={"authorization": f"Bearer {BOB_TOKEN}"})
-
-    lines = read_log(tmp_path / "github.jsonl")
-    who = {
-        (r["gateway.agent_id"], r["gateway.agent"], r.get("user.id"), r.get("gateway.app"))
-        for r in lines
-    }
-    assert who == {
-        (_hash(AGENT_TOKEN)[:12], "ci", "u-0417", "ci-bot"),  # default id: the token hash's start
-        ("agt-17", "bob", None, None),  # an id set in the config is kept across token rotations
-    }
-    assert {r["log.level"] for r in lines} == {"info"}
+    assert (notice["user.id"], notice["gateway.session_owner"]) == ("bob-sub", f"{APP} (alice-sub)")
 
 
 async def test_security_notices_are_warnings(gateway: httpx.AsyncClient, tmp_path: Path) -> None:
@@ -436,15 +413,14 @@ async def test_a_session_taken_over_after_its_owner_ended_it_is_still_flagged(
     tmp_path: Path, upstream_client: httpx.AsyncClient
 ) -> None:
     """Found live: GitHub kept accepting a session id after the client's DELETE."""
-    agents = {_hash(AGENT_TOKEN): "alice", _hash(BOB_TOKEN): "bob"}
-    gateway = _client(_app(tmp_path, upstream_client, agents=agents))
+    gateway = _client(_app(tmp_path, upstream_client, signed_in=True))
     await gateway.post("/github", json=INITIALIZE, headers=_as_agent())
     await gateway.delete("/github", headers=_as_agent(session=SESSION_ID))
     bob = {"authorization": f"Bearer {BOB_TOKEN}", "mcp-session-id": SESSION_ID}
     await gateway.post("/github", json=CALL, headers=bob)
 
     [notice] = _notices(tmp_path / "github.jsonl", "session_agent_mismatch")
-    assert notice["gateway.session_owner"] == "alice"
+    assert notice["gateway.session_owner"] == f"{APP} (alice-sub)"
     assert notice["gateway.session_ended"] is True
 
 

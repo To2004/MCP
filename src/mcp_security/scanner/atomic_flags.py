@@ -12,8 +12,15 @@ Two deterministic (no-LLM) additions layered on top of the existing scan:
   destructive flag, a magnitude count, …), so an operator sees which input to
   watch first, from the tool's own schema.
 
-Both are attached to the scan table (``tool_atomic_ops``, ``tool_input_ranking``)
-so they ship inside ``reports/scan/<server>.json`` alongside the risk matrix.
+* **breadth** — which inputs decide how *much* a call covers (an array's length, a
+  page size, a pair of interval endpoints), from
+  :mod:`mcp_security.scanner.breadth`. Deliberately carries no thresholds: the scan
+  says which argument is a quantity, the runtime learns from traffic how large is
+  large for that deployment.
+
+All three are attached to the scan table (``tool_atomic_ops``, ``tool_input_ranking``,
+``tool_breadth``) so they ship inside ``reports/scan/<server>.json`` alongside the risk
+matrix.
 """
 
 from __future__ import annotations
@@ -24,6 +31,7 @@ from mcp_security.atomic_ops import toollist_rules
 from mcp_security.atomic_ops.classifier import DEFAULT_TAXONOMY, _to_op_set_and_severities
 from mcp_security.atomic_ops.taxonomy import AtomicOp, load_taxonomy
 from mcp_security.llm.ollama_client import query_ollama
+from mcp_security.scanner.breadth import classify_breadth
 from mcp_security.static_scoring.registry import ToolSpec
 
 # Input-risk heuristic, most-amplifying first. Each rule matches on the parameter
@@ -391,11 +399,19 @@ def rank_tool_inputs(tools: list[ToolSpec], *, use_llm: bool = False) -> dict[st
 
 
 def enrich_scan(table: dict, tools: list[ToolSpec], *, use_llm: bool = False) -> dict:
-    """Attach ``tool_atomic_ops`` and ``tool_input_ranking`` to a scan table in place.
+    """Attach the per-tool enrichments to a scan table in place.
 
-    The atomic-op flag is always the deterministic taxonomy match; the input
-    ranking uses the LLM when ``use_llm`` is set (falling back to the rules).
+    Three blocks ship with the matrix. The atomic-op flag is always the deterministic
+    taxonomy match; the input ranking uses the LLM when ``use_llm`` is set (falling back
+    to the rules); ``tool_breadth`` says which inputs decide how *much* a call covers,
+    which is what the runtime layer needs before it can measure anything.
+
+    ``tool_breadth`` carries no thresholds on purpose — see
+    :mod:`mcp_security.scanner.breadth`. The scan says which argument is a quantity; the
+    runtime learns from a deployment's own traffic how large is large *there*, and keeps
+    those numbers current as it observes more calls.
     """
     table["tool_atomic_ops"] = classify_tools_atomic(tools)
     table["tool_input_ranking"] = rank_tool_inputs(tools, use_llm=use_llm)
+    table["tool_breadth"] = classify_breadth(tools, use_llm=use_llm)
     return table

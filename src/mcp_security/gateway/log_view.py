@@ -60,7 +60,8 @@ COLUMNS = (
     "SIZE",
 )
 DETAILS = "DETAILS"  # last column: not padded, as long as it needs
-CAPS = {"EVENT": 40, "RESULT": 22, "AGENT": 16, "USER_ID": 16, "AGENT_ID": 16}
+#: Column widths; USER_ID fits a whole UUID — ids are looked up, so they are never cut.
+CAPS = {"EVENT": 40, "RESULT": 22, "AGENT": 16, "USER_ID": 36, "AGENT_ID": 16}
 RIGHT = frozenset({"DURATION", "SIZE"})
 EMPTY = "-"
 GAP = "  "
@@ -220,7 +221,7 @@ def _run_details(record: dict) -> list[tuple[str, object]]:
         ("importance", str(record.get("gateway.effects_sha256") or "")[:SHORT_ID]),
         ("bodies", record.get("gateway.log_bodies")),
         ("pseudonyms", None if keyed is None else ("keyed" if keyed else "unkeyed")),
-        ("agents", record.get("gateway.agents")),
+        ("auth", record.get("gateway.auth")),
     ]
 
 

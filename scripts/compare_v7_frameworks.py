@@ -305,6 +305,18 @@ def render_markdown(results: dict) -> str:
             if not d:
                 out.append(f"| `{server}` | `{arm}` | — | — | — | — | — | not scanned |")
                 continue
+            if not d["shared_assets"]:
+                # A framework arm whose register was rewritten to a different asset
+                # taxonomy (e.g. virtual information types replacing named
+                # containers) shares no ids with nacombo at all -- a real, expected
+                # outcome, not a scan failure. `exact`/`within_one`/`mad`/`bias` are
+                # None in this case (see sensitivity_delta), so report it as such
+                # rather than crashing on `None:.0%}`.
+                out.append(
+                    f"| `{server}` | `{arm}` | 0 | 0% | — | — | — | "
+                    "no shared asset ids (different taxonomy) |"
+                )
+                continue
             out.append(
                 f"| `{server}` | `{arm}` | {d['shared_assets']} | "
                 f"{d['shared_assets'] / base_assets:.0%} | {d['exact']:.0%} | "
@@ -323,8 +335,14 @@ def render_markdown(results: dict) -> str:
     for server in SERVERS:
         for arm in ARMS:
             d = results["cells"][server].get(arm)
-            if not d or not d["comparable_cells"]:
+            if not d:
                 out.append(f"| `{server}` | `{arm}` | — | — | — | — | not scanned |")
+                continue
+            if not d["comparable_cells"]:
+                out.append(
+                    f"| `{server}` | `{arm}` | 0 | — | — | — | "
+                    "no shared asset ids (different taxonomy) |"
+                )
                 continue
             out.append(
                 f"| `{server}` | `{arm}` | {d['comparable_cells']} | "

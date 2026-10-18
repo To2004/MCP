@@ -80,6 +80,8 @@ _IMPACT_MAX = {
     "five_level_v2_v7_iso": 5,
     "five_level_v2_v7_nist": 5,
     "five_level_v2_v7_cis": 5,
+    "five_level_v2_v5r_uframe": 5,
+    "five_level_v2_v5r_uframe_llmonly": 5,
 }
 # Ablation variants of the ult mode — same profile-sensitivity machinery, one
 # prompt-context lever each:
@@ -317,6 +319,32 @@ _ULT_VARIANT_OPTIONS: dict[str, dict] = {
         "asset_flags": "none", "blast_prompt": "scope", "floors": "none",
         "relevance": "combo", "sens_scheme": "v7_cis",
     },
+    # uframe — nacombo's mechanics (register-settles / model-decides-on-silence /
+    # N/A is the costlier error, no flags, no floors) restated in the
+    # organization's own three-dimension framework: Asset Confidentiality, Action
+    # Impact, Consequence Scope, each an independent 1-5 (prompts.py's `_UFRAME`
+    # templates). Structurally the same ladder as nacombo at every tier, so a
+    # delta from nacombo isolates wording, not the scale.
+    "five_level_v2_v5r_uframe": {
+        "v4_prompts": True, "impact_bare": True, "blast_peers": True,
+        "static_impact": True, "static_impact_fallback": True,
+        "v5r_prompts": True, "no_baselines": True,
+        "asset_flags": "none", "blast_prompt": "scope_uframe", "floors": "none",
+        "relevance": "combo", "sens_scheme": "uframe", "impact_prompt": "uframe",
+    },
+    # DIAGNOSTIC ONLY — identical to uframe except the deterministic verb
+    # ladder is skipped entirely, so every tool's impact comes from the LLM
+    # (TOOL_IMPACT_TASK_V5R_UFRAME) instead. Used to check whether a ladder
+    # false positive (e.g. "remove" firing tier 5 on a self-scoped, reversible
+    # membership action already caught by tier 4's "leave") is an artifact of
+    # the deterministic MAX-tier-wins rule, or something the LLM gets wrong too.
+    "five_level_v2_v5r_uframe_llmonly": {
+        "v4_prompts": True, "impact_bare": True, "blast_peers": True,
+        "static_impact": False,
+        "v5r_prompts": True, "no_baselines": True,
+        "asset_flags": "none", "blast_prompt": "scope_uframe", "floors": "none",
+        "relevance": "combo", "sens_scheme": "uframe", "impact_prompt": "uframe",
+    },
 }
 # Modes that use the geometric-mean formula score = sens * 5 * sqrt(blast * impact).
 _SQRT_MODES = {"hybrid", "hybrid_na"}
@@ -360,6 +388,8 @@ _POLICY_SENS_MODES = {
     "five_level_v2_v7_iso",
     "five_level_v2_v7_nist",
     "five_level_v2_v7_cis",
+    "five_level_v2_v5r_uframe",
+    "five_level_v2_v5r_uframe_llmonly",
 }
 # The three register flags that ever changed a score. Everything else in the
 # vocabulary was written and never read.
@@ -1130,11 +1160,12 @@ class StaticScorer:
             # tier 3) and its own return schema is identical, so only the task
             # text differs.
             if self._ult_opts.get("v5r_prompts"):
-                template = (
-                    prompts.TOOL_IMPACT_TASK_V5R_TWOSTAGE
-                    if self._ult_opts.get("two_stage_framing")
-                    else prompts.TOOL_IMPACT_TASK_V5R
-                )
+                if self._ult_opts.get("impact_prompt") == "uframe":
+                    template = prompts.TOOL_IMPACT_TASK_V5R_UFRAME
+                elif self._ult_opts.get("two_stage_framing"):
+                    template = prompts.TOOL_IMPACT_TASK_V5R_TWOSTAGE
+                else:
+                    template = prompts.TOOL_IMPACT_TASK_V5R
                 prompt = template.format(tool_json=json.dumps(item))
             else:
                 prompt = (
@@ -1253,6 +1284,7 @@ class StaticScorer:
                     "v7_iso": prompts.ASSET_TASK_POLICY_V7_ISO,
                     "v7_nist": prompts.ASSET_TASK_POLICY_V7_NIST,
                     "v7_cis": prompts.ASSET_TASK_POLICY_V7_CIS,
+                    "uframe": prompts.ASSET_TASK_POLICY_UFRAME,
                 }[scheme]
             elif self._ult_opts.get("two_stage_framing"):
                 task = prompts.ASSET_TASK_POLICY_V5R_TWOSTAGE
@@ -1330,7 +1362,8 @@ class StaticScorer:
                 # assembly, so the model's own number already respects them.
                 # With no flags there is no closed route list, so tier 5 has to be
                 # argued from the register's description and named in free text.
-                if self._ult_opts.get("blast_prompt") == "scope":
+                if self._ult_opts.get("blast_prompt") in ("scope", "scope_uframe"):
+                    is_uframe = self._ult_opts.get("blast_prompt") == "scope_uframe"
                     relevance = self._ult_opts.get("relevance")
                     blast_user = prompts.BLAST_USER_V5R_SCOPE
                     if relevance == "register":
@@ -1341,7 +1374,11 @@ class StaticScorer:
                     elif relevance == "none":
                         blast_task = prompts.BLAST_TASK_V5R_SCOPE_NONA
                     elif relevance == "combo":
-                        blast_task = prompts.BLAST_TASK_V5R_SCOPE_NACOMBO
+                        blast_task = (
+                            prompts.BLAST_TASK_V5R_SCOPE_UFRAME
+                            if is_uframe
+                            else prompts.BLAST_TASK_V5R_SCOPE_NACOMBO
+                        )
                         blast_user = prompts.BLAST_USER_V5R_SCOPE_NACOMBO
                     else:
                         blast_task = prompts.BLAST_TASK_V5R_SCOPE

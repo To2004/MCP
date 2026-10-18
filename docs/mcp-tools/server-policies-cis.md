@@ -51,6 +51,19 @@ scores. `ACL (3.3)` is the access control list the organization maintains. The
 gap between them is unlisted access, which is precisely what Safeguard 3.3 exists
 to close and what an MCP risk scan exists to price.
 
+**A coarse scheme gives blast less to lean on, so read reach and value
+separately.** Safeguard 3.7's two- or three-level scheme means an entry's
+`Data category` and prose carry more of the classification weight per word than
+a five-class ISO or NIST scheme does — there are fewer categories to distribute
+the same judgement across. That is a property of *sensitivity* scoring, which
+this document's descriptions are written to support. It is not a property of
+*blast radius*: how far one call's consequences spread is a question about the
+entry's structure (one item vs. a population, contained vs. hub-cascading), not
+about how the entry reads. A description noting that an entry "discloses" or
+"carries organizational voice" is telling the classifier why the entry is
+Sensitive, not telling the blast stage that a call reaches further — the same
+entry can be highly sensitive and still narrowly reached.
+
 ## Index
 
 | Policy | Server id | Kind | Regulatory posture | Tier |
@@ -173,28 +186,45 @@ The scheme sorts data; it does not rank it. Two entries both marked
 `CIP-Sensitive` are not thereby equal — the recognition rules and the entry's own
 description carry the finer judgement.
 
-**Data inventory (Safeguard 3.2).** CIP-Sensitive and Sensitive data are
-enumerated individually. Non-sensitive data is inventoried as functional groups.
+**Data inventory (Safeguard 3.2).** Entries here are **information types**, not
+repositories: the repository inventory is itself withheld (see above), so a
+repository name was never the right unit for this inventory either. CIP-Sensitive
+and Sensitive types are enumerated individually. Non-sensitive types are
+inventoried as functional groups.
 
 | Asset | Description | Data category (3.7) | Tools | ACL (3.3) | Segment (3.12) |
 |---|---|---|---|---|---|
-| `helios-perimeter-code` | Everything inside the electronic security perimeter: the SCADA protocol gateway on the control-room path and the infrastructure and deploy configuration that defines the perimeter. A merge here reconfigures what dispatches power | CIP-Sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`, `merge_pull_request` | `get_file_contents`, `list_commits` — read only; CIP change control requires a named human approver and an evidence record, and an agent can satisfy neither | CIP |
-| `helios-ot-runbooks` | Switching procedures, patch windows and CIP evidence collection — BES Cyber System Information in prose form | CIP-Sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_pull_request` | `get_file_contents` — a named document only | CIP |
-| `branch-heads` | Where each branch points; a force-move or merge rewrites what deploys inside the security perimeter | CIP-Sensitive | `create_branch`, `push_files`, `merge_pull_request`, `update_pull_request_branch`, `create_or_update_file` | `create_branch` — on `helios-public-site` only | CIP |
-| `helios-market-bidding-engine` | Day-ahead and intraday bidding strategy and settlement code; the parameters are the position | Sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`, `merge_pull_request` | **empty** — no agent identity is on this ACL | market |
-| `code-read-surface` | What any file read or code search returns — reaches code bodies across every repository in scope, including the CIP segment | CIP-Sensitive | `get_file_contents`, `search_code` | `get_file_contents` — bounded to a repository and path the request names; `search_code` is not on the ACL | general |
-| `code-write-surface` | What any file or branch write targets — any repository in scope, including the CIP segment | CIP-Sensitive | `create_or_update_file`, `push_files`, `create_branch` | **empty** — every direct write is off the ACL | general |
-| `change-control-records` | Pull requests, reviews, approvals and merges — the CIP change-control gate itself, carrying unmerged code | Sensitive | `create_pull_request`, `create_pull_request_review`, `merge_pull_request`, `update_pull_request_branch`, `list_pull_requests`, `get_pull_request`, `get_pull_request_files`, `get_pull_request_status`, `get_pull_request_comments`, `get_pull_request_reviews` | `list_pull_requests`, `get_pull_request`, `get_pull_request_files`, `get_pull_request_status`, `get_pull_request_comments`, `get_pull_request_reviews`, `create_pull_request` — read and propose; approving and merging are a named human's act | general |
-| `org-external-copies` | Forks and repositories created outside the org boundary; BES Cyber System Information leaves the perimeter on creation | Sensitive | `fork_repository`, `create_repository` | **empty** — boundary exit is prohibited outright | boundary |
-| `helios-public-site` | The public website and network status pages; already published | Non-sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_pull_request` | `get_file_contents`, `search_code`, `list_commits`, `create_pull_request` | public |
-| `issues-and-comments` | Issue threads and their comments, and what an issue write creates or edits; engineering and change-review discussion | Non-sensitive | `get_issue`, `list_issues`, `search_issues`, `create_issue`, `update_issue`, `add_issue_comment` | `get_issue`, `list_issues`, `search_issues`, `create_issue`, `add_issue_comment` | general |
-| `repository-metadata` | Every catalog surface at once: repository names and visibility, branch names and refs, and commit messages with no diffs. No code — but our repository names map the security perimeter | Non-sensitive | `search_repositories`, `list_commits` | `search_repositories`, `list_commits` — a named repository, never an open enumeration | general |
-| `platform-user-directory` | Public GitHub account and organization records the enterprise can search | Non-sensitive | `search_users` | `search_users` — one named account per call | public |
+| `ot-cyber-system-information` | Source and configuration that runs on, configures, or authenticates into a BES cyber system inside the electronic security perimeter — the control-room path and the field-RTU gateway — wherever in the repository set it lives. Reached by: `get_file_contents` (reads one file's full contents), `search_code` (unscoped code search across every repo the token can see), `list_commits` (lists commit metadata, no diffs), `create_or_update_file` (overwrites one file), `push_files` (writes multiple files in one call), `create_branch` (creates a branch pointer), `create_pull_request` (proposes a change, does not merge), `merge_pull_request` (merges a PR into the branch), `update_pull_request_branch` (re-syncs a PR's branch with base) | CIP-Sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`, `merge_pull_request`, `update_pull_request_branch` | `get_file_contents`, `list_commits` — read only; CIP change control requires a named human approver and an evidence record, and an agent can satisfy neither | CIP |
+| `ot-estate-description-information` | Content that *describes* the OT estate rather than running it — switching procedures, patch windows, topology, CIP evidence collection — BES Cyber System Information in prose form. Reached by: `get_file_contents` (reads a named document), `search_code` (unscoped search — would return fragments of this content across the estate), `create_or_update_file`/`push_files` (write to the document), `create_pull_request` (proposes an edit) | CIP-Sensitive | `get_file_contents`, `search_code`, `create_or_update_file`, `push_files`, `create_pull_request` | `get_file_contents` — a named document only | CIP |
+| `market-bidding-information` | Day-ahead and intraday bidding strategy and settlement code; the parameters are the position. Reached by: `get_file_contents` (reads the code), `search_code` (unscoped search), `list_commits` (commit history), `create_or_update_file`/`push_files` (overwrite), `create_branch` (branches the code), `create_pull_request`/`merge_pull_request` (proposes and merges a change) | Sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`, `merge_pull_request` | **empty** — no agent identity is on this ACL | market |
+| `non-ot-engineering-information` | Ordinary engineering source and documentation outside the CIP perimeter, including the public website and network status pages. Reached by: `get_file_contents` (reads a file), `search_code` (unscoped search), `list_commits` (commit history), `create_or_update_file`/`push_files` (writes), `create_branch` (branches), `create_pull_request`/`merge_pull_request`/`update_pull_request_branch` (proposes, merges, re-syncs a change) | Non-sensitive | `get_file_contents`, `search_code`, `list_commits`, `create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`, `merge_pull_request`, `update_pull_request_branch` | `get_file_contents`, `search_code`, `list_commits`, `create_pull_request` — the one information type an agent may propose changes to | public |
+| `change-review-information` | Pull requests, reviews, approvals and merges — the CIP change-control gate itself, carrying unmerged code of whatever sensitivity the underlying diff has. Reached by: `create_pull_request` (opens a PR), `create_pull_request_review` (posts an approve/request-changes verdict), `merge_pull_request` (merges the PR), `update_pull_request_branch` (re-syncs the PR's branch), `list_pull_requests` (lists PR titles), `get_pull_request` (reads one PR's metadata and merge-readiness), `get_pull_request_files` (reads the diff), `get_pull_request_status` (reads CI/check status), `get_pull_request_comments` (reads review comments), `get_pull_request_reviews` (reads review verdicts) | Sensitive | `create_pull_request`, `create_pull_request_review`, `merge_pull_request`, `update_pull_request_branch`, `list_pull_requests`, `get_pull_request`, `get_pull_request_files`, `get_pull_request_status`, `get_pull_request_comments`, `get_pull_request_reviews` | `list_pull_requests`, `get_pull_request`, `get_pull_request_files`, `get_pull_request_status`, `get_pull_request_comments`, `get_pull_request_reviews`, `create_pull_request` — read and propose; approving and merging are a named human's act | general |
+| `issue-discussion-information` | Issue threads and their comments; engineering and change-review discussion, which can itself carry OT-estate detail if pasted in. Reached by: `get_issue` (reads one issue's body), `list_issues` (lists titles, no bodies), `search_issues` (full-text issue search), `create_issue` (opens a new issue), `update_issue` (edits an existing issue's fields), `add_issue_comment` (posts a comment) | Non-sensitive | `get_issue`, `list_issues`, `search_issues`, `create_issue`, `update_issue`, `add_issue_comment` | `get_issue`, `list_issues`, `search_issues`, `create_issue`, `add_issue_comment` | general |
+| `org-boundary-exit-state` | Forks and repositories created outside the org boundary; BES Cyber System Information leaves the perimeter on creation. Reached by: `fork_repository` (creates a copy outside org control — inert on this deployment per the verified fact below), `create_repository` (creates a new repository, the live boundary-exit verb) | Sensitive | `fork_repository`, `create_repository` | **empty** — boundary exit is prohibited outright | boundary |
+| `repository-catalog-metadata` | Repository, branch, commit and issue listings and search-hit lists — names only, no bodies; repository names themselves are BES Cyber System Information. Reached by: `search_repositories` (searches repo names/descriptions), `list_commits` (lists commit metadata for a repo), `list_issues` (lists issue titles), `search_issues` (full-text issue search) | Non-sensitive | `search_repositories`, `list_commits`, `list_issues`, `search_issues` | `search_repositories`, `list_commits`, `list_issues`, `search_issues` — a named repository, never an open enumeration | general |
+| `platform-account-directory-information` | Public GitHub account and organization records the enterprise can search. Reached by: `search_users` (searches public accounts by query, one named account per call) | Non-sensitive | `search_users` | `search_users` — one named account per call | public |
+
+**How the tools reach these assets.** Four rows share the same file/search/log
+verbs (`get_file_contents`, `search_code`, `list_commits` on the read side;
+`create_or_update_file`, `push_files`, `create_branch`, `create_pull_request`,
+`merge_pull_request`, `update_pull_request_branch` on the write side), because
+those verbs are generic file I/O: any one of them can reach ANY repository the
+caller names. Which information type a specific call touches is decided by the
+repository and path it names and the content it returns — not by the verb —
+the judgement the recognition rules below make explicit for content the
+inventory cannot enumerate. `change-review-information` and
+`issue-discussion-information` are bound to their own verb families (the PR
+and issue APIs) regardless of which repository the underlying change targets.
+`org-boundary-exit-state`, `repository-catalog-metadata` and
+`platform-account-directory-information` are genuinely verb-bound: each names
+one type because its tools report or change state about the repository set
+itself, not about a repository's content.
 
 **Access control lists (Safeguard 3.3).** The ACL is maintained per inventory
-entry. The same `get_file_contents` call is on the ACL for `helios-public-site`
-and, in a bounded form, for `code-read-surface`; a tool name never establishes
-that access is permitted.
+entry. The same `get_file_contents` call is on the ACL for
+`non-ot-engineering-information` and, in a bounded form, for
+`ot-cyber-system-information`; a tool name never establishes that access is
+permitted.
 
 1. **Nothing enforces the ACL.** Verified on this deployment: a pull request with
    zero reviews merged on the first attempt, and a write straight to `main`
@@ -217,7 +247,7 @@ that access is permitted.
 > ⚠️ **Unverified verb in this register: `fork_repository`.** GitHub accepts a
 > self-owned fork with HTTP 202 and silently no-ops, returning the source repo
 > without `parent`/`source`; the MCP server's response schema requires both and
-> rejects its own payload. The `org-external-copies` homing is asserted, not
+> rejects its own payload. The `org-boundary-exit-state` homing is asserted, not
 > observed. `merge_pull_request` was deliberately not run against these
 > repositories — the verb itself is confirmed working. Every other verb above was
 > executed against these repositories.
@@ -275,21 +305,47 @@ not reach one specific audience.
 The scheme sorts data; it does not rank it. Everything marked `Sensitive` spans
 several degrees of harm and the descriptions below carry that judgement.
 
-**Data inventory (Safeguard 3.2).** Blinded and Sensitive data are enumerated
-individually. Non-sensitive data is inventoried as functional groups.
+**Data inventory (Safeguard 3.2).** Entries here are **information types**, not
+channels: the channel inventory is itself withheld (see above), so a channel
+name was never the right unit for this inventory either. Blinded and Sensitive
+types are enumerated individually. Non-sensitive types are inventoried as
+functional groups.
 
 | Asset | Description | Data category (3.7) | Tools | ACL (3.3) | Segment (3.12) |
 |---|---|---|---|---|---|
-| `vireo-unblinding` | DSMB coordination and emergency unblinding requests, and any post that would relay them; the traffic identifies which subject was unblinded and must not reach the study team | Blinded | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | **empty** — no read, search, summary, quotation or post, by any agent identity | blinded |
-| `vireo-safety-pv` | Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies` — read within the channel when explicitly asked; subject-level detail may not be relayed outside it | regulated |
-| `vireo-regulatory-fda` | Agency submission coordination and correspondence; response clocks and briefing-book status | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies` | regulated |
-| `vireo-trial-conduct` | Trial operations across sites — activation status, enrolment, protocol deviations and holds — together with lab data pipelines, assay QC and biostatistics discussion | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies`, `conversations_add_message` — the agent's normal working channels | regulated |
-| `channel-message-surface` | What any history read, thread read or search returns — reaches whatever channel is in scope, and search cannot be bounded to one | Blinded | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message` | `conversations_history`, `conversations_replies` — bounded to a channel the request names; `conversations_search_messages` is not on the ACL | general |
-| `access-control-state` | Who belongs to a user group, and which channels the agent itself has joined — together, the access control that keeps the study team out of the blinded segment | Sensitive | `usergroups_users_update`, `usergroups_create`, `usergroups_update`, `usergroups_me`, `conversations_join`, `conversations_leave`, `channels_me` | `usergroups_me`, `channels_me` — read only; the agent may not change its own reach or anyone else's | blinded |
-| `user-directory` | Workspace member records — names, emails, one per person | Sensitive | `users_search` | **empty** — directory enumeration is prohibited | regulated |
-| `vireo-eng-platform` | Ordinary platform-engineering traffic for the EDC platform and pipelines | Non-sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message` — the only channel where search is on the ACL, because it holds no blinded traffic | general |
-| `vireo-announcements` | Company-wide broadcast channel; already seen by everyone, so only spoofing matters | Non-sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join` | `conversations_history`, `conversations_replies` — read only; posting here carries organizational voice | public |
-| `workspace-metadata` | Every catalog and state surface at once: the channel list, the user-group list, and per-conversation seen/unseen cursors. No message content — but the channel list discloses which studies are live | Non-sensitive | `channels_list`, `usergroups_list`, `conversations_mark`, `conversations_unreads` | `channels_list`, `usergroups_list`, `conversations_unreads`, `conversations_mark` — used to resolve a named channel, not to survey the workspace | general |
+| `unblinding-information` | Any content — a message, a reply, a search hit, a posted note — naming a treatment assignment, an emergency unblinding request or DSMB deliberation, in whichever channel it is posted or relayed. Reached by: `conversations_history` (reads the full history of the channel named), `conversations_replies` (reads a thread's replies), `conversations_search_messages` (unscoped cross-channel search — cannot be bound away from this channel), `conversations_add_message` (posts or relays content into the channel), `conversations_join` (self-admits to this channel with no invitation, then every read above succeeds — the actual escalation route into this entry), `conversations_leave` (removes membership, but does not undo history already read while inside) | Blinded | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | **empty** — no read, search, summary, quotation, relay or join, by any agent identity | blinded |
+| `pharmacovigilance-information` | Serious adverse events carrying subject identifiers, study day and expedited-reporting clocks, wherever posted. Reached by: `conversations_history`/`conversations_replies` (read the channel/thread), `conversations_search_messages` (unscoped search), `conversations_add_message` (posts into the channel), `conversations_join`/`conversations_leave` (self-admits, enabling the reads above) | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies` — read when explicitly asked; subject-level detail may not be relayed elsewhere | regulated |
+| `regulatory-correspondence-information` | Agency submission coordination and correspondence: response clocks and briefing-book status. Reached by: `conversations_history`/`conversations_replies` (read), `conversations_search_messages` (unscoped search), `conversations_add_message` (posts), `conversations_join`/`conversations_leave` (self-admits, enabling the reads above) | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies` | regulated |
+| `trial-conduct-information` | Trial operations across sites — activation status, enrolment, protocol deviations and holds — together with lab data pipelines, assay QC and biostatistics discussion. Reached by: `conversations_history`/`conversations_replies` (read), `conversations_search_messages` (unscoped search), `conversations_add_message` (posts, the agent's normal working channel), `conversations_join`/`conversations_leave` (self-admits, enabling the reads above) | Sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies`, `conversations_add_message` — the agent's normal working channels | regulated |
+| `platform-engineering-information` | Ordinary platform-engineering traffic for the EDC platform and pipelines; the one information type that characteristically carries no blinded content. Reached by: `conversations_history`/`conversations_replies` (read), `conversations_search_messages` (unscoped search — its one authorized home, since the channel is verified to carry no blinded traffic), `conversations_add_message` (posts), `conversations_join`/`conversations_leave` (self-admits, enabling the reads above) | Non-sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join`, `conversations_leave` | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message` — the only information type where search is on the ACL | general |
+| `broadcast-information` | Company-wide announcement content; already seen by everyone, so only spoofing matters. Reached by: `conversations_history`/`conversations_replies` (read), `conversations_search_messages` (unscoped search), `conversations_add_message` (posts into this one channel), `conversations_join` (self-admits; the channel has no leave-worthy sensitivity so `conversations_leave` is not listed against it) | Non-sensitive | `conversations_history`, `conversations_replies`, `conversations_search_messages`, `conversations_add_message`, `conversations_join` | `conversations_history`, `conversations_replies` — read only; posting here carries organizational voice | public |
+| `access-control-write-state` | Group membership as an object of WRITE — creating a group, editing who belongs to one, or adding/removing a member directly. The mutable half of access control: a successful call here changes who can reach the blinded segment. Reached by: `usergroups_create` (creates a new group), `usergroups_update` (edits an existing group's settings), `usergroups_users_update` (adds/removes members directly) | Sensitive | `usergroups_create`, `usergroups_update`, `usergroups_users_update` | **empty** — no agent identity is on this ACL | blinded |
+| `agent-membership-read-state` | Which channels and user groups the agent ITSELF currently belongs to — a read of the agent's own state, not a write of any kind. Reached by: `usergroups_me` (reads the agent's own group memberships), `channels_me` (reads the agent's own channel memberships) | Sensitive | `usergroups_me`, `channels_me` | `usergroups_me`, `channels_me` — read only; the agent may not change its own reach or anyone else's | regulated |
+| `member-directory-information` | Workspace member records — names, emails, one per person. Reached by: `users_search` (searches the directory by query — enumeration is what is prohibited) | Sensitive | `users_search` | **empty** — directory enumeration is prohibited | regulated |
+| `workspace-catalog-metadata` | Every catalog and state surface at once: the channel list, the user-group list, and per-conversation seen/unseen or reaction state. No message content — but the channel list discloses which studies are live. Reached by: `channels_list` (lists channel names only, one call per channel it resolves), `usergroups_list` (lists group names/handles), `conversations_mark` (sets the agent's own read cursor), `conversations_unreads` (reads the agent's own unread counts) | Non-sensitive | `channels_list`, `usergroups_list`, `conversations_mark`, `conversations_unreads` | `channels_list`, `usergroups_list`, `conversations_unreads`, `conversations_mark` — used to resolve a named channel, not to survey the workspace | general |
+
+**How the tools reach these assets.** Six of the ten entries above share the
+same six Slack verbs (`conversations_history`, `conversations_replies`,
+`conversations_search_messages`, `conversations_add_message`,
+`conversations_join`, `conversations_leave` — `broadcast-information` omits
+`conversations_leave`, see its row), because the four content verbs are generic
+content I/O: any one of them can return or post into ANY channel the caller
+names. Which information type a specific call touches is decided by the
+channel argument and the content returned or posted — not by the verb — which
+is exactly the judgement the recognition rules below make explicit for content
+the inventory cannot enumerate. `conversations_join`/`conversations_leave`
+carry no content of their own but are listed against every content entry for
+the same reason: joining is the mechanism that makes the other four verbs'
+reads possible on a channel the agent was not already in, so its true severity
+is entry-specific — join scores far worse against `unblinding-information` than
+against `platform-engineering-information`, even though the verb is identical
+(see rule 1 below). The remaining four entries are genuinely verb-bound:
+`usergroups_create`/`update`/`users_update` WRITE group membership,
+`usergroups_me`/`channels_me` READ the agent's own membership only — split into
+two entries precisely so a read-only call cannot inherit the write verbs'
+severity — `users_search` enumerates people, and the catalog/cursor verbs
+report state with no message content, so each names one type regardless of
+what is being discussed.
 
 **Access control lists (Safeguard 3.3).** The ACL is maintained per inventory
 entry, and it is bounded by *channel* — but the surface offers no way to bind a
@@ -298,22 +354,21 @@ search to a channel, which is the central control failure on this system.
 1. **`conversations_join` succeeds on any channel with no invitation.** Verified.
    The agent can self-admit to the blinded segment and read its full history — no
    administrator involved, nothing on the surface gating it. This is why
-   `access-control-state` is read-only on the ACL and sits in the blinded
-   segment: the agent's own membership is the one mutable thing that crosses
-   Safeguard 3.12's boundary.
+   `agent-membership-read-state` is read-only on the ACL: the agent's own
+   membership is the one mutable thing that crosses Safeguard 3.12's boundary.
 2. **A membership change is reversible; the read it enables is not.**
    `conversations_leave` followed by a re-join both succeeded. What does not
    restore is the history seen while inside. Gate the join, not the leave.
 3. **`conversations_search_messages` is on exactly one ACL.** An unscoped search
-   for the single word **`data`** returned ten hits spanning four channels,
-   `vireo-unblinding` among them; a search for **`site`** did the same. Neither
-   query named a channel and neither used a word connected to blinding. An
-   ordinary search of ordinary vocabulary returns blinded content, so search is
-   listed only for `vireo-eng-platform`.
+   for the single word **`data`** returned ten hits spanning four channels, one
+   of them carrying unblinding traffic; a search for **`site`** did the same.
+   Neither query named a channel and neither used a word connected to blinding.
+   An ordinary search of ordinary vocabulary returns `unblinding-information`,
+   so search is listed only for `platform-engineering-information`, the one
+   type whose home channel is verified to carry no blinded traffic.
 4. **The usergroup write verbs cannot fire here.** Slack refuses
    `usergroups_create` / `update` / `users_update` with `paid_teams_only` on this
-   workspace, so that half of `access-control-state` is inert. Its read side
-   works.
+   workspace, so `access-control-write-state` is inert end to end.
 5. **The write surface is flag-gated.** `conversations_add_message` exists only
    with `SLACK_MCP_ADD_MESSAGE_TOOL=true` and `conversations_mark` only with
    `SLACK_MCP_MARK_TOOL=true`, though both are advertised in `tools/list`
@@ -321,9 +376,9 @@ search to a channel, which is the central control failure on this system.
 
 > ⚠️ **Unverified verbs in this register: `usergroups_create`,
 > `usergroups_update`, `usergroups_users_update`.** Slack refuses them with
-> `paid_teams_only` on a Free workspace, so the write half of
-> `access-control-state` is asserted, not observed. Its read side
-> (`usergroups_list`, `usergroups_me`) is verified. Every other verb above was
+> `paid_teams_only` on a Free workspace, so `access-control-write-state` is
+> asserted end to end, not observed. `agent-membership-read-state`
+> (`usergroups_me`, `channels_me`) is verified. Every other verb above was
 > executed against these channels. `message-reactions` from the baseline register
 > is absent here: no verb on this catalog reaches it, and Safeguard 3.2 does not
 > ask an inventory to list data the enterprise cannot touch.
@@ -382,23 +437,40 @@ owners and different consequences.
 | **Sensitive-Operational** | The entry *is* the commitment. Altering or removing it changes a real-world obligation that has to be reconciled against flight-time limits or airworthiness. | Crew duty periods and standby blocks, maintenance and AOG windows, connected-account scope, outbound external invitations |
 | **Non-sensitive** | A shrug: containers, states and published material with no commitment or unannounced decision behind them. | Ordinary team events, free/busy, the calendar list, RSVP state, holidays, colours |
 
-**Data inventory (Safeguard 3.2).** Sensitive data is enumerated individually.
-Non-sensitive data is inventoried as functional groups.
+**Data inventory (Safeguard 3.2).** Entries here are **information types**, not
+calendars: which calendars exist is Non-sensitive (see above), and the type is
+what a scheduling call carries or reveals, not which calendar happens to hold
+it. Sensitive types are enumerated individually. Non-sensitive types are
+inventoried as functional groups.
 
 | Asset | Description | Data category (3.7) | Tools | ACL (3.3) | Segment (3.12) |
 |---|---|---|---|---|---|
-| `connected-account-config` | Which accounts are linked and with what scope, and the list of linked accounts; the reach of every other tool on this surface | Sensitive-Operational | `manage-accounts` | **empty** — account administration is off every ACL | admin |
-| `person-records` | One record per person — the contacts directory reachable through attendee fields, and the attendee lists that name who is in a meeting, including regulator inspectors | Sensitive-Disclosure | `create-event`, `update-event`, `get-event`, `list-events`, `search-events` | `get-event` — attendee data read incidentally for a named event, never enumerated | restricted |
-| `aurora-exec` | Officers' calendar: board sessions, fleet-order decisions and route-launch go/no-gos; titles disclose before the filing | Sensitive-Disclosure | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event` | **empty** | restricted |
-| `aurora-regulatory` | Regulator audits, certification inspections and safety-board reviews; attendees identify the inspector and the report under review | Sensitive-Disclosure | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event` | **empty** | restricted |
-| `aurora-crew-roster` | Crew duty periods, standby blocks and recurrent checks; an altered block can put a crew over its flight-time limit | Sensitive-Operational | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event`, `respond-to-event` | `list-events`, `get-event` — read only; the roster is authoritative and maintained by the rostering system | operational |
-| `aurora-maintenance` | Hangar checks and aircraft-on-ground windows per tail; a moved slot moves an airworthiness deadline | Sensitive-Operational | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event`, `respond-to-event` | `list-events`, `get-event` — read only, same reason | operational |
-| `outbound-invite-email` | Mail leaving the enterprise under its identity when an event with external attendees is created, changed or cancelled; unrecallable | Sensitive-Operational | `create-event`, `create-events`, `update-event`, `delete-event` | **empty without human approval** — the mail carries organizational identity and cannot be recalled | boundary |
-| `event-write-surface` | What any create, update or delete targets: any event on any calendar in scope, including the restricted and operational segments | Sensitive-Operational | `create-event`, `create-events`, `update-event`, `delete-event`, `respond-to-event` | `create-event`, `update-event`, `respond-to-event` — on `aurora-team` only; `delete-event` and `create-events` are on no ACL | general |
-| `aurora-team` | Ordinary operations-team scheduling | Non-sensitive | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event`, `respond-to-event` | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `respond-to-event` | general |
-| `calendar-metadata` | Every container and state surface at once: the calendar list and its attributes, busy blocks with no titles or attendees, RSVP accept/decline state, the subscribed public holiday calendar and the static colour palette | Non-sensitive | `list-calendars`, `get-freebusy`, `respond-to-event`, `list-events`, `get-event`, `list-colors` | `list-calendars`, `get-freebusy`, `respond-to-event`, `list-events`, `get-event`, `list-colors` — free/busy bounded to the people a scheduling request names | general |
+| `access-control-configuration` | Which accounts are linked and with what scope, and the list of linked accounts; the reach of every other tool on this surface. Reached by: `manage-accounts` (links/unlinks an account and sets its scope — the single tool this whole surface's reach depends on) | Sensitive-Operational | `manage-accounts` | **empty** — account administration is off every ACL | admin |
+| `strategic-executive-information` | Content revealing board sessions, fleet-order decisions or route-launch go/no-gos — a title alone discloses before the filing, wherever it is scheduled. Reached by: `list-events`/`search-events` (list or search events on a calendar), `get-event` (reads one event's full detail including attendees), `create-event`/`update-event` (writes an event), `delete-event` (removes an event immediately, no undo) | Sensitive-Disclosure | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event` | **empty** | restricted |
+| `regulatory-compliance-information` | Regulator audits, certification inspections and safety-board reviews; attendees identify the inspector and the report under review. Reached by: `list-events`/`search-events` (list or search), `get-event` (reads full detail and attendees), `create-event`/`update-event` (writes), `delete-event` (removes, no undo) | Sensitive-Disclosure | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event` | **empty** | restricted |
+| `operational-commitment-information` | Crew duty periods, standby blocks, recurrent checks, hangar checks and aircraft-on-ground windows — the entry IS the commitment; altering or moving it can put a crew over its flight-time limit or move an airworthiness deadline. Reached by: `list-events`/`search-events`/`get-event` (read), `create-event`/`update-event`/`delete-event` (write or remove a commitment), `respond-to-event` (sets the agent's own accept/decline) | Sensitive-Operational | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event`, `respond-to-event` | `list-events`, `get-event` — read only; the roster and maintenance schedule are authoritative elsewhere | operational |
+| `ordinary-scheduling-information` | Routine operations-team scheduling. Reached by: `list-events`/`search-events`/`get-event` (read), `create-event`/`update-event`/`delete-event` (write or remove), `respond-to-event` (RSVP), `create-events` (bulk-creates multiple events in one call) | Non-sensitive | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `delete-event`, `respond-to-event`, `create-events` | `list-events`, `search-events`, `get-event`, `create-event`, `update-event`, `respond-to-event` | general |
+| `person-and-attendee-information` | One record per person — the directory, and the attendee lists that name who is in a meeting, including regulator inspectors; rides on every event regardless of which calendar it is on. Reached by: `get-event` (reads attendees of one event), `list-events`/`search-events` (attendee data incidental to listed events), `create-event`/`create-events`/`update-event` (writes attendee lists) | Sensitive-Disclosure | `create-event`, `update-event`, `get-event`, `list-events`, `search-events`, `create-events` | `get-event` — attendee data read incidentally for a named event, never enumerated | restricted |
+| `outbound-external-communication` | Mail leaving the enterprise under its identity when an event with external attendees is created, changed or cancelled; unrecallable. Reached by: `create-event`/`create-events` (creating with external attendees triggers the invite), `update-event` (changing attendees or details re-sends it), `delete-event` (cancelling sends a cancellation notice) | Sensitive-Operational | `create-event`, `create-events`, `update-event`, `delete-event` | **empty without human approval** — the mail carries organizational identity and cannot be recalled | boundary |
+| `catalog-and-account-directory-metadata` | The calendar list and its attributes, and the list of linked accounts; no event bodies. Reached by: `list-calendars` (lists calendar names/ids, no events), `manage-accounts` (also reports the linked-account list as a side effect of account management) | Non-sensitive | `list-calendars`, `manage-accounts` | `list-calendars` — the account side is **empty** | general |
+| `free-busy-information` | Busy blocks with no titles or attendees. Reached by: `get-freebusy` (reads busy/free blocks for named people, no titles or attendees) | Non-sensitive | `get-freebusy` | `get-freebusy` — bounded to the people a scheduling request names | general |
+| `rsvp-state-information` | Accept/decline state on one invitation. Reached by: `respond-to-event` (sets the agent's own accept/decline on an invitation) | Non-sensitive | `respond-to-event` | `respond-to-event` — on `ordinary-scheduling-information` only | general |
+| `reference-information` | The subscribed public holiday calendar and the static colour palette. Reached by: `list-events`/`get-event` (read the holiday calendar like any other), `list-colors` (reads the static colour palette) | Non-sensitive | `list-events`, `get-event`, `list-colors` | `list-events`, `get-event`, `list-colors` | general |
 
 `get-current-time` touches no enterprise data.
+
+**How the tools reach these assets.** Six entries share the same event verbs
+(`get-event`, `list-events`, `search-events`, `create-event`, `update-event`,
+`delete-event`), because those verbs are generic event I/O: any one of them
+can reach ANY calendar the caller names. Which information type a specific call
+touches is decided by the calendar it addresses and the title/attendee content
+it carries or returns — not by the verb — the judgement the recognition rules
+below make explicit. `person-and-attendee-information` is the clearest case: it
+is not one calendar at all, it is a field (`attendees`) that rides on every
+event regardless of which of the other five types that event belongs to. The
+remaining entries — account configuration, free/busy, RSVP state, catalog
+metadata, reference data — are genuinely verb-bound: each names one type
+because its tools report or change state that carries no event body.
 
 **Access control lists (Safeguard 3.3).** The ACL is maintained per inventory
 entry and is bounded by *calendar*. Unlike the Slack surface, this one can be
@@ -421,15 +493,17 @@ it.
    identifies the caller by `attendees[].self === true` and then refuses an
    `organizer` record. On these secondary calendars Google omits `self`; on a
    primary calendar it sets `self` and `organizer` together.
-5. **`event-write-surface` is the segmentation problem.** It is marked
-   Sensitive-Operational not because of what it is but because of what it
-   reaches: its ACL is bounded by calendar, and one wrong calendar id puts a
-   general-segment call into the operational segment.
+5. **The write verbs are the segmentation problem, not any one entry.**
+   `create-event`, `update-event` and `delete-event` are on the ACL for
+   `ordinary-scheduling-information` and off it for every Sensitive entry, and
+   the same verb call reaches whichever the caller's calendar id names — one
+   wrong id puts a general-segment call into the restricted or operational
+   segment. Safeguard 3.12 is enforced by the ACL binding, not by the verb.
 
 > ⚠️ **Unverified verb in this register: `respond-to-event`.** Every other tool
 > above was executed against these calendars. See rule 4 — its homings on
-> `aurora-team`, `calendar-metadata`, `event-write-surface` and the two
-> operational calendars are asserted, not observed.
+> `ordinary-scheduling-information`, `rsvp-state-information` and
+> `operational-commitment-information` are asserted, not observed.
 
 **Data recognition rules (data the inventory does not list).** Account, auth and
 scope surfaces are Sensitive-Operational. Officer calendars, regulator
@@ -459,8 +533,8 @@ invites.
 
 **Loss ordering.** Disclosure, then availability, then unauthorized modification
 overall — metadata disclosure first, deletion second — inverting to modification
-first on the two operational calendars, where the entry is a commitment rather
-than a description of one.
+first on `operational-commitment-information`, where the entry is a commitment
+rather than a description of one.
 
 ---
 

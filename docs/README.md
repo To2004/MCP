@@ -19,6 +19,7 @@ Guides, standards, and references for working with the project.
 - Visual map of the whole system (static + dynamic dataflow): [Architecture Diagrams](project/architecture-diagrams.md) (Mermaid) / [architecture.svg](project/architecture.svg) (Graphviz)
 - Building the dynamic (runtime) scorer? See [Dynamic Scoring Design](project/dynamic-scoring-design.md)
 - Reviewing the runtime enforcement gateway bundle? See [Gateway Bundle Review](project/gateway-bundle-review.md)
+- How the gateway connects policy, static, dynamic, storage and remote agents — and the build order? See [Gateway Architecture](project/gateway-architecture.md)
 - Designing the runtime layer on top of the severity matrix? See [Dynamic Layer Design](project/dynamic-layer-design.md)
 - Just need the runtime arithmetic and a worked example? See [Dynamic Layer Formula](project/dynamic-layer-formula.md) — and [Dynamic Layer v2 Formula](project/dynamic-layer-formula-v2.md) for the implemented `cell x D` runtime, including the scan-time prompt verbatim
 - Resolving *which asset* a runtime call touches (no LLM, no per-server config):
@@ -31,6 +32,7 @@ Guides, standards, and references for working with the project.
 - Need an *external* benchmark, or wondering how this compares to published work? See [External Benchmarks and Positioning](project/external-benchmarks-and-positioning.md)
 - **Want to understand the runtime layer end to end — every stage, formula and constant, with diagrams and a worked example? Start here: [The Dynamic Layer, Explained](project/dynamic-layer-explained.md)**
 - What the runtime layer can and cannot see, and the two dimensions it missed? See [Dynamic Layer Blind Spots](project/dynamic-layer-blind-spots.md)
+- Which runtime context can a gateway use without reading tool inputs — by category, with evidence and log coverage? See [Dynamic Context Catalog](project/dynamic-context-catalog.md)
 - Asking "we scored this 125 — is that right?" See [Evaluating the Risk Score](project/evaluating-the-risk-score.md) (measurement theory, case-control, what to report)
 - Asking "does the runtime layer actually work?" See [Evaluating the Dynamic Layer](project/evaluating-the-dynamic-layer.md) (executable protocol: noise floor, matched pairs, minimum detectable deviation, ablation, baseline poisoning)
 - Writing this up for a venue? See [Claims and Defence](project/dynamic-layer-claims-and-defence.md) (what survives review, what a reviewer attacks first)

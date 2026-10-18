@@ -101,11 +101,27 @@ matters most (`reports/experiments/breadth_spec/rank_stability.json`). Positiona
 listwise LLM ranking is architectural — causal attention couples a candidate's score to
 where it sat in the prompt — so a smaller prompt or a stricter retry does not fix this.
 
-`breadth` fixes it by construction, not by being a better ranker: each input is scored
-*independently* against the fixed 1-5 rubric above, so nothing about grading one input
-depends on where another one sat. `_relative_weight()` in §3.3 below is therefore built
-entirely on `breadth`. `rank` contributes nothing to `B` — there is no field left to weight
-by, and no code path in `dynamic_v2.py` that reads one.
+**`breadth` fixes `rank`'s specific failure mode, but is not itself proven stable — and
+measured the same way, it isn't.** Removing the relative-comparison mechanism (nothing is
+ranked against anything else) does not stop position from leaking into a reply the model
+still generates in one pass over the whole input list. Run the identical forward/reversed
+test on `kind` and `breadth` instead of `rank`
+(`scripts/check_breadth_stability.py` → `reports/experiments/breadth_spec/breadth_stability.json`,
+same 24 tools): `kind` holds up (94.7% mean agreement) but `breadth` does not — **62.5%
+mean agreement, 59.8% median, only 3 of 24 tools identical**, with a mean swing of **1.2
+levels** when it disagrees. `update-event`'s `account` goes from breadth 5 when it's first
+in the list to breadth 1 when it's last — the same primacy signature that broke `rank`.
+Unlike `rank`, this does **not** track tool size (Spearman ≈ 0.06 against input count) —
+`usergroups_update`, 5 inputs, agrees with itself only 20% of the time. Identifiers that
+plainly name the asset (`usergroup_id`, `eventId`, `calendarId`) hold steady either way;
+it's the judgment calls in the middle of the 1-5 scale that drift.
+
+`_relative_weight()` in §3.3 below is built entirely on `breadth`, which means it is built
+on a field that disagrees with itself under reordering roughly 40% of the time — an open
+reliability problem in the current design, not a resolved one. `rank` itself still
+contributes nothing to `B`: there is no field left to weight by, and no code path in
+`dynamic_v2.py` that reads one. Replacing it fixed *that* specific bug; it did not make the
+replacement trustworthy by itself.
 
 (A related field, `targets` — whether a value decides *which* stored thing a call acts on —
 was dropped alongside it for a different reason: not instability, but scope. Which asset a

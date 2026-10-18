@@ -1,0 +1,988 @@
+{
+  "server": "slack",
+  "tools": [
+    {
+      "tool_name": "channels_list",
+      "parameters": [
+        {
+          "name": "channel_types",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "cursor",
+          "kind": "pagination_cursor",
+          "population": {
+            "of": "pagination positions",
+            "size": "variable, depends on the number of channels",
+            "caller_reaches": "all relevant to the caller's query",
+            "listable_via": "sequential API calls with updated cursor values",
+            "unusual": "a cursor that skips over a large range or points to an unexpected position"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "limit",
+          "kind": "quantity",
+          "limits": {
+            "min": 1,
+            "max": 999,
+            "unit": "items"
+          },
+          "measures": "number of items to return",
+          "edges": [
+            {
+              "at": 100,
+              "means": "default value, returns up to 100 items"
+            }
+          ],
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "query",
+          "kind": "filter_query",
+          "population": {
+            "of": "channel names, topics, purposes",
+            "size": "variable, depends on the number of channels and their content",
+            "caller_reaches": "all relevant to the caller's query",
+            "listable_via": "querying with different substrings",
+            "unusual": "a very specific or uncommon substring"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "query_targets",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "sort",
+          "kind": "sorting_type",
+          "population": {
+            "of": "sorting criteria",
+            "size": "1 (popularity)",
+            "caller_reaches": "all available sorting options",
+            "listable_via": "none, fixed set of options",
+            "unusual": "no unusual values as there is only one option"
+          },
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 6
+    },
+    {
+      "tool_name": "channels_me",
+      "parameters": [
+        {
+          "name": "channel_types",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "cursor",
+          "kind": "pagination_cursor",
+          "population": {
+            "of": "generated cursor values for pagination",
+            "size": "dynamic based on the number of pages",
+            "caller_reaches": "all relevant cursors in their context",
+            "listable_via": "not directly listable, obtained from previous API responses",
+            "unusual": "cursors that do not correspond to any page"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "limit",
+          "kind": "pagination_limit",
+          "limits": {
+            "min": 1,
+            "max": 999,
+            "unit": "items"
+          },
+          "measures": "number of items to return per page",
+          "edges": [
+            {
+              "at": 100,
+              "means": "default limit if not specified"
+            }
+          ],
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "conversations_add_message",
+      "parameters": [
+        {
+          "name": "blocks",
+          "kind": "block_kit_json",
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "channel_id",
+          "kind": "channel_identifier",
+          "population": {
+            "of": "channels and direct messages",
+            "size": "variable, depends on the organization's size",
+            "caller_reaches": "the channels and DMs the caller is entitled to access",
+            "listable_via": "API calls like 'conversations.list'",
+            "unusual": "private channels or DMs with high-privilege users"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "content_type",
+          "kind": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to 'text/markdown'"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "text",
+          "kind": "message_text",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "thread_ts",
+          "kind": "timestamp",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "message will be added to the channel itself, not a thread"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "conversations_history",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "kind": "identifier",
+          "population": {
+            "of": "channels or direct messages",
+            "size": "many, depending on the organization's size",
+            "caller_reaches": "only channels and DMs the caller is a part of",
+            "listable_via": "API calls to list channels and DMs",
+            "unusual": "a channel ID that does not belong to any existing or accessible channel"
+          },
+          "stability": "constant",
+          "evidence": "schema, name, description",
+          "reused": false
+        },
+        {
+          "name": "cursor",
+          "kind": "pagination_cursor",
+          "population": {
+            "of": "pagination positions",
+            "size": "variable, depends on the number of channels",
+            "caller_reaches": "all relevant to the caller's query",
+            "listable_via": "sequential API calls with updated cursor values",
+            "unusual": "a cursor that skips over a large range or points to an unexpected position"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": true
+        },
+        {
+          "name": "include_activity_messages",
+          "kind": "flag",
+          "limits": null,
+          "measures": null,
+          "edges": [
+            {
+              "at": false,
+              "means": "exclude activity messages"
+            },
+            {
+              "at": true,
+              "means": "include activity messages"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name, description",
+          "reused": false
+        },
+        {
+          "name": "limit",
+          "kind": "range_or_count",
+          "limits": null,
+          "measures": "time or number of messages",
+          "unit": "time (days/weeks) or count",
+          "edges": [
+            {
+              "at": "1d",
+              "means": "fetch messages from the last day"
+            },
+            {
+              "at": "1w",
+              "means": "fetch messages from the last week"
+            },
+            {
+              "at": "30d",
+              "means": "fetch messages from the last 30 days"
+            },
+            {
+              "at": "90d",
+              "means": "default limit for free tier history, fetches messages from the last 90 days"
+            },
+            {
+              "at": "50",
+              "means": "fetch up to 50 messages"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name, description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "conversations_join",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "kind": "identifier",
+          "population": {
+            "of": "public channels",
+            "size": "many, depending on the organization's size and structure",
+            "caller_reaches": "only those they are entitled to join based on permissions",
+            "listable_via": "channels_list or channels_me API calls",
+            "unusual": "private or restricted channels that require special access"
+          },
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 1
+    },
+    {
+      "tool_name": "conversations_leave",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "kind": "identifier",
+          "population": {
+            "of": "channels, group conversations, or DMs",
+            "size": "variable depending on the organization's size and structure",
+            "caller_reaches": "only channels the caller is a member of",
+            "listable_via": "API calls to list all channels the user can access",
+            "unusual": "leaving #general channel, as it cannot be left"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 1
+    },
+    {
+      "tool_name": "conversations_mark",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "kind": "identifier",
+          "population": {
+            "of": "channels, group conversations, or DMs",
+            "size": "variable depending on the organization's size and structure",
+            "caller_reaches": "only channels the caller is a member of",
+            "listable_via": "API calls to list all channels the user can access",
+            "unusual": "leaving #general channel, as it cannot be left"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": true
+        },
+        {
+          "name": "ts",
+          "kind": "timestamp",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "marks all messages as read"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 2
+    },
+    {
+      "tool_name": "conversations_replies",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "kind": "channel_identifier",
+          "population": {
+            "of": "channels and direct messages",
+            "size": "variable, depends on the organization's size",
+            "caller_reaches": "the channels and DMs the caller is entitled to access",
+            "listable_via": "API calls like 'conversations.list'",
+            "unusual": "private channels or DMs with high-privilege users"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": true
+        },
+        {
+          "name": "cursor",
+          "kind": "pagination_cursor",
+          "population": {
+            "of": "pagination positions",
+            "size": "variable, depends on the number of channels",
+            "caller_reaches": "all relevant to the caller's query",
+            "listable_via": "sequential API calls with updated cursor values",
+            "unusual": "a cursor that skips over a large range or points to an unexpected position"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": true
+        },
+        {
+          "name": "include_activity_messages",
+          "kind": "flag",
+          "limits": null,
+          "measures": null,
+          "edges": [
+            {
+              "at": false,
+              "means": "exclude activity messages"
+            },
+            {
+              "at": true,
+              "means": "include activity messages"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name, description",
+          "reused": true
+        },
+        {
+          "name": "limit",
+          "kind": "time_or_count_limit",
+          "limits": {
+            "min": "",
+            "max": "90d or 50 messages",
+            "unit": "days or number of messages"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "default limit (1 day)"
+            }
+          ],
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "thread_ts",
+          "kind": "timestamp_identifier",
+          "population": {
+            "of": "messages in a thread",
+            "size": "many",
+            "caller_reaches": "entitled messages",
+            "listable_via": "API call to list messages in the thread",
+            "unusual": "messages with no replies"
+          },
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "conversations_search_messages",
+      "parameters": [
+        {
+          "name": "cursor",
+          "kind": "pagination_cursor",
+          "population": {
+            "of": "pagination positions",
+            "size": "variable, depends on the number of channels",
+            "caller_reaches": "all relevant to the caller's query",
+            "listable_via": "sequential API calls with updated cursor values",
+            "unusual": "a cursor that skips over a large range or points to an unexpected position"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": true
+        },
+        {
+          "name": "filter_date_after",
+          "kind": "date_filter",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all dates will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_date_before",
+          "kind": "date_filter",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all dates will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_date_during",
+          "kind": "date_filter",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all dates will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_date_on",
+          "kind": "date_filter",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all dates will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_in_channel",
+          "kind": "channel_filter",
+          "population": {
+            "of": "public/private channels",
+            "size": "many",
+            "caller_reaches": "entitled to reach",
+            "listable_via": "API call",
+            "unusual": "specific channel IDs or names"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all channels will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_in_im_or_mpim",
+          "kind": "channel_filter",
+          "population": {
+            "of": "direct message (DM) or multi-person direct message (MPIM) conversations",
+            "size": "many",
+            "caller_reaches": "entitled to reach",
+            "listable_via": "API call",
+            "unusual": "specific DM/MPIM IDs or names"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all DMs and MPIMs will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_threads_only",
+          "kind": "boolean_flag",
+          "edges": [
+            {
+              "at": true,
+              "means": "response will include only messages from threads"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_users_from",
+          "kind": "user_filter",
+          "population": {
+            "of": "users by their ID or display name",
+            "size": "many",
+            "caller_reaches": "entitled to reach",
+            "listable_via": "API call",
+            "unusual": "specific user IDs or names"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all users will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "filter_users_with",
+          "kind": "user_filter",
+          "population": {
+            "of": "users by their ID or display name in threads and DMs",
+            "size": "many",
+            "caller_reaches": "entitled to reach",
+            "listable_via": "API call",
+            "unusual": "specific user IDs or names"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all threads and DMs will be searched"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "limit",
+          "kind": "pagination_limit",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "items"
+          },
+          "measures": "number of items to return",
+          "edges": [
+            {
+              "at": 20,
+              "means": "default limit"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "search_query",
+          "kind": "query_filter",
+          "prose": true,
+          "edges": [
+            {
+              "at": "absent",
+              "means": "all messages will be searched if other filters are not provided"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 12
+    },
+    {
+      "tool_name": "conversations_unreads",
+      "parameters": [
+        {
+          "name": "channel_types",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "include_messages",
+          "kind": "boolean_flag",
+          "stability": "per-call",
+          "edges": [
+            {
+              "at": true,
+              "means": "returns the actual unread messages"
+            },
+            {
+              "at": false,
+              "means": "returns only a summary of channels with unreads"
+            }
+          ],
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "include_muted",
+          "kind": "boolean_flag",
+          "stability": "per-call",
+          "edges": [
+            {
+              "at": true,
+              "means": "includes muted channels in results"
+            },
+            {
+              "at": false,
+              "means": "excludes muted channels from results"
+            }
+          ],
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "max_channels",
+          "kind": "limit",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "channels"
+          },
+          "measures": "number of channels to fetch unreads from",
+          "edges": [
+            {
+              "at": 50,
+              "means": "default maximum number of channels"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "max_messages_per_channel",
+          "kind": "limit",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "messages"
+          },
+          "measures": "number of messages to fetch per channel",
+          "edges": [
+            {
+              "at": 10,
+              "means": "default maximum number of messages per channel"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "mentions_only",
+          "kind": "boolean_flag",
+          "stability": "per-call",
+          "edges": [
+            {
+              "at": true,
+              "means": "only returns channels where you have @mentions"
+            },
+            {
+              "at": false,
+              "means": "returns all unread messages"
+            }
+          ],
+          "evidence": "schema",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 6
+    },
+    {
+      "tool_name": "usergroups_create",
+      "parameters": [
+        {
+          "name": "channels",
+          "kind": "channel_set",
+          "population": {
+            "of": "Slack channels",
+            "size": "varies by workspace",
+            "caller_reaches": "all channels the caller can access",
+            "listable_via": "API call to list all channels in the workspace",
+            "unusual": "channels that are rarely used or not commonly mentioned"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "description",
+          "kind": "text_description",
+          "prose": true,
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "handle",
+          "kind": "mention_handle",
+          "population": {
+            "of": "user group handles",
+            "size": "varies by workspace",
+            "caller_reaches": "all valid handles the caller can create",
+            "listable_via": "API call to list all user groups in the workspace",
+            "unusual": "handles that are not short or lowercase, or those that conflict with existing names"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "name",
+          "kind": "display_name",
+          "prose": true,
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "usergroups_list",
+      "parameters": [
+        {
+          "name": "include_count",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "include_disabled",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "include_users",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "usergroups_me",
+      "parameters": [
+        {
+          "name": "action",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "usergroup_id",
+          "kind": "identifier",
+          "population": {
+            "of": "user groups",
+            "size": "many",
+            "caller_reaches": "entitled to reach",
+            "listable_via": "usergroups_list",
+            "unusual": "none"
+          },
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 2
+    },
+    {
+      "tool_name": "usergroups_update",
+      "parameters": [
+        {
+          "name": "channels",
+          "kind": "list_of_ids",
+          "population": "IDs of channels, typically a subset of all available channels in the organization.",
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "description",
+          "kind": "text",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "handle",
+          "kind": "mention_handle",
+          "population": "A unique handle for the user group, used in mentions.",
+          "edges": [
+            {
+              "at": "",
+              "means": "No change to the existing handle."
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "usergroup_id",
+          "kind": "unique_identifier",
+          "population": "IDs of user groups, each ID is unique to a specific group.",
+          "stability": "constant",
+          "evidence": "schema",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "usergroups_users_update",
+      "parameters": [
+        {
+          "name": "usergroup_id",
+          "kind": "identifier",
+          "population": {
+            "of": "user groups",
+            "size": "medium to large, depending on the organization's structure",
+            "caller_reaches": "only user groups the caller is entitled to manage",
+            "listable_via": "usergroups_list API call with appropriate permissions",
+            "unusual": "a user group ID that does not belong to the organization or one the caller should not have access to"
+          },
+          "stability": "constant",
+          "evidence": "description",
+          "reused": false
+        },
+        {
+          "name": "users",
+          "kind": "list_of_identifiers",
+          "population": {
+            "of": "user IDs",
+            "size": "medium to large, depending on the organization's size and structure",
+            "caller_reaches": "only user IDs that are valid within the organization",
+            "listable_via": "usergroups_list API call with include_users=true parameter"
+          },
+          "measures": {
+            "unit": "number of users"
+          },
+          "edges": [
+            {
+              "at": 0,
+              "means": "the user group will have no members"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 2
+    },
+    {
+      "tool_name": "users_search",
+      "parameters": [
+        {
+          "name": "limit",
+          "kind": "quantity",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "results"
+          },
+          "edges": [
+            {
+              "at": 10,
+              "means": "default value"
+            },
+            {
+              "at": 1,
+              "means": "minimum number of results"
+            },
+            {
+              "at": 100,
+              "means": "maximum number of results"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema",
+          "reused": false
+        },
+        {
+          "name": "query",
+          "kind": "search_query",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "no search performed"
+            }
+          ],
+          "read_with": [],
+          "stability": "per-call",
+          "evidence": "description",
+          "reused": false
+        }
+      ],
+      "declared_parameters": 2
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": [],
+  "distinct_parameters": 57
+}

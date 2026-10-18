@@ -21,7 +21,16 @@ SHORT_ID = 8  # session, request and digest ids are shown by their first charact
 KILOBYTE = 1024
 SECONDS_PER_DAY = 86_400
 RUN_NOTICES = ("gateway_started", "gateway_stopped")
-REASONS = {"unknown_token": "token matches no agent", "no_bearer_token": "no bearer token"}
+REASONS = {
+    "no_bearer_token": "no bearer token",
+    "token_expired": "token expired",
+    "wrong_audience": "token issued for another server",
+    "wrong_issuer": "token from another issuer",
+    "bad_signature": "token signature does not verify",
+    "unknown_signing_key": "token signed with an unknown key",
+    "missing_claim": "token lacks a required claim",
+    "invalid_token": "not a valid access token",
+}
 
 
 def exchange_key(record: dict, number: int) -> str:
@@ -123,9 +132,7 @@ def summary_lines(records: list[dict], exchanges: int) -> list[str]:
         if r.get("gateway.direction") == TO_AGENT and r.get("mcp.method.name") == CALL_METHOD
     )
     agents = Counter(
-        f"{r.get('gateway.agent')} ({r['gateway.agent_id']})"
-        if r.get("gateway.agent_id")
-        else str(r.get("gateway.agent"))
+        " / ".join(str(r[k]) for k in ("gateway.agent", "user.id", "gateway.agent_id") if r.get(k))
         for r in calls
     )
     notices = Counter(
@@ -141,7 +148,7 @@ def summary_lines(records: list[dict], exchanges: int) -> list[str]:
     lines = [
         "== Summary " + "=" * 72,
         f"   exchanges {exchanges}  ·  tool calls {len(calls)}" + (f" ({ended})" if ended else ""),
-        "   calls by agent  " + ", ".join(f"{a} {n}" for a, n in agents.most_common()),
+        "   calls by caller  " + ", ".join(f"{a} {n}" for a, n in agents.most_common()),
         "   notices  " + (", ".join(f"{k} {n}" for k, n in notices.most_common()) or "none"),
     ]
     if top and top["gateway.decision"].get("risk") is not None:

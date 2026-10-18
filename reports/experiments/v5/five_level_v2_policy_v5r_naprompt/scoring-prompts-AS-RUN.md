@@ -84,19 +84,21 @@ Ask only: does it read, does it write, or does it remove?
   2 METADATA       returns or changes only about-ness — names, ids, counts, sizes,
                    timestamps, permissions, schema, a listing; or consumption
                    state: mark read, star, pin, mute, rename.
-  3 CONTENT READ or LIMITED WRITE
+  3 CONTENT ACCESS or LIMITED MODIFICATION
                    returns the substance itself (bodies, values, message text), OR
-                   writes a bounded amount and leaves the rest of the item
-                   untouched: append a line, add a comment or a reply, set one
+                   modifies a bounded part of an item while leaving the rest
+                   untouched: append a line, add a comment or reply, set one
                    named field, post a short message. HTTP calls this PATCH; CVSS
                    calls it "the amount of modification is limited".
-  4 WRITE          the ordinary write: the caller supplies what the item says.
+  4 FULL MODIFICATION
+                   the caller controls the item's resulting contents.
                    Create a record with its fields, update an event, write a file,
-                   overwrite content. HTTP calls this PUT; CVSS calls it a total
-                   loss of integrity for that item.
-  5 REMOVAL or EXECUTION
-                   no path back from inside the system: delete, wipe, drop, purge,
-                   truncate; or it executes code, runs a command, or moves money.
+                   overwrite content. HTTP calls this PUT; CVSS treats this as a
+                   total loss of integrity for that item.
+  5 DESTRUCTIVE or EXECUTING ACTION
+                   causes an irreversible destructive effect inside the system:
+                   delete, wipe, drop, purge, truncate; OR causes the system to
+                   execute code, run a command, or perform an active operation.
 
 RULES
 - Score the DESCRIPTION and PARAMETERS, never the name alone.
@@ -106,7 +108,7 @@ RULES
 - Annotation hints (readOnlyHint, destructiveHint, idempotentHint) are HINTS. They
   may corroborate; they never bound the answer. If a hint contradicts the
   description, follow the description and say so in your reasoning.
-- A write is an ordinary write (4) unless the declaration says the amount is
+- A write is FULL MODIFICATION (4) unless the declaration says the amount is
   bounded (3). If it does not say, judge from the parameters: a single
   content/body field is a whole write; named optional fields are a patch.
 - A tool that can do two of these takes the more consequential one.

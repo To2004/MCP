@@ -1133,19 +1133,21 @@ Ask only: does it read, does it write, or does it remove?
   2 METADATA       returns or changes only about-ness — names, ids, counts, sizes,
                    timestamps, permissions, schema, a listing; or consumption
                    state: mark read, star, pin, mute, rename.
-  3 CONTENT READ or LIMITED WRITE
+  3 CONTENT ACCESS or LIMITED MODIFICATION
                    returns the substance itself (bodies, values, message text), OR
-                   writes a bounded amount and leaves the rest of the item
-                   untouched: append a line, add a comment or a reply, set one
+                   modifies a bounded part of an item while leaving the rest
+                   untouched: append a line, add a comment or reply, set one
                    named field, post a short message. HTTP calls this PATCH; CVSS
                    calls it "the amount of modification is limited".
-  4 WRITE          the ordinary write: the caller supplies what the item says.
+  4 FULL MODIFICATION
+                   the caller controls the item's resulting contents.
                    Create a record with its fields, update an event, write a file,
-                   overwrite content. HTTP calls this PUT; CVSS calls it a total
-                   loss of integrity for that item.
-  5 REMOVAL or EXECUTION
-                   no path back from inside the system: delete, wipe, drop, purge,
-                   truncate; or it executes code, runs a command, or moves money.
+                   overwrite content. HTTP calls this PUT; CVSS treats this as a
+                   total loss of integrity for that item.
+  5 DESTRUCTIVE or EXECUTING ACTION
+                   causes an irreversible destructive effect inside the system:
+                   delete, wipe, drop, purge, truncate; OR causes the system to
+                   execute code, run a command, or perform an active operation.
 
 RULES
 - Score the DESCRIPTION and PARAMETERS, never the name alone.
@@ -1155,7 +1157,7 @@ RULES
 - Annotation hints (readOnlyHint, destructiveHint, idempotentHint) are HINTS. They
   may corroborate; they never bound the answer. If a hint contradicts the
   description, follow the description and say so in your reasoning.
-- A write is an ordinary write (4) unless the declaration says the amount is
+- A write is FULL MODIFICATION (4) unless the declaration says the amount is
   bounded (3). If it does not say, judge from the parameters: a single
   content/body field is a whole write; named optional fields are a patch.
 - A tool that can do two of these takes the more consequential one.
@@ -1647,6 +1649,139 @@ BLAST_USER_V5R_SCOPE_NACOMBO = BLAST_USER_V5R_SCOPE_NAPROMPT
 
 
 # ===========================================================================
+# ARM `uframe` — the nacombo mechanics (register-settles / model-decides-on-
+# silence / N/A is the costlier error) restated in the organization's own
+# three-dimension framework: ASSET CONFIDENTIALITY, ACTION IMPACT, CONSEQUENCE
+# SCOPE, each scored 1-5 independently for the worst reasonable result of one
+# successful call. Structurally this is the same ladder as nacombo at every
+# tier (impact: no-effect/metadata/content-limited/major-change/irreversible;
+# scope: item-or-person/one-scope/multiple-scopes/org-wide/cascading;
+# confidentiality: public/routine-internal/internal/confidential/strictly-
+# confidential) — this arm speaks the framework's own tier names and drops the
+# internal worked examples, so a score difference from nacombo isolates
+# wording alone, not the underlying scale.
+# ===========================================================================
+
+TOOL_IMPACT_TASK_V5R_UFRAME = """You are classifying one MCP tool. Output ONLY valid JSON,
+no prose, no fences.
+
+TASK: Assign ACTION IMPACT (1-5) — the worst reasonable result of ONE
+successful call with valid inputs: what the action itself does. Not how far it
+reaches (Consequence Scope scores that), not how valuable the target is
+(Asset Confidentiality scores that).
+
+  1 No Material Effect              Does not read meaningful content or
+                                     change meaningful state.
+  2 Metadata                        Reads or changes descriptive information
+                                     without accessing or changing the main
+                                     content.
+  3 Content Access / Limited Change Reads content, or makes a limited change.
+  4 Major Change                    Creates or makes a major change to data,
+                                     permissions, configuration, or system
+                                     state, but can normally be reversed.
+  5 Irreversible / Consequential    Causes an effect that cannot normally be
+                                     undone.
+
+MAIN RULE: score the action itself, not the value of the asset or the number
+of items affected.
+
+RULES
+- Score the DESCRIPTION and PARAMETERS, never the name alone.
+- The CHANNEL is not the operation. Sending mail, posting externally or invoking a
+  webhook creates a message — that is a change. Whether a specific call actually
+  leaves the organization is a runtime fact, scored elsewhere.
+- Annotation hints (readOnlyHint, destructiveHint, idempotentHint) are HINTS. They
+  may corroborate; they never bound the answer. If a hint contradicts the
+  description, follow the description and say so in your reasoning.
+- A write is MAJOR CHANGE (4) unless the declaration says the amount is
+  bounded (3). If it does not say, judge from the parameters: a single
+  content/body field is a whole write; named optional fields are a patch.
+- A tool that can do two of these takes the more consequential one.
+
+Tool:
+{tool_json}
+
+Return JSON (reason first): {{"tool_name": str, "reasoning": str,
+"tool_impact": 1-5, "confidence": 0.0-1.0}}"""
+
+
+ASSET_TASK_POLICY_UFRAME = """
+TASK: Assign ASSET CONFIDENTIALITY (1-5) — how harmful it would be if this
+asset's information were exposed. Judge what it CHARACTERISTICALLY holds, not
+the worst thing it could conceivably hold.
+
+The ORGANIZATION'S POLICY above is authoritative. Work in two steps:
+  1 CLASSIFY. Find this asset in the policy's asset register -- its Description
+    states what it holds. No row? Apply the policy's recognition rules. Still
+    undecided? Use the policy's stated default class.
+  2 MAP that class onto the tiers below.
+
+  5 Strictly Confidential  Exposure could cause severe harm or directly
+                            enable unauthorized access, impersonation, fraud,
+                            or control.
+  4 Confidential            Exposure could cause serious harm to a person,
+                            organization, or its interests.
+  3 Internal                Exposure could cause meaningful harm, but the
+                            harm is limited and recoverable.
+  2 Routine Internal        Non-public information whose exposure would have
+                            limited impact.
+  1 Public                  Information that does not require
+                            confidentiality.
+
+MAIN RULE: score based on the harm caused by exposure, not the data type.
+
+RULES
+- ABSOLUTE scale, never relative to the other assets here. A whole server sitting
+  at one tier is expected and correct; do NOT spread scores to manufacture contrast.
+- CONTAINER: takes the tier of the most sensitive thing it CHARACTERISTICALLY
+  holds -- its typical payload, not a conceivable one.
+- Already-published or freely available data is 1, whatever its topic."""
+
+
+BLAST_TASK_V5R_SCOPE_UFRAME = (
+    """TASK: Assign CONSEQUENCE SCOPE (1-5) for ONE (tool, asset) pair — how far
+the effect of one successful call can reach. What the asset is worth is scored
+separately and already multiplied in; price the REACH only.
+
+  1 One Item / Person   The effect stops at one independent item or person.
+  2 One Scope           The effect stays within one bounded group or scope.
+  3 Multiple Scopes     One call can affect several separate groups or scopes.
+  4 Organization-Wide   One call can affect almost the whole organization.
+  5 Cascading           The effect can spread from the directly affected
+                        scope into other systems or scopes.
+
+MAIN RULE: score the reach of one call, not repeated calls.
+
+"""
+    + BLAST_TASK_V5R_SCOPE[BLAST_TASK_V5R_SCOPE.index("BEFORE AWARDING 5") :]
+).replace(
+    """RELEVANCE FIRST: does this tool act on this asset AT ALL? If it operates only on a
+different class, set affects_asset=false and blast_radius=null — N/A, not a low
+score.""",
+    """RELEVANCE. The organization's register lists which tools it believes reach this
+asset; that list is given below. Use it like this:
+
+  * IF THE REGISTER LISTS THIS TOOL — relevance is settled. The organization is
+    not guessing about its own surface. Score the reach; do not return null.
+  * IF THE REGISTER DOES NOT LIST IT — you decide, but silence is not evidence of
+    absence. Registers are written by hand and miss shared surfaces. Ask whether
+    this tool genuinely reaches this asset, not whether somebody wrote it down.
+
+N/A IS THE MORE EXPENSIVE MISTAKE. A wrong low score stays in the matrix where a
+reviewer can see it and argue with it. A wrong N/A deletes the cell — nobody ever
+looks at it again, and a real consequence goes unrecorded. They are not
+symmetric. So:
+
+  * return null ONLY when the tool operates on a genuinely different class of
+    thing and could not touch this asset by any route;
+  * when you are unsure, score 1 — "one item or person" — rather than null. An
+    over-scored 1 costs almost nothing; a wrongly hidden cell costs everything.""",
+)
+
+BLAST_USER_V5R_SCOPE_UFRAME = BLAST_USER_V5R_SCOPE_NAPROMPT
+
+
+# ===========================================================================
 # Sensitivity by SCHEME — does the vocabulary the organization uses change the
 # number we derive?
 # ===========================================================================
@@ -1668,8 +1803,11 @@ _SENS_TIERS = """
                  it rewires what every other tool can reach.
   4 RESTRICTED   serious lasting harm one step removed: damages customers, staff
                  or the organization's position, but is not instantly weaponizable.
-  3 INTERNAL     disruptive and embarrassing but recoverable; meant to stay in-org.
-  2 ROUTINE      low-value internal material; exposure is a shrug.
+  3 INTERNAL     sensitive internal information; exposure could cause
+                 operational or reputational harm but is generally
+                 recoverable.
+  2 ROUTINE      low-sensitivity internal information with limited impact if
+                 exposed.
   1 PUBLIC       already published or disposable — no confidentiality left to lose.
 
 RULES

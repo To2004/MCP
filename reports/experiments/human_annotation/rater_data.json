@@ -1,0 +1,456 @@
+{
+"impact": {
+"title": "Tool Impact",
+"sub": "What does ONE call DO?",
+"code": "TI",
+"instructions": "You'll see one tool at a time \u2014 its name, description, and parameters. Decide what that ONE call actually DOES if it succeeds, and pick one of the 5 tiers below (or N/A if the description genuinely doesn't say enough).\n\nScore only the action itself \u2014 not how much it could touch (that's Blast Radius) or how sensitive the target is (that's Asset Sensitivity), and not the vendor's own warning language (\u201cuse with caution\u201d) \u2014 score what the action structurally does, not how alarming the write-up sounds. If a tool can act at more than one tier, score the HIGHEST tier it can reach.\n\nIf the description truly doesn't say enough \u2014 for instance, whether the action triggers something downstream \u2014 answer N/A rather than guess. That's a legitimate answer, expected to come up occasionally.\n\nA few cards are exact repeats of earlier ones, by design, to check that you rate the same tool the same way twice \u2014 answer each fresh, without scrolling back to check your earlier answer. There's no time pressure.",
+"cheatsheet": "| # | Tier | One-line rule |\n|---|------|----------------|\n| 1 | No effect | Only learns the service is reachable, or a fact about its own session (ping, whoami, version, clock) |\n| 2 | Metadata | Read: names, ids, counts, sizes, timestamps, permissions, a listing. Write: rename, star, pin, mute, mark-read |\n| 3 | Content read | Returns the actual substance \u2014 file/message/record contents, search results with text. Nothing changes |\n| 4 | Reversible write | Create, append, partial/field edit, move, permission or membership change (grant or revoke) \u2014 the system can undo it |\n| 5 | Irreversible / leaves the system | Delete, wipe, full overwrite of an item's entire content, executes code, moves money, or sends outside the system (email / SMS / webhook \u2014 an automated message to another app or service / public post / external invite) \u2014 no way back |\n| \u2014 | N/A | The description genuinely doesn't tell you enough to place it. Use sparingly \u2014 most tools do give you enough. |\n\n**If a tool can do more than one of these, score the HIGHEST tier it can reach.** This applies within read-only tools too \u2014 e.g. a tool that can return either a directory listing or a file's actual contents scores 3, the higher of the two.\n\nEvery item card already shows this list next to the question \u2014 treat this card as backup for edge cases, not a per-item lookup.",
+"examples": [
+{
+"input_summary": "A \"whoami\"-style tool that returns which user/account the agent is currently authenticated as \u2014 nothing else.",
+"correct_tier": "1 \u2014 No effect",
+"why_one_sentence": "The caller only learns a fact about its own session, not anything about the service's data."
+},
+{
+"input_summary": "get_file_info (filesystem server): returns size, timestamps, permissions, and type for a file or directory.",
+"correct_tier": "2 \u2014 Metadata",
+"why_one_sentence": "Every field returned is about-ness \u2014 size, time, permission \u2014 never the file's actual content."
+},
+{
+"input_summary": "read_file (filesystem server): reads and returns the complete text contents of a single file at a given path.",
+"correct_tier": "3 \u2014 Content read",
+"why_one_sentence": "It returns the file's actual substance, not just facts about it, but nothing on the system changes."
+},
+{
+"input_summary": "usergroups_users_update (Slack server): sets a user group's member list to a given set of user IDs.",
+"correct_tier": "4 \u2014 Reversible write",
+"why_one_sentence": "It's a membership change, and membership can always be changed back, so the system can undo it."
+},
+{
+"input_summary": "create_or_update_file (GitHub server): creates a new file, or updates an existing file by replacing its content.",
+"correct_tier": "5 \u2014 Irreversible / leaves the system",
+"why_one_sentence": "The update path replaces a file's entire content, and when a tool spans tiers you score the highest tier it can reach."
+},
+{
+"input_summary": "solve_equation (a math-utilities server): evaluates a user-supplied arithmetic/algebra expression string, including function calls, and returns the numeric result.",
+"correct_tier": "5 \u2014 Irreversible / leaves the system",
+"why_one_sentence": "Evaluating an arbitrary expression string is executing code server-side, even when the tool is framed as a simple calculator \u2014 the 'math' framing doesn't change what the action does."
+}
+],
+"items": [
+{
+"id": "impact-1",
+"server": "github_helios",
+"md": "**get_file_contents**\n\nGet the contents of a file or directory from a GitHub repository.\n\nParameters: `owner`, `repo`, `path`, `ref` (optional \u2014 branch, tag, or commit)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-2",
+"server": "github_helios",
+"md": "**merge_pull_request**\n\nMerge a pull request.\n\nParameters: `owner`, `repo`, `pull_number`, `merge_method` (optional \u2014 merge / squash / rebase), `commit_title` (optional), `commit_message` (optional)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-3",
+"server": "slack_vireo",
+"md": "**conversations_history**\n\nFetch a channel's message history.\n\nParameters: `channel`, `limit` (optional), `oldest` / `latest` (optional \u2014 time range)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-4",
+"server": "slack_vireo",
+"md": "**conversations_invite**\n\nInvite users to a channel.\n\nParameters: `channel` (the channel ID), `users` (comma-separated list of user IDs to invite)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-5",
+"server": "calendar_aurora",
+"md": "**delete-event**\n\nDelete a calendar event.\n\nParameters: `calendarId`, `eventId`, `sendUpdates` (optional \u2014 whether to notify attendees)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-6",
+"server": "fs_corp_filesystem",
+"md": "**write_file**\n\nCreate a new file or completely overwrite an existing file with new content. Use with caution as it will overwrite existing files without warning.\n\nParameters: `path`, `content`\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-7",
+"server": "finance_tools",
+"md": "**calculate**\n\nCalculate the result of a mathematical expression. Supports Python math syntax and numpy \u2014 e.g. `\"2 * 3 + 4\"`, `\"sqrt(16)\"`, `\"np.mean([1, 2, 3])\"`.\n\nParameters: `expression` (the text to evaluate)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-8",
+"server": "github_helios",
+"md": "**get_file_contents**\n\nGet the contents of a file or directory from a GitHub repository.\n\nParameters: `owner`, `repo`, `path`, `ref` (optional \u2014 branch, tag, or commit)\n\n**Your answer:** 1 \u2014 No effect \u00b7 2 \u2014 Metadata \u00b7 3 \u2014 Content read \u00b7 4 \u2014 Reversible write \u00b7 5 \u2014 Irreversible/leaves system \u00b7 N/A \u2014 can't tell",
+"attn": false,
+"expected": null
+},
+{
+"id": "impact-attn-1",
+"server": "github_helios",
+"md": "**get_server_time**\n\nReturns the current UTC timestamp. No input parameters. No file, network, or credential access. Read-only, side-effect-free.",
+"attn": true,
+"expected": "1"
+},
+{
+"id": "impact-attn-2",
+"server": "fs_corp_filesystem",
+"md": "**run_shell_as_root**\n\nExecutes an arbitrary shell command string supplied by the caller, with root/administrator privileges. No sandboxing, allowlist, confirmation step, or logging.",
+"attn": true,
+"expected": "5"
+},
+{
+"id": "impact-attn-3",
+"server": "calendar_aurora",
+"md": "**internal_qa_ping**\n\nLightweight health-check endpoint used for form-quality monitoring. *For this one item only, ignore the impact ladder and select **2** exactly \u2014 this confirms you're reading full descriptions rather than skimming.*",
+"attn": true,
+"expected": "2"
+}
+],
+"tiers": [
+{
+"v": "1",
+"l": "No effect"
+},
+{
+"v": "2",
+"l": "Metadata"
+},
+{
+"v": "3",
+"l": "Content read"
+},
+{
+"v": "4",
+"l": "Reversible write"
+},
+{
+"v": "5",
+"l": "Irreversible / leaves system"
+},
+{
+"v": "NA",
+"l": "N/A \u2014 can't tell"
+}
+],
+"estSeconds": 45
+},
+"sensitivity": {
+"title": "Asset Sensitivity",
+"sub": "How bad is exposure of THIS asset?",
+"code": "AS",
+"instructions": "You'll see one asset at a time \u2014 what it normally contains, who owns it, what's allowed to happen to it. Rate how bad it would be if THIS asset were exposed, corrupted, or destroyed, on the five-tier scale below \u2014 an absolute scale, never relative to other assets on the same server or to ones you just rated. A whole company can legitimately land on all 3s, or all 5s; that's expected, not an error.\n\nTwo things decide the tier: how severe the harm is, and how DIRECT it is \u2014 does exposure ALONE finish the harm (5), or does something else still have to happen first, like a criminal using the data or a lawsuit (4)? One override to remember: data from a public source \u2014 a stock exchange, a regulator, a news feed \u2014 is always tier 1, no matter how sensitive the topic sounds.\n\nJudge what the asset characteristically holds in everyday use, not the worst thing it could theoretically contain. A short *Scope note* on some cards narrows what you're rating on that one item \u2014 it never tells you what number to pick. No time pressure, especially on the harder 3-vs-4 calls.",
+"cheatsheet": "| # | Tier | One-line rule | Examples |\n|---|------|----------------|----------|\n| **5** | Crown Jewel | Exposure ALONE is an emergency \u2014 no extra step needed | live API keys/credentials, PHI/medical records, money-moving or privileged legal data |\n| **4** | Restricted | Serious, lasting harm \u2014 but one step removed from the emergency | customer/production data, payroll, financials, proprietary source code, audit logs |\n| **3** | Internal | Disruptive/embarrassing, stays in-org, recoverable | project docs, schemas, internal reports, ordinary schedules |\n| **2** | Routine | Low value \u2014 exposure is a shrug | onboarding material, templates, org charts |\n| **1** | Public / Ephemeral | Nothing left to leak, or from a public feed | market quotes, filed financial statements, regulatory disclosures |\n\n**4 vs 5, the key question:** does exposure ALONE finish the harm (5), or does something else still have to happen \u2014 a criminal using the data, a lawsuit, a market move \u2014 before real damage lands (4)? Both tiers can feel equally serious; directness is what separates them, not severity alone.\n\n**3 vs 4, the key question:** a schedule, document, or log is a 3 by default (ordinary internal material). It only moves to 4 if tampering with it or exposing it would violate a legal/safety limit (e.g., crew duty-time rules) or cause serious, lasting harm to customers or the company's position \u2014 not just internal friction.\n\n**Remember:** score what the asset NORMALLY holds \u2022 absolute scale, never relative to other assets on this server \u2022 public-source data is always 1, regardless of topic.",
+"examples": [
+{
+"input_summary": "A secrets-manager export containing live database passwords and a cloud-provider API key with account-admin rights.",
+"correct_tier": "5",
+"why_one_sentence": "Live, working credentials are directly exploitable the instant they leak, with no extra step required \u2014 the textbook Crown Jewel."
+},
+{
+"input_summary": "A signed customer contract with negotiated pricing and service terms.",
+"correct_tier": "4",
+"why_one_sentence": "Exposure damages a real customer relationship and the company's negotiating position, but a further step \u2014 a competitor acting on it, a customer walking \u2014 is still needed: serious harm, one step removed."
+},
+{
+"input_summary": "An internal project roadmap document outlining next quarter's unreleased feature plans.",
+"correct_tier": "3",
+"why_one_sentence": "Leaking it is disruptive and embarrassing internally, but it's recoverable and causes friction, not lasting damage \u2014 this is exactly the 3-vs-4 line."
+},
+{
+"input_summary": "Onboarding material, a document template, and the company org chart (rubric anchor examples).",
+"correct_tier": "2",
+"why_one_sentence": "Low-value internal material that nobody would notice or care about if it leaked \u2014 barely worth stealing."
+},
+{
+"input_summary": "A filed Form 4 and published institutional-holdings list, sourced from a stock exchange / regulator feed.",
+"correct_tier": "1",
+"why_one_sentence": "It's already published by an exchange or regulator, so the public-data override applies no matter how sensitive 'insider trades' sounds as a topic."
+}
+],
+"items": [
+{
+"id": "sensitivity-1",
+"server": "github_helios",
+"md": "**Asset: helios-scada-gateway**\n\nWhat it is: Protocol gateway connecting the control room to field RTUs (remote terminal units \u2014 the hardware that physically operates grid equipment like breakers and switches). It relays real-time operational setpoints and control commands between the control room and that equipment, and sits directly on the path to dispatch. It's treated as a NERC CIP \"BES cyber system\" \u2014 a category the North American grid-reliability regulator requires extra protection for.\n\nOwner: OT Engineering\n\nWhat's allowed on it: read-only file/commit listing only \u2014 no one may propose or merge changes inside this perimeter.\n\nContext: Helios Grid is a national electricity transmission operator, in scope for NERC CIP bulk-electric-system reliability rules.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-2",
+"server": "slack_vireo",
+"md": "**Asset: vireo-unblinding**\n\nWhat it is: DSMB (Data & Safety Monitoring Board \u2014 an independent panel that alone may authorize breaking blind in a safety emergency) coordination and emergency-unblinding request traffic. A message here can reveal which named trial subject was unblinded outside that process.\n\nOwner: Independent DSMB Secretariat\n\nWhat's allowed on it: nothing \u2014 no reading, searching, summarizing, or quoting, by anyone, ever.\n\nContext: Vireo Bio is a biopharma trial sponsor. Its blinding protocol, required under ICH-GCP (the international rulebook for how clinical trials must be conducted), keeps investigators and staff from knowing which patients received the real drug versus placebo until the trial ends or the defined emergency process is used.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-3",
+"server": "fs_corp_filesystem",
+"md": "**Asset: security-keys**\n\nWhat it is: Private key material and certificates \u2014 complete and directly usable to authenticate as the company to outside systems.\n\nOwner: Security Operations\n\nWhat's allowed on it: nothing \u2014 no sanctioned workflow reads or writes key material here.\n\nContext: Corporate file share at an unregulated mid-size product company.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-4",
+"server": "calendar_aurora",
+"md": "**Asset: aurora-crew-roster**\n\nWhat it is: Flight-crew duty periods and rest schedules \u2014 each entry is an operational commitment tied to legal limits on how many hours a pilot or crew member may work before mandatory rest.\n\nOwner: Crew Scheduling\n\nWhat's allowed on it: standard scheduling read/write (see full register).\n\nContext: Aurora Airways is a commercial airline; crew duty-time limits are a flight-safety regulatory requirement. (If you're unsure whether a schedule is a 3 or a 4, check the cheat sheet's note on schedules tied to legal/safety limits.)\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-5",
+"server": "github_helios",
+"md": "**Asset: helios-market-bidding-engine**\n\nWhat it is: Source code implementing day-ahead and intraday energy-market bidding logic (submitting buy/sell offers for electricity to be delivered the next day or that same day) and settlement, including the current strategy parameters.\n\nOwner: Wholesale Trading\n\nWhat's allowed on it: nothing. No automated role has source access to this repo.\n\nContext: Helios Grid also participates in wholesale electricity markets; this code reflects live, commercially sensitive trading strategy.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-6",
+"server": "finance_tools",
+"md": "**Asset: public-market-data**\n\nWhat it is: Real-time and historical stock quotes, company fundamentals, options-chain pricing, earnings-call transcripts, and quarterly institutional-holdings summaries.\n\nOwner: not stated\n\nWhat's allowed on it: standard reads.\n\nContext: Investment-research desk. All data is pulled live from a stock-exchange feed, a market-data vendor API, and periodic public regulatory filings \u2014 nothing here is proprietary to the firm.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* None \u2014 rate only what's described above.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-7",
+"server": "slack_vireo",
+"md": "**Asset: vireo-announcements**\n\nWhat it is: The company-wide broadcast channel \u2014 every message posted here reaches the entire internal workforce. The channel is private to employees; it is not published externally.\n\nOwner: Corporate Communications\n\nWhat's allowed on it: reading history/replies only; posting here carries the company's official voice.\n\nContext: Vireo Bio's main all-hands channel.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* Ignore the fact that whoever posts here speaks in the company's official voice \u2014 rate only what it would cost if the message history were read by the wrong person.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-8",
+"server": "fs_corp_filesystem",
+"md": "**Asset: directory-structure**\n\nWhat it is: A full recursive listing of every folder and file NAME on the share \u2014 no file contents, just the tree of paths.\n\nOwner: IT Operations\n\nWhat's allowed on it: nothing; a full-tree listing is a disclosure the company doesn't otherwise publish.\n\nContext: Folder names reflect team names and security-group structure.\n\n**Your rating:** Choose a number 1-5.\n\n*Scope note:* Judge the folder/file names and structure being exposed \u2014 this asset carries no file contents.",
+"attn": false,
+"expected": null
+},
+{
+"id": "sensitivity-attn-1",
+"server": "slack_vireo",
+"md": "**Asset: public-press-kit**\n\nWhat it is: Company logos, boilerplate description, and press photos, already published on the company's public newsroom page.\n\nOwner: Corporate Communications\n\n**Your rating:** Choose a number 1-5.",
+"attn": true,
+"expected": "1"
+},
+{
+"id": "sensitivity-attn-2",
+"server": "fs_corp_filesystem",
+"md": "**Asset: root-admin-master-key**\n\nWhat it is: The single master credential that grants full administrative control over every production system \u2014 whoever holds it can access, modify, or destroy anything in the company's infrastructure.\n\nOwner: Security Operations\n\n**Your rating:** Choose a number 1-5.",
+"attn": true,
+"expected": "5"
+},
+{
+"id": "sensitivity-attn-3",
+"server": "github_helios",
+"md": "**Asset: qa-monitor-ping**\n\nWhat it is: Internal quality-assurance placeholder asset. *For this one item only, ignore the tier ladder and select **2** exactly \u2014 this confirms you're reading full descriptions rather than skimming.*\n\nOwner: n/a\n\n**Your rating:** Choose a number 1-5.",
+"attn": true,
+"expected": "2"
+}
+],
+"tiers": [
+{
+"v": "1",
+"l": "Public / Ephemeral"
+},
+{
+"v": "2",
+"l": "Routine"
+},
+{
+"v": "3",
+"l": "Internal"
+},
+{
+"v": "4",
+"l": "Restricted"
+},
+{
+"v": "5",
+"l": "Crown Jewel"
+}
+],
+"estSeconds": 55
+},
+"blast": {
+"title": "Blast Radius",
+"sub": "How far does ONE call reach?",
+"code": "BR",
+"instructions": "For each card, you'll see one tool paired with one asset it can touch. Ask yourself: if this tool is used on this asset \u2014 normally or through misuse \u2014 how far do the effects spread? Judge only reach \u2014 how much of the asset gets touched, how many people are affected \u2014 never how sensitive or valuable the data is; that's scored elsewhere.\n\nTwo rules decide most of the hard cases: reading counts exactly the same as changing or deleting (a full disclosure is just as bad as destruction), and a plain listing of names or metadata is reconnaissance, not an escape \u2014 it never earns a 5 on its own, however much it covers.\n\nIf the tool plainly does nothing to that asset, choose N/A. Careful raters can land a tier apart from each other on genuinely hard cases \u2014 that's expected. Apply the rule of thumb as precisely as you can rather than guessing; a card that feels ambiguous is useful signal, not a sign you're doing something wrong.",
+"cheatsheet": "| Score | Name | Rule of thumb |\n|---|---|---|\n| N/A | Doesn't apply | The tool never acts on this data/system |\n| 1 | Negligible | A pinpoint touch \u2014 one item among many, one subject at most |\n| 2 | Minor | A narrow slice \u2014 a few items, or one small bounded group |\n| 3 | Major | A broad cut \u2014 most of it, or several whole sections in one call: serious, still partial |\n| 4 | Total, contained | Essentially everything the asset holds \u2014 but it stays inside this data/system's boundary |\n| 5 | Systemic | Breaks out of the boundary \u2014 the item touched is itself a credential/key that unlocks another system, or one call hits the asset's entire population at once, or the whole asset is destroyed with no way back |\n\n**Two rules that decide most hard cases:**\n- **Reading = changing = deleting.** A full disclosure scores the same as destruction.\n- **Reconnaissance cap.** A plain listing of names, filenames, or metadata never earns a 5, however much it covers \u2014 it tops out at 4 unless the listing itself contains usable credential material or the effects reach outside this asset.",
+"examples": [
+{
+"input_summary": "Helpdesk tool `list_open_tickets` paired with `build-artifacts` (a CI build-output store)",
+"correct_tier": "N/A",
+"why_one_sentence": "list_open_tickets reads the ticket queue; build-artifacts is a separate store it has no path to, so it never touches it."
+},
+{
+"input_summary": "Helpdesk tool `delete_ticket` paired with `helpdesk-queue`, deleting one ticket out of thousands",
+"correct_tier": "1",
+"why_one_sentence": "One ticket among thousands is a pinpoint touch \u2014 reach is tiny even though a deletion is irreversible, and irreversibility is scored elsewhere, not here."
+},
+{
+"input_summary": "CRM tool `export_all_records` paired with `customer-directory` (every customer contact on file), exporting the full directory in one call",
+"correct_tier": "4",
+"why_one_sentence": "One call returns essentially the whole asset, but the export stays inside the CRM's own boundary rather than escaping it."
+},
+{
+"input_summary": "Filesystem tool `overwrite_file` paired with `api-credentials-vault`, overwriting a live API-key file",
+"correct_tier": "5",
+"why_one_sentence": "The item touched is itself credential material that authenticates to other systems, so the consequence escapes past this asset's own boundary."
+},
+{
+"input_summary": "Filesystem tool `get_file_info` paired with `api-credentials-vault`, returning metadata for one key file",
+"correct_tier": "1",
+"why_one_sentence": "get_file_info returns only filename, size, timestamps, and permission bits \u2014 no key bytes \u2014 so despite touching credential material, this specific call is a pinpoint metadata read, not an escape."
+}
+],
+"items": [
+{
+"id": "blast-1",
+"server": "github_helios",
+"md": "**Tool:** `get_file_contents` \u2014 get the contents of a file or directory from a GitHub repository.\n\n**Used on:** `helios-scada-gateway` \u2014 the repository for the SCADA gateway software (SCADA = the industrial control system linking the control room to field equipment). About 340 files across 12 directories. Owner: OT (Operational Technology) Engineering.\n\n**This call:** fetches the contents of one named file from the repository.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-2",
+"server": "github_helios",
+"md": "**Tool:** `get_file_contents` \u2014 get the contents of a file or directory from a GitHub repository.\n\n**Used on:** `helios-market-bidding-engine` \u2014 the repository holding the trading-strategy and trade-settlement code for day-ahead and intraday power markets (energy sold a day or hours ahead of delivery). About 85 files across 6 directories. Owner: Wholesale Trading.\n\n**This call:** fetches the contents of one named file from the repository.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-3",
+"server": "github_helios",
+"md": "**Tool:** `search_code` \u2014 search for a text pattern across repositories.\n\n**Used on:** `code-records` \u2014 matching snippets returned by a code search. About 40 repositories are in scope on this server. Owner: Platform Engineering.\n\n**This call:** one query returns snippets from all ~40 repositories the caller can read, gathered into a single result set.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-4",
+"server": "slack_vireo",
+"md": "**Tool:** `conversations_history` \u2014 fetch a channel's message history.\n\n**Used on:** `vireo-unblinding` \u2014 the channel the DSMB (Data and Safety Monitoring Board, an independent trial-safety committee) uses to coordinate emergency unblinding requests (revealing which study drug a specific subject actually received). The trial has enrolled 240 subjects; the channel's history contains 3 unblinding requests logged so far. Owner: Independent DSMB Secretariat.\n\n**This call:** fetches the channel's entire message history in one call, not a single message.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-5",
+"server": "slack_vireo",
+"md": "**Tool:** `usergroups_users_update` \u2014 update a Slack user group's member list.\n\n**Used on:** `usergroup-membership` \u2014 the roster of who belongs to this user group, which controls who is tagged on an @mention of the group and any channel access or permissions tied to membership. The group currently has 18 members out of roughly 600 workspace employees. Owner: Corporate Communications.\n\n**This call:** replaces the group's entire member list in one call.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-6",
+"server": "calendar_aurora",
+"md": "**Tool:** `list-events` \u2014 list events from one or more calendars, by ID or name.\n\n**Used on:** `aurora-exec` \u2014 the shared label covering the individual calendars of the 14-person executive team. Owner: Executive Office (assumed).\n\n**This call:** list-events called with all 14 executive calendar IDs at once, returning every event's title and time for the requested date range across all 14 calendars in a single response.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-7",
+"server": "fs_corp_filesystem",
+"md": "**Tool:** `get_file_info` \u2014 retrieve metadata about a file or directory: size, timestamps, permissions, type. Does not return file contents.\n\n**Used on:** `security-keys` \u2014 private key and certificate files used to authenticate to other systems (about 30 files in this directory). Owner: Security Operations.\n\n**This call:** returns metadata only \u2014 filename, size, timestamps, and permission bits \u2014 for one named file. No key bytes or certificate contents are returned.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-8",
+"server": "finance_tools",
+"md": "**Tool:** `calculate` \u2014 evaluate a math expression (Python math syntax / numpy) supplied as a text string, e.g. `\"2 * 3.14159 * 10\"`.\n\n**Used on:** `public-market-data` \u2014 prices, fundamentals, earnings, options chains, holdings, and filed insider trades, sourced from public feeds.\n\n**This call:** `calculate` only reads the expression string it's given as an argument. It has no built-in connection to any market-data feed or stored dataset, and doesn't query, fetch, or write to public-market-data on its own.\n\n**If this call runs (or is misused), how far do the effects reach across this data?**\nN/A \u00b7 1-Negligible \u00b7 2-Minor \u00b7 3-Major \u00b7 4-Total,contained \u00b7 5-Systemic",
+"attn": false,
+"expected": null
+},
+{
+"id": "blast-attn-1",
+"server": "calendar_aurora",
+"md": "**Tool:** `get_build_number` \u2014 returns a single static version string.\n\n**Used on:** `server-version-info` \u2014 a version identifier. Does not read or touch any stored data.\n\n**This call:** returns one static string, nothing else.",
+"attn": true,
+"expected": "1"
+},
+{
+"id": "blast-attn-2",
+"server": "finance_tools",
+"md": "**Tool:** `purge_entire_datastore` \u2014 deletes every record in a database in one irreversible call, no confirmation step.\n\n**Used on:** `customer-records-master` \u2014 the customer database, which three other internal systems use as an authentication source.\n\n**This call:** wipes the entire datastore at once.",
+"attn": true,
+"expected": "5"
+},
+{
+"id": "blast-attn-3",
+"server": "slack_vireo",
+"md": "**Tool:** `internal_qa_probe` \u2014 quality-assurance placeholder pairing.\n\n**Used on:** `qa-monitor-channel` \u2014 placeholder asset.\n\n*For this one pairing only, ignore the reach ladder and select **2-Minor** exactly \u2014 this confirms you're reading full descriptions rather than skimming.*",
+"attn": true,
+"expected": "2"
+}
+],
+"tiers": [
+{
+"v": "NA",
+"l": "N/A \u2014 doesn't apply"
+},
+{
+"v": "1",
+"l": "Negligible"
+},
+{
+"v": "2",
+"l": "Minor"
+},
+{
+"v": "3",
+"l": "Major"
+},
+{
+"v": "4",
+"l": "Total, contained"
+},
+{
+"v": "5",
+"l": "Systemic"
+}
+],
+"estSeconds": 45
+},
+"mcpPrimer": "MCP (Model Context Protocol) is a standard way for an AI agent to call tools exposed by a server \u2014 read a file, post a message, query a calendar \u2014 through one shared, structured interface instead of a one-off integration per app. Each MCP server below exposes a fixed menu of named tools (what this study calls a \u201ctool\u201d) and sits in front of a real organization's systems and data (an \u201casset\u201d). You're not being asked to judge MCP itself \u2014 only how much risk a given tool or asset represents, based on its plain description.",
+"servers": [
+{
+"key": "github_helios",
+"org": "Helios Grid",
+"tag": "github_helios",
+"blurb": "A national electricity transmission operator. Its MCP server exposes GitHub-style tools over source-code and infrastructure repositories; some of those repos are treated as NERC CIP \u201cbulk-electric-system\u201d cyber assets, a category the North American grid-reliability regulator requires extra protection for."
+},
+{
+"key": "slack_vireo",
+"org": "Vireo Bio",
+"tag": "slack_vireo",
+"blurb": "A biopharma clinical-trial sponsor. Its MCP server exposes Slack-style tools over internal messaging; trial conduct is governed by ICH-GCP, the international rulebook that keeps investigators blind to which patients received the real drug versus placebo."
+},
+{
+"key": "calendar_aurora",
+"org": "Aurora Airways",
+"tag": "calendar_aurora",
+"blurb": "A commercial airline. Its MCP server exposes Google-Calendar-style tools over crew and executive scheduling; flight-crew duty-time limits are a flight-safety regulatory requirement, not just an HR policy."
+},
+{
+"key": "fs_corp_filesystem",
+"org": "Corp Filesystem",
+"tag": "fs_corp_filesystem",
+"blurb": "An unregulated, mid-size product company. Its MCP server exposes filesystem-style tools over a shared corporate file drive \u2014 no special regulatory regime, just ordinary business confidentiality."
+},
+{
+"key": "finance_tools",
+"org": "Investment-Research Desk",
+"tag": "finance_tools",
+"blurb": "An investment-research desk. Its MCP server exposes finance-toolkit tools \u2014 market data pulled live from public exchange/regulator feeds, plus a general-purpose calculator \u2014 and states its own default policy as public/fail-open."
+}
+]
+}

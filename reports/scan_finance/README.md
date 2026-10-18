@@ -88,6 +88,13 @@ uv venv --python 3.12 .fin-venvs/maverick
 uv pip install --python .fin-venvs/maverick/bin/python -e external/maverick-mcp
 ```
 
+## Runtime / dynamic layer
+
+The static scan above is design-time only. A runtime corpus now exists too: 600 real,
+read-only calls per server (3,000 total) driven directly against each live server and
+scored by the `B × L` breadth/likelihood layer — see
+[`reports/experiments/dynamic_layer/v2_finance/README.md`](../experiments/dynamic_layer/v2_finance/README.md).
+
 ## Transport note
 
 The capture proxy records discrete request/response flows, so servers are run

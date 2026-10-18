@@ -16,6 +16,7 @@ scores. Two layers:
 | [domain-graph.md](domain-graph.md) | Two Mermaid views — domain → servers, and domain → operation types (linked to the atomic-op taxonomy). |
 | [server-profiles.md](server-profiles.md) | Organizational profile for each of the 18 scanned servers: owning company, expected agent use, peak asset severity, and per-asset CIA emphasis. Profiles are written at five deliberate length tiers (XS–XL) so context length can be A/B'd as scanner input. |
 | [server-policies.md](server-policies.md) | Policy-grade descriptions of 19 servers (5 fs tenants + github/slack/calendar real & cbg + 5 finance + 3 live-provisioned) — the realistic-disclosure variant: a data-classification table stating adverse impact per class, an asset register (asset · description · tools · flags · CIA) and recognition rules, with **no sensitivity number anywhere** (real orgs don't release the inventory). The scanner derives the 1–5 itself. Consumed by `scripts/scan_policy_v5.py`, `scripts/scan_policy_sens.py` and `scripts/scan_policy_no_sens.py`; validated by `scripts/check_policies.py`. |
+| [server-policies-abstract.md](server-policies-abstract.md) | The three live-provisioned orgs (`github_helios`, `slack_vireo`, `calendar_aurora`) rewritten in the [abstract template](../standards/policy.md): org context, prose asset register, value rules, and a **baseline of normal use** (Block 4 / optional Table 4). No ladder, no CIA, no numbers unless the org stated them; `draft` baseline rows await org confirmation. |
 | [server-profile-contents-proposal.md](server-profile-contents-proposal.md) | Worked L3 example (`sqlite:devops_sqlite`) — asset contents and sensitivity merged into one table, per the [profile spec](../standards/mcp-profile-spec.md). Proposal only; nothing reads it yet. |
 
 ## Framework-native policies (the v7 arms)
@@ -73,6 +74,17 @@ They corroborate two design choices (no published sensitivity numbers; reachable
 authorized) and challenge two others (our required `Owner` column exceeds what this real org
 discloses; no rung reaches per-operation authorization). Refreshed by
 `scripts/fetch_real_policy_examples.py`.
+
+## Literature grounding (ABAC/RAdAC)
+
+[`asset-register-abac-literature.md`](asset-register-abac-literature.md) — the theory
+counterpart to the real-policy ladder above: grounds both halves of our policy documents
+against the ABAC/RAdAC literature (Yalcinkaya et al. 2017; Balogun & Takabi 2022; Jin, Krishnan
+& Sandhu 2012; Kandala, Sandhu & Bhamidipati 2011; Bui & Stoller 2020) — the **asset register**
+as an **Attribute Repository / PIP**, and the **classification table + recognition rules** as
+the paired **Policy Repository** a PDP evaluates against it — maps the ISO arm's columns and
+the policy spec's blocks onto that construct, and works every example in virtual assets only —
+no system from the real-policy corpus.
 
 ## Deep references (per-server tool docs)
 

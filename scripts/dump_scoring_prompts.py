@@ -154,6 +154,18 @@ _IMPACT_SECTIONS = {
             "annotation hints no longer bound anything.",
         ),
     ],
+    "five_level_v2_v5r_uframe": [
+        (
+            "TOOL_IMPACT_TASK_V5R_UFRAME",
+            "1 · Tool impact — FALLBACK ONLY (operation-type ladder)",
+            "EXPERIMENT V5R-UFRAME: nacombo's mechanics (register-settles relevance, "
+            "no asset flags, no floors) with the rubric restated in the organization's "
+            "own three-dimension framework — Asset Confidentiality, Action Impact, "
+            "Consequence Scope, each an independent 1-5. Impact is still the "
+            "deterministic ladder in static_impact.classify_by_operation() FIRST; "
+            "this prompt is sent only where the rules abstain.",
+        ),
+    ],
     "cia": [
         (
             "TOOL_IMPACT_TASK",
@@ -214,6 +226,7 @@ _BLAST_ATTR = {
     "five_level_v2_v5r_senscis": "BLAST_TASK_V5R_SCOPE_NACOMBO",
     "five_level_v2_v5r_sensnist": "BLAST_TASK_V5R_SCOPE_NACOMBO",
     "five_level_v2_v5r_sensiso": "BLAST_TASK_V5R_SCOPE_NACOMBO",
+    "five_level_v2_v5r_uframe": "BLAST_TASK_V5R_SCOPE_UFRAME",
 }
 _BLAST_USER_ATTR = {
     "hybrid_na": "BLAST_USER_NA",
@@ -237,6 +250,10 @@ _BLAST_USER_ATTR = {
     "five_level_v2_v5r_senscis": "BLAST_USER_V5R_SCOPE_NACOMBO",
     "five_level_v2_v5r_sensnist": "BLAST_USER_V5R_SCOPE_NACOMBO",
     "five_level_v2_v5r_sensiso": "BLAST_USER_V5R_SCOPE_NACOMBO",
+    # Matches the pipeline's actual "combo" relevance branch: the user message
+    # (register + tool/asset JSON + sibling lists) is shared with nacombo
+    # verbatim — only the TASK text (rubric wording) differs for uframe.
+    "five_level_v2_v5r_uframe": "BLAST_USER_V5R_SCOPE_NACOMBO",
 }
 # Modes whose sensitivity comes from the org's own table, so no LLM stage exists.
 _PROFILE_SENS = {"five_level_v2_v4", "five_level_v2_v4_static"}
@@ -257,6 +274,7 @@ _SENS_ATTR = {
     "five_level_v2_v5r_sensiso": "ASSET_TASK_POLICY_ISO",
     "five_level_v2_v5r_sensnist": "ASSET_TASK_POLICY_NIST",
     "five_level_v2_v5r_senscis": "ASSET_TASK_POLICY_CIS",
+    "five_level_v2_v5r_uframe": "ASSET_TASK_POLICY_UFRAME",
 }
 
 _V5R_VARIANTS = (
@@ -427,6 +445,7 @@ def _header(impact_mode: str, *, org_desc: bool = False) -> str:
     "five_level_v2_v5r_lowfloor": 125,
     "five_level_v2_v5r_selfassess": 125,
     "five_level_v2_v5r": 125,
+    "five_level_v2_v5r_uframe": 125,
     }[_normalize(impact_mode)]
     # hybrid/hybrid_na use the geometric-mean formula; every other mode uses the
     # plain product. Render whichever THIS mode actually scores with, so the header

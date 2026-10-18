@@ -1,7 +1,6 @@
 """The gateway as an OAuth 2.1 resource server: who a caller is, read from a signed token.
 
-With an identity provider configured (``config.OAuthConfig``), an agent nobody listed
-signs in there — the MCP authorization flow — and sends ``Authorization: Bearer <JWT>``.
+With an identity provider configured (``config.OAuthConfig``), an agent signs in there — the MCP authorization flow — and sends ``Authorization: Bearer <JWT>``.
 The gateway checks the token: the signature against the provider's published keys
 (JWKS), the issuer, the audience (it must name this route: RFC 8707, so a token minted for
 another server is refused), and the expiry. Then it reads the caller from the token
@@ -23,7 +22,6 @@ import jwt
 from mcp_security.gateway.config import AGENT_ID_CHARS, OAUTH, Identity, OAuthConfig
 
 KEY_CACHE_S = 300  # how long fetched signing keys are reused before the JWKS is read again
-JWT_PARTS = 3  # header.payload.signature
 REQUIRED_CLAIMS = ["exp", "iss", "aud", "sub"]
 NO_TOKEN = "no_bearer_token"
 
@@ -40,11 +38,6 @@ class SigningKeys(Protocol):
     """Where verification keys come from: ``jwt.PyJWKClient`` live, a fixed set in tests."""
 
     def get_signing_key_from_jwt(self, token: str) -> jwt.PyJWK: ...
-
-
-def looks_like_jwt(token: str) -> bool:
-    """A JWT has three dot-separated parts; a table token is one random string."""
-    return token.count(".") == JWT_PARTS - 1
 
 
 class TokenVerifier:

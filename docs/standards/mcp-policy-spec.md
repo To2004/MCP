@@ -86,7 +86,10 @@ scale. Per-asset CIA lives in the register, not here.
 ### Block 3 — Asset register (table)
 
 The asset list the org CAN share — everything except the judgement number.
-One row per asset:
+One row per asset. See [policy-authoring-rules.md](policy-authoring-rules.md)
+for the four-part `Description` structure (what it is, why it classifies this
+way, a `Reached by:` mechanism clause per tool, an escalation note where
+needed) and the measured mistakes each part guards against.
 
 | Column | What it states |
 |---|---|

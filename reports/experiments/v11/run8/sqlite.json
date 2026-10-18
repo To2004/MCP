@@ -1,0 +1,176 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "prompt_sha256": "3b16e30d7d5b3ed6efb69e129ccda99f7b49b582629ac7818de3894dc03287b1",
+  "prompt": "prompt-AS-RUN.md",
+  "composites_prompt_sha256": "851d11fc795cdd7bf2594f549ffc4ba740f8afb5015f24ee818ec9518f2dfe6d",
+  "composites_prompt": "composites-prompt-AS-RUN.md",
+  "slurm_job": "21013896",
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "composites": [],
+      "declared_arguments": 0,
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "tool_context": {
+        "atomic_ops": [
+          "METADATA"
+        ],
+        "max_severity": 1,
+        "severity_label": "Low"
+      },
+      "arguments": [
+        {
+          "path": "table",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": false,
+          "composes_new_content": false,
+          "references_existing": true,
+          "provenance": "caller_copied",
+          "commits_change": false,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "open domain and required argument implies selecting from a population of tables",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "read_query",
+      "tool_context": {
+        "atomic_ops": [
+          "READ"
+        ],
+        "max_severity": 2,
+        "severity_label": "Low"
+      },
+      "arguments": [
+        {
+          "path": "sql",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": false,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "open domain and caller composes the SQL query, which can select different populations",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "write_query",
+      "tool_context": {
+        "atomic_ops": [
+          "DELETE",
+          "EXECUTE",
+          "OVERWRITE",
+          "SCHEMA_MODIFY",
+          "WRITE"
+        ],
+        "max_severity": 5,
+        "severity_label": "Critical"
+      },
+      "arguments": [
+        {
+          "path": "sql",
+          "orderable": false,
+          "selects_population": false,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": false,
+          "track_concentration": false,
+          "track_temporal_pattern": true,
+          "track_pairing": [],
+          "reason": "The sql argument is free-form text that can expand reach by affecting multiple records and commits changes through SQL queries.",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "insert_row",
+      "tool_context": {
+        "atomic_ops": [
+          "WRITE"
+        ],
+        "max_severity": 3,
+        "severity_label": "Medium"
+      },
+      "arguments": [
+        {
+          "path": "table",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": false,
+          "composes_new_content": false,
+          "references_existing": true,
+          "provenance": "caller_copied",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "open domain and required, likely refers to an existing table name",
+          "confidence": 1.0
+        },
+        {
+          "path": "values",
+          "orderable": false,
+          "selects_population": false,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": false,
+          "track_concentration": false,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "open domain and required, represents new content to be inserted into the table",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 2,
+      "empty_reasons": []
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": [
+    "list_tables"
+  ]
+}

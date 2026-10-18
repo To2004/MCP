@@ -2,15 +2,18 @@
 
 Real, publicly published data-classification policies, collected as the outside-world
 counterpart to the synthetic registers in [`../server-policies.md`](../server-policies.md)
-and the v7 framework arms. They exist to answer one question: **when a real organization
-publishes a policy, how concrete are the assets in it?**
+and the v7 framework arms. Two independent sets live here, answering two different questions.
 
-All three documents come from **one organization** — The University of Iowa — and all three
-describe the same subject: how institutional data is classified and where it is allowed to
-live. They differ only in how concretely they name the things being protected. That makes
-them a controlled ladder rather than three unrelated samples.
+The **ladder** (below) asks: when a real organization publishes a policy, how concrete are
+the assets in it? The **framework set** asks a narrower question: when a real org discloses
+that it follows ISO/NIST/CIS, what does the resulting document actually cite and say?
 
 ## The ladder
+
+All three ladder documents come from **one organization** — The University of Iowa — and all
+three describe the same subject: how institutional data is classified and where it is allowed
+to live. They differ only in how concretely they name the things being protected. That makes
+them a controlled ladder rather than three unrelated samples.
 
 | Rung | Document | Assets as published | Register shape |
 |---|---|---|---|
@@ -84,24 +87,74 @@ public files here." No purely severity-driven model produces that shape.
   lists the data itself (`payroll-records`, `security-keys`). Both are legitimate readings
   of "asset"; they are not interchangeable inputs to a blast-radius calculation.
 
+## The framework set
+
+Three documents from **three different organizations**, each publicly citing one of the
+frameworks the v7 arms ([`../server-policies-iso.md`](../server-policies-iso.md),
+[`-nist.md`](../server-policies-nist.md), [`-cis.md`](../server-policies-cis.md)) write in
+natively. Unlike the ladder, these aren't a controlled comparison — they're independent
+evidence for the same question the ladder's "What it challenges" section raises: does a real
+disclosure under this framework actually reach the concreteness our synthetic arm assumes?
+
+| Framework | Document | What it cites | Register shape |
+|---|---|---|---|
+| **iso** | [Information Classification Scheme — Leeds Beckett University](iso-leedsbeckett-information-classification-scheme/) | "BS ISO/IEC 27002:2013 Section 8.2" by name, and controls A.8.1.1/A.8.2.1/A.8.2.2/A.8.2.3 — the 2013-numbering predecessors of A.5.9/A.5.12/A.8.3 | 3 classes (Public/Internal/Confidential) × a worked matrix of concrete data examples (staff names, passwords, server-room details, exam papers) |
+| **nist** | [Data Classification and System Security Categorization — University of Colorado Denver](nist-ucdenver-data-classification-and-system-security-categorization/) | "FIPS 199" and "NIST 800-60" by name, the {confidentiality, integrity, availability} security-category triple, and the high-water-mark rule | 3 classes (Highly Confidential/Confidential/Public) for data elements, plus a separate FIPS 199 information-type categorization worked end-to-end for one type (Funds Control) straight from the NIST 800-60 catalog |
+| **cis** | [Statewide Policy for Data Classification — State of Nevada](cis-nevada-statewide-data-classification-policy/) | "CIS Controls v8" as a named federal reference alongside NIST SP 800-53/800-60, directs its own technical-control policies to be built on "NIST and CIS Control frameworks," and defines CIS as the Center for Internet Security in its glossary | 4 tiers (Public/Sensitive/Confidential/Restricted) with named regulatory sub-categories (CJIS, FTI, CUI, PCI) rather than a per-system register |
+
+### What each one actually confirms
+
+The ISO document is the strongest hit for a *named-control* citation: it walks the reader
+through all four A.8.1.1→A.8.2.3 steps in one sentence, exactly the "publish the procedure"
+move the ladder's "medium" rung and the ISO arm's A.5.12 block both make. The NIST document is
+the strongest hit for a *worked example*: it doesn't just name FIPS 199 and SP 800-60, it
+reproduces one of SP 800-60's own information-type tables (Financial Management → Funds
+Control) and carries it through to a high-water-mark verdict, which is the same move the NIST
+arm's information-type register is built around. The CIS document is the weakest of the three
+on citation depth — CIS Controls v8 appears as one named reference among several (NIST SP
+800-53, SP 800-60, the Cybersecurity Framework) rather than the sole framework the classification
+scheme derives from — but it is real, current (effective 2026-02-10), and its four-tier,
+sub-category structure (CJIS/FTI/CUI/PCI as named carve-outs) is closer to a live-organization
+register than either of the other two.
+
+### What none of the three reach
+
+None of the three is a per-tool or per-system register the way the synthetic v7 arms are.
+Leeds Beckett's matrix is `class × data-example`, Colorado's is `information type × CIA impact`,
+and Nevada's is `tier × sub-category`. All three name *kinds* of data, not *systems* that hold
+it — the same gap the ladder's "good" rung (Iowa) closes with 41 named services, and that no
+document in the framework set closes on its own. Reading the framework set and the ladder
+together is the point: the ladder shows what concreteness a real disclosure *can* reach: the
+framework set shows what a real disclosure *actually says* when it names ISO, NIST, or CIS by
+name — and it is closer to "bad"/"medium" than to "good."
+
 ## Provenance and refresh
 
-Each folder holds the raw `source.html` as downloaded, a Markdown text extraction, and a
-`provenance.json` with the URL, retrieval timestamp and SHA-256 of the exact bytes converted.
-The permission grid is stored as Font Awesome glyphs with no text, so a naive text extraction
-silently loses all 164 verdicts; the fetcher maps the icon classes back to the page's own
-legend wording.
+Each folder holds the raw downloaded file (`source.html` for the ladder, `source.pdf` for the
+framework set), a Markdown text extraction, and a `provenance.json` with the URL, retrieval
+timestamp and SHA-256 of the exact bytes converted. The Iowa permission grid is stored as Font
+Awesome glyphs with no text, so a naive text extraction silently loses all 164 verdicts; the
+fetcher maps the icon classes back to the page's own legend wording. The framework-set PDFs are
+extracted page-by-page with `pypdf`.
 
 ```bash
-uv run python scripts/fetch_real_policy_examples.py            # re-download and re-extract
-uv run python scripts/fetch_real_policy_examples.py --offline  # re-extract from cached html
+uv run python scripts/fetch_real_policy_examples.py            # re-download and re-extract all six
+uv run python scripts/fetch_real_policy_examples.py --offline  # re-extract from cached source files
 ```
 
-These are public web pages, retained here as reference examples for research. Copyright
-remains with The University of Iowa.
+These are public documents, retained here as reference examples for research. Copyright
+remains with each publisher.
 
 ## Sources
+
+Ladder (The University of Iowa):
 
 - [Institutional Data Policy (IT-19)](https://itsecurity.uiowa.edu/policies-standards-guidelines/institutional-data-policy)
 - [Data classification guidelines](https://itsecurity.uiowa.edu/it-policies/it-guidelines/data-classification-guidelines)
 - [Data Classification Guide to IT Services](https://its.uiowa.edu/services/protecting-sensitive-data/data-classification-guide-it-services)
+
+Framework set:
+
+- [Information Classification Scheme — Leeds Beckett University](https://www.leedsbeckett.ac.uk/-/media/files/policies/information-governance/upig_information_classification.pdf)
+- [Process for Data Classification and System Security Categorization — University of Colorado Denver](https://clas.ucdenver.edu/it-support/sites/default/files/attached-files/cudataclassification.pdf)
+- [Statewide Policy for Data Classification — State of Nevada Governor's Technology Office](https://www.it.nv.gov/siteassets/itnew.nv.gov/content/governance/statewide-policy-for-data-classifications---signed_020220206-12.pdf)

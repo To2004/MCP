@@ -1,6 +1,6 @@
 # Scan — calendar:aurora
 
-_kind=calendar · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 24, 'medium': 44, 'high': 13, 'critical': 8, 'na': 158}_
+_kind=calendar · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 12, 'medium': 23, 'high': 11, 'critical': 4, 'na': 93}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Matrix colour is by RAW SCORE (0–125), scaled to this max.
 
@@ -41,25 +41,17 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `connected-account-config` | 5 |
-| `contacts` | 3 |
-| `event-attendee-lists` | 3 |
-| `aurora-exec` | 3 |
-| `aurora-regulatory` | 3 |
-| `aurora-crew-roster` | 4 |
-| `aurora-crew-roster-commitment` | 5 |
-| `aurora-maintenance` | 3 |
-| `aurora-maintenance-window` | 5 |
-| `aurora-team` | 3 |
-| `outbound-invite-email` | 4 |
-| `event-records` | 4 |
-| `calendar-records` | 2 |
-| `account-directory` | 4 |
-| `free-busy-availability` | 2 |
-| `calendar-directory` | 2 |
-| `rsvp-state` | 3 |
-| `holidays` | 1 |
-| `color-catalog` | 1 |
+| `access-control-configuration` | 5 |
+| `strategic-executive-information` | 4 |
+| `regulatory-compliance-information` | 3 |
+| `operational-commitment-information` | 5 |
+| `ordinary-scheduling-information` | 3 |
+| `person-and-attendee-information` | 3 |
+| `outbound-external-communication` | 3 |
+| `catalog-and-account-directory-metadata` | 2 |
+| `free-busy-information` | 2 |
+| `rsvp-state-information` | 3 |
+| `reference-information` | 2 |
 
 ## Risk matrix (score · band)
 
@@ -67,25 +59,17 @@ _Each cell shows `score (sensitivity×blast×impact)`; impact_mode=five_level_v2
 
 | asset \ tool | list-calendars | list-events | search-events | get-event | list-colors | create-event | create-events | update-event | delete-event | get-freebusy | get-current-time | respond-to-event | manage-accounts |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `connected-account-config` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 125 (5×5×5) 🔴 |
-| `contacts` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 36 (3×3×4) 🟡 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
-| `event-attendee-lists` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 24 (3×2×4) 🟢 | 36 (3×3×4) 🟡 | 36 (3×3×4) 🟡 | 30 (3×2×5) 🟢 | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
-| `aurora-exec` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 48 (3×4×4) 🟡 | 60 (3×5×4) 🟡 | 48 (3×4×4) 🟡 | 75 (3×5×5) 🟠 | N/A | N/A | N/A | N/A |
-| `aurora-regulatory` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 36 (3×3×4) 🟡 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 75 (3×5×5) 🟠 | N/A | N/A | N/A | N/A |
-| `aurora-crew-roster` | N/A | 16 (4×2×2) 🟢 | 36 (4×3×3) 🟡 | 36 (4×3×3) 🟡 | N/A | N/A | 48 (4×3×4) 🟡 | 48 (4×3×4) 🟡 | N/A | 16 (4×2×2) 🟢 | N/A | N/A | N/A |
-| `aurora-crew-roster-commitment` | N/A | 20 (5×2×2) 🟢 | 45 (5×3×3) 🟡 | 30 (5×2×3) 🟢 | N/A | 80 (5×4×4) 🟠 | 100 (5×5×4) 🔴 | 80 (5×4×4) 🟠 | 125 (5×5×5) 🔴 | N/A | N/A | 20 (5×2×2) 🟢 | N/A |
-| `aurora-maintenance` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | N/A | 36 (3×3×4) 🟡 | N/A | 45 (3×3×5) 🟡 | 12 (3×2×2) 🟢 | N/A | N/A | N/A |
-| `aurora-maintenance-window` | N/A | 20 (5×2×2) 🟢 | 45 (5×3×3) 🟡 | N/A | N/A | 80 (5×4×4) 🟠 | 100 (5×5×4) 🔴 | 80 (5×4×4) 🟠 | 125 (5×5×5) 🔴 | N/A | N/A | 20 (5×2×2) 🟢 | N/A |
-| `aurora-team` | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 24 (3×2×4) 🟢 | 36 (3×3×4) 🟡 | 24 (3×2×4) 🟢 | 30 (3×2×5) 🟢 | 12 (3×2×2) 🟢 | N/A | 12 (3×2×2) 🟢 | N/A |
-| `outbound-invite-email` | N/A | N/A | N/A | N/A | N/A | 80 (4×5×4) 🟠 | 80 (4×5×4) 🟠 | 80 (4×5×4) 🟠 | 100 (4×5×5) 🔴 | N/A | N/A | N/A | N/A |
-| `event-records` | N/A | 24 (4×3×2) 🟢 | 36 (4×3×3) 🟡 | 24 (4×2×3) 🟢 | N/A | 64 (4×4×4) 🟡 | 80 (4×5×4) 🟠 | 64 (4×4×4) 🟡 | 100 (4×5×5) 🔴 | N/A | N/A | 16 (4×2×2) 🟢 | N/A |
-| `calendar-records` | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `account-directory` | 16 (4×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 100 (4×5×5) 🔴 |
-| `free-busy-availability` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 8 (2×2×2) 🟢 | N/A | N/A | N/A |
-| `calendar-directory` | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `rsvp-state` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
-| `holidays` | N/A | 2 (1×1×2) 🟢 | 6 (1×2×3) 🟢 | 3 (1×1×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `color-catalog` | N/A | N/A | N/A | N/A | 2 (1×1×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `access-control-configuration` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 125 (5×5×5) 🔴 |
+| `strategic-executive-information` | N/A | 16 (4×2×2) 🟢 | 36 (4×3×3) 🟡 | 36 (4×3×3) 🟡 | N/A | 64 (4×4×4) 🟡 | 80 (4×5×4) 🟠 | 64 (4×4×4) 🟡 | 100 (4×5×5) 🔴 | N/A | N/A | N/A | N/A |
+| `regulatory-compliance-information` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | 48 (3×4×4) 🟡 | 60 (3×5×4) 🟡 | 48 (3×4×4) 🟡 | 75 (3×5×5) 🟠 | N/A | N/A | N/A | N/A |
+| `operational-commitment-information` | N/A | 20 (5×2×2) 🟢 | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 | N/A | 80 (5×4×4) 🟠 | 100 (5×5×4) 🔴 | 80 (5×4×4) 🟠 | 125 (5×5×5) 🔴 | N/A | N/A | 20 (5×2×2) 🟢 | N/A |
+| `ordinary-scheduling-information` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 24 (3×2×4) 🟢 | 36 (3×3×4) 🟡 | 24 (3×2×4) 🟢 | 30 (3×2×5) 🟢 | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
+| `person-and-attendee-information` | N/A | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | 36 (3×3×4) 🟡 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 30 (3×2×5) 🟢 | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
+| `outbound-external-communication` | N/A | N/A | N/A | N/A | N/A | 60 (3×5×4) 🟡 | 60 (3×5×4) 🟡 | 48 (3×4×4) 🟡 | 75 (3×5×5) 🟠 | N/A | N/A | N/A | N/A |
+| `catalog-and-account-directory-metadata` | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 50 (2×5×5) 🟡 |
+| `free-busy-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 8 (2×2×2) 🟢 | N/A | N/A | N/A |
+| `rsvp-state-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A |
+| `reference-information` | N/A | 4 (2×1×2) 🟢 | N/A | 6 (2×1×3) 🟢 | 4 (2×1×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 ## Blast radius (coverage · 1–5)
 
@@ -93,25 +77,17 @@ _What fraction of the asset ONE call of the tool reaches (1 = tiny/metadata, 4 =
 
 | asset \ tool | list-calendars | list-events | search-events | get-event | list-colors | create-event | create-events | update-event | delete-event | get-freebusy | get-current-time | respond-to-event | manage-accounts |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `connected-account-config` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 5 |
-| `contacts` | N/A | 2 | 3 | 2 | N/A | 3 | 4 | 4 | N/A | N/A | N/A | 2 | N/A |
-| `event-attendee-lists` | N/A | 2 | 3 | 2 | N/A | 2 | 3 | 3 | 2 | N/A | N/A | 2 | N/A |
-| `aurora-exec` | N/A | 2 | 3 | 2 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | N/A | N/A |
-| `aurora-regulatory` | N/A | 2 | 3 | 2 | N/A | 3 | 4 | 4 | 5 | N/A | N/A | N/A | N/A |
-| `aurora-crew-roster` | N/A | 2 | 3 | 3 | N/A | N/A | 3 | 3 | N/A | 2 | N/A | N/A | N/A |
-| `aurora-crew-roster-commitment` | N/A | 2 | 3 | 2 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | 2 | N/A |
-| `aurora-maintenance` | N/A | 2 | 3 | 2 | N/A | N/A | 3 | N/A | 3 | 2 | N/A | N/A | N/A |
-| `aurora-maintenance-window` | N/A | 2 | 3 | N/A | N/A | 4 | 5 | 4 | 5 | N/A | N/A | 2 | N/A |
-| `aurora-team` | 2 | 2 | 3 | 2 | N/A | 2 | 3 | 2 | 2 | 2 | N/A | 2 | N/A |
-| `outbound-invite-email` | N/A | N/A | N/A | N/A | N/A | 5 | 5 | 5 | 5 | N/A | N/A | N/A | N/A |
-| `event-records` | N/A | 3 | 3 | 2 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | 2 | N/A |
-| `calendar-records` | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `account-directory` | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 5 |
-| `free-busy-availability` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A |
-| `calendar-directory` | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `rsvp-state` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A |
-| `holidays` | N/A | 1 | 2 | 1 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `color-catalog` | N/A | N/A | N/A | N/A | 1 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `access-control-configuration` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 5 |
+| `strategic-executive-information` | N/A | 2 | 3 | 3 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | N/A | N/A |
+| `regulatory-compliance-information` | N/A | 2 | 3 | 3 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | N/A | N/A |
+| `operational-commitment-information` | N/A | 2 | 3 | 3 | N/A | 4 | 5 | 4 | 5 | N/A | N/A | 2 | N/A |
+| `ordinary-scheduling-information` | N/A | 2 | 3 | 2 | N/A | 2 | 3 | 2 | 2 | N/A | N/A | 2 | N/A |
+| `person-and-attendee-information` | N/A | 2 | 3 | 2 | N/A | 3 | 4 | 4 | 2 | N/A | N/A | 2 | N/A |
+| `outbound-external-communication` | N/A | N/A | N/A | N/A | N/A | 5 | 5 | 4 | 5 | N/A | N/A | N/A | N/A |
+| `catalog-and-account-directory-metadata` | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 5 |
+| `free-busy-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A |
+| `rsvp-state-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A |
+| `reference-information` | N/A | 1 | N/A | 1 | 1 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 ## Tool atomic operations
 

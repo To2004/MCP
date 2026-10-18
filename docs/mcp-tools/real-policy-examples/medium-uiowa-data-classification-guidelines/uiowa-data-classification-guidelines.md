@@ -1,6 +1,6 @@
 # Data classification guidelines — The University of Iowa
 
-> Verbatim text extraction of a **publicly published** policy page, kept as a
+> Verbatim text extraction of a **publicly published** policy document, kept as a
 > real-world reference example. Copyright remains with the publisher.
 >
 > - Source: <https://itsecurity.uiowa.edu/it-policies/it-guidelines/data-classification-guidelines>

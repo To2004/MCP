@@ -142,8 +142,11 @@ The ORGANIZATION'S POLICY above is authoritative. Work in two steps:
                  them.
   4 RESTRICTED   serious lasting harm one step removed: damages customers, staff or
                  the company's position, but is not instantly weaponizable.
-  3 INTERNAL     disruptive and embarrassing but recoverable; meant to stay in-org.
-  2 ROUTINE      low-value internal material; exposure is a shrug.
+  3 INTERNAL     sensitive internal information; exposure could cause
+                 operational or reputational harm but is generally
+                 recoverable.
+  2 ROUTINE      low-sensitivity internal information with limited impact if
+                 exposed.
   1 PUBLIC       already published or disposable -- no confidentiality left to lose.
 
 RULES

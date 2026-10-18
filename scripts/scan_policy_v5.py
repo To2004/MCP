@@ -146,6 +146,19 @@ MODES = {
     "five_level_v2_v7_cis": (
         REPO_ROOT / "reports/experiments/v7/five_level_v2_policy_v7_cis"
     ),
+    # uframe — nacombo's mechanics restated in the organization's own
+    # three-dimension framework (Asset Confidentiality / Action Impact /
+    # Consequence Scope). New sibling dir so the existing nacombo numbers
+    # (aurora/helios/vireo/finance/etc.) stay untouched for comparison.
+    "five_level_v2_v5r_uframe": (
+        REPO_ROOT / "reports/experiments/v5/five_level_v2_policy_v5r_uframe"
+    ),
+    # DIAGNOSTIC — uframe with the deterministic verb ladder switched off, so
+    # every tool's impact comes from the LLM alone. Checks whether a ladder
+    # false positive is a ladder artifact or something the LLM gets wrong too.
+    "five_level_v2_v5r_uframe_llmonly": (
+        REPO_ROOT / "reports/experiments/v5/five_level_v2_policy_v5r_uframe_llmonly"
+    ),
 }
 
 
@@ -189,6 +202,10 @@ TARGETS: tuple[Target, ...] = (
     Target("sec_edgar", "finance", "sec-edgar-mcp", FINANCE_CATALOGS / "sec_edgar.json"),
     Target("yahoo_finance", "finance", "yfinance", FINANCE_CATALOGS / "yahoo_finance.json"),
     Target("maverick", "finance", "maverick-mcp", FINANCE_CATALOGS / "maverick.json"),
+    # Payments and automation: official vendor servers captured live via their
+    # own advertised tools/list (reports/live_run/), same as github_real/slack_real.
+    Target("stripe_real", "stripe", "stripe:real", TOOL_LISTS / "stripe_real.json"),
+    Target("playwright_real", "playwright", "playwright:real", TOOL_LISTS / "playwright_real.json"),
 )
 
 

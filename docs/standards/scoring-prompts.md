@@ -2,7 +2,7 @@
 
 Every prompt this experiment's scan sent to the local LLM, verbatim from `src/mcp_security/static_scoring/prompts.py`. Generated -- do not hand-edit; edit the templates and re-run `scripts/dump_scoring_prompts.py`.
 
-Risk formula: `score = asset_sensitivity × blast_radius × likelihood(1.0) × tool_impact`, score_max = 75. Only the **tool-impact** stage differs between experiments; blast (coverage) and sensitivity are shared.
+Risk formula: `score = asset_sensitivity × blast_radius × likelihood(1.0) × tool_impact`, score_max = 75. The **tool-impact** and **blast** stages vary by experiment; asset sensitivity is shared.
 
 ## 0 · Domain inference (system)
 
@@ -25,13 +25,31 @@ You must determine, with no outside hints:
 - contents_definition: one sentence on what counts as the items' CONTENTS here
   (bodies, titles, message text, cell values) versus mere METADATA about them
   (ids, counts, sizes, timestamps, permissions, schema).
+- dependency_hubs: traits of asset classes that other systems FUNCTIONALLY depend
+  on -- something they authenticate against, load configuration from, or build/
+  deploy from -- whose wholesale disclosure, corruption, or removal cascades BEYOND
+  the asset itself (e.g. credentials/keys/password stores, auth or infra config,
+  CI/CD pipeline definitions, DNS zones, package manifests). List traits, not names.
+  NEGATIVE: holding valuable or PII data at scale does NOT make a hub -- that is
+  dangerous_classes. A hub is FUNCTIONALLY load-bearing, not merely sensitive.
 - dangerous_classes: traits of asset classes that should escalate severity
   (e.g. holds secrets, holds PII at scale, moves real money, is executable).
+  PUBLIC data is NOT dangerous: data already published by an exchange, regulator,
+  news outlet, or open API (public market quotes, filed financial statements, SEC
+  insider-trade / Form 4 filings, institutional-holding / 13F filings, central-bank
+  series) has nothing to leak and must NOT be listed here, however sensitive its
+  TOPIC sounds. A class is dangerous only if a leak/corruption of it is itself
+  harmful -- reserve it for NON-public secrets, PII, money-moving, or unpublished
+  records.
 - irreversible_actions: traits of tools whose effects genuinely cannot be undone
   IN THIS DOMAIN, which imply the maximum tool-impact tier (e.g. drops a table,
   executes code, transfers funds, sends external messages). Judge realistically:
   a delete in a scratch/cache system is routine and recoverable, whereas dropping
   a production table is not -- list the latter, not merely scary-sounding verbs.
+  GROUND THIS IN THE ACTUAL REGISTRY: list ONLY actions some tool present here can
+  really perform. Do NOT invent write/modify/delete traits from the domain's
+  stereotype -- if every tool in the registry is read-only (get/list/search/fetch/
+  read), irreversible_actions is an EMPTY list. Read the tools, not the topic.
 - worked_example: one concrete (tool, asset) pairing in THIS domain and a
   one-sentence severity rationale.
 
@@ -54,7 +72,7 @@ Sample asset classes:
 
 Return JSON:
 {{"mcp_kind": str, "asset_meaning": str, "blast_radius_meaning": str,
-  "content_unit": str, "contents_definition": str,
+  "content_unit": str, "contents_definition": str, "dependency_hubs": [str],
   "dangerous_classes": [str], "irreversible_actions": [str],
   "worked_example": str, "confidence": 0.0-1.0, "needs_human_review": bool}}
 ```
@@ -74,9 +92,9 @@ INFERRED DOMAIN PROFILE:
 Output ONLY valid JSON, no prose, no fences.
 ```
 
-## 1 · Tool impact — task (impact_mode=baseline)
+## 1 · Tool impact — task
 
-BASELINE experiment: damage-ceiling rubric 1-3 (read / recoverable write / destructive). score_max = 75.
+BASELINE: 1-3 damage-ceiling rubric (read / recoverable write / destructive). score_max = 75.
 
 ```text
 TASK: Assign TOOL IMPACT (1/2/3) -- the damage ceiling of the tool itself: the
@@ -148,37 +166,64 @@ Return JSON (reason BEFORE you score -- emit these keys in this exact order):
 Criticality of the asset by what it CHARACTERISTICALLY holds (absolute scale).
 
 ```text
-TASK: Assign ASSET SENSITIVITY (1-5) -- criticality if this asset class is
-exposed, corrupted, or destroyed. Use these ANCHORS, judged by what the asset
-CHARACTERISTICALLY CONTAINS in normal use (its name/path/columns are evidence of
-content):
-  5 = crown jewel: secrets/keys/credentials, regulated records (PHI, card/PAN
-      data), money-moving or legally-privileged data. Exposure alone is
-      reportable or directly exploitable.
-  4 = restricted business data: production/customer data, personnel/payroll,
-      financials, proprietary source code, security/audit logs. Serious harm,
-      but not immediately exploitable like a live credential.
-  3 = internal working data: project docs, schemas, internal reports, ordinary
-      team schedules/threads -- meant to stay inside the org, embarrassing but
-      recoverable if leaked.
-  2 = routine/low-value internal: onboarding material, templates, org charts.
-  1 = public or ephemeral: published content, README, scratch data.
-This is an ABSOLUTE scale, shared across every MCP kind -- score each asset
-against these universal anchors, NEVER relative to the other assets on this same
-server. It is expected and correct for an entire server to sit at one tier: a
-secrets vault is 5 for every asset; a public holidays calendar is 1 for every
-asset. Do NOT spread scores to manufacture contrast, and do NOT reflexively push
-a broad container to 4 just because it *could conceivably* hold something
-restricted -- that worst-case reasoning collapses the whole scale onto 4.
-A CONTAINER takes the sensitivity of the most sensitive content it
-CHARACTERISTICALLY holds in normal operation -- its typical payload, not the
-worst thing it could ever contain (a directory named secrets/ is 5; an ordinary
-team calendar of meeting times is 3, even if an exec occasionally puts a
-confidential title in one event). Escalate classes matching the inferred
-dangerous_classes. If the org supplied a priority, treat it as the primary
-anchor. When GENUINELY torn between two adjacent tiers AND the asset
-characteristically holds secrets, PII, financial, or regulated data, choose the
-HIGHER tier -- under-scoring a crown jewel is the costlier error.
+TASK: Assign ASSET SENSITIVITY (1-5) -- how critical an incident is if this asset
+class is exposed, corrupted, or destroyed, judged by what it CHARACTERISTICALLY
+CONTAINS in normal use (name/path/columns are evidence). Each tier states what an
+incident AT THAT LEVEL MEANS; the categories in parentheses are anchors, not an
+exhaustive list:
+  5 = CROWN JEWEL -- exposure alone is an emergency: the content is directly
+      exploitable or legally reportable the moment it leaks, no further step needed
+      (live secrets/keys/credentials, regulated records like PHI or card/PAN,
+      money-moving or legally-privileged data).
+  4 = RESTRICTED -- serious, lasting harm one step removed: a leak damages
+      customers, staff, or the company's position, but is not instantly
+      weaponizable like a live credential (production/customer data,
+      personnel/payroll, financials, proprietary source, security/audit logs).
+  3 = INTERNAL -- disruptive and embarrassing, but recoverable: meant to stay
+      in-org, a leak causes friction or short-lived advantage to others, not
+      lasting damage (project docs, schemas, internal reports, ordinary team
+      schedules and threads).
+  2 = ROUTINE -- barely worth stealing: low-value internal material whose exposure
+      is a shrug (onboarding material, templates, org charts).
+  1 = PUBLIC / EPHEMERAL -- no confidentiality left to lose: already published or
+      disposable (published content, README, scratch, or data sourced from public
+      feeds, exchanges, regulators, or news -- e.g. public market quotes, filed
+      financial statements, public regulatory disclosures, central-bank series);
+      only defacement or downtime could matter, both trivially restored.
+This is an ABSOLUTE scale shared across every MCP kind -- score each asset against
+these anchors, NEVER relative to the other assets on this server. An entire server
+sitting at one tier is expected and correct: a secrets vault is 5 for every asset;
+a public transit timetable is 1 for every asset. Do NOT spread scores to
+manufacture contrast, and do NOT push a broad container to 4 just because it
+*could conceivably* hold something restricted -- that worst-case reasoning
+collapses the scale onto 4. A CONTAINER takes the sensitivity of the most
+sensitive content it CHARACTERISTICALLY holds in normal operation -- its typical
+payload, not the worst it could ever contain (a store whose name marks it secrets
+is 5; an ordinary shift-roster is 3 even if one entry notes something
+confidential). Escalate classes matching the inferred dangerous_classes; if the
+org supplied a priority, treat it as the primary anchor.
+WORKED EXAMPLES from an UNRELATED domain (a freight-logistics company) -- learn
+the SHAPE, not the nouns:
+  - carrier_api_credentials (live booking-system keys) -> 5: exploitable the moment
+    they leak.
+  - shipment_manifests (consignee names, addresses, cargo values) -> 4: customer
+    data at scale; damaging, not instantly weaponizable.
+  - route_planning_notes (internal optimization) -> 3: embarrassing, not damaging.
+  - driver_onboarding_handbook -> 2: routine internal material.
+  - public_tracking_pages -> 1: already published.
+PUBLIC-DATA OVERRIDE: data that is ALREADY PUBLIC -- published by an exchange,
+regulator, news outlet, or open data API, or otherwise freely available to anyone
+-- is tier 1 regardless of its TOPIC. "Financial" is not "confidential": public
+stock quotes, filed 10-K/10-Q statements, SEC insider-trade (Form 4) filings,
+central-bank / FRED series, and news or social feeds have no confidentiality left
+to lose and must NOT be pushed up merely because they concern money or markets.
+Reserve tiers 4-5 for financial data that is NON-public and directly harmful on
+leak (live payment credentials, account/card numbers, unpublished customer records
+or trading positions).
+When GENUINELY torn between two adjacent tiers AND the asset characteristically
+holds NON-PUBLIC secrets, PII, money-moving, or regulated records, choose the
+HIGHER -- under-scoring a real crown jewel is the costlier error. This tie-breaker
+NEVER applies to public data.
 ```
 
 ## 2 · Asset sensitivity — return schema
@@ -192,35 +237,100 @@ Return JSON (reason BEFORE you score -- emit these keys in this exact order):
   "sensitivity": 1-5, "confidence": 0.0-1.0}}
 ```
 
-## 3 · Blast radius (coverage 1-5) — task
+## 3 · Blast radius (1-5) — task
 
-What FRACTION of the asset ONE call reaches (LLM-only; a whole single-file asset read = 4). Shared by every experiment.
+Reach of ONE call: coverage of the asset (items, subjects, and — via the dependency_hub / dangerous_class traits — fallout that escapes it). N/A modes also mark pairs the tool does not act on as N/A (not scored).
 
 ```text
-TASK: Assign BLAST RADIUS (1-5) for one (tool, asset class) pair -- what FRACTION
-of THIS asset can ONE call of this tool reach, per the inferred
-blast_radius_meaning. Blast is COVERAGE of the asset, NOT a raw item count:
-reading the only file in a single-file asset reaches 100% of it, so it is HIGH
-blast even though it is "one item". Ask: of everything this asset holds, how much
-does one call touch, read, or change?
-  1 = a TINY fraction -- one item among very many, OR metadata only (size, name,
-      timestamps, existence, schema) with no contents; OR the tool does not
-      really touch this asset.
-  2 = a SMALL part of the asset.
-  3 = a LARGE part, or several items in one scope.
-  4 = ESSENTIALLY THE ENTIRE asset -- read-all / list-all / search-all / export,
-      OR the whole of a single-item asset (a password file, a config file).
-  5 = the ENTIRE asset with DESTRUCTIVE or irreversible scope -- wipe, drop,
-      delete-all, overwrite-all.
-Judge coverage RELATIVE TO THIS ASSET, not in absolute item counts:
-  - A calendar of 10,000 events: get_event -> 1 (one of thousands);
-    list_all_events -> 4 (essentially all); delete_all_events -> 5 (all, destroyed).
-  - A password file treated as ONE asset: read_password_file -> 4 (the whole
-    asset is exposed); overwrite_password_file -> 4; delete_password_file -> 5.
-Blast is REACH (coverage), not badness -- how sensitive the data is is priced
-separately by sensitivity, so never raise blast just because the asset is
-important. If the tool does not touch this asset at all, blast = 1.
-Reason FIRST about what fraction one call reaches, THEN give the number.
+TASK: Assign BLAST RADIUS (1-5) for one (tool, asset class) pair -- a CONTAINMENT
+question: if ONE call runs or is misused, how far do the consequences reach across
+this asset's items, across the subjects whose data it holds, and across the systems
+that depend on it? Blast prices REACH only; how valuable the data is is priced by
+sensitivity, so raise blast only because one call reaches more of the asset, more
+of its subjects, or beyond it.
+REACH INCLUDES DISCLOSURE, not just change. Exfiltrating a secret is itself a
+systemic reach: a credential, key, or token read in full ESCAPES and unlocks
+whatever it protects, even though nothing was altered -- theft is silent and
+enables lateral use, so it is often worse than destruction, which is at least
+detectable and recoverable. A read can therefore reach as far as a write: a call
+that discloses a complete, self-sufficient secret must NOT score below a call that
+overwrites or deletes that same secret. Disclosure means RETURNING THE CONTENTS --
+learning only that a secret EXISTS (a listing, a name, a size) is reconnaissance,
+not exfiltration, and stays low.
+Check tier 5's ESCAPE ROUTES FIRST. Only if none applies do the consequences stay
+inside the asset, on tiers 1-4. Each tier is a KIND OF INCIDENT; named actions are
+examples, not the definition:
+  1 = NEGLIGIBLE -- a pinpoint touch: one item among many, one subject at most.
+      The asset as a whole is untouched; recovery, if needed at all, is trivial.
+  2 = MINOR -- a narrow slice: a few items or one small bounded scope, a handful of
+      subjects. Real but local -- the overwhelming majority of the asset and its
+      subjects are unaffected, and the slice is easy to restore or revoke.
+  3 = MAJOR -- a broad cut: most of the asset, or several whole scopes in one call,
+      a meaningful share of its subjects. Serious, yet still PARTIAL -- a
+      substantial part survives and nothing beyond the asset is implicated.
+  4 = TOTAL BUT CONTAINED -- the entire asset, and only the asset: one call reaches
+      essentially everything it holds (all items at once, including the whole of a
+      single-item asset), but the consequences END at the asset's boundary --
+      recoverable, a bounded subject group, no other system depends on it. Full
+      coverage of an ORDINARY asset is 4, never 5.
+  5 = SYSTEMIC -- the consequences ESCAPE the asset; no responder could contain the
+      incident by dealing with the asset alone. Award 5 for ANY one route, and
+      record which in the "escape" field:
+      (a) TOTAL + IRREVERSIBLE: the whole asset is destroyed or irreversibly altered
+          in one call, no realistic path back -- nothing left to restore.
+      (b) HUB CASCADE: the asset matches the inferred dependency_hubs (systems
+          authenticate against it, load config from it, or build/deploy from it) and
+          one call DISCLOSES, corrupts, or removes it WHOLESALE -- the compromise
+          moves LATERALLY, breaking or unlocking everything downstream, systemic
+          even if the asset looks recoverable alone. DISCLOSURE means the call
+          RETURNS THE SECRET'S CONTENTS: reading or exfiltrating a COMPLETE,
+          self-sufficient credential in full -- a private key, password, or token
+          that BY ITSELF grants access -- is wholesale disclosure -> 5(b), even as
+          one small file. Two things are NOT disclosure and take their ordinary
+          metadata tier (1-2), NEVER 5(b): (i) LISTING, enumerating, a recursive
+          directory TREE, searching that returns only names/paths, or reading any
+          METADATA -- learning that a secret exists, its name, size, or path,
+          without its contents (the secret never leaves); (ii)
+          acting on a CONTAINER that merely HOLDS the secret -- listing the folder,
+          or writing one unrelated file into it -- since the container is not
+          itself the hub. Only reading, overwriting, or deleting the secret's OWN
+          contents is wholesale. One non-usable fragment (one log row, one
+          non-privileged value) is never a cascade -> 1-2.
+      (c) COMPLETE POPULATION: the asset matches an inferred dangerous_class
+          (secrets, PII at scale, money-moving, regulated) AND one call reaches its
+          ENTIRE population of subjects at once. "Everyone at once" tops the scale
+          regardless of form -- one file, one row, or one query returning the whole
+          set all count.
+CALIBRATION BY TRAIT (no nouns to imitate):
+  - ORDINARY asset: one item -> 1; narrow slice -> 2; most -> 3; all, recoverably
+    -> 4; all, destroyed -> 5(a).
+  - DEPENDENCY HUB: read-CONTENTS-in-full / overwrite / remove it WHOLESALE -> 5(b)
+    -- a complete standalone credential read in full IS wholesale; LISTING or
+    searching it by name, or one NON-usable fragment (one row, one non-privileged
+    value) -> 1-2.
+  - DANGEROUS-CLASS population store: every subject in one call -> 5(c); one subject
+    -> 1-2.
+WORKED EXAMPLES from an UNRELATED domain (a security-operations system) -- learn
+the SHAPE, not the nouns:
+  - SIEM event log of millions (ordinary): read one event -> 1; one host's day -> 2;
+    a month -> 3; the full log -> 4; purge it -> 5(a).
+  - A signing key / IAM policy store (dependency hubs): READ a key's CONTENTS in full
+    or overwrite it -> 5(b) -- a stolen key silently forges or unlocks every system
+    that trusts it, as bad as or worse than destroying it. But RECURSIVELY LISTING
+    the ENTIRE store -- every key's name and path, returning no key material -> 2:
+    full coverage of NAMES is still metadata, it hands over nothing usable, so it
+    never escapes. Rotate ONE non-privileged entry among thousands -> 1-2.
+  - A breach-notification list of every affected customer (dangerous_class): return
+    the whole list -> 5(c); look up one customer -> 1-2.
+Reach is RELATIVE TO THIS ASSET: reaching the only file of a single-file asset is
+100% of it, not "one item"; the physical unit is a red herring -- one small file is
+5(b) when everything depends on it, ten thousand items are 4 when nothing outside
+them is affected. But a tier-5 escape requires DISCLOSING CONTENTS or DESTROYING:
+a tool that only enumerates, lists, or reports metadata can reach at most tier 4
+(full metadata coverage), never 5 -- it exposes no contents and removes nothing.
+Reason FIRST about what one call reaches -- items, subjects, dependents -- THEN
+give the number.
+If the tool does not act on this asset at all, blast = 1.
 ```
 
 ## 3 · Blast radius — return schema
@@ -232,9 +342,10 @@ Tool:
 Asset class:
 {asset_json}
 
-Return JSON (reason about the fraction FIRST, blast_radius LAST):
+Return JSON (reason about reach FIRST, then escape route, blast_radius LAST).
+escape is "a", "b", or "c" when a tier-5 route fired, else "none":
 {{"tool_name": str, "asset_id": str, "coverage_reasoning": str,
-  "blast_radius": 1-5, "confidence": 0.0-1.0}}
+  "escape": "a|b|c|none", "blast_radius": 1-5, "confidence": 0.0-1.0}}
 ```
 
 ## 4 · Behavioral baseline — task
@@ -247,6 +358,26 @@ operations given its stated purpose, so deviation can be measured later. Be
 precise, not permissive. List expected tools, typical flow patterns (in this
 domain's terms) with their normal max sensitivity, and explicitly list patterns
 that would be ANOMALOUS for this app.
+A "pattern" is ONE recurring action-on-a-target the app performs in normal use,
+written as a short verb-phrase at a consistent granularity: "<action> <what> [in
+<scope>] [for <purpose>]". Keep patterns at the level of a tool-call intent, not
+a whole workflow and not a single API parameter -- one pattern per distinct
+(action, target-class) the app routinely does. Anomalous patterns are the same
+shape, describing actions OUTSIDE its purpose (wrong action type, wrong asset
+class, or wrong scope/volume).
+EXAMPLE in a domain UNRELATED to whatever server you are scoring (a read-only
+triage assistant over a support-ticket system) -- copy the SHAPE and granularity,
+not the nouns:
+  expected_tools: ["get_ticket", "search_tickets", "list_queues"]
+  expected_flows: [
+    {"pattern": "read and search tickets in the assigned queue to triage them",
+     "normal_sensitivity_max": 3},
+    {"pattern": "list queues to locate where a ticket belongs",
+     "normal_sensitivity_max": 2}]
+  anomalous_patterns: ["closing or deleting tickets", "reassigning another agent's
+    tickets", "exporting every ticket in one session", "reading billing or payment
+    records outside the support scope"]
+Match this granularity and keep each pattern decidable against a single tool call.
 ```
 
 ## 4 · Behavioral baseline — return schema

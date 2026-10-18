@@ -43,9 +43,7 @@ from mcp_security.gateway.config import (
     GatewayConfig,
     Identity,
     Upstream,
-    identity_of,
     load_config,
-    token_hash,
 )
 from mcp_security.gateway.effects import EffectMap
 from mcp_security.gateway.framework import RouteScorer, load_artifacts
@@ -58,7 +56,7 @@ from mcp_security.gateway.http_wire import (
     parse_networks,
 )
 from mcp_security.gateway.log_file import MessageLog
-from mcp_security.gateway.oauth import NO_TOKEN, AuthError, TokenVerifier, looks_like_jwt
+from mcp_security.gateway.oauth import NO_TOKEN, AuthError, TokenVerifier
 from mcp_security.gateway.pseudonym import Pseudonymizer
 from mcp_security.gateway.wire_log import (
     CALL_METHOD,
@@ -117,7 +115,12 @@ class Gateway:
         self.agent_names: dict[str, str] = {}  # identity key -> agent name, for notices
         self.log = MessageLog(config.log_dir)
         self.sessions = SessionBook()
-        self.identities = {digest: identity_of(e, digest) for digest, e in config.agents.items()}
+        if self.verifier is None:
+            print(
+                "gateway: no identity provider configured (oauth): every caller is "
+                "'anonymous' — for local testing only, never in front of a real credential",
+                file=sys.stderr,
+            )
         self.trusted: tuple[Network, ...] = parse_networks(config.trusted_proxies)
         pseudonyms = Pseudonymizer.from_env(config.hash_key_env)
         self.refusals = LogPolicy(pseudonyms=pseudonyms)
@@ -222,19 +225,14 @@ class Gateway:
                 self.sessions.end(exchange.session)
 
     async def _identify(self, request: Request, route: str) -> Identity:
-        """Who sent the request: a token listed in ``agents``, or an access token the
-        identity provider signed. ``AuthError`` says why neither holds."""
-        if not self.identities and self.verifier is None:
+        """Who sent the request, as the identity provider's signed access token says;
+        ``AuthError`` says why the token does not hold. No provider: ``anonymous``."""
+        if self.verifier is None:
             return ANONYMOUS
         scheme, _, token = request.headers.get("authorization", "").partition(" ")
         if scheme.lower() != "bearer" or not token:
             raise AuthError(NO_TOKEN)
-        listed = self.identities.get(token_hash(token))
-        if listed:
-            return listed
-        if self.verifier and looks_like_jwt(token):  # may fetch keys: off the event loop
-            return await asyncio.to_thread(self.verifier.verify, token, route)
-        raise AuthError("unknown_token")
+        return await asyncio.to_thread(self.verifier.verify, token, route)  # may fetch keys
 
     def _unauthorized(self, route: str, reason: str) -> Response:
         """401, pointing a client to where it can sign in when OAuth is on (MCP, RFC 9728)."""
@@ -281,7 +279,7 @@ class Gateway:
                 "gateway.effects_sha256": policy.effects.digest if policy.effects else None,
                 "gateway.log_bodies": policy.bodies,
                 "gateway.pseudonyms_keyed": policy.pseudonyms.keyed,
-                "gateway.agents": len(self.identities),
+                "gateway.auth": "oauth" if self.verifier else "none",
                 "gateway.oauth_issuer": self.config.oauth.issuer if self.config.oauth else None,
             }
             self.log.write(name, gateway_record(name, notice, **fields))

@@ -45,6 +45,13 @@ own README with the folder-by-folder index and its headline findings.
   discount, never inflate (the v1 CIA arm's failure). Nothing is wired into the
   scan path yet.
 
+- **v10** steps down a level: instead of scoring a (tool, asset) cell, it types
+  each tool's **input parameters** — what population a value is drawn from and
+  how much of it the caller may reach, where a number's meaning changes, what a
+  list measures, what is merely prose. No bands. The prompt hands the model no
+  taxonomy and no examples from the servers under test, so the categories are
+  the model's own. See [v10/](v10/).
+
 Current best configuration: **v5** — see
 [v5/five_level_v2_policy_v5/](v5/five_level_v2_policy_v5/) (`EVALUATION.md` for
 accuracy against the organization's own numbers). It reproduces each

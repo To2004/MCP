@@ -33,8 +33,10 @@ BIN=/home/ovadyat/local-llm/ollama
 PORT=$((11600 + RANDOM % 300))
 PY="$REPO/.venv/bin/python"
 case "$MODE" in
-  five_level_v2_v5r) OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5r" ;;
-  *)                 OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5" ;;
+  five_level_v2_v5r)                OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5r" ;;
+  five_level_v2_v5r_uframe)         OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5r_uframe" ;;
+  five_level_v2_v5r_uframe_llmonly) OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5r_uframe_llmonly" ;;
+  *)                                OUT="$REPO/reports/experiments/v5/five_level_v2_policy_v5" ;;
 esac
 
 export OLLAMA_MODELS=/home/ovadyat/local-llm/models

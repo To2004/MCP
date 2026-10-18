@@ -82,7 +82,11 @@ RECORDS = [
         "gateway",
         "x4",
         4.0,
-        **{"gateway.notice": "auth_failed", "gateway.reason": "unknown_token", "log.level": "warn"},
+        **{
+            "gateway.notice": "auth_failed",
+            "gateway.reason": "wrong_audience",
+            "log.level": "warn",
+        },
     ),
     _line("gateway", "", 5.0, **{"gateway.notice": "gateway_stopped"}),
 ]
@@ -122,7 +126,7 @@ def test_a_call_logged_without_its_body_shows_names_and_typed_values(lines: list
 def test_notices_are_warnings_with_their_details(lines: list[str]) -> None:
     takeover = _row(lines, "! session_agent_mismatch")
     assert "WARN" in takeover and "bob" in takeover and "owner=alice" in takeover
-    assert "unknown_token" in _row(lines, "! auth_failed")
+    assert "wrong_audience" in _row(lines, "! auth_failed")
 
 
 def test_the_summary_counts_calls_outcomes_and_notices(lines: list[str]) -> None:
@@ -147,7 +151,8 @@ def test_the_grouped_view_reads_request_verdict_reply_per_session() -> None:
     request = view.index("→ tools/call list_commits")
     assert request < view.index("◆ verdict    risk 20.0 medium") < view.index("← 200 ok")
     assert "arguments  repo  (values not logged)" in view
-    assert view.index("✗ refused: token matches no agent") > view.index("== Outside any session")
+    refused = view.index("✗ refused: token issued for another server")
+    assert refused > view.index("== Outside any session")
 
 
 def test_the_command_writes_either_view_with_the_chain_status(

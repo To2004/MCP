@@ -4,9 +4,18 @@ Same stack as ``run_mitm_direct.py`` — mitmdump is the only logging layer — 
 fronts the third-party finance FastMCP servers under ``external/`` instead of the
 built-in test server::
 
-    client → mitmdump:9090 (reverse) → finance FastMCP server:8080
-                         │
-                         └── mitm_capture.py addon → captured.jsonl
+    client → mitmdump (reverse) → finance FastMCP server
+                    │
+                    └── mitm_capture.py addon → captured.jsonl
+
+Both ports are OS-assigned by default (``--server-port`` / ``--mitm-port`` to pin
+them). Fixed ports were a trap: the readiness check only asked whether the port
+was open, so an unrelated service already listening there was captured instead of
+the MCP server, and every session failed with an unexplained 405.
+
+Each party's session is stamped with identity headers (``Authorization``,
+``X-Agent-Id``) so every captured flow attributes to a caller — see
+``_identity_headers``.
 
 The finance servers ship stdio-only, so each is launched over Streamable HTTP by
 ``finance_http_launcher.py`` inside its *own* uv project (its deps are isolated
@@ -41,9 +50,6 @@ from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SERVER_PORT = 8080
-MITM_PORT = 9090
-PROXY_BASE = f"http://localhost:{MITM_PORT}"
 SESSIONS_DIR = REPO_ROOT / "logs" / "proxy" / "sessions"
 LAUNCHER = REPO_ROOT / "logs" / "proxy" / "servers" / "finance_http_launcher.py"
 CAPTURE_ADDON = REPO_ROOT / "logs" / "proxy" / "analysis" / "mitm_capture.py"
@@ -72,7 +78,9 @@ SERVERS: dict[str, dict] = {
         # yahoo only pins mcp>=1.6 (sse-only), but sse is a long-lived stream the
         # buffering proxy can't capture. Overlay a newer mcp so the server speaks
         # streamable-http (discrete POST/response flows mitmdump records cleanly).
-        "uv_with": ["mcp[cli]>=1.13.0"],
+        # Upper-bounded at <2: mcp 2.x drops `mcp.server.fastmcp`, which the
+        # vendored server imports, so an unbounded pin fails to start at all.
+        "uv_with": ["mcp[cli]>=1.9,<2"],
         "transport": "streamable-http",
         "client_path": "/mcp",
         "sessions": [
@@ -277,9 +285,30 @@ def _port_open(port: int) -> bool:
         return s.connect_ex(("127.0.0.1", port)) == 0
 
 
-def _wait(port: int, timeout: float) -> bool:
+def _free_port() -> int:
+    """An OS-assigned free port.
+
+    The fixed defaults collide with whatever else happens to run on the host (a
+    VS Code server on :8080 was silently captured instead of the MCP server,
+    because "the port is open" was the only readiness test). Binding port 0 asks
+    the kernel for one nobody is using.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return int(s.getsockname()[1])
+
+
+def _wait(port: int, timeout: float, proc: subprocess.Popen | None = None) -> bool:
+    """Wait for ``port`` to accept connections, giving up if ``proc`` dies first.
+
+    ``proc`` is what makes this a readiness check rather than a liveness check on
+    an unrelated process: an open port only counts when the process we started is
+    still running.
+    """
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
+        if proc is not None and proc.poll() is not None:
+            return False
         if _port_open(port):
             return True
         time.sleep(0.5)
@@ -314,6 +343,23 @@ async def _run_calls(
     return n_tools
 
 
+def _identity_headers(party: str) -> dict[str, str]:
+    """Per-caller identity headers, stamped on every HTTP request of one session.
+
+    `clientInfo` in the MCP handshake is free text that defaults to the SDK's own
+    name, so it does not identify a caller. Transport headers do, and they ride on
+    every request rather than only the handshake. These stand in for what a real
+    deployment carries: an OAuth bearer token whose claims name the calling
+    application (`client_id`) and the user who authorized it (`sub`). The value
+    here is a placeholder, not a credential — the point is to prove the field
+    survives the proxy into the capture, so a real token's claims would too.
+    """
+    return {
+        "Authorization": f"Bearer placeholder-token-for-{party}",
+        "X-Agent-Id": party,
+    }
+
+
 async def _drive_session(
     transport: str, url: str, party: str, calls: list[tuple[str, str, dict]]
 ) -> int:
@@ -322,19 +368,25 @@ async def _drive_session(
     Picks the client transport that matches how the server was launched. Both
     ride HTTP through mitmdump, so either way the flows land in captured.jsonl.
     """
+    headers = _identity_headers(party)
     if transport == "sse":
-        async with sse_client(url) as (read, write):
+        async with sse_client(url, headers=headers) as (read, write):
             async with ClientSession(read, write) as session:
                 return await _run_calls(session, party, calls)
     else:
-        async with streamablehttp_client(url) as (read, write, _):
+        async with streamablehttp_client(url, headers=headers) as (read, write, _):
             async with ClientSession(read, write) as session:
                 return await _run_calls(session, party, calls)
 
 
-async def run_server(name: str, cfg: dict) -> bool:
+async def run_server(name: str, cfg: dict, server_port: int, mitm_port: int) -> bool:
     out_dir = SESSIONS_DIR / cfg["session"]
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    for label, port in (("server", server_port), ("mitmdump", mitm_port)):
+        if _port_open(port):
+            print(f"  ERROR: port {port} for the {label} is already in use by another process")
+            return False
 
     print(f"\n{'═' * 70}\n  FINANCE SERVER: {name}  ({cfg.get('server_dir', cfg.get('run_cmd'))})\n{'═' * 70}")
 
@@ -355,7 +407,7 @@ async def run_server(name: str, cfg: dict) -> bool:
             "FIN_ATTR": cfg["attr"],
             "FIN_FACTORY": "1" if cfg.get("factory") else "",
             "FIN_HOST": "127.0.0.1",
-            "FIN_PORT": str(SERVER_PORT),
+            "FIN_PORT": str(server_port),
             "FIN_TRANSPORT": cfg.get("transport", "sse"),
             **cfg.get("env", {}),
         }
@@ -370,12 +422,12 @@ async def run_server(name: str, cfg: dict) -> bool:
                 launch_cmd += ["--with", dep]
             launch_cmd += ["python", str(LAUNCHER)]
             how = f"uv --project {cfg['server_dir']}"
-    print(f"[1/3] Starting {name} on :{SERVER_PORT} ({how}) ...")
+    print(f"[1/3] Starting {name} on :{server_port} ({how}) ...")
     with open(server_log, "w", encoding="utf-8") as sf:
         server_proc = subprocess.Popen(
             launch_cmd, stdout=sf, stderr=subprocess.STDOUT, env=launcher_env, cwd=str(REPO_ROOT),
         )
-    if not _wait(SERVER_PORT, 180):  # first run resolves the server's deps
+    if not _wait(server_port, 180, server_proc):  # first run resolves the server's deps
         print(f"  ERROR: {name} did not start — see {server_log}")
         server_proc.terminate()
         return False
@@ -385,19 +437,19 @@ async def run_server(name: str, cfg: dict) -> bool:
     mitm_log = out_dir / "mitmdump.log"
     capture_path = out_dir / "captured.jsonl"
     env = {**os.environ, "MITM_OUT": str(capture_path.resolve())}
-    print(f"[2/3] Starting mitmdump :{MITM_PORT} → :{SERVER_PORT} ...")
+    print(f"[2/3] Starting mitmdump :{mitm_port} → :{server_port} ...")
     with open(mitm_log, "w", encoding="utf-8") as mf:
         mitm_proc = subprocess.Popen(
             [
                 "uvx", "--from", "mitmproxy", "mitmdump",
-                "--mode", f"reverse:http://localhost:{SERVER_PORT}",
-                "--listen-port", str(MITM_PORT),
+                "--mode", f"reverse:http://localhost:{server_port}",
+                "--listen-port", str(mitm_port),
                 "-s", str(CAPTURE_ADDON),
                 "--set", "stream_large_bodies=10m",
             ],
             stdout=mf, stderr=subprocess.STDOUT, env=env, cwd=str(REPO_ROOT),
         )
-    if not _wait(MITM_PORT, 90):
+    if not _wait(mitm_port, 90, mitm_proc):
         print(f"  ERROR: mitmdump did not start — see {mitm_log}")
         server_proc.terminate()
         mitm_proc.terminate()
@@ -406,7 +458,7 @@ async def run_server(name: str, cfg: dict) -> bool:
 
     # 3) drive each party's MCP session through the proxy (all → same capture).
     transport = cfg.get("transport", "sse")
-    client_url = f"{PROXY_BASE}{cfg.get('client_path', '/sse')}"
+    client_url = f"http://localhost:{mitm_port}{cfg.get('client_path', '/sse')}"
     sessions = _sessions_of(cfg)
     print(f"[3/3] Driving {len(sessions)} {transport} session(s) through {client_url} ...")
     ok = True
@@ -424,8 +476,8 @@ async def run_server(name: str, cfg: dict) -> bool:
     server_proc.terminate()
     mitm_proc.wait()
     server_proc.wait()
-    _wait_closed(SERVER_PORT)
-    _wait_closed(MITM_PORT)
+    _wait_closed(server_port)
+    _wait_closed(mitm_port)
 
     if capture_path.exists() and capture_path.stat().st_size > 0:
         n = sum(1 for _ in capture_path.open(encoding="utf-8"))
@@ -439,6 +491,14 @@ async def run_server(name: str, cfg: dict) -> bool:
 async def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", help="run just one server by key", choices=list(SERVERS))
+    parser.add_argument(
+        "--server-port", type=int, default=0,
+        help="port for the MCP server (default: an OS-assigned free port).",
+    )
+    parser.add_argument(
+        "--mitm-port", type=int, default=0,
+        help="port for the mitmdump reverse proxy (default: an OS-assigned free port).",
+    )
     args = parser.parse_args(argv)
 
     targets = {args.only: SERVERS[args.only]} if args.only else SERVERS
@@ -446,7 +506,9 @@ async def main(argv: list[str] | None = None) -> int:
 
     rc = 0
     for name, cfg in targets.items():
-        if not await run_server(name, cfg):
+        server_port = args.server_port or _free_port()
+        mitm_port = args.mitm_port or _free_port()
+        if not await run_server(name, cfg, server_port, mitm_port):
             rc = 1
     return rc
 

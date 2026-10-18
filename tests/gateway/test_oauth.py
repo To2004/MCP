@@ -1,4 +1,4 @@
-"""OAuth: a caller nobody listed signs in at the identity provider; the token says who it is."""
+"""OAuth: every caller signs in at the identity provider; the signed token says who it is."""
 
 from __future__ import annotations
 
@@ -7,75 +7,37 @@ import time
 from pathlib import Path
 
 import httpx
-import jwt
 import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from mcp_security.gateway.config import OAuthConfig
 from mcp_security.gateway.log_file import read_log
-from mcp_security.gateway.oauth import TokenVerifier, actor_chain
+from mcp_security.gateway.oauth import actor_chain
 from mcp_security.gateway.proxy import GatewayConfig, Upstream, create_app
+from tests.gateway.tokens import (
+    GATEWAY,
+    ISSUER,
+    OAUTH,
+    OTHER_KEY,
+    RESOURCE,
+    bearer,
+    mint,
+    verifier,
+)
 
-ISSUER = "https://idp.example"
-GATEWAY = "http://gw"
-RESOURCE = f"{GATEWAY}/github"
-KID = "key-1"
-LISTED_TOKEN = "ci-bot-token"
+USER = "5f0c1e6a-user"
 CALL = {
     "jsonrpc": "2.0",
     "id": 2,
     "method": "tools/call",
     "params": {"name": "list_commits", "arguments": {"repo": "r"}},
 }
-OAUTH = OAuthConfig(
-    issuer=ISSUER,
-    jwks_uri=f"{ISSUER}/jwks",
-    public_url=GATEWAY,
-    scopes_supported=("mcp:tools",),
-)
 
 
-def _key() -> rsa.RSAPrivateKey:
-    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
-
-
-SIGNING_KEY, OTHER_KEY = _key(), _key()
-
-
-class FixedKeys:
-    """The provider's JWKS, held in memory: what ``jwt.PyJWKClient`` would have fetched."""
-
-    def __init__(self, key: rsa.RSAPrivateKey) -> None:
-        jwk = jwt.algorithms.RSAAlgorithm.to_jwk(key.public_key(), as_dict=True)
-        self._set = jwt.PyJWKSet.from_dict({"keys": [{**jwk, "kid": KID, "alg": "RS256"}]})
-
-    def get_signing_key_from_jwt(self, token: str) -> jwt.PyJWK:
-        kid = jwt.get_unverified_header(token).get("kid")
-        try:
-            return self._set[kid]
-        except KeyError as exc:
-            raise jwt.PyJWKClientError(f"no key {kid}") from exc
-
-
-def _token(key: rsa.RSAPrivateKey = SIGNING_KEY, kid: str = KID, **claims: object) -> str:
-    now = int(time.time())
-    body = {
-        "iss": ISSUER,
-        "aud": RESOURCE,
-        "sub": "5f0c1e6a-user",
-        "client_id": "claude-code",
-        "scope": "mcp:tools",
-        "jti": "tok-81",
-        "iat": now,
-        "exp": now + 300,
-        **claims,
-    }
-    body = {k: v for k, v in body.items() if v is not None}
-    return jwt.encode(body, key, algorithm="RS256", headers={"kid": kid})
+def _token(**claims: object) -> str:
+    return mint(**{"sub": USER, **claims})
 
 
 @pytest.fixture
@@ -96,35 +58,30 @@ def gateway(
     monkeypatch.setenv("UPSTREAM_KEY", "upstream-secret")
     config = GatewayConfig(
         upstreams={"github": Upstream(name="github", url="http://up/mcp", key_env="UPSTREAM_KEY")},
-        agents={hashlib.sha256(LISTED_TOKEN.encode()).hexdigest(): "ci-bot"},
         log_dir=tmp_path,
         oauth=OAUTH,
     )
     client = httpx.AsyncClient(transport=httpx.ASGITransport(app=upstream))
-    app = create_app(config, client=client, verifier=TokenVerifier(OAUTH, FixedKeys(SIGNING_KEY)))
+    app = create_app(config, client=client, verifier=verifier())
     return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url=GATEWAY)
 
 
-def _bearer(token: str, **headers: str) -> dict[str, str]:
-    return {"authorization": f"Bearer {token}", **headers}
-
-
-async def test_a_caller_nobody_listed_is_named_by_the_token(
+async def test_the_caller_is_named_by_the_signed_token(
     gateway: httpx.AsyncClient, tmp_path: Path, seen_headers: list[dict[str, str]]
 ) -> None:
     token = _token()
-    reply = await gateway.post("/github", json=CALL, headers=_bearer(token))
+    reply = await gateway.post("/github", json=CALL, headers=bearer(token))
 
     assert reply.status_code == 200
     request = read_log(tmp_path / "github.jsonl")[0]
     assert (request["user.id"], request["gateway.app"], request["gateway.agent"]) == (
-        "5f0c1e6a-user",
+        USER,
         "claude-code",
         "claude-code",
     )
     assert (request["gateway.auth"], request["gateway.issuer"]) == ("oauth", ISSUER)
     assert (request["gateway.scopes"], request["gateway.token_id"]) == (["mcp:tools"], "tok-81")
-    expected_id = hashlib.sha256(f"{ISSUER}|claude-code|5f0c1e6a-user".encode()).hexdigest()
+    expected_id = hashlib.sha256(f"{ISSUER}|claude-code|{USER}".encode()).hexdigest()
     assert request["gateway.agent_id"] == expected_id[:12]
     assert seen_headers[-1]["authorization"] == "Bearer upstream-secret"  # never passed through
     assert token not in (tmp_path / "github.jsonl").read_text()
@@ -141,13 +98,13 @@ async def test_a_caller_nobody_listed_is_named_by_the_token(
         (lambda: _token(client_id=None), "missing_claim"),
         (lambda: _token(sub=None), "missing_claim"),
         (lambda: "not.a.jwt", "invalid_token"),
-        (lambda: "random-opaque-token", "unknown_token"),
+        (lambda: "random-opaque-token", "invalid_token"),  # not even a JWT
     ],
 )
 async def test_a_bad_token_is_refused_with_its_reason(
     gateway: httpx.AsyncClient, tmp_path: Path, token, reason: str
 ) -> None:
-    reply = await gateway.post("/github", json=CALL, headers=_bearer(token()))
+    reply = await gateway.post("/github", json=CALL, headers=bearer(token()))
 
     assert reply.status_code == 401
     assert 'error="invalid_token"' in reply.headers["www-authenticate"]
@@ -173,7 +130,7 @@ async def test_delegation_is_logged_as_the_actor_chain(
     gateway: httpx.AsyncClient, tmp_path: Path
 ) -> None:
     act = {"sub": "assistant-svc", "act": {"sub": "orchestrator"}}
-    await gateway.post("/github", json=CALL, headers=_bearer(_token(act=act)))
+    await gateway.post("/github", json=CALL, headers=bearer(_token(act=act)))
 
     assert read_log(tmp_path / "github.jsonl")[0]["gateway.act"] == [
         "assistant-svc",
@@ -185,20 +142,10 @@ async def test_delegation_is_logged_as_the_actor_chain(
 async def test_two_users_of_one_app_do_not_share_a_session(
     gateway: httpx.AsyncClient, tmp_path: Path
 ) -> None:
-    await gateway.post("/github", json=CALL, headers=_bearer(_token(sub="user-a")))
-    other = _bearer(_token(sub="user-b"), **{"mcp-session-id": "s-1"})
+    await gateway.post("/github", json=CALL, headers=bearer(_token(sub="user-a")))
+    other = bearer(_token(sub="user-b"), **{"mcp-session-id": "s-1"})
     await gateway.post("/github", json=CALL, headers=other)
 
     [notice] = [r for r in read_log(tmp_path / "github.jsonl") if r.get("gateway.notice")]
     assert notice["gateway.notice"] == "session_agent_mismatch"
     assert notice["user.id"] == "user-b"  # same app, same name: told apart by the user
-
-
-async def test_a_listed_token_still_works_beside_oauth(
-    gateway: httpx.AsyncClient, tmp_path: Path
-) -> None:
-    reply = await gateway.post("/github", json=CALL, headers=_bearer(LISTED_TOKEN))
-
-    assert reply.status_code == 200
-    request = read_log(tmp_path / "github.jsonl")[0]
-    assert (request["gateway.agent"], request["gateway.auth"]) == ("ci-bot", "token")

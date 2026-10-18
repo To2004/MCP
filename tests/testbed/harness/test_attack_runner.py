@@ -118,33 +118,22 @@ def test_build_args_none_input_schema() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_scorer_bridge_static_and_combined_always_none(monkeypatch) -> None:
-    """static/combined stay None: no profile-to-scan-artifact mapping exists yet."""
-    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: ("high", "test reason"))
+def test_scorer_bridge_scores_are_all_none() -> None:
+    """Every score stays None while no scorer is wired — never a fabricated number."""
     result = score("read_file", {"path": "foo"}, "Reads a file", "file contents")
     assert result["static"] is None
+    assert result["dynamic"] is None
     assert result["combined"] is None
 
 
-def test_scorer_bridge_dynamic_reflects_judge_verdict(monkeypatch) -> None:
-    """dynamic is the judge's band when the judge returns a verdict."""
-    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: ("critical", "obfuscated payload"))
-    result = score("run_command", {"cmd": "..."}, "Runs a command", "")
-    assert result["dynamic"] == "critical"
-    assert "obfuscated payload" in result["note"]
-
-
-def test_scorer_bridge_dynamic_none_when_judge_has_no_verdict(monkeypatch) -> None:
-    """dynamic is None (not fabricated) when the judge stage has no opinion."""
-    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: None)
-    result = score("any_tool", {}, "", "")
-    assert result["dynamic"] is None
-
-
-def test_scorer_bridge_always_has_note_key(monkeypatch) -> None:
+def test_scorer_bridge_always_has_note_key() -> None:
     """The bridge always includes a 'note' key explaining the current verdict."""
-    monkeypatch.setattr(scorer_bridge, "judge_call", lambda tool, args: None)
     result = score("any_tool", {}, "", "")
     assert "note" in result
     assert isinstance(result["note"], str)
     assert len(result["note"]) > 0
+
+
+def test_scorer_bridge_has_no_archived_gen1_dependency() -> None:
+    """The bridge must not reach into the archived Gen-1 dynamic package."""
+    assert not hasattr(scorer_bridge, "judge_call")

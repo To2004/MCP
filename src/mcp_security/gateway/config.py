@@ -1,58 +1,54 @@
-"""The gateway's routes file: upstream servers, known agents, and how the log is written.
+"""The gateway's routes file: upstream servers, the identity provider, and how the log is written.
 
     {
       "log_dir": "runs/gateway",
       "hash_key_env": "GATEWAY_LOG_KEY",
       "trusted_proxies": ["127.0.0.1/32"],
-      "agents": {"<sha256 of token>": {"id": "agt-17", "agent": "ci-bot", "user": "u-0417",
-                                       "app": "ci"}},
       "oauth": {"issuer": "https://idp.example", "jwks_uri": "https://idp.example/jwks",
                 "public_url": "https://gateway.example", "scopes_supported": ["mcp:tools"]},
       "upstreams": {"github": {"url": "https://...", "key_env": "GITHUB_TOKEN", ...}}
     }
 
-An ``agents`` entry may also be a plain name (``"<sha256>": "alice"``), as before. With
-``oauth`` set, a caller nobody listed signs in at the identity provider instead, and the
-gateway reads who it is from the signed token (``oauth.py``); both can be used together.
+Who a caller is comes only from the organisation's identity provider: people sign in there,
+services use client credentials, and the gateway reads the caller from the signed access
+token (``oauth.py``). Nobody is named in this file. Without ``oauth`` every caller is
+``anonymous`` — for local testing only.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from mcp_security.gateway.wire_log import BODIES
 
 SCORING_MODES = ("inline", "background", "off")
-IDENTITY_KEYS = frozenset({"id", "agent", "user", "app"})
 OAUTH_KEYS = frozenset(
     {"issuer", "jwks_uri", "public_url", "algorithms", "scopes_supported", "leeway_s"}
 )
-TOKEN_TABLE, OAUTH, NO_AUTH = "token", "oauth", "none"  # how an identity was established
-AGENT_ID_CHARS = 12  # default agent id: the start of the token's SHA-256 (GitHub logs the same)
+OAUTH, NO_AUTH = "oauth", "none"  # how an identity was established
+AGENT_ID_CHARS = 12  # an agent id: the start of SHA-256 over issuer, app and user
 DEFAULT_LOG_DIR = Path("runs/gateway")
 DEFAULT_HASH_KEY_ENV = "GATEWAY_LOG_KEY"
 
 
 @dataclass(frozen=True)
 class Identity:
-    """Who a gateway token belongs to: its id, the agent's name, the user it acts for, its app.
+    """Who sent a request, as the identity provider's signed access token says.
 
-    Never from the wire's own say-so: either the gateway hashes the bearer token and looks
-    the hash up in ``agents`` (``auth`` = ``token``), or the token is an access token signed
-    by the identity provider and the gateway reads it (``auth`` = ``oauth``: ``user`` is its
-    ``sub``, ``app`` its ``client_id``). The client's own ``clientInfo`` is self-reported and
-    logged separately as ``gateway.client``. ``id`` is the stable key for baselines: one per
-    user and app. Use a pseudonym for ``user`` in the table, not an e-mail address.
+    ``user`` is the token's ``sub`` (the person, or the service for client credentials),
+    ``app`` and ``agent`` its ``client_id`` (the agent application registered at the
+    provider), ``id`` one stable key per issuer, app and user — the key for baselines and
+    session ownership. Never from the wire's own say-so: the client's ``clientInfo`` is
+    self-reported and logged separately as ``gateway.client``.
     """
 
     agent: str
     user: str | None = None
     app: str | None = None
     id: str | None = None
-    auth: str = TOKEN_TABLE
+    auth: str = OAUTH
     issuer: str | None = None  # oauth: who signed the token
     scopes: tuple[str, ...] = ()  # oauth: what the token allows
     token_id: str | None = None  # oauth: the token's jti, for revocation and audit
@@ -64,22 +60,7 @@ class Identity:
         return self.id or self.agent
 
 
-ANONYMOUS = Identity("anonymous", auth=NO_AUTH)  # no agents, no oauth: local demo only
-
-
-def identity_of(entry: str | dict, token_digest: str | None = None) -> Identity:
-    """An ``agents`` entry (keyed by ``token_digest``) as an Identity; fails loudly on an
-    entry it cannot read."""
-    default_id = token_digest[:AGENT_ID_CHARS] if token_digest else None
-    if isinstance(entry, str):
-        return Identity(entry, id=default_id)
-    if not isinstance(entry, dict) or not entry.get("agent"):
-        raise ValueError(f"an agents entry needs an 'agent' name: {entry!r}")
-    unknown = set(entry) - IDENTITY_KEYS
-    if unknown:
-        raise ValueError(f"unknown keys in agents entry {entry['agent']!r}: {sorted(unknown)}")
-    agent_id = entry.get("id") or default_id
-    return Identity(entry["agent"], entry.get("user"), entry.get("app"), agent_id)
+ANONYMOUS = Identity("anonymous", auth=NO_AUTH)  # no identity provider: local testing only
 
 
 @dataclass(frozen=True)
@@ -144,37 +125,33 @@ def oauth_of(raw: dict | None) -> OAuthConfig | None:
 
 @dataclass(frozen=True)
 class GatewayConfig:
-    """Routes, known agents (by SHA-256 of their gateway token), and where logs go."""
+    """Routes, the identity provider, and where logs go."""
 
     upstreams: dict[str, Upstream]
-    agents: dict[str, str | dict] = field(default_factory=dict)  # empty = no agent auth (demo)
     log_dir: Path = DEFAULT_LOG_DIR
     trusted_proxies: tuple[str, ...] = ()  # addresses/CIDRs whose X-Forwarded-For is believed
     hash_key_env: str = DEFAULT_HASH_KEY_ENV  # env var holding the log's pseudonym key
-    oauth: OAuthConfig | None = None  # accept the identity provider's access tokens
+    oauth: OAuthConfig | None = None  # the identity provider; None: everyone is anonymous
 
 
 def load_config(path: Path) -> GatewayConfig:
-    """Read the routes file. Fails loudly on a route without a URL or a bad agents entry."""
+    """Read the routes file. Fails loudly on a route without a URL, a bad ``oauth`` section,
+    or an ``agents`` table (removed: names now come only from the identity provider)."""
     raw = json.loads(path.read_text(encoding="utf-8"))
+    if "agents" in raw:
+        raise ValueError(
+            "routes file: 'agents' is no longer supported; callers are identified by the "
+            "identity provider's tokens — configure 'oauth' (services: client credentials)"
+        )
     upstreams = {}
     for name, entry in raw["upstreams"].items():
         if not entry.get("url"):
             raise ValueError(f"upstream {name!r} has no url")
         upstreams[name] = Upstream(name=name, **entry)
-    agents = dict(raw.get("agents", {}))
-    for digest, entry in agents.items():
-        identity_of(entry, digest)
     return GatewayConfig(
         upstreams=upstreams,
-        agents=agents,
         log_dir=Path(raw.get("log_dir", DEFAULT_LOG_DIR)),
         trusted_proxies=tuple(raw.get("trusted_proxies", ())),
         hash_key_env=raw.get("hash_key_env", DEFAULT_HASH_KEY_ENV),
         oauth=oauth_of(raw.get("oauth")),
     )
-
-
-def token_hash(token: str) -> str:
-    """How an agent token is stored in the config: its SHA-256, never the token."""
-    return hashlib.sha256(token.encode()).hexdigest()

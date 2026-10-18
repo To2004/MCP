@@ -1,6 +1,6 @@
 # Scan — slack:vireo
 
-_kind=slack · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 18, 'medium': 41, 'high': 3, 'critical': 3, 'na': 207}_
+_kind=slack · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 17, 'medium': 27, 'high': 2, 'critical': 1, 'na': 113}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Matrix colour is by RAW SCORE (0–125), scaled to this max.
 
@@ -44,23 +44,16 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `vireo-unblinding` | 5 |
-| `vireo-unblinding-relay` | 5 |
-| `vireo-safety-pv` | 3 |
-| `vireo-safety-pv-post` | 4 |
-| `vireo-regulatory-fda` | 3 |
-| `vireo-trial-ops` | 3 |
-| `vireo-lab-informatics` | 3 |
-| `vireo-eng-platform` | 2 |
-| `vireo-announcements` | 2 |
-| `channel-messages` | 5 |
-| `usergroup-membership` | 4 |
-| `agent-channel-membership` | 5 |
-| `user-directory` | 4 |
-| `channel-directory` | 2 |
-| `usergroup-directory` | 2 |
-| `read-markers` | 4 |
-| `message-reactions` | 2 |
+| `unblinding-information` | 5 |
+| `pharmacovigilance-information` | 4 |
+| `regulatory-correspondence-information` | 3 |
+| `trial-conduct-information` | 3 |
+| `platform-engineering-information` | 2 |
+| `broadcast-information` | 1 |
+| `access-control-write-state` | 5 |
+| `agent-membership-read-state` | 3 |
+| `member-directory-information` | 3 |
+| `workspace-catalog-metadata` | 3 |
 
 ## Risk matrix (score · band)
 
@@ -68,23 +61,16 @@ _Each cell shows `score (sensitivity×blast×impact)`; impact_mode=five_level_v2
 
 | asset \ tool | channels_list | channels_me | conversations_add_message | conversations_history | conversations_join | conversations_leave | conversations_mark | conversations_replies | conversations_search_messages | conversations_unreads | usergroups_create | usergroups_list | usergroups_me | usergroups_update | usergroups_users_update | users_search |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `vireo-unblinding` | N/A | N/A | N/A | 45 (5×3×3) 🟡 | 20 (5×2×2) 🟢 | 25 (5×1×5) 🟢 | N/A | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-unblinding-relay` | N/A | N/A | 75 (5×5×3) 🟠 | N/A | 40 (5×4×2) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-safety-pv` | N/A | N/A | N/A | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-safety-pv-post` | N/A | N/A | 36 (4×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-regulatory-fda` | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-trial-ops` | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | 12 (3×2×2) 🟢 | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-lab-informatics` | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-eng-platform` | N/A | N/A | 18 (2×3×3) 🟢 | 18 (2×3×3) 🟢 | 8 (2×2×2) 🟢 | 10 (2×1×5) 🟢 | 8 (2×2×2) 🟢 | 18 (2×3×3) 🟢 | 12 (2×2×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-announcements` | 16 (2×4×2) 🟢 | N/A | 24 (2×4×3) 🟢 | 24 (2×4×3) 🟢 | 8 (2×2×2) 🟢 | N/A | 8 (2×2×2) 🟢 | 24 (2×4×3) 🟢 | 24 (2×4×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `channel-messages` | N/A | N/A | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 | N/A | N/A | N/A | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `usergroup-membership` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 64 (4×4×4) 🟡 | 16 (4×2×2) 🟢 | 100 (4×5×5) 🔴 | 36 (4×3×3) 🟡 | 100 (4×5×5) 🔴 | N/A |
-| `agent-channel-membership` | N/A | 20 (5×2×2) 🟢 | N/A | N/A | 20 (5×2×2) 🟢 | 50 (5×2×5) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | 125 (5×5×5) 🔴 | N/A | N/A | N/A |
-| `user-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 36 (4×3×3) 🟡 |
-| `channel-directory` | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `usergroup-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 16 (2×2×4) 🟢 | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A |
-| `read-markers` | N/A | N/A | N/A | N/A | N/A | N/A | 16 (4×2×2) 🟢 | N/A | N/A | 16 (4×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A |
-| `message-reactions` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `unblinding-information` | N/A | N/A | 45 (5×3×3) 🟡 | 60 (5×4×3) 🟡 | 40 (5×4×2) 🟡 | 25 (5×1×5) 🟢 | N/A | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `pharmacovigilance-information` | N/A | N/A | 36 (4×3×3) 🟡 | 36 (4×3×3) 🟡 | 16 (4×2×2) 🟢 | 40 (4×2×5) 🟡 | N/A | 36 (4×3×3) 🟡 | 36 (4×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `regulatory-correspondence-information` | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `trial-conduct-information` | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 30 (3×2×5) 🟢 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `platform-engineering-information` | N/A | N/A | 18 (2×3×3) 🟢 | 18 (2×3×3) 🟢 | 8 (2×2×2) 🟢 | 10 (2×1×5) 🟢 | N/A | 18 (2×3×3) 🟢 | 18 (2×3×3) 🟢 | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A |
+| `broadcast-information` | N/A | N/A | 12 (1×4×3) 🟢 | 12 (1×4×3) 🟢 | 8 (1×4×2) 🟢 | N/A | N/A | 12 (1×4×3) 🟢 | 3 (1×1×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `access-control-write-state` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 80 (5×4×4) 🟠 | N/A | N/A | 45 (5×3×3) 🟡 | 125 (5×5×5) 🔴 | N/A |
+| `agent-membership-read-state` | N/A | 12 (3×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 15 (3×1×5) 🟢 | N/A | N/A | N/A |
+| `member-directory-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 27 (3×3×3) 🟢 |
+| `workspace-catalog-metadata` | 18 (3×3×2) 🟢 | 12 (3×2×2) 🟢 | N/A | N/A | N/A | N/A | 6 (3×1×2) 🟢 | N/A | N/A | 12 (3×2×2) 🟢 | N/A | 12 (3×2×2) 🟢 | N/A | N/A | N/A | N/A |
 
 ## Blast radius (coverage · 1–5)
 
@@ -92,23 +78,16 @@ _What fraction of the asset ONE call of the tool reaches (1 = tiny/metadata, 4 =
 
 | asset \ tool | channels_list | channels_me | conversations_add_message | conversations_history | conversations_join | conversations_leave | conversations_mark | conversations_replies | conversations_search_messages | conversations_unreads | usergroups_create | usergroups_list | usergroups_me | usergroups_update | usergroups_users_update | users_search |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `vireo-unblinding` | N/A | N/A | N/A | 3 | 2 | 1 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-unblinding-relay` | N/A | N/A | 5 | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-safety-pv` | N/A | N/A | N/A | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-safety-pv-post` | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-regulatory-fda` | N/A | N/A | 3 | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-trial-ops` | N/A | N/A | 3 | 3 | 2 | 2 | 2 | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-lab-informatics` | N/A | N/A | 3 | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-eng-platform` | N/A | N/A | 3 | 3 | 2 | 1 | 2 | 3 | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `vireo-announcements` | 4 | N/A | 4 | 4 | 2 | N/A | 2 | 4 | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `channel-messages` | N/A | N/A | 3 | 3 | N/A | N/A | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `usergroup-membership` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4 | 2 | 5 | 3 | 5 | N/A |
-| `agent-channel-membership` | N/A | 2 | N/A | N/A | 2 | 2 | N/A | N/A | N/A | N/A | N/A | N/A | 5 | N/A | N/A | N/A |
-| `user-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 |
-| `channel-directory` | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `usergroup-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | 2 | N/A | N/A | N/A | N/A |
-| `read-markers` | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A |
-| `message-reactions` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `unblinding-information` | N/A | N/A | 3 | 4 | 4 | 1 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `pharmacovigilance-information` | N/A | N/A | 3 | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `regulatory-correspondence-information` | N/A | N/A | 3 | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `trial-conduct-information` | N/A | N/A | 3 | 3 | 2 | 2 | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `platform-engineering-information` | N/A | N/A | 3 | 3 | 2 | 1 | N/A | 3 | 3 | 2 | N/A | N/A | N/A | N/A | N/A | N/A |
+| `broadcast-information` | N/A | N/A | 4 | 4 | 4 | N/A | N/A | 4 | 1 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `access-control-write-state` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4 | N/A | N/A | 3 | 5 | N/A |
+| `agent-membership-read-state` | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 1 | N/A | N/A | N/A |
+| `member-directory-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 |
+| `workspace-catalog-metadata` | 3 | 2 | N/A | N/A | N/A | N/A | 1 | N/A | N/A | 2 | N/A | 2 | N/A | N/A | N/A | N/A |
 
 ## Tool atomic operations
 

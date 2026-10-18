@@ -1,6 +1,6 @@
 # Scan — github:helios
 
-_kind=github · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 43, 'medium': 88, 'high': 34, 'critical': 2, 'na': 379}_
+_kind=github · provenance=llm-scan · model_reviewed=True · impact_mode=five_level_v2_v7_nist · bands={'low': 17, 'medium': 56, 'high': 17, 'critical': 0, 'na': 144}_
 
 Risk derived live by the LLM from the scanned tools and assets — no checked-in table was read. Matrix colour is by RAW SCORE (0–125), scaled to this max.
 
@@ -54,27 +54,15 @@ Risk derived live by the LLM from the scanned tools and assets — no checked-in
 
 | asset | sensitivity |
 | --- | --- |
-| `helios-grid-infra-config` | 3 |
-| `helios-grid-infra-config-change` | 5 |
-| `helios-scada-gateway` | 3 |
-| `helios-scada-gateway-release` | 5 |
-| `helios-market-bidding-engine` | 4 |
-| `helios-ot-runbooks` | 3 |
-| `helios-public-site` | 1 |
-| `repository-contents` | 3 |
-| `code-records` | 4 |
-| `branch-heads` | 4 |
-| `pull-requests-and-reviews` | 3 |
-| `pull-request-records` | 3 |
-| `issues-and-comments` | 2 |
-| `issue-records` | 3 |
-| `org-external-copies` | 4 |
-| `repository-records` | 3 |
-| `repository-catalog` | 2 |
-| `branch-directory` | 2 |
-| `commit-list` | 2 |
-| `issue-catalog` | 3 |
-| `platform-user-directory` | 2 |
+| `ot-cyber-system-information` | 5 |
+| `ot-estate-description-information` | 3 |
+| `market-bidding-information` | 4 |
+| `non-ot-engineering-information` | 3 |
+| `change-review-information` | 3 |
+| `issue-discussion-information` | 3 |
+| `org-boundary-exit-state` | 5 |
+| `repository-catalog-metadata` | 3 |
+| `platform-account-directory-information` | 1 |
 
 ## Risk matrix (score · band)
 
@@ -82,27 +70,15 @@ _Each cell shows `score (sensitivity×blast×impact)`; impact_mode=five_level_v2
 
 | asset \ tool | create_or_update_file | search_repositories | create_repository | get_file_contents | push_files | create_issue | create_pull_request | fork_repository | create_branch | list_commits | list_issues | update_issue | add_issue_comment | search_code | search_issues | search_users | get_issue | get_pull_request | list_pull_requests | create_pull_request_review | merge_pull_request | get_pull_request_files | get_pull_request_status | update_pull_request_branch | get_pull_request_comments | get_pull_request_reviews |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `helios-grid-infra-config` | 48 (3×4×4) 🟡 | N/A | N/A | 36 (3×4×3) 🟡 | 48 (3×4×4) 🟡 | N/A | 48 (3×4×4) 🟡 | 60 (3×5×4) 🟡 | 48 (3×4×4) 🟡 | 18 (3×3×2) 🟢 | 12 (3×2×2) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | N/A | 18 (3×3×2) 🟢 | N/A | 48 (3×4×4) 🟡 | N/A | N/A |
-| `helios-grid-infra-config-change` | 80 (5×4×4) 🟠 | N/A | N/A | N/A | 80 (5×4×4) 🟠 | N/A | 80 (5×4×4) 🟠 | 100 (5×5×4) 🔴 | 80 (5×4×4) 🟠 | 40 (5×4×2) 🟡 | N/A | N/A | N/A | 75 (5×5×3) 🟠 | N/A | N/A | N/A | 60 (5×4×3) 🟡 | 20 (5×2×2) 🟢 | 80 (5×4×4) 🟠 | 80 (5×4×4) 🟠 | 40 (5×4×2) 🟡 | N/A | 80 (5×4×4) 🟠 | N/A | 45 (5×3×3) 🟡 |
-| `helios-scada-gateway` | N/A | N/A | N/A | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 18 (3×2×3) 🟢 | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `helios-scada-gateway-release` | 80 (5×4×4) 🟠 | N/A | N/A | 75 (5×5×3) 🟠 | 80 (5×4×4) 🟠 | N/A | 80 (5×4×4) 🟠 | N/A | 80 (5×4×4) 🟠 | 40 (5×4×2) 🟡 | N/A | N/A | N/A | 45 (5×3×3) 🟡 | N/A | N/A | N/A | 60 (5×4×3) 🟡 | 30 (5×3×2) 🟢 | 80 (5×4×4) 🟠 | 100 (5×5×4) 🔴 | 40 (5×4×2) 🟡 | 20 (5×2×2) 🟢 | 80 (5×4×4) 🟠 | 45 (5×3×3) 🟡 | 45 (5×3×3) 🟡 |
-| `helios-market-bidding-engine` | 64 (4×4×4) 🟡 | N/A | N/A | 48 (4×4×3) 🟡 | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | 16 (4×2×2) 🟢 | 16 (4×2×2) 🟢 | N/A | N/A | 48 (4×4×3) 🟡 | 24 (4×2×3) 🟢 | N/A | N/A | 24 (4×2×3) 🟢 | 24 (4×3×2) 🟢 | 64 (4×4×4) 🟡 | 64 (4×4×4) 🟡 | 32 (4×4×2) 🟢 | 16 (4×2×2) 🟢 | 64 (4×4×4) 🟡 | 24 (4×2×3) 🟢 | 36 (4×3×3) 🟡 |
-| `helios-ot-runbooks` | 48 (3×4×4) 🟡 | N/A | N/A | 27 (3×3×3) 🟢 | 48 (3×4×4) 🟡 | N/A | 48 (3×4×4) 🟡 | N/A | 36 (3×3×4) 🟡 | 12 (3×2×2) 🟢 | 18 (3×3×2) 🟢 | 36 (3×3×4) 🟡 | 18 (3×2×3) 🟢 | 36 (3×4×3) 🟡 | 27 (3×3×3) 🟢 | N/A | N/A | N/A | 18 (3×3×2) 🟢 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | N/A | 48 (3×4×4) 🟡 | N/A | 27 (3×3×3) 🟢 |
-| `helios-public-site` | 16 (1×4×4) 🟢 | N/A | N/A | 6 (1×2×3) 🟢 | 16 (1×4×4) 🟢 | N/A | 16 (1×4×4) 🟢 | N/A | 8 (1×2×4) 🟢 | 4 (1×2×2) 🟢 | N/A | N/A | N/A | 6 (1×2×3) 🟢 | N/A | N/A | N/A | N/A | 4 (1×2×2) 🟢 | 8 (1×2×4) 🟢 | 16 (1×4×4) 🟢 | 4 (1×2×2) 🟢 | N/A | 16 (1×4×4) 🟢 | N/A | N/A |
-| `repository-contents` | 48 (3×4×4) 🟡 | N/A | N/A | 27 (3×3×3) 🟢 | 48 (3×4×4) 🟡 | N/A | 48 (3×4×4) 🟡 | 60 (3×5×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | N/A | N/A | N/A | 36 (3×4×3) 🟡 | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | N/A | 48 (3×4×4) 🟡 | N/A | N/A |
-| `code-records` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 36 (4×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `branch-heads` | 64 (4×4×4) 🟡 | N/A | N/A | N/A | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | 24 (4×3×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 64 (4×4×4) 🟡 | N/A | N/A | 64 (4×4×4) 🟡 | N/A | N/A |
-| `pull-requests-and-reviews` | N/A | N/A | N/A | N/A | N/A | 36 (3×3×4) 🟡 | 48 (3×4×4) 🟡 | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A | 18 (3×2×3) 🟢 | N/A | 27 (3×3×3) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 |
-| `pull-request-records` | N/A | N/A | N/A | N/A | N/A | N/A | 48 (3×4×4) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 18 (3×2×3) 🟢 | 27 (3×3×3) 🟢 |
-| `issues-and-comments` | N/A | N/A | N/A | N/A | N/A | 16 (2×2×4) 🟢 | N/A | N/A | N/A | N/A | 8 (2×2×2) 🟢 | 16 (2×2×4) 🟢 | 12 (2×2×3) 🟢 | N/A | 18 (2×3×3) 🟢 | N/A | 12 (2×2×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 12 (2×2×3) 🟢 | 18 (2×3×3) 🟢 |
-| `issue-records` | N/A | N/A | N/A | N/A | N/A | 48 (3×4×4) 🟡 | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 18 (3×2×3) 🟢 | N/A | 27 (3×3×3) 🟢 | N/A | 18 (3×2×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 18 (3×2×3) 🟢 | N/A |
-| `org-external-copies` | N/A | N/A | 64 (4×4×4) 🟡 | N/A | N/A | N/A | N/A | 64 (4×4×4) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `repository-records` | N/A | N/A | 48 (3×4×4) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `repository-catalog` | N/A | 18 (2×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `branch-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 32 (2×4×4) 🟢 | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `commit-list` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 8 (2×2×2) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `issue-catalog` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A | N/A | N/A | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `platform-user-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 18 (2×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `ot-cyber-system-information` | 80 (5×4×4) 🟠 | N/A | N/A | 60 (5×4×3) 🟡 | 80 (5×4×4) 🟠 | N/A | 80 (5×4×4) 🟠 | N/A | 80 (5×4×4) 🟠 | 40 (5×4×2) 🟡 | N/A | N/A | N/A | 60 (5×4×3) 🟡 | 45 (5×3×3) 🟡 | N/A | N/A | N/A | N/A | 80 (5×4×4) 🟠 | 80 (5×4×4) 🟠 | 40 (5×4×2) 🟡 | N/A | 80 (5×4×4) 🟠 | N/A | N/A |
+| `ot-estate-description-information` | 48 (3×4×4) 🟡 | 36 (3×4×3) 🟡 | N/A | 27 (3×3×3) 🟢 | 48 (3×4×4) 🟡 | N/A | 48 (3×4×4) 🟡 | N/A | 36 (3×3×4) 🟡 | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 36 (3×3×4) 🟡 | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 18 (3×3×2) 🟢 | 48 (3×4×4) 🟡 | 36 (3×3×4) 🟡 | 12 (3×2×2) 🟢 | N/A | 48 (3×4×4) 🟡 | N/A | N/A |
+| `market-bidding-information` | 64 (4×4×4) 🟡 | N/A | N/A | 48 (4×4×3) 🟡 | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | N/A | 64 (4×4×4) 🟡 | 16 (4×2×2) 🟢 | N/A | N/A | N/A | 36 (4×3×3) 🟡 | 36 (4×3×3) 🟡 | N/A | N/A | N/A | N/A | N/A | 64 (4×4×4) 🟡 | 16 (4×2×2) 🟢 | N/A | 64 (4×4×4) 🟡 | N/A | N/A |
+| `non-ot-engineering-information` | 48 (3×4×4) 🟡 | 27 (3×3×3) 🟢 | N/A | 27 (3×3×3) 🟢 | 48 (3×4×4) 🟡 | 24 (3×2×4) 🟢 | 48 (3×4×4) 🟡 | N/A | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | 18 (3×3×2) 🟢 | 36 (3×3×4) 🟡 | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 18 (3×2×3) 🟢 | 27 (3×3×3) 🟢 |
+| `change-review-information` | N/A | N/A | N/A | N/A | N/A | N/A | 48 (3×4×4) 🟡 | N/A | N/A | N/A | 12 (3×2×2) 🟢 | N/A | 27 (3×3×3) 🟢 | N/A | 27 (3×3×3) 🟢 | N/A | N/A | 27 (3×3×3) 🟢 | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 48 (3×4×4) 🟡 | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | 36 (3×3×4) 🟡 | 18 (3×2×3) 🟢 | 27 (3×3×3) 🟢 |
+| `issue-discussion-information` | N/A | N/A | N/A | N/A | N/A | 24 (3×2×4) 🟢 | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | 48 (3×4×4) 🟡 | 27 (3×3×3) 🟢 | N/A | 27 (3×3×3) 🟢 | N/A | 18 (3×2×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 27 (3×3×3) 🟢 | 27 (3×3×3) 🟢 |
+| `org-boundary-exit-state` | N/A | N/A | 80 (5×4×4) 🟠 | N/A | N/A | N/A | N/A | 80 (5×4×4) 🟠 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `repository-catalog-metadata` | N/A | 36 (3×4×3) 🟡 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 12 (3×2×2) 🟢 | 12 (3×2×2) 🟢 | N/A | N/A | N/A | 27 (3×3×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `platform-account-directory-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 6 (1×2×3) 🟢 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 ## Blast radius (coverage · 1–5)
 
@@ -110,27 +86,15 @@ _What fraction of the asset ONE call of the tool reaches (1 = tiny/metadata, 4 =
 
 | asset \ tool | create_or_update_file | search_repositories | create_repository | get_file_contents | push_files | create_issue | create_pull_request | fork_repository | create_branch | list_commits | list_issues | update_issue | add_issue_comment | search_code | search_issues | search_users | get_issue | get_pull_request | list_pull_requests | create_pull_request_review | merge_pull_request | get_pull_request_files | get_pull_request_status | update_pull_request_branch | get_pull_request_comments | get_pull_request_reviews |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `helios-grid-infra-config` | 4 | N/A | N/A | 4 | 4 | N/A | 4 | 5 | 4 | 3 | 2 | N/A | N/A | 3 | 3 | N/A | N/A | N/A | 2 | 4 | N/A | 3 | N/A | 4 | N/A | N/A |
-| `helios-grid-infra-config-change` | 4 | N/A | N/A | N/A | 4 | N/A | 4 | 5 | 4 | 4 | N/A | N/A | N/A | 5 | N/A | N/A | N/A | 4 | 2 | 4 | 4 | 4 | N/A | 4 | N/A | 3 |
-| `helios-scada-gateway` | N/A | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | 2 | 2 | N/A | N/A | 3 | 2 | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `helios-scada-gateway-release` | 4 | N/A | N/A | 5 | 4 | N/A | 4 | N/A | 4 | 4 | N/A | N/A | N/A | 3 | N/A | N/A | N/A | 4 | 3 | 4 | 5 | 4 | 2 | 4 | 3 | 3 |
-| `helios-market-bidding-engine` | 4 | N/A | N/A | 4 | 4 | N/A | 4 | N/A | 4 | 2 | 2 | N/A | N/A | 4 | 2 | N/A | N/A | 2 | 3 | 4 | 4 | 4 | 2 | 4 | 2 | 3 |
-| `helios-ot-runbooks` | 4 | N/A | N/A | 3 | 4 | N/A | 4 | N/A | 3 | 2 | 3 | 3 | 2 | 4 | 3 | N/A | N/A | N/A | 3 | 4 | 4 | 2 | N/A | 4 | N/A | 3 |
-| `helios-public-site` | 4 | N/A | N/A | 2 | 4 | N/A | 4 | N/A | 2 | 2 | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | 2 | 2 | 4 | 2 | N/A | 4 | N/A | N/A |
-| `repository-contents` | 4 | N/A | N/A | 3 | 4 | N/A | 4 | 5 | 4 | 2 | N/A | N/A | N/A | 4 | N/A | N/A | N/A | N/A | 2 | N/A | 4 | 2 | N/A | 4 | N/A | N/A |
-| `code-records` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `branch-heads` | 4 | N/A | N/A | N/A | 4 | N/A | 4 | N/A | 4 | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4 | N/A | N/A | 4 | N/A | N/A |
-| `pull-requests-and-reviews` | N/A | N/A | N/A | N/A | N/A | 3 | 4 | N/A | N/A | N/A | 2 | N/A | 2 | N/A | 3 | N/A | N/A | 3 | 2 | 4 | 4 | 2 | 2 | 4 | 3 | 3 |
-| `pull-request-records` | N/A | N/A | N/A | N/A | N/A | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 | 2 | 4 | 4 | 2 | 2 | 4 | 2 | 3 |
-| `issues-and-comments` | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | 2 | 2 | 2 | N/A | 3 | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | 3 |
-| `issue-records` | N/A | N/A | N/A | N/A | N/A | 4 | N/A | N/A | N/A | N/A | 2 | 4 | 2 | N/A | 3 | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A |
-| `org-external-copies` | N/A | N/A | 4 | N/A | N/A | N/A | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `repository-records` | N/A | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `repository-catalog` | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `branch-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 4 | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `commit-list` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `issue-catalog` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
-| `platform-user-directory` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `ot-cyber-system-information` | 4 | N/A | N/A | 4 | 4 | N/A | 4 | N/A | 4 | 4 | N/A | N/A | N/A | 4 | 3 | N/A | N/A | N/A | N/A | 4 | 4 | 4 | N/A | 4 | N/A | N/A |
+| `ot-estate-description-information` | 4 | 4 | N/A | 3 | 4 | N/A | 4 | N/A | 3 | 2 | 2 | 3 | N/A | 3 | 3 | N/A | N/A | 3 | 3 | 4 | 3 | 2 | N/A | 4 | N/A | N/A |
+| `market-bidding-information` | 4 | N/A | N/A | 4 | 4 | N/A | 4 | N/A | 4 | 2 | N/A | N/A | N/A | 3 | 3 | N/A | N/A | N/A | N/A | N/A | 4 | 2 | N/A | 4 | N/A | N/A |
+| `non-ot-engineering-information` | 4 | 3 | N/A | 3 | 4 | 2 | 4 | N/A | 4 | 2 | 3 | 3 | 3 | 3 | 3 | N/A | N/A | 3 | 2 | 4 | 4 | 2 | 2 | 4 | 2 | 3 |
+| `change-review-information` | N/A | N/A | N/A | N/A | N/A | N/A | 4 | N/A | N/A | N/A | 2 | N/A | 3 | N/A | 3 | N/A | N/A | 3 | 2 | 4 | 4 | 2 | 2 | 3 | 2 | 3 |
+| `issue-discussion-information` | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | 2 | 4 | 3 | N/A | 3 | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 3 | 3 |
+| `org-boundary-exit-state` | N/A | N/A | 4 | N/A | N/A | N/A | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `repository-catalog-metadata` | N/A | 4 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | 2 | N/A | N/A | N/A | 3 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `platform-account-directory-information` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 2 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
 
 ## Tool atomic operations
 

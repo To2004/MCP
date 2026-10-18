@@ -32,6 +32,28 @@ def _kinds(entry: dict) -> dict[str, str]:
     return {i["name"]: i["kind"] for i in entry["inputs"]}
 
 
+def _full_reply() -> dict:
+    """A well-formed model reply covering every ``_SCHEMA`` property, in the current
+    prompt's wire shape (``kind``/``resource_role``/``external_effect``/``effect``).
+
+    ``resource_role`` here mirrors what v2's mocks expressed as a bare ``breadth`` int:
+    files=2 -> shapes_output, mode=5 -> names_resource, perPage=4 -> alters_reach,
+    timeMax=4 -> alters_reach, branch=3 -> sizes_amount.
+    """
+    return {"inputs": [
+        {"name": "files", "effect": "several paths", "kind": "count",
+         "resource_role": "shapes_output", "external_effect": "no"},
+        {"name": "mode", "effect": "a mode switch", "kind": "not_size",
+         "resource_role": "names_resource", "external_effect": "no"},
+        {"name": "perPage", "effect": "rows in one repo", "kind": "magnitude",
+         "resource_role": "alters_reach", "external_effect": "no"},
+        {"name": "timeMax", "effect": "window in one repo", "kind": "range",
+         "resource_role": "alters_reach", "external_effect": "no"},
+        {"name": "branch", "effect": "names a whole branch", "kind": "not_size",
+         "resource_role": "sizes_amount", "external_effect": "no"},
+    ]}
+
+
 def test_array_is_a_count_with_its_declared_ceiling() -> None:
     """An array's length is breadth, and ``maxItems`` is a ceiling the schema states."""
     entry = classify_structural("files", _SCHEMA["properties"]["files"])
@@ -90,12 +112,7 @@ def test_every_parameter_is_asked_about_and_structure_wins_on_kind(
 
     def fake(prompt: str, **_: object) -> dict:
         asked.append(prompt)
-        return {"inputs": [
-            {"name": "files", "kind": "count", "breadth": 2, "why": "several paths"},
-            {"name": "mode", "kind": "none", "breadth": 5, "why": "a mode switch"},
-            {"name": "perPage", "kind": "magnitude", "breadth": 4, "why": "rows in one repo"},
-            {"name": "timeMax", "kind": "range", "breadth": 4, "why": "window in one repo"},
-            {"name": "branch", "kind": "none", "breadth": 3, "why": "names a whole branch"}]}
+        return _full_reply()
 
     monkeypatch.setattr(breadth, "query_ollama", fake)
     entries = {i["name"]: i for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]}
@@ -110,7 +127,8 @@ def test_every_parameter_is_asked_about_and_structure_wins_on_kind(
 def test_partial_model_reply_is_rejected_whole(monkeypatch: pytest.MonkeyPatch) -> None:
     """A reply that misses a parameter is discarded, never merged half-way."""
     monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: {
-        "inputs": [{"name": "perPage", "kind": "magnitude", "breadth": 4}]})
+        "inputs": [{"name": "perPage", "effect": "rows in one repo", "kind": "magnitude",
+                    "resource_role": "alters_reach", "external_effect": "no"}]})
     entry = [i for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]
              if i["name"] == "timeMax"][0]
     assert entry["source"] == "unclassified"
@@ -119,9 +137,12 @@ def test_partial_model_reply_is_rejected_whole(monkeypatch: pytest.MonkeyPatch) 
 def test_invented_parameter_name_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     """The model may label the names it was given and no others."""
     monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: {"inputs": [
-        {"name": "perPage", "kind": "magnitude", "breadth": 4},
-        {"name": "timeMax", "kind": "range", "breadth": 4},
-        {"name": "invented", "kind": "count", "breadth": 2}]})
+        {"name": "perPage", "effect": "rows", "kind": "magnitude",
+         "resource_role": "alters_reach", "external_effect": "no"},
+        {"name": "timeMax", "effect": "window", "kind": "range",
+         "resource_role": "alters_reach", "external_effect": "no"},
+        {"name": "invented", "effect": "made up", "kind": "count",
+         "resource_role": "shapes_output", "external_effect": "no"}]})
     entry = [i for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]
              if i["name"] == "perPage"][0]
     assert entry["source"] == "unclassified"
@@ -151,12 +172,7 @@ def test_classify_breadth_covers_every_tool() -> None:
 
 def test_breadth_is_judged_independently_of_kind(monkeypatch: pytest.MonkeyPatch) -> None:
     """An identifier has no size but still decides which stored thing is opened."""
-    monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: {"inputs": [
-            {"name": "files", "kind": "count", "breadth": 2, "why": "several paths"},
-            {"name": "mode", "kind": "none", "breadth": 5, "why": "a mode switch"},
-            {"name": "perPage", "kind": "magnitude", "breadth": 4, "why": "rows in one repo"},
-            {"name": "timeMax", "kind": "range", "breadth": 4, "why": "window in one repo"},
-            {"name": "branch", "kind": "none", "breadth": 3, "why": "names a whole branch"}]})
+    monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: _full_reply())
     got = {i["name"]: (i["kind"], i["breadth"])
            for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]}
     assert got["branch"] == ("none", 3), "no quantity to read, but it opens a container"
@@ -164,11 +180,24 @@ def test_breadth_is_judged_independently_of_kind(monkeypatch: pytest.MonkeyPatch
     assert got["mode"] == ("none", 5), "an enum settled by schema still gets a reach grade"
 
 
-def test_an_out_of_range_breadth_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_not_size_is_translated_back_to_none(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The prompt asks for ``not_size``; the stored ``kind`` stays ``none`` (v2's vocabulary),
+    so every existing consumer of the scan artifact keeps working unchanged."""
+    monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: _full_reply())
+    entries = {i["name"]: i for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]}
+    assert entries["branch"]["kind"] == "none"
+    assert entries["branch"]["resource_role"] == "sizes_amount"
+    assert entries["branch"]["external_effect"] is False
+
+
+def test_an_invalid_resource_role_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(breadth, "query_ollama", lambda *_a, **_k: {"inputs": [
-        {"name": "perPage", "kind": "magnitude", "breadth": 9},
-        {"name": "timeMax", "kind": "range", "breadth": 4},
-        {"name": "branch", "kind": "none", "breadth": 3}]})
+        {"name": "perPage", "effect": "rows", "kind": "magnitude",
+         "resource_role": "not-a-real-level", "external_effect": "no"},
+        {"name": "timeMax", "effect": "window", "kind": "range",
+         "resource_role": "alters_reach", "external_effect": "no"},
+        {"name": "branch", "effect": "names a branch", "kind": "not_size",
+         "resource_role": "sizes_amount", "external_effect": "no"}]})
     entry = [i for i in classify_tool_breadth(_tool(), use_llm=True)["inputs"]
              if i["name"] == "perPage"][0]
     assert entry["source"] == "unclassified"
@@ -185,14 +214,10 @@ def test_a_rejected_reply_is_retried_once(monkeypatch: pytest.MonkeyPatch) -> No
     def flaky(*_a: object, **_k: object) -> dict:
         calls["n"] += 1
         if calls["n"] == 1:
-            return {"inputs": [{"name": "perPage", "kind": "magnitude",
-                                "breadth": 4}]}  # incomplete
-        return {"inputs": [
-            {"name": "files", "kind": "count", "breadth": 2, "why": "several paths"},
-            {"name": "mode", "kind": "none", "breadth": 5, "why": "a mode switch"},
-            {"name": "perPage", "kind": "magnitude", "breadth": 4, "why": "rows in one repo"},
-            {"name": "timeMax", "kind": "range", "breadth": 4, "why": "window in one repo"},
-            {"name": "branch", "kind": "none", "breadth": 3, "why": "names a whole branch"}]}
+            return {"inputs": [{"name": "perPage", "effect": "rows", "kind": "magnitude",
+                                "resource_role": "alters_reach",
+                                "external_effect": "no"}]}  # incomplete
+        return _full_reply()
 
     monkeypatch.setattr(breadth, "query_ollama", flaky)
     assert _kinds(classify_tool_breadth(_tool(), use_llm=True))["timeMax"] == "range"

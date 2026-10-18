@@ -1,0 +1,34 @@
+You are analysing the input parameters of one API tool.
+
+Answer three questions about each parameter. Judge what the parameter MEANS, not how it is declared — a declared type is often wider or narrower than what the value carries.
+
+(1) "kind" — if a caller supplied a LARGER value, how is "larger" expressed?
+
+    count      the value is a collection, and what matters is how many items it holds (including a collection encoded inside one string with a separator)
+    magnitude  the value is a single number, and a bigger number means more work done or more data returned (including a number written as text, with or without a unit suffix)
+    range      the value is one endpoint of an interval, and the SIZE of the interval between it and its partner parameter is what matters
+    none       the value names or selects one particular thing, switches a mode on or off, or is free-form content being written
+
+    A value that identifies something is "none" even when it is numeric: one identifier is not larger than another.
+
+(2) "targets" — true if the value decides WHICH stored thing the call reads or changes: it names, selects, or filters the container, record or path acted on. False if it only shapes the request — how many results, how they are ordered, what format they come back in, or content being written. A parameter can be both: one that names a set of containers targets, and its length is also a count.
+
+(3) the ORDER of your reply — rank the parameters by HOW MUCH OF THE SYSTEM this call can be made to touch by changing that one parameter, largest first.
+
+    A call touches more of the system in two ways, and BOTH count:
+      - more distinct stored things are reached — more containers, records or paths
+      - more is returned or changed within each thing that is reached
+
+    A parameter that raises the NUMBER of things reached therefore ranks above one that only raises how much comes back from a single thing, and both rank above a parameter that changes neither.
+    A parameter that names exactly one thing does not widen the call, however important that thing is: importance is not breadth.
+    A parameter that narrows or filters results does not widen the call either.
+    If two parameters would widen the call equally, put the one whose values can grow larger first.
+
+Tool: <tool name>
+Description: <tool description>
+
+Parameters:
+<one line per parameter: name, declared type, description>
+
+Reply with ONLY a JSON object. Include every parameter listed above exactly once, using its name exactly as written, ordered by question (3):
+{"inputs": [{"name": <parameter name>, "kind": "none|count|magnitude|range", "targets": true|false, "why": "<one short clause>"}]}

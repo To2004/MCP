@@ -1,0 +1,1872 @@
+{
+  "server": "github",
+  "tools": [
+    {
+      "tool_name": "create_or_update_file",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones it is entitled to (owned by the user)",
+            "listable_via": "GitHub API: GET /users and GET /orgs",
+            "unusual": "organizations with very large numbers of repositories"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by the specified owner",
+            "size": "varies widely from one to thousands per user/organization",
+            "caller_reaches": "only the ones it is entitled to (owned by the user)",
+            "listable_via": "GitHub API: GET /repos/{owner}",
+            "unusual": "repositories with very large numbers of files"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "path",
+          "kind": "file_path",
+          "population": {
+            "of": "files within the specified repository",
+            "size": "varies widely from one to thousands per repository",
+            "caller_reaches": "all files in the repository it is entitled to",
+            "listable_via": "GitHub API: GET /repos/{owner}/{repo}/contents",
+            "unusual": "paths that do not conform to typical naming conventions"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "content",
+          "kind": "file_content",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "message",
+          "kind": "commit_message",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "branch",
+          "kind": "repository_branch",
+          "population": {
+            "of": "branches within the specified repository",
+            "size": "varies widely from one to hundreds per repository",
+            "caller_reaches": "all branches in the repository it is entitled to",
+            "listable_via": "GitHub API: GET /repos/{owner}/{repo}/branches",
+            "unusual": "branch names that do not conform to typical naming conventions"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "sha",
+          "kind": "file_sha",
+          "population": {
+            "of": "SHA values of files within the specified repository",
+            "size": "one per file version",
+            "caller_reaches": "all SHA values in the repository it is entitled to",
+            "listable_via": "GitHub API: GET /repos/{owner}/{repo}/commits",
+            "unusual": "SHA values that do not correspond to existing files"
+          },
+          "stability": "per-call",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 7
+    },
+    {
+      "tool_name": "search_repositories",
+      "parameters": [
+        {
+          "name": "query",
+          "kind": "text_query",
+          "population": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "page",
+          "kind": "pagination_index",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "pages"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "default value"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "perPage",
+          "kind": "pagination_size",
+          "limits": {
+            "min": null,
+            "max": 100,
+            "unit": "results"
+          },
+          "edges": [
+            {
+              "at": 30,
+              "means": "default value"
+            },
+            {
+              "at": 100,
+              "means": "maximum allowed"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "create_repository",
+      "parameters": [
+        {
+          "name": "name",
+          "kind": "identifier",
+          "population": {
+            "of": "repository names",
+            "size": "potentially infinite, limited by naming constraints and uniqueness within an account",
+            "caller_reaches": "only the ones it is entitled to create",
+            "listable_via": "GitHub API for listing repositories in an account",
+            "unusual": "names that are excessively long or contain unusual characters"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "description",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "private",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema, description"
+        },
+        {
+          "name": "autoInit",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema, description"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "get_file_contents",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "GitHub users and organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they have access to or are entitled to reach",
+            "listable_via": "GitHub API endpoints like /users and /orgs",
+            "unusual": "an owner that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by a specific user or organization",
+            "size": "varies widely; can be from one to thousands per owner",
+            "caller_reaches": "only the ones they have access to or are entitled to reach",
+            "listable_via": "GitHub API endpoint /repos/{owner}",
+            "unusual": "a repository that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "path",
+          "kind": "file_or_directory_path",
+          "population": {
+            "of": "files and directories within a repository",
+            "size": "varies widely; can be from one to thousands per repository",
+            "caller_reaches": "only the ones they have access to or are entitled to reach",
+            "listable_via": "GitHub API endpoint /repos/{owner}/{repo}/contents",
+            "unusual": "a path that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "branch",
+          "kind": "repository_branch",
+          "population": {
+            "of": "branches within a repository",
+            "size": "varies widely; can be from one to hundreds per repository",
+            "caller_reaches": "only the ones they have access to or are entitled to reach",
+            "listable_via": "GitHub API endpoint /repos/{owner}/{repo}/branches",
+            "unusual": "a branch that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "push_files",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "GitHub users and organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones it is entitled to (the user's own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /users or GET /orgs",
+            "unusual": "an organization that is not commonly used by the calling entity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned or accessible to the user",
+            "size": "varies per owner, from a few to thousands of repositories",
+            "caller_reaches": "only the ones it is entitled to (the user's own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}",
+            "unusual": "a repository that is not commonly used by the calling entity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "branch",
+          "kind": "branch_name",
+          "population": {
+            "of": "branches in a given repository",
+            "size": "varies per repository, from one to hundreds of branches",
+            "caller_reaches": "only the ones it is entitled to (the user's own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/branches",
+            "unusual": "a branch that does not exist in the repository"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "files",
+          "kind": "file_list",
+          "population": "fixed_choice",
+          "read_with": [
+            "path",
+            "content"
+          ],
+          "stability": "per-call",
+          "note": "Each file object contains a path and content."
+        },
+        {
+          "name": "message",
+          "kind": "commit_message",
+          "prose": true,
+          "stability": "fresh",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "create_issue",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they are entitled to (their own and those they have access to)",
+            "listable_via": "GitHub API endpoints like /users/{username}/repos",
+            "unusual": "an owner that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "GitHub repositories owned or accessible to the user",
+            "size": "varies per owner, can be from a few to thousands",
+            "caller_reaches": "only the ones they are entitled to (their own and those they have access to)",
+            "listable_via": "GitHub API endpoints like /repos/{owner}/{repo}",
+            "unusual": "a repository that is not commonly used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "title",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "body",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "assignees",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users who can be assigned to an issue",
+            "size": "varies per repository, can range from a few to hundreds",
+            "caller_reaches": "only the ones they are entitled to (collaborators of the repository)",
+            "listable_via": "GitHub API endpoints like /repos/{owner}/{repo}/assignees",
+            "unusual": "an assignee that is not commonly used by the organization running this server"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "milestone",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "integer milestone number"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "no milestone is assigned to the issue"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "labels",
+          "kind": "population",
+          "population": {
+            "of": "GitHub labels that can be applied to an issue",
+            "size": "varies per repository, can range from a few to hundreds",
+            "caller_reaches": "only the ones they are entitled to (labels of the repository)",
+            "listable_via": "GitHub API endpoints like /repos/{owner}/{repo}/labels",
+            "unusual": "a label that is not commonly used by the organization running this server"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        }
+      ],
+      "declared_parameters": 7
+    },
+    {
+      "tool_name": "create_pull_request",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "GitHub users and organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they are entitled to (their own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /users or GET /orgs",
+            "unusual": "an owner that is not typically used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned or accessible to the user",
+            "size": "varies per owner, can be from a few to thousands of repositories",
+            "caller_reaches": "only the ones they are entitled to (their own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}",
+            "unusual": "a repository that is not typically used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "title",
+          "kind": "pull_request_title",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "body",
+          "kind": "pull_request_body",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "head",
+          "kind": "branch_name",
+          "population": {
+            "of": "branches in the repository",
+            "size": "varies per repository, can be from a few to hundreds of branches",
+            "caller_reaches": "only the ones they are entitled to (their own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/branches",
+            "unusual": "a branch that is not typically used by the organization running this server"
+          },
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "base",
+          "kind": "branch_name",
+          "population": {
+            "of": "branches in the repository",
+            "size": "varies per repository, can be from a few to hundreds of branches",
+            "caller_reaches": "only the ones they are entitled to (their own or those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/branches",
+            "unusual": "a branch that is not typically used by the organization running this server"
+          },
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "draft",
+          "kind": "boolean_flag",
+          "fixed_choice": true,
+          "stability": "per-call",
+          "evidence": "schema, description"
+        },
+        {
+          "name": "maintainer_can_modify",
+          "kind": "boolean_flag",
+          "fixed_choice": true,
+          "stability": "per-call",
+          "evidence": "schema, description"
+        }
+      ],
+      "declared_parameters": 8
+    },
+    {
+      "tool_name": "fork_repository",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they are entitled to interact with (e.g., their own repositories or those they have access to)",
+            "listable_via": "GitHub API endpoints such as /users/{username}/repos for users and /orgs/{orgname} for organizations",
+            "unusual": "an organization that is not commonly used by the caller"
+          },
+          "stability": "constant",
+          "evidence": "description"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "repositories owned by the specified owner",
+            "size": "varies, can be from a few to thousands for popular users or organizations",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "GitHub API endpoints such as /repos/{owner}/{repo}",
+            "unusual": "a repository that is not commonly used by the caller"
+          },
+          "stability": "constant",
+          "evidence": "description"
+        },
+        {
+          "name": "organization",
+          "kind": "population",
+          "population": {
+            "of": "GitHub organizations",
+            "size": "large, but limited to those the user has access to",
+            "caller_reaches": "only the ones they are entitled to interact with (e.g., their own organizations or those they have access to)",
+            "listable_via": "GitHub API endpoints such as /orgs/{orgname}",
+            "unusual": "an organization that is not commonly used by the caller"
+          },
+          "stability": "constant",
+          "note": "optional parameter, defaults to personal account if omitted",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "create_branch",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones it is entitled to (the user's own repositories and those they have access to)",
+            "listable_via": "GitHub API calls such as GET /users/{username}/repos",
+            "unusual": "an organization or a rarely used account"
+          },
+          "stability": "constant",
+          "evidence": "schema|name|description"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "GitHub repositories owned by the specified owner",
+            "size": "varies, from one to thousands per user or organization",
+            "caller_reaches": "only the ones it is entitled to (the user's own repositories and those they have access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}",
+            "unusual": "a repository with a very large number of branches or one that is rarely accessed"
+          },
+          "stability": "constant",
+          "evidence": "schema|name|description"
+        },
+        {
+          "name": "branch",
+          "kind": "population",
+          "population": {
+            "of": "new branch names within the specified repository",
+            "size": "varies, from one to thousands per repository",
+            "caller_reaches": "all branches in repositories it has access to",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/branches",
+            "unusual": "a branch name that is very long or contains special characters"
+          },
+          "stability": "per-call",
+          "evidence": "schema|name|description"
+        },
+        {
+          "name": "from_branch",
+          "kind": "population",
+          "population": {
+            "of": "existing branches within the specified repository",
+            "size": "varies, from one to thousands per repository",
+            "caller_reaches": "all branches in repositories it has access to",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/branches",
+            "unusual": "a branch that is rarely used or a very long branch name"
+          },
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to the repository's default branch"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema|name|description"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "list_commits",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "GitHub API endpoints like /users",
+            "unusual": "accounts with extremely high activity or visibility"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "repositories owned by the user or organization specified in 'owner'",
+            "size": "varies widely; could be from 1 to thousands per owner",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "GitHub API endpoints like /repos/{owner}",
+            "unusual": "repositories with extremely high activity or visibility"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "sha",
+          "kind": "population",
+          "population": {
+            "of": "commit hashes in the repository specified by 'owner' and 'repo'",
+            "size": "varies widely; could be from 1 to thousands per repository",
+            "caller_reaches": "only commits they have access to",
+            "listable_via": "GitHub API endpoints like /repos/{owner}/{repo}/commits",
+            "unusual": "commit hashes that represent major milestones or releases"
+          },
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "pages"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "first page of results"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "perPage",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "items"
+          },
+          "edges": [
+            {
+              "at": 30,
+              "means": "default number of items per page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description"
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "list_issues",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones it is entitled to (those it owns or has access to)",
+            "listable_via": "GitHub API calls such as GET /users/{username}/repos",
+            "unusual": "an organization with a very large number of repositories"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "GitHub repositories owned by the user or organization specified in 'owner'",
+            "size": "varies widely from a few to thousands per owner",
+            "caller_reaches": "only the ones it is entitled to (those it owns or has access to)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}",
+            "unusual": "a repository with an unusually high number of issues"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "direction",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "labels",
+          "kind": "population",
+          "population": {
+            "of": "GitHub labels applied to issues in the repository",
+            "size": "varies widely from a few to hundreds per repository",
+            "caller_reaches": "only the ones it is entitled to (those defined for the repository)",
+            "listable_via": "GitHub API calls such as GET /repos/{owner}/{repo}/labels",
+            "unusual": "a label that is rarely used or not commonly associated with issues"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "pages"
+          },
+          "measures": "count of pages",
+          "edges": [
+            {
+              "at": 1,
+              "means": "first page"
+            },
+            {
+              "at": "absent",
+              "means": "default to first page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "per_page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "issues"
+          },
+          "measures": "count of issues per page",
+          "edges": [
+            {
+              "at": 30,
+              "means": "default value"
+            },
+            {
+              "at": 100,
+              "means": "maximum allowed"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "since",
+          "kind": "timestamp",
+          "limits": {
+            "min": null,
+            "max": null
+          },
+          "measures": "time since the specified date and time",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "no limit"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name"
+        },
+        {
+          "name": "sort",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "state",
+          "kind": "fixed_choice",
+          "stability": "per-call",
+          "evidence": "schema"
+        }
+      ],
+      "declared_parameters": 9
+    },
+    {
+      "tool_name": "update_issue",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "an organization with a very large number of repositories"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "repositories owned by the user or organization specified in 'owner'",
+            "size": "varies widely, from one to thousands per owner",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "a repository with a very large number of issues"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "issue_number",
+          "kind": "population",
+          "population": {
+            "of": "issues within the specified repository",
+            "size": "varies widely, from one to thousands per repository",
+            "caller_reaches": "only issues they have access to",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "an issue with a very high number indicating it was created much later than others"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "title",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "body",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "assignees",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users who can be assigned to the issue",
+            "size": "varies widely, from one to hundreds per repository",
+            "caller_reaches": "only users they have access to or are part of their organization",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "assigning a user who is not typically involved in the project"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "milestone",
+          "kind": "population",
+          "population": {
+            "of": "milestones within the specified repository",
+            "size": "varies widely, from one to hundreds per repository",
+            "caller_reaches": "only milestones they have access to or are part of their organization",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "assigning a milestone that is far in the future or has already passed"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "labels",
+          "kind": "population",
+          "population": {
+            "of": "labels within the specified repository",
+            "size": "varies widely, from one to hundreds per repository",
+            "caller_reaches": "only labels they have access to or are part of their organization",
+            "listable_via": "GitHub API, but not all at once due to pagination",
+            "unusual": "using a label that is rarely used in the project"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "state",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema"
+        }
+      ],
+      "declared_parameters": 9
+    },
+    {
+      "tool_name": "add_issue_comment",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "GitHub repository owners",
+            "size": "large, varies by organization",
+            "caller_reaches": "only the ones it is entitled to",
+            "listable_via": "API calls like GET /users/{username}/repos",
+            "unusual": "owners outside of the usual organizational scope"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "GitHub repositories under a specific owner",
+            "size": "large, varies by organization and owner",
+            "caller_reaches": "only the ones it is entitled to",
+            "listable_via": "API calls like GET /repos/{owner}/{repo}",
+            "unusual": "repositories outside of the usual organizational scope"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "issue_number",
+          "kind": "issue_identifier",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "issues"
+          },
+          "measures": "count of issues in a repository",
+          "edges": [
+            {
+              "at": 1,
+              "means": "first issue"
+            },
+            {
+              "at": "absent",
+              "means": "invalid"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "body",
+          "kind": "comment_content",
+          "prose": true,
+          "stability": "fresh",
+          "evidence": "description, domain"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "search_code",
+      "parameters": [
+        {
+          "name": "q",
+          "kind": "query",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "order",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema"
+        },
+        {
+          "name": "page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "pages"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "first page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "per_page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "items"
+          },
+          "edges": [
+            {
+              "at": 100,
+              "means": "maximum items per page"
+            }
+          ],
+          "stability": "constant",
+          "evidence": "schema"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "search_issues",
+      "parameters": [
+        {
+          "name": "q",
+          "kind": "query",
+          "stability": "per-call",
+          "prose": true,
+          "evidence": "description"
+        },
+        {
+          "name": "order",
+          "kind": "fixed_choice",
+          "limits": {
+            "min": 1,
+            "max": 2
+          },
+          "edges": [
+            {
+              "at": "asc",
+              "means": "ascending order"
+            },
+            {
+              "at": "desc",
+              "means": "descending order"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null
+          },
+          "measures": "count of pages",
+          "unit": "pages",
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "per_page",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": 100
+          },
+          "measures": "count of items per page",
+          "unit": "items",
+          "edges": [
+            {
+              "at": 100,
+              "means": "maximum number of items per page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "sort",
+          "kind": "fixed_choice",
+          "limits": {
+            "min": 1,
+            "max": 11
+          },
+          "edges": [
+            {
+              "at": "comments",
+              "means": "sorted by number of comments"
+            },
+            {
+              "at": "reactions",
+              "means": "sorted by total reactions"
+            },
+            {
+              "at": "interactions",
+              "means": "sorted by interactions"
+            },
+            {
+              "at": "created",
+              "means": "sorted by creation date"
+            },
+            {
+              "at": "updated",
+              "means": "sorted by update date"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "search_users",
+      "parameters": [
+        {
+          "name": "q",
+          "kind": "query",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "order",
+          "kind": "fixed_choice",
+          "limits": {
+            "min": 1,
+            "max": 2
+          },
+          "edges": [
+            {
+              "at": "asc",
+              "means": "ascending order"
+            },
+            {
+              "at": "desc",
+              "means": "descending order"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "page",
+          "kind": "pagination",
+          "limits": {
+            "min": 1,
+            "max": null
+          },
+          "unit": "pages",
+          "edges": [
+            {
+              "at": 1,
+              "means": "first page"
+            },
+            {
+              "at": "absent",
+              "means": "defaults to first page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "per_page",
+          "kind": "pagination",
+          "limits": {
+            "min": 1,
+            "max": 100
+          },
+          "unit": "users per page",
+          "edges": [
+            {
+              "at": 1,
+              "means": "one user per page"
+            },
+            {
+              "at": 100,
+              "means": "maximum users per page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        },
+        {
+          "name": "sort",
+          "kind": "fixed_choice",
+          "limits": {
+            "min": 1,
+            "max": 3
+          },
+          "edges": [
+            {
+              "at": "followers",
+              "means": "sort by number of followers"
+            },
+            {
+              "at": "repositories",
+              "means": "sort by number of repositories"
+            },
+            {
+              "at": "joined",
+              "means": "sort by date joined"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema"
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "get_issue",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "GitHub users or organizations",
+            "size": "large, millions of GitHub accounts exist",
+            "caller_reaches": "only the ones they have access to (their own and those shared with them)",
+            "listable_via": "GitHub API endpoints like /users or /orgs",
+            "unusual": "an owner that is not typically used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "repositories owned or accessible to the owner",
+            "size": "varies widely; could be from a few to thousands per user/organization",
+            "caller_reaches": "only repositories they have access to (their own and those shared with them)",
+            "listable_via": "GitHub API endpoints like /repos for users/orgs",
+            "unusual": "a repository that is not typically used by the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "issue_number",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "issues"
+          },
+          "measures": "the issue number within a repository",
+          "edges": [
+            {
+              "at": 1,
+              "means": "first issue in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "get_pull_request",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, potentially millions",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API endpoints for listing users or orgs",
+            "unusual": "an owner that is not commonly used by the organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories under an owner",
+            "size": "varies widely by owner, from a few to thousands",
+            "caller_reaches": "only the repositories they have access to",
+            "listable_via": "API endpoints for listing repositories of an owner",
+            "unusual": "a repository that is not commonly accessed by the organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "integer"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, schema"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "list_pull_requests",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "population",
+          "population": {
+            "of": "repository owners (users or organizations)",
+            "size": "large, varies by platform",
+            "caller_reaches": "only the ones it is entitled to access",
+            "listable_via": "API calls listing repositories and their owners",
+            "unusual": "owners with very high or low activity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "population",
+          "population": {
+            "of": "repositories owned by the specified owner",
+            "size": "varies widely per owner",
+            "caller_reaches": "only repositories it is entitled to access",
+            "listable_via": "API calls listing repositories for a given owner",
+            "unusual": "repositories with very high or low activity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "state",
+          "kind": "fixed_choice",
+          "limits": {},
+          "edges": [
+            {
+              "at": "open",
+              "means": "only open pull requests"
+            },
+            {
+              "at": "closed",
+              "means": "only closed pull requests"
+            },
+            {
+              "at": "all",
+              "means": "both open and closed pull requests"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name"
+        },
+        {
+          "name": "head",
+          "kind": "population",
+          "population": {
+            "of": "branch names or user/organization names paired with branch names",
+            "size": "varies widely per repository",
+            "caller_reaches": "only branches it is entitled to access",
+            "listable_via": "API calls listing branches for a given repository"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "base",
+          "kind": "population",
+          "population": {
+            "of": "branch names",
+            "size": "varies widely per repository",
+            "caller_reaches": "only branches it is entitled to access",
+            "listable_via": "API calls listing branches for a given repository"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "sort",
+          "kind": "fixed_choice",
+          "limits": {},
+          "edges": [
+            {
+              "at": "created",
+              "means": "sort by creation date"
+            },
+            {
+              "at": "updated",
+              "means": "sort by last update date"
+            },
+            {
+              "at": "popularity",
+              "means": "sort by popularity (number of comments)"
+            },
+            {
+              "at": "long-running",
+              "means": "sort by how long the pull request has been open"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name"
+        },
+        {
+          "name": "direction",
+          "kind": "fixed_choice",
+          "limits": {},
+          "edges": [
+            {
+              "at": "asc",
+              "means": "ascending order"
+            },
+            {
+              "at": "desc",
+              "means": "descending order"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "schema, name"
+        },
+        {
+          "name": "per_page",
+          "kind": "limits",
+          "limits": {
+            "min": 1,
+            "max": 100,
+            "unit": "results per page"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "minimum number of results per page"
+            },
+            {
+              "at": 100,
+              "means": "maximum number of results per page"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "page",
+          "kind": "limits",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "page number"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "first page of results"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 9
+    },
+    {
+      "tool_name": "create_pull_request_review",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users or organizations",
+            "size": "large, varies by platform",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API calls like 'List Organizations' or 'List Users'",
+            "unusual": "an owner not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by 'owner'",
+            "size": "varies widely depending on the owner",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API calls like 'List Repositories for Owner'",
+            "unusual": "a repository not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "measures": "number of pull requests",
+          "unit": "integer",
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "commit_id",
+          "kind": "commit_sha",
+          "population": {
+            "of": "commits within a specific pull request",
+            "size": "varies by pull request size and history",
+            "caller_reaches": "only commits they have access to",
+            "listable_via": "API calls like 'List Commits in Pull Request'",
+            "unusual": "a commit not typically associated with the organization running this server"
+          },
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "body",
+          "kind": "review_body",
+          "prose": true,
+          "stability": "fresh",
+          "evidence": "description"
+        },
+        {
+          "name": "event",
+          "kind": "fixed_choice",
+          "population": [
+            "APPROVE",
+            "REQUEST_CHANGES",
+            "COMMENT"
+          ],
+          "stability": "per-call",
+          "evidence": "schema, description"
+        },
+        {
+          "name": "comments",
+          "kind": "review_comments",
+          "measures": "number of comments",
+          "unit": "integer",
+          "edges": [
+            {
+              "at": 0,
+              "means": "no additional comments are posted with the review"
+            }
+          ],
+          "stability": "fresh",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 7
+    },
+    {
+      "tool_name": "merge_pull_request",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, varies by platform",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API calls listing repositories or users/organizations",
+            "unusual": "an owner not typically associated with the organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by a user or organization",
+            "size": "varies widely depending on the owner",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API calls listing repositories for an owner",
+            "unusual": "a repository not typically associated with the owner"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "measures": "number of pull requests",
+          "unit": "count",
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description"
+        },
+        {
+          "name": "commit_title",
+          "kind": "commit_message",
+          "prose": true,
+          "stability": "fresh",
+          "evidence": "description"
+        },
+        {
+          "name": "commit_message",
+          "kind": "commit_details",
+          "prose": true,
+          "stability": "fresh",
+          "evidence": "description"
+        },
+        {
+          "name": "merge_method",
+          "kind": "fixed_choice",
+          "stability": "constant",
+          "evidence": "schema, description"
+        }
+      ],
+      "declared_parameters": 6
+    },
+    {
+      "tool_name": "get_pull_request_files",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, potentially thousands or more",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API calls listing repositories or users/organizations",
+            "unusual": "an owner that is not commonly used by the organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories under a specific owner",
+            "size": "varies widely depending on the owner; could be from one to hundreds",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API calls listing repositories for an owner",
+            "unusual": "a repository that is not commonly used by the organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "integer"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, schema"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "get_pull_request_status",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, potentially thousands or more",
+            "caller_reaches": "only the ones it is entitled to access",
+            "listable_via": "API calls listing repositories for a user or organization",
+            "unusual": "an owner that does not belong to the calling organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by a user or organization",
+            "size": "varies widely; could be from one to hundreds",
+            "caller_reaches": "only the ones it is entitled to access",
+            "listable_via": "API calls listing repositories for an owner",
+            "unusual": "a repository that does not belong to the calling organization"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "measures": "number of pull requests",
+          "unit": "count",
+          "limits": {
+            "min": 1
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, schema"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "update_pull_request_branch",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users or organizations",
+            "size": "large, varies by platform",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API calls listing repositories and their owners",
+            "unusual": "owners with very high or low activity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories under the owner's control",
+            "size": "varies widely by user or organization",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API calls listing repositories for a given owner",
+            "unusual": "repositories with very high or low activity"
+          },
+          "stability": "constant",
+          "evidence": "name, description"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "integer"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, schema"
+        },
+        {
+          "name": "expected_head_sha",
+          "kind": "commit_hash",
+          "population": {
+            "of": "commits on the pull request's branch",
+            "size": "large, varies by repository and branch activity",
+            "caller_reaches": "all commits they have access to in the repository",
+            "listable_via": "API calls listing commit history for a given branch"
+          },
+          "stability": "fresh",
+          "evidence": "name, description"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "get_pull_request_comments",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, potentially thousands or more",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API endpoints that list repositories or users/organizations",
+            "unusual": "an owner not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by a specific user or organization",
+            "size": "varies widely depending on the owner; could be from one to hundreds",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API endpoints that list repositories for an owner",
+            "unusual": "a repository not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "integer"
+          },
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        }
+      ],
+      "declared_parameters": 3
+    },
+    {
+      "tool_name": "get_pull_request_reviews",
+      "parameters": [
+        {
+          "name": "owner",
+          "kind": "repository_owner",
+          "population": {
+            "of": "users and organizations",
+            "size": "large, potentially thousands or more",
+            "caller_reaches": "only the ones they have access to",
+            "listable_via": "API endpoints that list repositories or users/organizations",
+            "unusual": "an owner not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "repo",
+          "kind": "repository_name",
+          "population": {
+            "of": "repositories owned by a specific user or organization",
+            "size": "varies widely depending on the owner; could be from one to hundreds",
+            "caller_reaches": "only repositories they have access to",
+            "listable_via": "API endpoints that list repositories for an owner",
+            "unusual": "a repository not typically associated with the organization running this server"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "pull_number",
+          "kind": "pull_request_id",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "number"
+          },
+          "measures": "identifier for a pull request",
+          "edges": [
+            {
+              "at": 1,
+              "means": "the first pull request in the repository"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        }
+      ],
+      "declared_parameters": 3
+    }
+  ],
+  "failed": []
+}

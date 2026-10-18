@@ -1,0 +1,303 @@
+{
+  "server": "calendar",
+  "tools": [
+    {
+      "tool_name": "list_calendars",
+      "parameters": [],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "list_events",
+      "parameters": [
+        {
+          "name": "calendar_id",
+          "kind": "identifier",
+          "population": {
+            "of": "calendars",
+            "size": "variable, depending on the number of calendars created by the user or organization",
+            "caller_reaches": "only the ones it is entitled to (owned or shared with the caller)",
+            "listable_via": "API call to list all accessible calendars",
+            "unusual": "a calendar that does not belong to the user or their organization"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        },
+        {
+          "name": "start_date",
+          "kind": "date",
+          "measures": "duration",
+          "unit": "days",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to the current date if not provided"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "end_date",
+          "kind": "date",
+          "measures": "duration",
+          "unit": "days",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to the current date if not provided, effectively setting a zero-day range"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "event_type",
+          "kind": "fixed_choice",
+          "population": "fixed_choice",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "returns all event types if not provided"
+            }
+          ],
+          "stability": "constant",
+          "evidence": "domain"
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "list_week",
+      "parameters": [
+        {
+          "name": "",
+          "kind": "no_input",
+          "stability": "constant",
+          "note": "The tool does not require any input parameters."
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "get_event",
+      "parameters": [
+        {
+          "name": "event_id",
+          "kind": "identifier",
+          "population": {
+            "of": "events",
+            "size": "large, varies by system usage",
+            "caller_reaches": "all events the caller is entitled to access",
+            "listable_via": "API call to list all events or filter by criteria",
+            "unusual": "events from outside the organization's scope"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "find_free_slot",
+      "parameters": [],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "access_contacts",
+      "parameters": [
+        {
+          "name": "",
+          "kind": "no_parameters",
+          "stability": "constant",
+          "note": "The tool has no input parameters."
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "create_event",
+      "parameters": [
+        {
+          "name": "title",
+          "kind": "prose",
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "date",
+          "kind": "timestamp",
+          "measures": "duration",
+          "unit": "time",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to current date and time if not provided"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "calendar",
+          "kind": "identifier",
+          "population": {
+            "of": "calendars",
+            "size": "medium to large, depending on the organization's size",
+            "caller_reaches": "only the ones it is entitled to access",
+            "listable_via": "API call to list calendars",
+            "unusual": "a calendar not typically used by the caller"
+          },
+          "stability": "constant",
+          "evidence": "description"
+        },
+        {
+          "name": "attendees",
+          "kind": "collection",
+          "population": {
+            "of": "usernames/emails",
+            "size": "variable, depending on the event's scope",
+            "caller_reaches": "only the ones it is entitled to invite",
+            "listable_via": "API call to list users or emails",
+            "unusual": "an attendee not typically invited by the caller"
+          },
+          "stability": "per-call",
+          "evidence": "description"
+        },
+        {
+          "name": "duration_min",
+          "kind": "number",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "minutes"
+          },
+          "measures": "duration",
+          "unit": "minutes",
+          "edges": [
+            {
+              "at": "absent",
+              "means": "defaults to a reasonable duration if not provided, typically 30 minutes"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 5
+    },
+    {
+      "tool_name": "update_event",
+      "parameters": [
+        {
+          "name": "event_id",
+          "kind": "identifier",
+          "population": {
+            "of": "events",
+            "size": "many",
+            "caller_reaches": "entitled events",
+            "listable_via": "calendar API",
+            "unusual": "non-existent or unauthorized event IDs"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "calendar",
+          "kind": "identifier",
+          "population": {
+            "of": "calendars",
+            "size": "many",
+            "caller_reaches": "entitled calendars",
+            "listable_via": "calendar API",
+            "unusual": "non-existent or unauthorized calendar IDs"
+          },
+          "stability": "constant",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "attendees",
+          "kind": "collection",
+          "population": {
+            "of": "usernames/emails",
+            "size": "many",
+            "caller_reaches": "entitled attendees",
+            "listable_via": "directory service API",
+            "unusual": "non-existent or unauthorized usernames/emails"
+          },
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        },
+        {
+          "name": "duration_min",
+          "kind": "measurement",
+          "limits": {
+            "min": 1,
+            "max": null,
+            "unit": "minutes"
+          },
+          "measures": "meeting length",
+          "edges": [
+            {
+              "at": 0,
+              "means": "invalid meeting duration (too short)"
+            }
+          ],
+          "stability": "per-call",
+          "evidence": "name, description, domain"
+        }
+      ],
+      "declared_parameters": 4
+    },
+    {
+      "tool_name": "send_email_invite",
+      "parameters": [
+        {
+          "name": "email",
+          "kind": "contact_info",
+          "population": {
+            "of": "email addresses",
+            "size": "potentially unlimited, depends on the number of external attendees",
+            "caller_reaches": "only the ones it is entitled to invite",
+            "listable_via": "not listable at run time; determined by the caller's context or input",
+            "unusual": "email addresses from domains not typically associated with the organization"
+          },
+          "stability": "per-call",
+          "evidence": "domain"
+        },
+        {
+          "name": "message",
+          "kind": "prose",
+          "prose": true,
+          "stability": "per-call",
+          "evidence": "description"
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "delete_event",
+      "parameters": [
+        {
+          "name": "event_id",
+          "kind": "identifier",
+          "population": {
+            "of": "events",
+            "size": "many",
+            "caller_reaches": "entitled events only",
+            "listable_via": "API call to list events",
+            "unusual": "events from other organizations"
+          },
+          "stability": "constant",
+          "evidence": "domain"
+        }
+      ],
+      "declared_parameters": 0
+    },
+    {
+      "tool_name": "delete_all_events",
+      "parameters": [],
+      "declared_parameters": 0
+    }
+  ],
+  "failed": []
+}

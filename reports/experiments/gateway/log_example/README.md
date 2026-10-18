@@ -1,8 +1,9 @@
 # Gateway Log Example
 
 One real run of the gateway in front of the remote GitHub MCP server, kept so there is a
-complete `gateway-log/3` file to look at: every kind of line the gateway writes, from a
-real agent session, with nothing secret in it. Field meanings are in the
+complete `gateway-log/3` file to look at. Nobody is named in the gateway's config: every
+caller signs in at the identity provider, and the log names each caller only from the
+signed token. Field meanings are in the
 [gateway README](../../../../src/mcp_security/gateway/README.md#log-format-gateway-log3).
 
 ## Read it
@@ -12,40 +13,43 @@ views are made from it, and any gateway log renders the same way:
 
 | View | File | Command |
 |---|---|---|
-| One line per event, like a normal log: time, level, agent id, agent, user id, session, request, event, result, duration, size, details | [`github_view.txt`](github_view.txt) | `uv run python -m mcp_security.gateway.log_view <log.jsonl>` |
+| One line per event, like a normal log: time, level, agent id, app, user id, session, request, event, result, duration, size, details | [`github_view.txt`](github_view.txt) | `uv run python -m mcp_security.gateway.log_view <log.jsonl>` |
 | Grouped by session, one block per exchange (request, verdict, reply) | [`github_grouped.txt`](github_grouped.txt) | `... log_view <log.jsonl> --grouped` |
 
 In a terminal the first view colours `WARN` and `ERROR` lines. A piece of it:
 
 ```text
-TIME          LEVEL  AGENT_ID      AGENT  USER_ID  SESSION   REQUEST   EVENT                             RESULT               DURATION      SIZE  DETAILS
-11:20:55.460  INFO   agt-0001      alice  u-0001   c36a1a8d  dbdb49f1  → tools/call get_file_contents    -                           -     183 B  owner=modelcontextprotocol path=README.md repo=python-sdk
-11:20:55.460  INFO   agt-0001      alice  u-0001   c36a1a8d  dbdb49f1  ◆ verdict get_file_contents       risk 75.0 high              -         -  cell=75.0 factor=1.00 asset=helios-scada-gateway basis=unresolved input=4(owner,repo) catalog=scanned
-11:20:55.552  INFO   agt-0001      alice  u-0001   c36a1a8d  f715536e  → GET  (stream)                   -                           -         -
-11:20:55.747  INFO   agt-0001      alice  u-0001   c36a1a8d  f715536e  ← GET                             405                    0.19 s      36 B  body=not-kept
-11:20:56.682  INFO   agt-0001      alice  u-0001   c36a1a8d  dbdb49f1  ← tools/call get_file_contents    200 ok                 1.22 s    5.0 KB  body=not-kept
-…
-11:20:59.421  WARN   1b93891181f4  bob    -        c36a1a8d  d6cbcd08  ! session_agent_mismatch          -                           -         -  owner=alice ended=yes from=127.0.0.1
-11:20:59.421  INFO   1b93891181f4  bob    -        c36a1a8d  d6cbcd08  → tools/call list_commits         -                           -     172 B  owner=modelcontextprotocol perPage=1 repo=python-sdk
+TIME          LEVEL  AGENT_ID      AGENT        USER_ID                               SESSION   REQUEST   EVENT                             RESULT               DURATION      SIZE  DETAILS
+09:00:21.724  INFO   0b995eb352ca  claude-code  a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21  12371305  b8121977  → tools/call get_file_contents    -                           -     183 B  owner=modelcontextprotocol path=README.md repo=python-sdk
+09:00:21.724  INFO   0b995eb352ca  claude-code  a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21  12371305  b8121977  ◆ verdict get_file_contents       risk 75.0 high              -         -  cell=75.0 factor=1.00 asset=helios-scada-gateway basis=unresolved input=4(owner,repo) catalog=scanned
+09:00:23.041  INFO   0b995eb352ca  claude-code  a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21  12371305  b8121977  ← tools/call get_file_contents    200 ok                 1.32 s    5.0 KB  body=not-kept
+09:00:26.145  INFO   2d614e2da252  ci-bot       5d2e8c40-1f6a-4b37-a0e9-c4b81f2d9a73  c1f8c756  aaf1c8f1  → tools/call list_pull_requests   -                           -     177 B  owner=modelcontextprotocol perPage=2 repo=python-sdk
+09:00:28.916  WARN   d67a0331eeb4  claude-code  0b7f13aa-2c94-4e0d-8a6f-5e19c3d70f44  12371305  4b64cd60  ! session_agent_mismatch          -                           -         -  owner="claude-code (a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b…" owner_id=0b995eb352ca ended=yes from=127.0.0.1
+09:00:28.916  INFO   d67a0331eeb4  claude-code  0b7f13aa-2c94-4e0d-8a6f-5e19c3d70f44  12371305  4b64cd60  → tools/call list_commits         -                           -     172 B  owner=modelcontextprotocol perPage=1 repo=python-sdk
+09:00:29.825  WARN   -             -            -                                     -         cb247a2e  ! auth_failed                     token_expired               -         -  from=127.0.0.1
+09:00:29.836  WARN   -             -            -                                     -         bb092bc7  ! auth_failed                     wrong_audience              -         -  from=127.0.0.1
 ```
 
-## Where the ids come from
+## Who the callers are, and how the gateway knows
 
-None of them is sent by the agent: the gateway hashes the bearer token and looks the hash
-up in the `agents` table of [`routes.json`](routes.json).
+The gateway is an OAuth resource server. It checks each access token's signature against
+the identity provider's published keys, its issuer, its audience (this route) and its
+expiry, and reads the caller from it. The routes file holds only where the provider is.
 
-| Field | Example | Source |
+| Field | In this log | Comes from |
 |---|---|---|
-| `gateway.agent_id` | `agt-0001`, `1b93891181f4` | The entry's `id` (alice), or — when it has none — the first 12 characters of the token's SHA-256 (bob), as GitHub's audit log records `hashed_token`. Set `id` to keep it across token rotations |
-| `gateway.agent` | `alice` | The entry's name: a label for people |
-| `user.id` | `u-0001` | The person the agent acts for, as the entry gives it (a pseudonym, not an e-mail) |
-| `gateway.app` | `claude-code` | Which agent application holds the token |
-| `gateway.client` | `mcp/0.1.0` | Self-reported by the client in `initialize` — not trusted for identity |
-| `mcp.session.id` | `c36a1a8d…` | The server's session id, logged only as a keyed pseudonym |
-| `gateway.exchange_id` | `dbdb49f1…` | One id per HTTP request, on every line it produced |
+| `user.id` | `a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21` (alice), `0b7f13aa-2c94-4e0d-8a6f-5e19c3d70f44` (bob), `5d2e8c40-1f6a-4b37-a0e9-c4b81f2d9a73` (the ci-bot service account) | The token's `sub`: the person the provider signed in, or the service account |
+| `gateway.app`, `gateway.agent` | `claude-code`, `ci-bot` | The token's `client_id`: an application an administrator registered at the provider. There is no self-registration, so the name is vouched for |
+| `gateway.agent_id` | `0b995eb352ca` (alice in claude-code) | SHA-256 of issuer, app and user, first 12 characters: one per person per app, the key for baselines and session ownership |
+| `gateway.auth`, `gateway.issuer` | `oauth`, `http://127.0.0.1:18800` | How the caller was identified, and who signed the token |
+| `gateway.scopes`, `gateway.token_id` | `['mcp:tools']`, `300ccf7ecb84764f` | What the token allows, and its `jti` (for audit and revocation) |
+| `gateway.client` | `mcp/0.1.0` | Self-reported by the client in `initialize` — not identity |
+| `mcp.session.id` | `12371305…` | The server's session id, logged only as a keyed pseudonym |
+| `gateway.exchange_id` | `b8121977…` | One id per HTTP request, on every line it produced |
 
-With OAuth (not set up here), `user.id` and the app would come from the identity
-provider's token (`sub`, `client_id`) instead of the table.
+To put a name to `a4c9e2d1…`, ask the identity provider's directory; the gateway and its
+log never hold names. If the token is edited to say someone else, its signature no longer
+verifies and the request is refused.
 
 ## How it was made
 
@@ -53,17 +57,23 @@ provider's token (`sub`, `client_id`) instead of the table.
 uv run python reports/experiments/gateway/log_example/make_example.py   # needs `gh` login
 ```
 
-[`make_example.py`](make_example.py) starts the real gateway process with
-[`routes.json`](routes.json) and drives it like an agent would:
+[`make_example.py`](make_example.py) starts [`identity_provider.py`](identity_provider.py)
+(standing in for the organisation's Okta, Entra ID or Keycloak: two applications registered
+in advance, `claude-code` for people and the `ci-bot` service) and the real gateway with
+[`routes.json`](routes.json), then:
 
-- **alice** (id `agt-0001`, user `u-0001`, app `claude-code`) opens a session with the
-  real `mcp` client, lists the 49 tools and makes five calls on the public repository
-  `modelcontextprotocol/python-sdk`: a search, reading `README.md`, listing a month of
-  commits, reading a file that does not exist (a tool error), and calling a tool that does
-  not exist (a JSON-RPC error). Her client then ends the session.
-- **bob** (no id in the config, so `1b93891181f4`) sends one call on alice's ended session id.
-  GitHub still answers it (200).
-- A request with a guessed token, and one to a route that does not exist (`/gitlab`).
+1. **alice** signs in with `claude-code`, the stock `mcp` OAuth client: its first request
+   has no token (line 2, `no_bearer_token`), the 401 points it to the provider, it
+   signs in (authorization code with PKCE; the browser step is automated) and retries. She
+   makes five read-only calls on the public repository `modelcontextprotocol/python-sdk` —
+   one reads a file that does not exist (a tool error), one names a tool that does not
+   exist (a JSON-RPC error) — and her client ends the session.
+2. The **ci-bot** service gets a token with client credentials (no person, no browser) and
+   makes one call.
+3. **bob** signs in with `claude-code` the same way and makes one call, then sends one on
+   alice's ended session. It is flagged, and GitHub still answers it.
+4. A token that expired an hour ago, a token minted for another server (`/slack`), and a
+   request to a route the gateway does not have (`/gitlab`).
 
 Settings: `log_bodies: "requests"` (reply bodies dropped — GitHub's commit listings carry
 commit authors' e-mail addresses, which should not sit in a log or this repository),
@@ -82,12 +92,12 @@ Raw records from `github.jsonl`; long `message` bodies are shortened here to the
 
 ### Run starts (line 1)
 
-What this run is: which config and which static artifacts every score below came from.
+What this run is: the config, the static artifacts every score below came from, and the identity provider (`gateway.oauth_issuer`).
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063253.4055371,
+ "ts": 1792141218.9452443,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "gateway",
@@ -101,34 +111,63 @@ What this run is: which config and which static artifacts every score below came
  "gateway.effects_sha256": "ff3018bbe203",
  "gateway.log_bodies": "requests",
  "gateway.pseudonyms_keyed": true,
- "gateway.agents": 2
+ "gateway.auth": "oauth",
+ "gateway.oauth_issuer": "http://127.0.0.1:18800"
 }
 ```
 
-### A tool call (line 13)
+### A client's first request, before it has signed in (line 2)
 
-Who (agent id, name, user id, app — from the config), where (address, client, protocol), the call (tool, argument names, argument pseudonym, typed effects) and the request body. `log.level` is the line's severity. `gateway.seq` counts every line in the session; `gateway.request_seq` only alice's own messages.
+No token yet: refused with a 401 whose `WWW-Authenticate` header names where to sign in. Every OAuth client starts this way.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063255.4604366,
+ "ts": 1792141219.167426,
+ "log.level": "warn",
+ "gateway.route": "github",
+ "gateway.direction": "gateway",
+ "gateway.exchange_id": "844471a174ba4f859c026dc14d02b434",
+ "client.address": "127.0.0.1",
+ "client.port": 39322,
+ "user_agent.original": "python-httpx/0.28.1",
+ "http.request.method": "POST",
+ "gateway.notice": "auth_failed",
+ "gateway.reason": "no_bearer_token",
+ "gateway.prev_sha256": "eb3505adf0f8405fcf0b55daff81c553b307a0d8d58031265c1802b2fc56b262"
+}
+```
+
+### A tool call (line 16)
+
+Who (agent id, app, user id, how identified, issuer, scopes, token id — all from the token), where (address, client, protocol), the call (tool, argument names, argument pseudonym, typed effects) and the request body. `gateway.seq` counts every line in the session; `gateway.request_seq` only alice's own messages.
+
+```json
+{
+ "schema": "gateway-log/3",
+ "ts": 1792141221.7245462,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "agent->server",
- "gateway.exchange_id": "dbdb49f19dcc4479b94c0da739ed504a",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "b8121977402e430f8962c9dc26c9d918",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
  "gateway.client": "mcp/0.1.0",
- "gateway.seq": 11,
+ "gateway.seq": 13,
  "gateway.request_seq": 4,
  "client.address": "127.0.0.1",
- "client.port": 32870,
+ "client.port": 48754,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.protocol.version": "2025-11-25",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
@@ -162,28 +201,34 @@ Who (agent id, name, user id, app — from the config), where (address, client, 
   "jsonrpc": "2.0",
   "id": 3
  },
- "gateway.prev_sha256": "d7fa05f7d2ae5def54d30668c283e24c5957ae2b9ea9f408c832259079c1879c"
+ "gateway.prev_sha256": "c653bc02c2c9336a59de53ea1af4cb4564cddcff0f805698da5b645640221ebf"
 }
 ```
 
-### Its verdict, before forwarding (line 14)
+### Its verdict, before forwarding (line 17)
 
 The framework's score. The org policy behind the scan is for a fictional organisation, so nothing in the arguments names one of its assets (`basis: unresolved`) and the call is priced at the worst asset the tool can reach (`helios-scada-gateway`: cell `75.0`, band `high`). `gateway.catalog_match: true` says the session saw the very tool list the scan was run on.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063255.4604366,
+ "ts": 1792141221.7245462,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "gateway",
- "gateway.exchange_id": "dbdb49f19dcc4479b94c0da739ed504a",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "b8121977402e430f8962c9dc26c9d918",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
- "gateway.seq": 12,
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
+ "gateway.seq": 14,
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
  "jsonrpc.request.id": "3",
@@ -197,7 +242,7 @@ The framework's score. The org policy behind the scan is for a fictional organis
   "risk": 75.001,
   "input_level": 4,
   "input_set_by": "owner,repo",
-  "score_us": 780,
+  "score_us": 474,
   "reasons": "L=1.00(0.97x the median tool, held back to 0% on 1 calls)",
   "band": "high",
   "sensitivity": 5,
@@ -209,69 +254,81 @@ The framework's score. The org policy behind the scan is for a fictional organis
    "rules": "ba341a5d68a1"
   }
  },
- "gateway.prev_sha256": "2ee5b2e12572e1b9441c55189a9818f6ab4b4d0b7dbd04354073b6eeb294e395"
+ "gateway.prev_sha256": "5f9ebf468bd996d483bc37ae43f7fd93c738b1990722bd6896cae17f62ec666a"
 }
 ```
 
-### Its reply (line 17)
+### Its reply (line 18)
 
 Status, time taken and size — no body, as `log_bodies` is `requests`.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063256.6821816,
+ "ts": 1792141223.041792,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "server->agent",
- "gateway.exchange_id": "dbdb49f19dcc4479b94c0da739ed504a",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "b8121977402e430f8962c9dc26c9d918",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
  "gateway.client": "mcp/0.1.0",
  "gateway.seq": 15,
  "client.address": "127.0.0.1",
- "client.port": 32870,
+ "client.port": 48754,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
  "http.response.status_code": 200,
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.protocol.version": "2025-11-25",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
  "jsonrpc.request.id": "3",
  "gen_ai.tool.name": "get_file_contents",
- "gateway.duration_s": 1.2218,
+ "gateway.duration_s": 1.3173,
  "gateway.message_bytes": 5086,
- "gateway.prev_sha256": "37210e69b9d6266745ec15f9bc89f3e1427f033c295add26de635926abebdfd1"
+ "gateway.prev_sha256": "a0d5890a1dfe69c2eba78b63087e823c048ae6703d77bcc71ef6e403db635286"
 }
 ```
 
-### A call with a time span (line 18)
+### A call with a time span (line 19)
 
 `since` and `until` are labelled `when` by the scan, so the log holds their span (`when_span_days`) without anyone parsing GitHub's arguments.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063256.6895053,
+ "ts": 1792141223.0452793,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "agent->server",
- "gateway.exchange_id": "707e873e1a1846a19353a4df90d3edbf",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "b22d6dcf72a142ff96879fdc80f81144",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
  "gateway.client": "mcp/0.1.0",
  "gateway.seq": 16,
  "gateway.request_seq": 5,
  "client.address": "127.0.0.1",
- "client.port": 32884,
+ "client.port": 48762,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.protocol.version": "2025-11-25",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
@@ -309,158 +366,235 @@ Status, time taken and size — no body, as `log_bodies` is `requests`.
   "jsonrpc": "2.0",
   "id": 4
  },
- "gateway.prev_sha256": "04964327eabbe512d4383c093014a0b7387697e686d3a80a327732f020083625"
+ "gateway.prev_sha256": "c44840c46202348ed536f60967ca7c417926453a850a4d56367ee087ee1adca7"
 }
 ```
 
-### The tool reports an error (line 23)
+### The tool reports an error (line 24)
 
 The call ran and failed: `error.type: tool_error` (OpenTelemetry's value for `isError`).
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063258.9714115,
+ "ts": 1792141225.106361,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "server->agent",
- "gateway.exchange_id": "48e78f5408014579af34d2f6b0f60188",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "3306848de2794a0faba54b0b9d6ceaf5",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
  "gateway.client": "mcp/0.1.0",
  "gateway.seq": 21,
  "client.address": "127.0.0.1",
- "client.port": 32888,
+ "client.port": 48766,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
  "http.response.status_code": 200,
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.protocol.version": "2025-11-25",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
  "jsonrpc.request.id": "5",
  "gen_ai.tool.name": "get_file_contents",
  "error.type": "tool_error",
- "gateway.duration_s": 1.4499,
+ "gateway.duration_s": 1.489,
  "gateway.message_bytes": 221,
- "gateway.prev_sha256": "3c2513f327b9e3c92d9a9f4015911b6c5595e7968a87e39e2b47e97347987b8e"
+ "gateway.prev_sha256": "beccce598e5d31835dd5d5a0226a0c6fbb85ef2dabd2a9ff87725008798a7ee6"
 }
 ```
 
-### A JSON-RPC error (line 26)
+### A JSON-RPC error (line 27)
 
 An unknown tool: the code is in `rpc.response.status_code`, and there is no `error.type`, since OpenTelemetry counts -32602 as the caller's mistake, not an error.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063259.1952965,
+ "ts": 1792141225.3131106,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "server->agent",
- "gateway.exchange_id": "3c3eb445ad4b48b3833aabc5faee14d8",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
+ "gateway.exchange_id": "3f52915a6cc043659b2f48ed2055dd88",
+ "gateway.agent_id": "0b995eb352ca",
+ "gateway.agent": "claude-code",
+ "user.id": "a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21",
  "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "300ccf7ecb84764f",
  "gateway.client": "mcp/0.1.0",
  "gateway.seq": 24,
  "client.address": "127.0.0.1",
- "client.port": 32898,
+ "client.port": 48768,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
  "http.response.status_code": 200,
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
  "mcp.protocol.version": "2025-11-25",
  "mcp.method.name": "tools/call",
  "gen_ai.operation.name": "execute_tool",
  "jsonrpc.request.id": "6",
  "gen_ai.tool.name": "no_such_tool",
  "rpc.response.status_code": "-32602",
- "gateway.duration_s": 0.2195,
+ "gateway.duration_s": 0.2024,
  "gateway.message_bytes": 98,
- "gateway.prev_sha256": "69e012d13aeaa0170edcbc9203f3f7970dd6f043052918ff0b40c7bfb98dd369"
+ "gateway.prev_sha256": "a8e1534e204ad6b4c92abc5f701dbcd04c1d3d7d20b8bae672845e0294d2e31a"
 }
 ```
 
-### A reply without a body (line 28)
+### A service, not a person (line 37)
 
-GitHub's answer to the session's end: no JSON-RPC message, but the status is still logged.
+The ci-bot's token came from client credentials: `user.id` is its service account, `gateway.app` the registered service.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063259.407389,
+ "ts": 1792141226.1450827,
  "log.level": "info",
  "gateway.route": "github",
- "gateway.direction": "server->agent",
- "gateway.exchange_id": "67eaab160c414c73b50283dc9e462167",
- "gateway.agent_id": "agt-0001",
- "gateway.agent": "alice",
- "user.id": "u-0001",
- "gateway.app": "claude-code",
+ "gateway.direction": "agent->server",
+ "gateway.exchange_id": "aaf1c8f13a9441ff8f9f3222cb592d2b",
+ "gateway.agent_id": "2d614e2da252",
+ "gateway.agent": "ci-bot",
+ "user.id": "5d2e8c40-1f6a-4b37-a0e9-c4b81f2d9a73",
+ "gateway.app": "ci-bot",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "02d7cbfb9eaaf766",
  "gateway.client": "mcp/0.1.0",
- "gateway.seq": 26,
+ "gateway.seq": 7,
+ "gateway.request_seq": 3,
  "client.address": "127.0.0.1",
- "client.port": 32906,
- "user_agent.original": "python-httpx/0.28.1",
- "http.request.method": "DELETE",
- "http.response.status_code": 204,
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
- "mcp.protocol.version": "2025-11-25",
- "gateway.duration_s": 0.208,
- "gateway.message_bytes": 0,
- "gateway.prev_sha256": "7b835507fe281ac9addd09600819a7fa5f76d8a2e50228805da36842fe33d88f"
-}
-```
-
-### Another agent on the session (line 29)
-
-bob uses alice's session id after she ended it. The gateway remembers the owner, so this is a `warn` — and forwarded, since the gateway never blocks. GitHub answered it (line 32, status 200): a closed session id still works upstream, which is why the session id is only ever logged as a pseudonym.
-
-```json
-{
- "schema": "gateway-log/3",
- "ts": 1792063259.4214203,
- "log.level": "warn",
- "gateway.route": "github",
- "gateway.direction": "gateway",
- "gateway.exchange_id": "d6cbcd08bbed44e6a662f612153ca292",
- "gateway.agent_id": "1b93891181f4",
- "gateway.agent": "bob",
- "client.address": "127.0.0.1",
- "client.port": 52652,
+ "client.port": 48840,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
- "mcp.session.id": "c36a1a8d6714888c187e6af20ff9c961",
- "gateway.notice": "session_agent_mismatch",
- "gateway.session_owner": "alice",
- "gateway.session_ended": true,
- "gateway.prev_sha256": "8b53deaba3f1ca5cd7607ccbafb733a6210525aa5b1aa14522590e9c17a97464"
+ "mcp.session.id": "c1f8c756d760d5c19f529122b5abaa4f",
+ "mcp.protocol.version": "2025-11-25",
+ "mcp.method.name": "tools/call",
+ "gen_ai.operation.name": "execute_tool",
+ "jsonrpc.request.id": "2",
+ "gen_ai.tool.name": "list_pull_requests",
+ "gateway.message_bytes": 177,
+ "gateway.tool_listed": true,
+ "gateway.arg_keys": [
+  "owner",
+  "perPage",
+  "repo"
+ ],
+ "gateway.args_hash": "44e21a30f807997bcdbab5deb0509092",
+ "gateway.effects": {
+  "how_much": {
+   "perPage": 2
+  }
+ },
+ "message": {
+  "method": "tools/call",
+  "params": {
+   "name": "list_pull_requests",
+   "arguments": {
+    "owner": "modelcontextprotocol",
+    "repo": "python-sdk",
+    "perPage": 2
+   }
+  },
+  "jsonrpc": "2.0",
+  "id": 2
+ },
+ "gateway.prev_sha256": "be2533c95ef490f48d9e11948ae743cc74de6a86b8680536ba9d2cabe08d2041"
 }
 ```
 
-### A refused login (line 33)
+### Another user on the session (line 59)
 
-No agent id: the token matched none. The token itself is not logged.
+bob, signed in and with a valid token of his own, sends a call on alice's session id after she ended it. The gateway remembers the session's owner (`gateway.session_owner_id`, her agent id), so this is a `warn` — and forwarded, since the gateway never blocks. GitHub answered it (line 62): a closed session id still works upstream, which is why session ids are logged only as pseudonyms.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063259.8984752,
+ "ts": 1792141228.916276,
  "log.level": "warn",
  "gateway.route": "github",
  "gateway.direction": "gateway",
- "gateway.exchange_id": "8203dd3542c8465da72bc15ee51f0c23",
+ "gateway.exchange_id": "4b64cd604f794018831ec228a749aee7",
+ "gateway.agent_id": "d67a0331eeb4",
+ "gateway.agent": "claude-code",
+ "user.id": "0b7f13aa-2c94-4e0d-8a6f-5e19c3d70f44",
+ "gateway.app": "claude-code",
+ "gateway.auth": "oauth",
+ "gateway.issuer": "http://127.0.0.1:18800",
+ "gateway.scopes": [
+  "mcp:tools"
+ ],
+ "gateway.token_id": "55c4badc653a8631",
  "client.address": "127.0.0.1",
- "client.port": 52652,
+ "client.port": 48928,
+ "user_agent.original": "python-httpx/0.28.1",
+ "http.request.method": "POST",
+ "mcp.session.id": "12371305548751cc630361b3da0025f0",
+ "gateway.notice": "session_agent_mismatch",
+ "gateway.session_owner": "claude-code (a4c9e2d1-77b0-4f5e-9c11-0d3f5a8e6b21)",
+ "gateway.session_owner_id": "0b995eb352ca",
+ "gateway.session_ended": true,
+ "gateway.prev_sha256": "77d06298e359bbb7efc36966a8a0cc11c6d90150e16f839dbd4a4770259834ac"
+}
+```
+
+### A token that expired (line 63)
+
+Correctly signed by the provider, but past its `exp`: refused (`token_expired`). Nothing about the caller is logged beyond the request's address.
+
+```json
+{
+ "schema": "gateway-log/3",
+ "ts": 1792141229.8251364,
+ "log.level": "warn",
+ "gateway.route": "github",
+ "gateway.direction": "gateway",
+ "gateway.exchange_id": "cb247a2e978b4fc58cb0cd5f0e49fd92",
+ "client.address": "127.0.0.1",
+ "client.port": 50908,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
  "gateway.notice": "auth_failed",
- "gateway.reason": "unknown_token",
- "gateway.prev_sha256": "e605d5e593f37d21544e63f8338311ad91547a28e4ff838358bafb025dbe3a26"
+ "gateway.reason": "token_expired",
+ "gateway.prev_sha256": "1c703cb64b922bd6376654552a59b9d1f43abc447820c0d30c65fe1a197b59b4"
+}
+```
+
+### A token minted for another server (line 64)
+
+Signed by the provider for `/slack`, sent to `/github`: refused (`wrong_audience`, RFC 8707). A token one server receives cannot be replayed at another.
+
+```json
+{
+ "schema": "gateway-log/3",
+ "ts": 1792141229.8364356,
+ "log.level": "warn",
+ "gateway.route": "github",
+ "gateway.direction": "gateway",
+ "gateway.exchange_id": "bb092bc7212b4bc8b83b60f9536df4e8",
+ "client.address": "127.0.0.1",
+ "client.port": 50910,
+ "user_agent.original": "python-httpx/0.28.1",
+ "http.request.method": "POST",
+ "gateway.notice": "auth_failed",
+ "gateway.reason": "wrong_audience",
+ "gateway.prev_sha256": "57f1f0bf967b6ecd489f6471fa8d5f05f5cbb601a7b719badbd5c156aef6ab69"
 }
 ```
 
@@ -471,27 +605,27 @@ Written to `_gateway.jsonl`, as there is no route file for it.
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063259.900303,
+ "ts": 1792141229.8458664,
  "log.level": "warn",
  "gateway.route": "gitlab",
  "gateway.direction": "gateway",
- "gateway.exchange_id": "64adc18d799a48efbf52a1585bd7b0d7",
+ "gateway.exchange_id": "bfa13ca940064000a387257439446303",
  "client.address": "127.0.0.1",
- "client.port": 52652,
+ "client.port": 50916,
  "user_agent.original": "python-httpx/0.28.1",
  "http.request.method": "POST",
  "gateway.notice": "unknown_route"
 }
 ```
 
-### Run stops (line 34)
+### Run stops (line 65)
 
 Written on a clean shutdown. Every line after the first carries `gateway.prev_sha256`, the digest of the line before it.
 
 ```json
 {
  "schema": "gateway-log/3",
- "ts": 1792063260.036962,
+ "ts": 1792141230.0401864,
  "log.level": "info",
  "gateway.route": "github",
  "gateway.direction": "gateway",
@@ -505,17 +639,19 @@ Written on a clean shutdown. Every line after the first carries `gateway.prev_sh
  "gateway.effects_sha256": "ff3018bbe203",
  "gateway.log_bodies": "requests",
  "gateway.pseudonyms_keyed": true,
- "gateway.agents": 2,
- "gateway.prev_sha256": "c8a1f56f57ca3f192920fe8888565c457be30fc47476c73609fcfede8893dc05"
+ "gateway.auth": "oauth",
+ "gateway.oauth_issuer": "http://127.0.0.1:18800",
+ "gateway.prev_sha256": "49699b2e205eaa95fd5e82c304b5276c07e477b6041f74e6ea79419b4e086f72"
 }
 ```
 
 ## What is not in it
 
-Checked on both files: no GitHub token, no agent token, no raw session id, no e-mail
-address, no reply content. What is there and could be sensitive in another deployment:
-the request arguments (`message` on request lines, and `which` / `action` values in
-`gateway.effects`); set `log_bodies: "none"` to keep only the typed fields.
+Checked on both files: no access token, no GitHub token, no client secret, no raw session
+id, no e-mail address, no reply content, no person's name. What is there and could be
+sensitive in another deployment: the request arguments (`message` on request lines, and
+`which` / `action` values in `gateway.effects`); set `log_bodies: "none"` to keep only the
+typed fields.
 
 ## Use it
 
@@ -529,9 +665,10 @@ uv run python -m mcp_security.gateway.score \
 
 | File | What it is |
 |---|---|
-| `github.jsonl` | The route's log: 34 lines |
+| `github.jsonl` | The route's log: 65 lines |
 | `_gateway.jsonl` | Requests that matched no route: 1 line |
 | `github_view.txt` | The same log, one line per event (`log_view.py`) |
 | `github_grouped.txt` | The same log, grouped by session (`log_view.py --grouped`) |
-| `routes.json` | The gateway config of the run; `agents` holds the SHA-256 of two throwaway example tokens |
+| `routes.json` | The gateway config of the run: the route and where the identity provider is — no callers |
+| `identity_provider.py` | The identity provider of the run: registered applications, a directory of people and one service account |
 | `make_example.py` | Re-makes both log files and both views (replaces them) |

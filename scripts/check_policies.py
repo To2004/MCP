@@ -65,6 +65,8 @@ SECTIONS: dict[str, tuple[str, str, str]] = {
     "openbb": ("finance", "openbb.json", "P1"),
     "sec_edgar": ("finance", "sec_edgar.json", "P1"),
     "yahoo_finance": ("finance", "yahoo_finance.json", "P1"),
+    "stripe_real": ("captured", "stripe_real.json", "P2"),
+    "playwright_real": ("captured", "playwright_real.json", "P2"),
     # Live-provisioned organizations — one org per real vendor catalog, three
     # domains. Assets in these registers exist; see reports/live_run/orgs_2026-07-29/.
     "github_helios": ("captured", "github_real.json", "P2"),

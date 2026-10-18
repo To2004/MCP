@@ -1,0 +1,185 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "prompt_sha256": "90e5685a67d4923e3299c5350c0c727fbd0b3394dee8fa196eaab12a259559d1",
+  "prompt": "prompt-AS-RUN.md",
+  "slurm_job": "20974599",
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "composites": [],
+      "declared_arguments": 0,
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "tool_context": {
+        "atomic_ops": [
+          "METADATA"
+        ],
+        "max_severity": 1,
+        "severity_label": "Low"
+      },
+      "arguments": [
+        {
+          "path": "table",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": true,
+          "composes_new_content": false,
+          "references_existing": true,
+          "provenance": "caller_copied",
+          "commits_change": false,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "The 'table' argument selects a specific table from the database, which is an existing entity. It expands reach as it determines the scope of metadata retrieval.",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "read_query",
+      "tool_context": {
+        "atomic_ops": [
+          "READ"
+        ],
+        "max_severity": 2,
+        "severity_label": "Low"
+      },
+      "arguments": [
+        {
+          "path": "sql",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": false,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": false,
+          "track_pairing": [],
+          "reason": "The 'sql' argument is a free-form SQL query that can select from any table or set of rows, thus it selects population and expands reach. It also composes new content as the caller writes the query.",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "write_query",
+      "tool_context": {
+        "atomic_ops": [
+          "DELETE",
+          "EXECUTE",
+          "OVERWRITE",
+          "SCHEMA_MODIFY",
+          "WRITE"
+        ],
+        "max_severity": 5,
+        "severity_label": "Critical"
+      },
+      "arguments": [
+        {
+          "path": "sql",
+          "orderable": false,
+          "selects_population": false,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": false,
+          "track_concentration": false,
+          "track_temporal_pattern": true,
+          "track_pairing": [],
+          "reason": "The 'sql' argument is a free-form SQL query that can significantly alter the database state, thus expanding reach and committing changes.",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [],
+      "declared_arguments": 1,
+      "empty_reasons": []
+    },
+    {
+      "tool_name": "insert_row",
+      "tool_context": {
+        "atomic_ops": [
+          "WRITE"
+        ],
+        "max_severity": 3,
+        "severity_label": "Medium"
+      },
+      "arguments": [
+        {
+          "path": "table",
+          "orderable": false,
+          "selects_population": true,
+          "expands_reach": false,
+          "composes_new_content": false,
+          "references_existing": true,
+          "provenance": "caller_copied",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": true,
+          "track_concentration": true,
+          "track_temporal_pattern": true,
+          "track_pairing": [],
+          "reason": "references an existing table, required for the operation to commit changes",
+          "confidence": 1.0
+        },
+        {
+          "path": "values",
+          "orderable": false,
+          "selects_population": false,
+          "expands_reach": true,
+          "composes_new_content": true,
+          "references_existing": false,
+          "provenance": "caller_composed",
+          "commits_change": true,
+          "scope_multiplier": false,
+          "track_rarity": false,
+          "track_concentration": false,
+          "track_temporal_pattern": true,
+          "track_pairing": [
+            "table"
+          ],
+          "reason": "composes new content to be inserted into the specified table",
+          "confidence": 1.0
+        }
+      ],
+      "composites": [
+        {
+          "args": [
+            "table",
+            "values"
+          ],
+          "meaning": "defines where and what data is being inserted, only meaningful together",
+          "note": ""
+        }
+      ],
+      "declared_arguments": 2,
+      "empty_reasons": []
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": [
+    "list_tables"
+  ]
+}

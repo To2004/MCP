@@ -75,12 +75,14 @@ register): each section keeps the `### <name>` heading and the
 | [slack_cbg](#slack_cbg) | `slack:cbg` | communication | internal comms | XS | P2 |
 | [calendar_real](#calendar_real) | `calendar:real` | calendar mgmt | workplace privacy | M | P2 |
 | [calendar_cbg](#calendar_cbg) | `calendar:cbg` | calendar mgmt | workplace privacy | XS | P2 |
+| [stripe_real](#stripe_real) | `stripe:real` | payments processing (generic API dispatch) | PCI-DSS + financial services | L | P2 |
 | [sqlite_cbg_sqlite](#sqlite_cbg_sqlite) | `sqlite:cbg_sqlite` | SQL database | unregulated research ops | S | P2 |
 | [maverick](#maverick) | `maverick-mcp` | trading research/portfolio | market-conduct / books-and-records | XL | P2 |
 | [finance_tools](#finance_tools) | `finance-tools-mcp` | market & macro lookups | unregulated research | L | P2 |
 | [openbb](#openbb) | `openbb-platform` | multi-asset research | unregulated research | M | P1 |
 | [sec_edgar](#sec_edgar) | `sec-edgar-mcp` | regulatory filings | public archive | S | P1 |
 | [yahoo_finance](#yahoo_finance) | `yfinance` | quote lookups | public data | XS | P1 |
+| [playwright_real](#playwright_real) | `playwright:real` | browser automation | no built-in auth; internal-app RPA | L | P2 |
 | [github_helios](#github_helios) | `github:helios` | GitHub repo mgmt | NERC CIP change control | L | P2 |
 | [slack_vireo](#slack_vireo) | `slack:vireo` | communication | ICH-GCP blinding + PHI | M | P2 |
 | [calendar_aurora](#calendar_aurora) | `calendar:aurora` | calendar mgmt | crew duty limits / workplace privacy | M | P2 |
@@ -258,18 +260,18 @@ are integrity-first — that failure hurts a person rather than a record.
 
 **Tier: M** · `fs:corp_filesystem` · 14 tools · policy-only disclosure
 
-**Company.** An unregulated mid-size product company. The share is the general
-corporate file store: engineering material, payroll, security key material and
-product source in one tree. We do not publish the file listing — the layout maps
-which teams hold what, and the security scope's very existence is a target.
-Classify by data type.
+**Company.** CBG's engineering organization runs the agent against the general
+14-tool corporate file share: engineering material, payroll, security key
+material, grant and compliance filings, and product source in one tree. CBG does
+not publish the file listing — the layout maps which teams hold what, and the
+security scope's very existence is a target. Classify by data type.
 
 **Data classification policy.**
 
 | Class | Definition (adverse impact) | Examples on this server |
 |---|---|---|
 | Restricted | Exploitable on its own the moment it leaks; compromise reaches systems beyond this share | Private keys and certificates, credentials, anything key-shaped |
-| Confidential | Serious lasting harm to staff or to the company's position | Payroll and compensation records, product source that ships, security audit records |
+| Confidential | Serious lasting harm to staff or to the company's position | Payroll and compensation records, product source that ships, security audit records, grant and compliance filings |
 | Internal | Recoverable embarrassment; meant to stay in-org | Schemas, defect lists, project material, onboarding documents |
 | Routine | A shrug: knowing that a path, a size or a timestamp exists | Directory listings, name trees, sizes and permissions, the allowed-roots list |
 | Public | None — already published | The published README overview |
@@ -283,6 +285,7 @@ Classify by data type.
 | `audit-records` | Append-only action record; no single line matters, the whole is the evidence | `read_file`, `read_text_file`, `write_file`, `edit_file`, `move_file` | `completeness-is-the-asset` | I>A>C |
 | `product-source` | Product logic that ships to production | `read_file`, `read_text_file`, `read_multiple_files`, `write_file`, `edit_file`, `move_file` | `hub` | I>C>A |
 | `project-material` | Schemas, defect lists and working project documents | `read_file`, `read_text_file`, `read_multiple_files`, `write_file`, `edit_file`, `move_file` | — | C>I>A |
+| `grant-and-compliance-records` | Grant proposals, funder financial terms and IRB/ethics compliance filings | `read_file`, `read_text_file`, `read_multiple_files`, `write_file`, `edit_file`, `move_file` | — | C>I>A |
 | `onboarding-material` | Org charts and onboarding documents; near-public internally | `read_file`, `read_text_file`, `read_media_file`, `write_file`, `edit_file` | — | C>I>A |
 | `public-overview` | Published overview and README material | `read_file`, `read_text_file` | `public` | I>C>A |
 | `file-contents` | What a content read returns; inherits the most sensitive file in reach | `read_file`, `read_text_file`, `read_multiple_files` | — | C>I>A |
@@ -299,7 +302,9 @@ Classify by data type.
 content are Restricted and self-sufficient wherever they sit — a `security/` or
 `secrets/` path is a strong cue but not a requirement. Compensation and personnel
 data is Confidential; so is source that ships, because a write is a supply-chain
-change. Audit material is Confidential and completeness is its value. Metadata
+change. Grant, funder and compliance material carries legal exposure of its own
+and is Confidential regardless of subject matter. Audit material is Confidential
+and completeness is its value. Metadata
 rule: names, layouts, sizes and permissions on this share carry no content and
 are Routine. Aggregation: a scope ranks at least as high as the most sensitive
 file it reaches; a scope holding the whole payroll ranks a step above one row;
@@ -463,11 +468,12 @@ chiefly for originals, which cannot be regenerated.
 
 **Tier: L** · `github:real` · 26 tools · policy-only disclosure
 
-**Company.** CBG's engineering organization on the vendor's 26-tool GitHub MCP
-catalog. CBG does not disclose its repository inventory to integrators — the list
-of private repository names alone maps the product estate and the production
-topology. The register below names the *classes* of repository and the mutable
-states this surface can reach, not the repositories themselves.
+**Company.** CBG's engineering organization runs the agent against the vendor's
+26-tool GitHub catalog. CBG does not disclose its repository inventory to
+integrators: the list of private repository names alone maps the product estate
+and the production topology. The register below names the *classes* of
+repository and the mutable states this surface can reach, not the repositories
+themselves.
 
 **Data classification policy.**
 
@@ -596,12 +602,12 @@ code.
 
 **Tier: M** · `slack:real` · 16 tools · policy-only disclosure
 
-**Company.** CBG's Slack workspace on the vendor's real 16-tool API surface. CBG
-does not publish a channel inventory or channel classification list to
-integrators: private channel names themselves reveal organizational structure
-(who is in an incident, what HR is discussing). Note what this surface includes
-beyond messaging — **user-group administration and channel join/leave**, which
-are access-control operations wearing messaging clothes.
+**Company.** CBG's Slack workspace runs on the real 16-tool API surface. CBG
+does not publish a channel inventory or classification list to integrators:
+private channel names themselves reveal organizational structure — who is in an
+incident, what HR is discussing. Note what this surface includes beyond
+messaging — **user-group administration and channel join/leave**, which are
+access-control operations wearing messaging clothes.
 
 **Data classification policy.**
 
@@ -731,10 +737,11 @@ The worked example of the [MCP Server Policy Spec](../standards/mcp-policy-spec.
 no sensitivity numbers anywhere — the tables carry the content, the scanner
 derives the 1–5.
 
-**Company.** CBG on the real 13-tool Google Calendar surface (workplace-services
-team). Central fact: **event metadata is itself sensitive** — attendee lists and
-titles disclose deals and candidates without opening an event body. This does
-*not* extend to knowing which calendars exist: the container list is routine.
+**Company.** CBG's workplace-services team runs the agent against the real
+13-tool Google Calendar surface. Central fact: **event metadata is itself
+sensitive** — attendee lists and titles disclose unannounced deals, candidates
+and departures without anyone opening an event body. Knowing which calendars
+exist is not: the container list is routine.
 
 **Data classification policy.**
 
@@ -847,18 +854,104 @@ executive or recruiting calendars; enumerating the contacts directory.
 
 ---
 
+## Payments servers
+
+The organization's own transactional and customer data, reached through a
+vendor payments API rather than a company-run store. Stripe's real MCP server
+routes almost its entire surface through two generic dispatch tools
+(`stripe_api_read` / `stripe_api_write`) rather than one tool per resource — the
+register states every asset each can reach; which one a specific call reaches is
+decided by the `stripe_api_operation_id` argument at call time, which is the
+dynamic layer's job to resolve, not this document's.
+
+### stripe_real
+
+**Tier: L** · `stripe:real` · 10 tools · policy-only disclosure
+
+**Company.** CBG's billing and support organization runs the agent against
+Stripe's official 10-tool MCP server in test mode. The nominal tool count
+understates the reach: `stripe_api_read` and `stripe_api_write` are a generic
+gateway onto the *entire* Stripe API — any resource, chosen by the caller at
+call time — so this surface is scored at the same tier as our largest,
+all-verbs vendor catalog (github_real) rather than at its raw tool count. CBG
+does not disclose live-mode credential material or real customer volumes to
+integrators: test mode is the only mode this policy authorizes.
+
+**Data classification policy.**
+
+| Class | Definition (adverse impact) | Examples on this server |
+|---|---|---|
+| Restricted | Loss reconfigures what every tool can reach, or moves money/bank routing without an owner in the loop; workspace-wide, durable | API-key, webhook and connected-account configuration; payout bank routing and account numbers |
+| Confidential | Disclosure or alteration causes PCI-DSS/GDPR exposure or direct, largely irreversible financial harm | Customer PII and stored payment-method records; charge and payment-intent detail; refund actions; subscription and billing history; dispute evidence |
+| Internal | Recoverable business impact | Product and price catalog; implementation-planning output |
+| Routine | A shrug: knowing an operation or object id exists, with no financial content behind it | Operation-id search results and parameter schemas; aggregate revenue totals with no per-customer detail |
+| Public | None — already published | Stripe's own published API documentation |
+
+**Asset register.**
+
+| Asset | Description | Tools | Flags | CIA |
+|---|---|---|---|---|
+| `account-config` | API keys, webhook endpoints and connected-account settings; the reach of every other tool | `get_stripe_account_info`, `stripe_api_read`, `stripe_api_write` | `hub`, `self-sufficient` | I≈C>A |
+| `payment-instruments` | Stored payment-method records (card brand/last4, bank-account tokens) attached to customers | `stripe_api_read`, `stripe_api_write` | `population` | C>I>A |
+| `customer-pii` | Customer name, email, address, phone and metadata across the account | `stripe_api_read`, `stripe_api_write` | `population` | C>I>A |
+| `charges-and-payments` | Payment-intent and charge records: amount, status, linked customer | `stripe_api_read`, `stripe_api_write`, `create_refund` | — | I>C>A |
+| `refunds` | Money returned to a customer; the act is not reversible through this surface | `create_refund`, `stripe_api_write`, `stripe_api_read` | — | I>A>C |
+| `subscriptions-and-billing` | Subscription state, billing cycle, upgrade/cancellation | `stripe_api_read`, `stripe_api_write` | — | I>C>A |
+| `payouts-and-bank-routing` | Payout schedule and the connected bank account's routing/account numbers | `get_stripe_account_info`, `stripe_api_read`, `stripe_api_write` | `hub` | C>I>A |
+| `disputes-and-evidence` | Chargeback disputes and the evidence submitted against them, often including customer statements | `stripe_api_read`, `stripe_api_write` | — | C>I>A |
+| `products-and-prices` | The product and price catalog | `stripe_api_read`, `stripe_api_write` | — | I>C>A |
+| `revenue-analytics` | Sigma/metrics aggregates across the whole account's transaction history | `stripe_analytics` | `population` | C>I>A |
+| `operation-catalog` | Which API operations exist and their parameter schemas; no customer data, but names the account's full reachable surface | `stripe_api_search`, `stripe_api_details` | `metadata-only` | C>I>A |
+| `documentation-and-planning` | Stripe's own published docs and integration-planning output | `search_stripe_documentation`, `stripe_implementation_planner` | `public` | none |
+
+`send_stripe_mcp_feedback` touches no organizational asset — it sends free-text
+feedback about the MCP tool itself to Stripe, not account data.
+
+**Asset recognition rules.** Anything key-shaped or account-config-shaped
+(API keys, webhook secrets, bank routing/account numbers) is Restricted
+wherever the gateway surfaces it. Customer PII, stored payment methods,
+transaction detail and dispute evidence are Confidential; the product/price
+catalog and planning output are Internal. Metadata rule: an operation id or
+parameter schema carries no customer content and is Routine, as does an
+aggregate total with no per-customer breakdown; a per-customer or per-charge
+read is not. Aggregation: `stripe_analytics` draws from the whole account's
+history at once and ranks with the most sensitive class it could summarize, not
+the metric the caller named. **Default: Confidential.**
+
+**Operation limits.** Prohibited outright: any `stripe_api_write` or
+`create_refund` call in live mode; rotating or reading account/webhook/API-key
+configuration. Requires human confirmation: any write resolved against
+`payment-instruments`, `subscriptions-and-billing`, `payouts-and-bank-routing`
+or `refunds`. Cannot be undone: a refund, and a subscription cancellation.
+
+**Expected organizational use.** Test-mode billing support: look up a customer,
+a charge or a subscription by id, issue a single refund with a human-approved
+reason, read account/revenue summaries.
+
+**Prohibited agent behavior.** Any live-mode call; bulk refund or bulk
+subscription-cancellation sweeps; reading or writing account/webhook/API-key
+configuration; exporting the full customer or payment-instrument population.
+
+**Loss priorities.** C > I > A. Customer PII and payment-instrument disclosure
+is the loss that triggers regulatory exposure; integrity follows because a
+wrongful refund or subscription change is a direct, largely irreversible
+financial event; availability is minor — this is a record and settlement path,
+not a serving path.
+
+---
+
 ## Database servers
 
 ### sqlite_cbg_sqlite
 
 **Tier: S** · `sqlite:cbg_sqlite` · 5 tools · policy-only disclosure
 
-**Company.** CBG's internal research-operations database — a single SQLite store
-holding the project register, experiment records, dataset provenance, staff
-records and the API credentials the research pipeline uses to reach other
-services. We do not publish the schema to integrators: the table names alone map
-which systems we integrate with and where the credentials live. Classify by what
-a table characteristically holds.
+**Company.** CBG's research-operations team runs the agent against a single
+SQLite store holding the project register, experiment records, dataset
+provenance, staff records and the API credentials the research pipeline uses to
+reach other services. CBG does not publish the schema to integrators: the table
+names alone map which systems we integrate with and where the credentials live.
+Classify by what a table characteristically holds.
 
 **Data classification policy.**
 
@@ -1216,6 +1309,94 @@ ticker.
 rate-limiting.
 
 **Loss priorities.** A > I > C.
+
+---
+
+## Automation servers
+
+Microsoft's official Playwright server, vendor-maintained but structurally
+unlike every catalog above: it is not an API wrapper around one company's data
+store, it is **direct control of a browser**. The asset is not a fixed catalog
+of company records but whatever the browser session's cookies/tokens currently
+grant, plus the host process the server itself runs in. The vendor's own
+documentation states the server carries **no built-in authentication** — the
+entire trust boundary is the browser profile and whatever internal application
+the agent is pointed at.
+
+### playwright_real
+
+**Tier: L** · `playwright:real` · 24 tools · policy-only disclosure
+
+**Company.** CBG's platform/QA-automation team runs the agent against
+Microsoft's official 24-tool Playwright MCP server to drive browser-based
+testing and RPA-style tasks against CBG's own internal web applications. CBG
+does not disclose which internal applications the automation profile is
+pre-authenticated to: the answer maps the company's admin and
+privileged-access estate.
+
+**Data classification policy.**
+
+| Class | Definition (adverse impact) | Examples on this server |
+|---|---|---|
+| Restricted | Loss reaches the host running the MCP server itself, or an admin/privileged session; workspace-wide, durable | Arbitrary code execution in the server process; session cookies/tokens for admin or privileged internal tools |
+| Confidential | Disclosure or alteration of content behind an authenticated internal application; largely irreversible once observed or submitted | Page content and form data on internal apps; request/response bodies and auth headers in transit; uploaded file contents |
+| Internal | Recoverable; ordinary internal-app interaction | Clicks/selections/keystrokes on non-privileged pages; console/debug output |
+| Routine | A shrug: knowing a tab, a URL or a window state exists, with no page content behind it | Tab list; navigation history to non-sensitive URLs; window size |
+| Public | None — already published | Content and network traffic on unauthenticated public websites |
+
+**Asset register.**
+
+| Asset | Description | Tools | Flags | CIA |
+|---|---|---|---|---|
+| `server-process-execution` | Arbitrary JavaScript run inside the Playwright server's own Node process — reaches the MCP host, not just the page | `browser_run_code_unsafe` | `hub`, `self-sufficient` | I>C>A |
+| `authenticated-session-state` | Cookies, tokens and login state carried by the browser profile; decides which internal systems every other tool can reach | `browser_navigate`, `browser_evaluate` | `hub` | C>I>A |
+| `network-traffic-content` | Full headers and bodies of every request the page has made since load, including any auth token or session header in transit | `browser_network_requests`, `browser_network_request` | `population` | C>I>A |
+| `internal-page-content` | Text and structure of whatever page is currently loaded, including content behind an internal login | `browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_find`, `browser_evaluate` | — | C>I>A |
+| `local-file-contents` | Local files read for upload, or data dropped onto the page | `browser_file_upload`, `browser_drop` | — | C>I>A |
+| `form-input-and-credentials` | Text typed into page fields, including login forms | `browser_type`, `browser_fill_form`, `browser_press_key` | — | C>I>A |
+| `page-interactive-state` | Clicks, drags, selections and dialog responses that submit or trigger real actions in whatever app is loaded (e.g. an "approve" or "delete" control in an internal admin console) | `browser_click`, `browser_hover`, `browser_drag`, `browser_select_option`, `browser_handle_dialog` | — | I>C>A |
+| `console-and-debug-output` | Browser console messages; commonly leaks stack traces, internal URLs, or tokens logged client-side | `browser_console_messages` | — | C>I>A |
+| `navigation-history` | URLs and tabs visited during the session | `browser_navigate_back`, `browser_tabs` | `metadata-only` | C>I>A |
+| `browser-runtime-state` | Window size, tab count, page-load timing — no content | `browser_resize`, `browser_wait_for`, `browser_close` | `metadata-only` | A>I>C |
+
+**Asset recognition rules.** Anything the automation profile reaches through an
+authenticated session — an admin console, an internal tool holding customer or
+financial data — classifies at least Confidential, and the session state that
+grants that reach classifies Restricted, because losing it reaches every
+system the profile is logged into. `browser_run_code_unsafe` is Restricted
+regardless of the page loaded: it runs in the server's own process, not the
+page's, so it reaches the MCP host itself. Metadata rule: which tabs are open
+or which URL was visited carries no page content and is Routine — except that
+our internal URL structure maps which admin tools exist, so a full
+navigation-history dump classifies Internal rather than Routine. Aggregation:
+`browser_network_requests` returns every request since page load at once, so
+it ranks with the most sensitive header or body it captured, not the page the
+caller had in mind. **Default: Confidential.**
+
+**Operation limits.** Prohibited outright: `browser_run_code_unsafe` against
+any profile that is or may be authenticated; navigating to and interacting
+with production admin consoles without a human in the loop. Requires human
+confirmation: any `browser_type`/`browser_fill_form` submission on a page
+requesting credentials; any `browser_click` on a destructive or approval
+control. Cannot be undone: a submitted form, an approved or deleted item in
+whatever application is loaded, and any outbound request the page itself
+issues as a side effect of navigation.
+
+**Expected organizational use.** Automated QA and read-only reconnaissance
+against CBG's own internal applications: navigate, snapshot, read
+console/network state, verify UI behavior — one target application at a time,
+unprivileged test accounts only.
+
+**Prohibited agent behavior.** Running `browser_run_code_unsafe`; navigating to
+or interacting with production admin/privileged consoles; submitting forms
+with real credentials; uploading files outside the task's declared scope;
+reading network traffic beyond the target application under test.
+
+**Loss priorities.** C > I > A. The session-state and host-execution paths are
+the loss — an authenticated profile or the server's own process reaches
+everything downstream; integrity follows because a stray click or form
+submission can trigger a real action in whatever app is loaded; availability
+is minor — the browser session, not a serving path, is what's at risk.
 
 ---
 

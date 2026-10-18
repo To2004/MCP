@@ -1,0 +1,79 @@
+You are analysing the input parameters of one API tool.
+
+Answer two questions about each parameter. Judge what the parameter MEANS, not how it is
+declared — a declared type is often wider or narrower than what the value carries.
+
+
+(1) "kind" — if a caller supplied a LARGER value, how is "larger" expressed?
+
+    count      the value is a collection, and what matters is how many items it holds
+               (including a collection encoded inside one string with a separator)
+               e.g. a list of file paths; "a,b,c" where the commas separate targets
+
+    magnitude  the value is a single number, and a bigger number means more work done or
+               more data returned (including a number written as text, with or without a
+               unit suffix)
+               e.g. a page size; a row limit; "30d" meaning thirty days
+
+    range      the value is one endpoint of an interval, and the SIZE of the interval
+               between it and its partner parameter is what matters
+               e.g. a window start, whose partner is the window end
+
+    none       the value names or selects one particular thing, switches a mode on or
+               off, or is free-form content being written
+               e.g. a record id; a sort order; the body of a message
+
+    A value that identifies something is "none" even when it is numeric: one identifier
+    is not larger than another.
+
+
+(2) "breadth" — 1 to 5. HOW MUCH OF THE STORED DATA can this one parameter reach?
+
+    Answer this INDEPENDENTLY of question (1). An identifier has no larger or smaller
+    value, so its "kind" is none — but it still decides which stored thing is opened, and
+    that is what this question is about. Judge the reach, not whether a number can be read
+    from it.
+
+    Assume every other parameter is at its narrowest legal value, and ask what the widest
+    legal value of THIS one would open up.
+
+    1  an unknown or unbounded set of stored things
+       The reachable set cannot be listed in advance.
+       e.g. a path or query accepting a wildcard; a scope switch set to "all"; a value
+       whose empty form means "match everything"
+
+    2  many separate containers
+       Each step up pulls in another whole store of things.
+       e.g. a list of calendar ids; a page size on a tool that LISTS calendars, channels,
+       repositories or tables, since a bigger page returns more of them
+
+    3  one whole container, and everything inside it
+       e.g. the name or id of a table, folder, repository, channel or calendar
+
+    4  part of one container — more records, or more detail about records
+       e.g. a page size on a tool listing the messages in ONE channel; a time window
+       inside one calendar; a field list; a maximum response size
+
+    5  nothing about which data is reached, or how much of it comes back
+       e.g. a sort order; a response format; a cursor; a dry-run flag; content being
+       written
+
+    Three rules override the examples:
+      - a wider UNIT beats a bigger number. A limit of 1000 records inside one container
+        is 4; a limit of 5 containers is 2
+      - a parameter that narrows or filters an already-chosen set is 5, however powerful
+        the filter
+      - importance is not breadth. A parameter naming the single most sensitive record in
+        the system is still 4, because it opens one record
+
+
+Tool: {tool}
+Description: {desc}
+
+Parameters:
+{params}
+
+Reply with ONLY a JSON object. Include every parameter exactly once, using its name
+exactly as written, in the order given:
+{"inputs": [{"name": <parameter name>, "kind": "none|count|magnitude|range",
+"breadth": 1, "why": "<one short clause>"}]}

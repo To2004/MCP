@@ -1,4 +1,12 @@
-# Dynamic Scoring Design
+# Dynamic Scoring Design (superseded — historical)
+
+> **Superseded on 2026-08-13.** This document describes the band-escalation
+> generation of the runtime layer. Its code (`src/mcp_security/dynamic/`), tests,
+> and eval scripts were archived to `_archive/2026-08-13/gen1_dynamic/`. The
+> current design is [Dynamic Layer — Design](dynamic-layer-design.md) with the
+> arithmetic in [Dynamic Layer — The Calculation](dynamic-layer-formula.md);
+> results in `reports/experiments/dynamic_layer/RESULTS.md`. Kept for the
+> reasoning and the measurements it records, not as a description of live code.
 
 The static side (`scanner/`, `static_scoring/`, `call_scoring/`, `param_scoring/`)
 answers *"how bad would this call be if it happened?"* — a design-time heatmap

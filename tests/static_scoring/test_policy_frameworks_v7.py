@@ -5,7 +5,21 @@ SP 800-60, and CIS Controls v8.1 Control 3 — describe the same four deployment
 the ``nacombo`` baseline covers, but in each framework's own register shape. The
 register carries native columns (an ISO owner, a NIST information type, a CIS
 data category and segment), an authorization column stating which of the tools
-that REACH an asset the organization actually SANCTIONS, and no flag column.
+that REACH an asset the organization actually SANCTIONS, and no flag or
+CIA/loss-axis column.
+
+``fs_corp_filesystem`` keeps the original container-per-row design (one row per
+concrete file/share) as a control. The other three organizations —
+``github_helios``, ``slack_vireo``, ``calendar_aurora`` — register **virtual**
+assets: information TYPES (e.g. "unblinding-information",
+"ot-cyber-system-information") rather than named channels, repositories or
+calendars, because each org's own container inventory is itself withheld and a
+real ISO/NIST/CIS disclosure classifies information by type, not by container
+(see ``docs/mcp-tools/real-policy-examples/`` for the real-world documents this
+is grounded in). Every content-reading/writing tool is mapped to every virtual
+asset its content COULD carry, with a "How the tools reach these assets"
+paragraph explaining that the register cannot bind a verb to one asset the way
+a container-per-row design could — the recognition rules classify by content.
 
 What these tests protect:
 
@@ -15,6 +29,8 @@ What these tests protect:
   authorization cell can never invent reach the register did not grant;
 * no framework document leaks a per-asset sensitivity number, which would turn
   the derivation experiment back into a lookup;
+* the three virtual-asset organizations register the SAME asset taxonomy in
+  every framework arm — only the framework-native columns and procedure differ;
 * the baseline document is unaffected by the parser changes.
 """
 
@@ -141,23 +157,53 @@ def test_document_rejects_a_leaked_sensitivity_table(framework: str):
 
 
 def test_register_shapes_diverge_as_designed():
-    """ISO keeps the baseline's rows, NIST splits, CIS merges.
+    """fs_corp_filesystem: ISO keeps the baseline's rows, NIST splits, CIS merges.
 
-    The divergence is the experiment: if every framework produced the same
-    register, the arms would differ only in prose and there would be nothing to
-    measure.
+    That container-per-row design is deliberately retained for the filesystem
+    server as a control: if every framework produced the same register, the
+    arms would differ only in prose and there would be nothing to measure.
     """
-    for server in SERVERS:
-        counts = {
-            framework: len(
-                parse_asset_register(policy_for(server, doc=framework_doc(framework)).text)
-            )
+    server = "fs_corp_filesystem"
+    counts = {
+        framework: len(parse_asset_register(policy_for(server, doc=framework_doc(framework)).text))
+        for framework in FRAMEWORKS
+    }
+    baseline = len(parse_asset_register(policy_for(server).text))
+    assert counts["iso"] == baseline, f"{server}: ISO should keep the baseline's rows"
+    assert counts["nist"] > baseline, f"{server}: NIST should split at least one row"
+    assert counts["cis"] < baseline, f"{server}: CIS should merge into coarse entries"
+
+
+def test_virtual_asset_orgs_share_one_taxonomy_across_frameworks():
+    """github_helios, slack_vireo and calendar_aurora register VIRTUAL assets.
+
+    Real ISO/NIST/CIS disclosure classifies information TYPES, not named
+    containers (channels, repositories, calendars) — the org's own channel or
+    repository inventory is itself withheld, so a container-named asset id was
+    never a shareable fact for these three. Their registers were rewritten to
+    one shared information-type taxonomy: the same asset ids and the same row
+    count in every framework arm, with only the framework-native columns
+    (owner / information type / data category, authorization vocabulary) and
+    the classification procedure differing. Divergence here would mean the
+    frameworks disagree about what the assets ARE, not just how they classify
+    them — which the design does not intend.
+    """
+    for server in ("github_helios", "slack_vireo", "calendar_aurora"):
+        rows_by_framework = {
+            framework: parse_asset_register(policy_for(server, doc=framework_doc(framework)).text)
             for framework in FRAMEWORKS
         }
-        baseline = len(parse_asset_register(policy_for(server).text))
-        assert counts["iso"] == baseline, f"{server}: ISO should keep the baseline's rows"
-        assert counts["nist"] > baseline, f"{server}: NIST should split at least one row"
-        assert counts["cis"] < baseline, f"{server}: CIS should merge into coarse entries"
+        ids_by_framework = {
+            framework: {row.asset_id for row in rows}
+            for framework, rows in rows_by_framework.items()
+        }
+        iso_ids = ids_by_framework["iso"]
+        for framework in ("nist", "cis"):
+            assert ids_by_framework[framework] == iso_ids, (
+                f"{server}: {framework} asset ids diverge from iso — "
+                f"only in {ids_by_framework[framework] - iso_ids}, "
+                f"missing {iso_ids - ids_by_framework[framework]}"
+            )
 
 
 def test_baseline_register_is_unchanged_by_the_parser_extension():

@@ -1,14 +1,16 @@
 """Bridge to the src/mcp_security/ scorer for the live attack testbed.
 
-Wires the framework's real dynamic judge stage
-(:mod:`mcp_security.dynamic.judge`) as the ``dynamic`` score: it needs only the
-tool name and its arguments, which every call site here already has.
-``static`` needs a scan artifact (``reports/scan/<server>.json``) for the
-specific live server profile under attack, and no profile-to-scan mapping
-exists yet, so it stays ``None`` rather than fabricate a number -- the same
-rule ``call_scoring`` already follows (a call is only scored against real
-evidence). ``combined`` needs both, so it stays ``None`` too until that mapping
-exists.
+Returns no score at present. The bridge previously wired the Gen-1 dynamic LLM
+judge stage, which was archived with the rest of that package
+(``_archive/2026-08-13/gen1_dynamic/``) when the runtime layer was rebuilt around
+the multiplicative design in ``docs/project/dynamic-layer-formula.md``. Rather
+than fabricate a number, every field stays ``None`` until the Gen-2 scorer is
+wired here -- the same rule ``call_scoring`` already follows (a call is only
+scored against real evidence).
+
+``static`` additionally needs a scan artifact (``reports/scan/<server>.json``)
+for the specific live server profile under attack, and no profile-to-scan
+mapping exists yet.
 """
 
 from __future__ import annotations
@@ -21,7 +23,11 @@ _project_root = Path(__file__).resolve().parent.parent.parent.parent
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
-from mcp_security.dynamic.judge import judge_call  # noqa: E402
+_NOT_WIRED = (
+    "no scorer wired: the Gen-1 dynamic judge was archived, and the Gen-2 "
+    "runtime layer is not yet importable from src/; static also needs a scan "
+    "artifact for this server profile"
+)
 
 
 def score(
@@ -42,22 +48,4 @@ def score(
         Dict with keys: static (float|None), dynamic (float|None),
         combined (float|None), note (str).
     """
-    judged = judge_call(tool_name, arguments)
-    if judged is None:
-        return {
-            "static": None,
-            "dynamic": None,
-            "combined": None,
-            "note": (
-                "dynamic judge returned no verdict (Ollama unreachable, or the "
-                "response was not a usable band); static needs a scan artifact "
-                "for this server profile, not yet wired"
-            ),
-        }
-    band, reason = judged
-    return {
-        "static": None,
-        "dynamic": band,
-        "combined": None,
-        "note": f"dynamic only ({reason}); static needs a scan artifact for this server profile",
-    }
+    return {"static": None, "dynamic": None, "combined": None, "note": _NOT_WIRED}

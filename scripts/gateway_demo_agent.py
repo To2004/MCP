@@ -5,7 +5,8 @@ Connects with the real ``mcp`` Streamable-HTTP client, lists tools, and makes a 
 read-only calls on public data. ``--direct`` also fetches the catalog straight from the
 upstream and checks the gateway returned the identical one — the agent cannot tell.
 
-    GATEWAY_AGENT_TOKEN=... uv run python scripts/gateway_demo_agent.py --route deepwiki \
+    GATEWAY_AGENT_TOKEN=<access token from the identity provider> \
+        uv run python scripts/gateway_demo_agent.py --route deepwiki \
         --direct https://mcp.deepwiki.com/mcp
 """
 

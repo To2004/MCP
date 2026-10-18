@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from mcp_security.gateway.config import Identity, identity_of, load_config
+from mcp_security.gateway.config import load_config
 from mcp_security.gateway.http_wire import client_behind, decode_header_value, parse_networks
 
 PROXIES = parse_networks(["127.0.0.1/32", "10.0.0.0/8"])
@@ -42,22 +42,16 @@ def test_mcp_name_base64_sentinel_is_decoded_and_a_fake_one_kept() -> None:
     assert decode_header_value("get_weather") == "get_weather"
 
 
-def test_an_agents_entry_can_name_the_user_and_app_or_just_the_agent() -> None:
-    assert identity_of("alice") == Identity("alice")
-    assert identity_of({"agent": "ci", "user": "u-1", "app": "ci-bot"}) == Identity(
-        "ci", "u-1", "ci-bot"
-    )
-    with pytest.raises(ValueError, match="needs an 'agent'"):
-        identity_of({"user": "u-1"})
-    with pytest.raises(ValueError, match="unknown keys"):
-        identity_of({"agent": "ci", "email": "x@y"})
-
-
 def test_the_routes_file_reads_the_new_logging_settings(tmp_path: Path) -> None:
     routes = {
         "trusted_proxies": ["127.0.0.1"],
         "hash_key_env": "MY_LOG_KEY",
-        "agents": {"ab": {"agent": "ci", "user": "u-1"}},
+        "oauth": {
+            "issuer": "https://idp.example",
+            "jwks_uri": "https://idp.example/jwks",
+            "public_url": "https://gw.example",
+            "scopes_supported": ["mcp:tools"],
+        },
         "upstreams": {"gh": {"url": "https://x", "log_bodies": "requests", "importance": "i.json"}},
     }
     path = tmp_path / "routes.json"
@@ -67,6 +61,8 @@ def test_the_routes_file_reads_the_new_logging_settings(tmp_path: Path) -> None:
 
     assert config.trusted_proxies == ("127.0.0.1",)
     assert config.hash_key_env == "MY_LOG_KEY"
+    assert config.oauth is not None and config.oauth.resource("gh") == "https://gw.example/gh"
+    assert config.oauth.scopes_supported == ("mcp:tools",)
     assert (config.upstreams["gh"].log_bodies, config.upstreams["gh"].importance) == (
         "requests",
         "i.json",
@@ -77,4 +73,21 @@ def test_a_route_with_an_unknown_body_policy_fails_loudly(tmp_path: Path) -> Non
     path = tmp_path / "routes.json"
     path.write_text(json.dumps({"upstreams": {"gh": {"url": "https://x", "log_bodies": "some"}}}))
     with pytest.raises(ValueError, match="log_bodies"):
+        load_config(path)
+
+
+@pytest.mark.parametrize(
+    ("routes", "message"),
+    [
+        ({"agents": {"ab": "alice"}}, "no longer supported"),  # names come only from the IdP
+        ({"oauth": {"issuer": "https://idp.example"}}, "missing"),
+        ({"oauth": {"issuer": "i", "jwks_uri": "j", "public_url": "p", "aud": "x"}}, "unknown"),
+    ],
+)
+def test_identity_settings_that_cannot_be_trusted_fail_loudly(
+    tmp_path: Path, routes: dict, message: str
+) -> None:
+    path = tmp_path / "routes.json"
+    path.write_text(json.dumps({**routes, "upstreams": {"gh": {"url": "https://x"}}}))
+    with pytest.raises(ValueError, match=message):
         load_config(path)

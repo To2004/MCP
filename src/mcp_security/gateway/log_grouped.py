@@ -98,7 +98,8 @@ def _runs(runs: list[tuple[int, dict]]) -> list[str]:
         )
         lines.append(
             f"{INDENT}bodies {record.get('gateway.log_bodies', '?')}  ·  pseudonyms {keyed}"
-            f"  ·  {record.get('gateway.agents', 0)} agents configured"
+            f"  ·  identity {record.get('gateway.auth') or '?'}"
+            + (f" ({record['gateway.oauth_issuer']})" if record.get("gateway.oauth_issuer") else "")
         )
     return lines
 

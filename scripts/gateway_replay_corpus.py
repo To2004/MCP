@@ -90,7 +90,7 @@ def main() -> None:
     parser.add_argument("--writes", choices=["skip", "scratch"], default="skip")
     args = parser.parse_args()
 
-    token = os.environ.get("GATEWAY_AGENT_TOKEN")
+    token = os.environ.get("GATEWAY_AGENT_TOKEN")  # an access token from the identity provider
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     url = f"{args.gateway.rstrip('/')}/{args.route}"
     rows = load_corpus(args.corpus, args.limit)
