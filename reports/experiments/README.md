@@ -11,6 +11,8 @@ own README with the folder-by-folder index and its headline findings.
 | [v4](v4/) | Can the prompts be standards-grounded, and is tool impact rule-derivable? | tool catalog + org profile only | org profile table |
 | [v5](v5/) | Can the scanner **derive** the org's severities from a policy that states no numbers? | tool catalog + org **policy** only | LLM classify → map |
 | [v6](v6/) | Can CIA change the *shape* of the matrix instead of its scale? | v5 artifacts, re-priced offline | per-facet split of the v5 number |
+| [v12](v12/README.md) | Which tool inputs change a call's risk, and what run-time rule turns a value into a level 1 to 5? (two stages) | tool catalog + policy slice | v5 scan, for asset names |
+| [v13](v13/README.md) | The same in one step, with every rule filling all five levels: a lookup table for the dynamic layer, following the policy where it speaks | tool catalog + the policy's rows for the tool + the asset register with levels | v5 scan, for asset names |
 
 ## The line through them
 

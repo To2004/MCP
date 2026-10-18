@@ -1,0 +1,1219 @@
+{
+  "server": "filesystem",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/filesystem.json",
+    "sha256": "fa4ec1e1b7be4deb0343690d00cf33e0aafca4ea783ee37c13436dbd9aeecdee",
+    "package": "@modelcontextprotocol/server-filesystem",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22962455",
+  "prompt_sha256": "07831bcf1b55beb0940cc694e75b317de9a2e1b6a190aa90d3f4137a5e8226a3",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "read_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "docs",
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal",
+                  "confidential"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "restricted"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "secret",
+                  "classified"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "top-secret",
+                  "highly-confidential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is read.",
+          "choices": null
+        },
+        {
+          "path": "tail",
+          "status": "null",
+          "important": false,
+          "effect": "how_much",
+          "reason": "It only narrows the call, as it reads fewer lines of a file that would be read in full otherwise.",
+          "choices": null
+        },
+        {
+          "path": "head",
+          "status": "null",
+          "important": false,
+          "effect": "how_much",
+          "reason": "It only narrows the call, as it reads fewer lines of a file that would be read in full otherwise.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_text_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "log",
+                  "temp"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "user-data",
+                  "public"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "secret"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "admin",
+                  "root"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Path decides which file is read",
+          "choices": null
+        },
+        {
+          "path": "tail",
+          "status": "null",
+          "important": false,
+          "effect": "how_much",
+          "reason": "It only narrows the call, reading fewer lines from the end of a file that is read anyway.",
+          "choices": null
+        },
+        {
+          "path": "head",
+          "status": "null",
+          "important": false,
+          "effect": "how_much",
+          "reason": "It only narrows the call, reading fewer lines from the start of a file that is read anyway.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_media_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "safe"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "allowed"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "media",
+                  "audio",
+                  "image"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is read.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_multiple_files",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "paths",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 1
+              },
+              {
+                "min": 1,
+                "max": 5,
+                "level": 2
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 3
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of files to read",
+          "choices": null
+        },
+        {
+          "path": "paths[]",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal",
+                  "team"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "project",
+                  "work"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "personal",
+                  "private"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path names the file and its sensitivity",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "paths",
+        "paths[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "secure",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "default",
+                  "general"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3,
+            "reason": "Added level 1 for default to cover all levels"
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path determines the file location and its associated sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "content",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal",
+                  "restricted"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "sensitive"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "secret",
+                  "top-secret"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "password",
+                  "token",
+                  "key"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The content decides what is written into the file.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "content"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "edit_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "docs"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "conf"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "src"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "secrets"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "credentials"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "path names the file or directory",
+          "choices": null
+        },
+        {
+          "path": "edits",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "read"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "update"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "delete"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "clear"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "overwrite"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "edits carry the content changes",
+          "choices": null
+        },
+        {
+          "path": "edits[].oldText",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "safest"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "safe"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "ordinary"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The text to search for can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "edits[].newText",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "safest"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "safe"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "ordinary"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The text to replace with can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "dryRun",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [
+        "path",
+        "edits",
+        "edits[].oldText",
+        "edits[].newText"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_directory",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal",
+                  "team-docs"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "project-logs",
+                  "archive"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "personal",
+                  "private"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which directory is created",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "secure",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "default",
+                  "general"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3,
+            "reason": "Added level 1 for names not matching any group and adjusted default to ensure all levels are covered"
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path determines the directory being listed, which can vary in sensitivity.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory_with_sizes",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "secure",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "archive",
+                  "backup"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "temp",
+                  "cache"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which directory is listed.",
+          "choices": null
+        },
+        {
+          "path": "sortBy",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "directory_tree",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "secure",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which directory is traversed.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "It only narrows the call by excluding patterns.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns[]",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "It only narrows the call",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "move_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "source",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "safe",
+                  "docs"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "secure"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The source path decides the asset being moved.",
+          "choices": null
+        },
+        {
+          "path": "destination",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "safe",
+                  "docs"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "secure"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The destination path decides the asset being moved.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "source",
+        "destination"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_files",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "confidential",
+                  "secure"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "private",
+                  "personal"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "test",
+                  "example"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "critical",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path names the directory to search, which can indicate its sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "pattern",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "*.txt",
+                  "*.log"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "*.docx",
+                  "*.xlsx"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "*.pdf",
+                  "*.csv"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "*.db",
+                  "*.sql"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "*.key",
+                  "*.pem"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The pattern decides what files are searched for.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns",
+          "status": "null",
+          "important": false,
+          "effect": "how_much",
+          "reason": "It only narrows the call.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns[]",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "It only narrows the call.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "pattern"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_file_info",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "general",
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal",
+                  "team"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "project",
+                  "work"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive",
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "personal",
+                  "private"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file or directory is inspected.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_allowed_directories",
+      "arguments": [],
+      "no_declared_schema": true
+    }
+  ],
+  "failed": []
+}

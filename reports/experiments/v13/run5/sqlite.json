@@ -1,0 +1,316 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22960015",
+  "prompt_sha256": "6d12d48b6d0cb5ab1da123fd7084603b73297ee56f1f869f9e542e5631e99df1",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 4,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "test",
+                  "example"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "dev",
+                  "staging"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "prod",
+                  "live"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "secret"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "archive",
+                  "backup"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The name of the table decides its level",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "order by",
+                  "group by"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "having",
+                  "distinct"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "union",
+                  "intersect"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The query text reveals the data and operations involved.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from",
+                  "where"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "group by",
+                  "order by"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "truncate",
+                  "grant",
+                  "revoke"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "insert",
+                  "update",
+                  "delete"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "drop",
+                  "alter",
+                  "create"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The query text determines the sensitivity of the action performed.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "internal",
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "restricted"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The input decides which table is affected.",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "private"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The input carries the data to be inserted.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

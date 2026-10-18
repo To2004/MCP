@@ -1,0 +1,642 @@
+{
+  "server": "filesystem",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/filesystem.json",
+    "sha256": "fa4ec1e1b7be4deb0343690d00cf33e0aafca4ea783ee37c13436dbd9aeecdee",
+    "package": "@modelcontextprotocol/server-filesystem",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22653392",
+  "prompt_sha256": "16dfe1211280c5054aeb490f478b03db19736d0feffe3cd6ccaa81ac65db6320",
+  "prompt": "prompt-rules-AS-RUN.md",
+  "policy_section": null,
+  "importance_file": "filesystem.importance.json",
+  "tools": [
+    {
+      "tool_name": "read_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Reading a sensitive file versus an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Reading a sensitive file is riskier than reading an innocuous one.",
+          "confidence": 0.0
+        },
+        {
+          "path": "tail",
+          "important": false,
+          "important_reason": "Pagination does not affect the asset's risk"
+        },
+        {
+          "path": "head",
+          "important": false,
+          "important_reason": "Pagination does not affect the asset's risk"
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_text_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Reading a sensitive file against an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "File path determines the sensitivity of the file being read.",
+          "confidence": 0.0
+        },
+        {
+          "path": "tail",
+          "important": false,
+          "important_reason": "Pagination does not affect the asset's risk"
+        },
+        {
+          "path": "head",
+          "important": false,
+          "important_reason": "Pagination does not affect the asset's risk"
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_media_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Reading a sensitive file against an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Reading a sensitive file is riskier than an innocuous one.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_multiple_files",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "paths",
+          "important": true,
+          "important_reason": "Reading sensitive files against reading non-sensitive ones",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "id_rsa",
+                  ".env",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive keywords in paths indicate risky reads.",
+          "confidence": 0.0
+        },
+        {
+          "path": "paths[]",
+          "important": true,
+          "important_reason": "Reading sensitive files against reading non-sensitive ones",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Reading sensitive files is riskier than reading non-sensitive ones.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "paths",
+        "paths[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "The path to a critical configuration file versus a non-sensitive temporary file",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The path determines the sensitivity of the file being written to.",
+          "confidence": 0.0
+        },
+        {
+          "path": "content",
+          "important": true,
+          "important_reason": "Sensitive data written into the file versus harmless text",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "id_rsa",
+                  ".env",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive keywords in content increase risk level.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path",
+        "content"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "edit_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Editing a sensitive file against an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Editing a sensitive file is riskier than an innocuous one.",
+          "confidence": 0.0
+        },
+        {
+          "path": "edits",
+          "important": true,
+          "important_reason": "A large number of edits against just a few",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "A large number of edits is riskier than just a few.",
+          "confidence": 0.0
+        },
+        {
+          "path": "edits[].oldText",
+          "important": false,
+          "important_reason": "Does not affect the asset directly, only specifies what to replace"
+        },
+        {
+          "path": "edits[].newText",
+          "important": true,
+          "important_reason": "Sensitive content against innocuous text",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "id_rsa",
+                  ".env",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive content is riskier than innocuous text.",
+          "confidence": 0.0
+        },
+        {
+          "path": "dryRun",
+          "important": true,
+          "important_reason": "Previewing changes versus making real edits",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 2
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Previewing changes is less risky than making real edits.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path",
+        "edits",
+        "edits[].newText",
+        "dryRun"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_directory",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Creating a sensitive directory path versus an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "secure"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords indicate sensitivity or public nature of the path",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Listing a sensitive directory against an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Listing a sensitive directory is riskier than an innocuous one.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory_with_sizes",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Listing a sensitive directory against an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Listing a sensitive directory is riskier than an innocuous one.",
+          "confidence": 0.0
+        },
+        {
+          "path": "sortBy",
+          "important": false,
+          "important_reason": "Sorting does not affect the asset's risk"
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "directory_tree",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "The path decides which directory tree is traversed, affecting the scope of data exposed.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The path determines the directory tree to traverse, impacting data exposure.",
+          "confidence": 0.0
+        },
+        {
+          "path": "excludePatterns",
+          "important": false,
+          "important_reason": "Exclusion patterns do not affect the fundamental asset being accessed."
+        },
+        {
+          "path": "excludePatterns[]",
+          "important": false,
+          "important_reason": "Exclusion patterns do not change the fundamental action on assets but merely filter out parts of the directory tree."
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "move_file",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "source",
+          "important": true,
+          "important_reason": "Moving from a sensitive directory to an allowed one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Moving from a sensitive directory is risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "destination",
+          "important": true,
+          "important_reason": "Moving to a sensitive directory from an allowed one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Moving to a sensitive directory is risky.",
+          "confidence": 0.8
+        }
+      ],
+      "shortlist": [
+        "source",
+        "destination"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_files",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "Searching a sensitive directory against a public one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Searching a sensitive directory is riskier.",
+          "confidence": 0.0
+        },
+        {
+          "path": "pattern",
+          "important": true,
+          "important_reason": "Matching all files ('*') versus specific file types ('*.txt')",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "*"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  ".txt",
+                  ".md",
+                  ".csv"
+                ],
+                "level": 3
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Matching all files is riskier than specific file types.",
+          "confidence": 0.0
+        },
+        {
+          "path": "excludePatterns",
+          "important": false,
+          "important_reason": "Excluding sensitive directories versus no exclusions"
+        },
+        {
+          "path": "excludePatterns[]",
+          "important": false,
+          "important_reason": "Excluding sensitive directories versus no exclusions"
+        }
+      ],
+      "shortlist": [
+        "path",
+        "pattern"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_file_info",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "The path to a sensitive file versus an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The path determines the sensitivity of the file or directory.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_allowed_directories",
+      "arguments": [],
+      "no_declared_schema": true
+    }
+  ],
+  "failed": []
+}

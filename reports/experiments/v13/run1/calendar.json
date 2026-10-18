@@ -1,0 +1,3167 @@
+{
+  "server": "calendar",
+  "catalog": {
+    "path": "reports/live_run/orgs_2026-07-29/verify_calendar.json",
+    "sha256": "939b5ede7488ff03f0f9e29be012947a09d305119ec325d68687e1da3708a2aa",
+    "package": "@cocal/google-calendar-mcp",
+    "captured": "2026-07-29"
+  },
+  "slurm_job": "22955070",
+  "prompt_sha256": "8e58bb649af60e7d778da49227e5a50e0653fc5d0e19ac10af581aaf18c8e804",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": "calendar_aurora",
+  "rounds": 3,
+  "tools": [
+    {
+      "tool_name": "list-calendars",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "calendar-records",
+            "description": "Calendar-level attributes returned by a read.",
+            "scanned_level": 2
+          },
+          {
+            "asset": "calendar-directory",
+            "description": "The list of calendars that exist, no events inside them \u2014 existence with no content behind it.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "account"
+      ],
+      "rule_problems": {
+        "account": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "list-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public.",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "aurora-exec"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "aurora-regulatory"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "aurora-crew-roster",
+                  "aurora-maintenance"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "aurora-team"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "holidays"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "calendarId names an asset",
+          "choices": null
+        },
+        {
+          "path": "timeMin",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": 0,
+                "level": 1
+              },
+              {
+                "min": 0,
+                "max": 24,
+                "level": 2
+              },
+              {
+                "min": 24,
+                "max": 72,
+                "level": 3
+              },
+              {
+                "min": 72,
+                "max": 168,
+                "level": 4
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "timeMin sets a time range",
+          "choices": null
+        },
+        {
+          "path": "timeMax",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": 0,
+                "level": 1
+              },
+              {
+                "min": 0,
+                "max": 24,
+                "level": 2
+              },
+              {
+                "min": 24,
+                "max": 72,
+                "level": 3
+              },
+              {
+                "min": 72,
+                "max": 168,
+                "level": 4
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "timeMax sets a time range",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "fields",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "fields[]",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": 34
+        },
+        {
+          "path": "privateExtendedProperty",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "sharedExtendedProperty",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "test",
+                  "sandbox"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "executive",
+                  "regulatory"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "confidential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "keywords in the value",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "timeMin",
+        "timeMax",
+        "sharedExtendedProperty[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "query",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "search query",
+          "choices": null
+        },
+        {
+          "path": "timeMin",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 1
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              },
+              {
+                "min": 0,
+                "max": 72,
+                "level": 3
+              },
+              {
+                "min": 72,
+                "max": 168,
+                "level": 4
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time range",
+          "choices": null
+        },
+        {
+          "path": "timeMax",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 1
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              },
+              {
+                "min": 0,
+                "max": 72,
+                "level": 3
+              },
+              {
+                "min": 72,
+                "max": 168,
+                "level": 4
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time range",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "fields",
+          "status": "null",
+          "important": false,
+          "reason": "Text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "fields[]",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "id",
+                "level": 1
+              },
+              {
+                "value": "summary",
+                "level": 2
+              },
+              {
+                "value": "description",
+                "level": 3
+              },
+              {
+                "value": "attendees",
+                "level": 4
+              },
+              {
+                "value": "extendedProperties",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "additional fields",
+          "choices": 34
+        },
+        {
+          "path": "privateExtendedProperty",
+          "status": "null",
+          "important": false,
+          "reason": "Presentation",
+          "choices": null
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "sharedExtendedProperty",
+          "status": "unanswered",
+          "important": false,
+          "reason": "no round answered this input",
+          "choices": null
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Ratings based on the sensitivity of extended properties",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "query",
+        "timeMin",
+        "timeMax",
+        "fields[]",
+        "sharedExtendedProperty[]"
+      ],
+      "missing_rules": [
+        "calendarId"
+      ],
+      "rule_problems": {
+        "calendarId": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "get-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public.",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "eventId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside the chosen calendar",
+          "choices": null
+        },
+        {
+          "path": "fields",
+          "status": "null",
+          "important": false,
+          "reason": "Text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "fields[]",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "id",
+                "level": 1
+              },
+              {
+                "value": "summary",
+                "level": 2
+              },
+              {
+                "value": "description",
+                "level": 3
+              },
+              {
+                "value": "attendees",
+                "level": 4
+              },
+              {
+                "value": "extendedProperties",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "fields[] is a choice of options",
+          "choices": 34
+        }
+      ],
+      "shortlist": [
+        "fields[]"
+      ],
+      "missing_rules": [
+        "calendarId"
+      ],
+      "rule_problems": {
+        "calendarId": [
+          "levels [2] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "list-colors",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "color-catalog",
+            "description": "The static UI colour palette \u2014 carries no organizational information at all.",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "eventId",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "summary",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "description",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "start",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time of day",
+          "choices": null
+        },
+        {
+          "path": "end",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time of day",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "location",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attendees",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "attendees[].email",
+          "rule": {
+            "kind": "email"
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Email addresses are rated based on organizational policy",
+          "choices": null
+        },
+        {
+          "path": "attendees[].displayName",
+          "status": "null",
+          "important": false,
+          "reason": "Text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attendees[].optional",
+          "status": "null",
+          "important": false,
+          "reason": "Two values only",
+          "choices": 2
+        },
+        {
+          "path": "attendees[].responseStatus",
+          "status": "null",
+          "important": false,
+          "reason": "Four options only",
+          "choices": 4
+        },
+        {
+          "path": "attendees[].comment",
+          "status": "null",
+          "important": false,
+          "reason": "Text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attendees[].additionalGuests",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Number of additional guests",
+          "choices": null
+        },
+        {
+          "path": "colorId",
+          "status": "null",
+          "important": false,
+          "reason": "Presentation",
+          "choices": null
+        },
+        {
+          "path": "reminders.useDefault",
+          "status": "null",
+          "important": false,
+          "reason": "Two values only",
+          "choices": 2
+        },
+        {
+          "path": "reminders.overrides",
+          "status": "null",
+          "important": false,
+          "reason": "Presentation details do not affect asset sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "status": "null",
+          "important": false,
+          "reason": "Two options only",
+          "choices": 2
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "recurrence",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "recurrence[]",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "transparency",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "visibility",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 4
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "guestsCanModify",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "sendUpdates",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 3
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "status": "null",
+          "important": false,
+          "reason": "two to four options only",
+          "choices": 4
+        },
+        {
+          "path": "attachments",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: rule is missing or of an unknown kind",
+          "choices": null
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "URL of the attached file",
+          "choices": null
+        },
+        {
+          "path": "attachments[].title",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].mimeType",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].iconLink",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].fileId",
+          "status": "null",
+          "important": false,
+          "reason": "record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "source.url",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "URL of the source",
+          "choices": null
+        },
+        {
+          "path": "source.title",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarsToCheck",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "duplicateSimilarityThreshold",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": null
+        },
+        {
+          "path": "allowDuplicates",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "eventType",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 4
+        },
+        {
+          "path": "focusTimeProperties.autoDeclineMode",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 3
+        },
+        {
+          "path": "focusTimeProperties.chatStatus",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "focusTimeProperties.declineMessage",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "outOfOfficeProperties.autoDeclineMode",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 3
+        },
+        {
+          "path": "outOfOfficeProperties.declineMessage",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.type",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": 3
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.label",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.buildingId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorSectionId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.deskId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "workingLocationProperties.customLocation.label",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "start",
+        "end",
+        "attendees[].email",
+        "attendees[].additionalGuests",
+        "attachments[].fileUrl",
+        "source.url"
+      ],
+      "missing_rules": [
+        "calendarId",
+        "attendees",
+        "visibility",
+        "sendUpdates",
+        "attachments",
+        "calendarsToCheck",
+        "eventType"
+      ],
+      "rule_problems": {
+        "calendarId": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "attendees": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "visibility": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "sendUpdates": [
+          "levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "attachments": [
+          "rule is missing or of an unknown kind"
+        ],
+        "eventType": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "calendarsToCheck": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "create-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "sendUpdates",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 3
+        },
+        {
+          "path": "events",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 25,
+                "level": 3
+              },
+              {
+                "min": 25,
+                "max": 40,
+                "level": 4
+              },
+              {
+                "min": 40,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "ranges on the number of events to create",
+          "choices": null
+        },
+        {
+          "path": "events[].summary",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].start",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "ranges on the hour of day for event start time",
+          "choices": null
+        },
+        {
+          "path": "events[].end",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "ranges on the hour of day for event end time",
+          "choices": null
+        },
+        {
+          "path": "events[].calendarId",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].description",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].location",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].attendees",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 1
+              },
+              {
+                "min": 1,
+                "max": 5,
+                "level": 2
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 3
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "number of attendees",
+          "choices": null
+        },
+        {
+          "path": "events[].attendees[].email",
+          "rule": {
+            "kind": "email"
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "email address levels based on organization policy",
+          "choices": null
+        },
+        {
+          "path": "events[].attendees[].displayName",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].attendees[].optional",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].attendees[].responseStatus",
+          "status": "null",
+          "important": false,
+          "reason": "two to four options cannot be rated on five levels",
+          "choices": 4
+        },
+        {
+          "path": "events[].colorId",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "events[].reminders.useDefault",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].reminders.overrides",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "events[].reminders.overrides[].method",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].reminders.overrides[].minutes",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 15,
+                "level": 1
+              },
+              {
+                "min": 15,
+                "max": 60,
+                "level": 2
+              },
+              {
+                "min": 60,
+                "max": 360,
+                "level": 3
+              },
+              {
+                "min": 360,
+                "max": 720,
+                "level": 4
+              },
+              {
+                "min": 720,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "ranges on minutes",
+          "choices": null
+        },
+        {
+          "path": "events[].recurrence",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "events[].recurrence[]",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "events[].transparency",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].visibility",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [4] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 4
+        },
+        {
+          "path": "events[].guestsCanInviteOthers",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].guestsCanModify",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].guestsCanSeeOtherGuests",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].anyoneCanAddSelf",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "events[].sendUpdates",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": 3
+        },
+        {
+          "path": "events[].conferenceData.createRequest.requestId",
+          "status": "null",
+          "important": false,
+          "reason": "bookkeeping (a request id, an idempotency key)",
+          "choices": null
+        },
+        {
+          "path": "events[].conferenceData.createRequest.conferenceSolutionKey.type",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": 4
+        }
+      ],
+      "shortlist": [
+        "events",
+        "events[].start",
+        "events[].end",
+        "events[].attendees",
+        "events[].attendees[].email",
+        "events[].reminders.overrides[].minutes"
+      ],
+      "missing_rules": [
+        "events[].visibility"
+      ],
+      "rule_problems": {
+        "events[].visibility": [
+          "levels [4] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "update-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "eventId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside the chosen calendar",
+          "choices": null
+        },
+        {
+          "path": "summary",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "description",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "start",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time of day",
+          "choices": null
+        },
+        {
+          "path": "end",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": 8,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 7,
+                "max": 8,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 6,
+                "max": 7,
+                "level": 4
+              },
+              {
+                "min": 20,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "time of day",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "location",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attendees",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: rule is missing or of an unknown kind",
+          "choices": null
+        },
+        {
+          "path": "attendees[].email",
+          "rule": {
+            "kind": "email"
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Email addresses are rated based on organizational policy",
+          "choices": null
+        },
+        {
+          "path": "colorId",
+          "status": "null",
+          "important": false,
+          "reason": "Presentation, does not affect the asset's content or scope",
+          "choices": null
+        },
+        {
+          "path": "reminders.useDefault",
+          "status": "null",
+          "important": false,
+          "reason": "Boolean switch for reminders, does not touch an asset",
+          "choices": 2
+        },
+        {
+          "path": "reminders.overrides",
+          "status": "null",
+          "important": false,
+          "reason": "Custom reminders do not affect the asset's content or scope",
+          "choices": null
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "status": "null",
+          "important": false,
+          "reason": "Reminder method is a choice of two options, cannot be rated on five levels",
+          "choices": 2
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 15,
+                "level": 1
+              },
+              {
+                "min": 15,
+                "max": 60,
+                "level": 2
+              },
+              {
+                "min": 60,
+                "max": 360,
+                "level": 3
+              },
+              {
+                "min": 360,
+                "max": 720,
+                "level": 4
+              },
+              {
+                "min": 720,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Minutes before the event to trigger a reminder",
+          "choices": null
+        },
+        {
+          "path": "recurrence",
+          "status": "null",
+          "important": false,
+          "reason": "Recurrence rules do not affect the asset's content or scope directly",
+          "choices": null
+        },
+        {
+          "path": "recurrence[]",
+          "status": "null",
+          "important": false,
+          "reason": "Recurrence rules do not affect the asset's content or scope directly",
+          "choices": null
+        },
+        {
+          "path": "sendUpdates",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 3
+        },
+        {
+          "path": "modificationScope",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 3] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 3
+        },
+        {
+          "path": "originalStartTime",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 8,
+                "level": 5
+              },
+              {
+                "min": 8,
+                "max": 10,
+                "level": 4
+              },
+              {
+                "min": 10,
+                "max": 16,
+                "level": 1
+              },
+              {
+                "min": 16,
+                "max": 18,
+                "level": 2
+              },
+              {
+                "min": 18,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 20,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Time of day for the original start time",
+          "choices": null
+        },
+        {
+          "path": "futureStartDate",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": 24,
+                "level": 1
+              },
+              {
+                "min": 24,
+                "max": 168,
+                "level": 2
+              },
+              {
+                "min": 168,
+                "max": 720,
+                "level": 3
+              },
+              {
+                "min": 720,
+                "max": 2160,
+                "level": 4
+              },
+              {
+                "min": 2160,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Time from now for future start date",
+          "choices": null
+        },
+        {
+          "path": "checkConflicts",
+          "status": "null",
+          "important": false,
+          "reason": "Boolean switch does not touch an asset",
+          "choices": 2
+        },
+        {
+          "path": "calendarsToCheck",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: rule is missing or of an unknown kind",
+          "choices": null
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "status": "null",
+          "important": false,
+          "reason": "Client-generated unique ID is bookkeeping",
+          "choices": null
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [5] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 4
+        },
+        {
+          "path": "transparency",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2, 4, 5] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 2
+        },
+        {
+          "path": "visibility",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": 4
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "status": "null",
+          "important": false,
+          "reason": "Boolean switch does not touch an asset",
+          "choices": 2
+        },
+        {
+          "path": "guestsCanModify",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 2
+        },
+        {
+          "path": "attachments",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Keywords indicate the sensitivity of attachments",
+          "choices": null
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "URL link to the attachment",
+          "choices": null
+        },
+        {
+          "path": "attachments[].title",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].mimeType",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].iconLink",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "attachments[].fileId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "start",
+        "end",
+        "attendees[].email",
+        "reminders.overrides[].minutes",
+        "originalStartTime",
+        "futureStartDate",
+        "attachments",
+        "attachments[].fileUrl"
+      ],
+      "missing_rules": [
+        "calendarId",
+        "attendees",
+        "sendUpdates",
+        "modificationScope",
+        "calendarsToCheck",
+        "calendarsToCheck[]",
+        "conferenceData.createRequest.conferenceSolutionKey.type",
+        "transparency",
+        "visibility"
+      ],
+      "rule_problems": {
+        "calendarId": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "attendees": [
+          "rule is missing or of an unknown kind"
+        ],
+        "sendUpdates": [
+          "levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "modificationScope": [
+          "levels [1, 3] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "calendarsToCheck": [
+          "rule is missing or of an unknown kind"
+        ],
+        "calendarsToCheck[]": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "conferenceData.createRequest.conferenceSolutionKey.type": [
+          "levels [5] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "transparency": [
+          "levels [2, 4, 5] have no entry of their own; every level 1 to 5 needs at least one"
+        ],
+        "visibility": [
+          "levels [2, 4] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "delete-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendarId",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "eventId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "sendUpdates",
+          "status": "null",
+          "important": false,
+          "reason": "two values only",
+          "choices": 3
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "calendarId"
+      ],
+      "rule_problems": {
+        "calendarId": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "get-freebusy",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "free-busy-availability",
+            "description": "Busy/free blocks with no titles or attendees attached. Knowing someone is busy discloses far less than knowing why.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendars",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "calendars[].id",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "timeMin",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 1
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              },
+              {
+                "min": 0,
+                "max": 72,
+                "level": 3
+              },
+              {
+                "min": 72,
+                "max": 672,
+                "level": 4
+              },
+              {
+                "min": 672,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Time range starts in the past or future",
+          "choices": null
+        },
+        {
+          "path": "timeMax",
+          "rule": {
+            "kind": "ranges",
+            "measure": "span_hours",
+            "with": "timeMin",
+            "ranges": [
+              {
+                "min": null,
+                "max": 24,
+                "level": 1
+              },
+              {
+                "min": 24,
+                "max": 168,
+                "level": 2
+              },
+              {
+                "min": 168,
+                "max": 720,
+                "level": 3
+              },
+              {
+                "min": 720,
+                "max": 2160,
+                "level": 4
+              },
+              {
+                "min": 2160,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "Time range span matches levels",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        },
+        {
+          "path": "groupExpansionMax",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 75,
+                "level": 3
+              },
+              {
+                "min": 75,
+                "max": 90,
+                "level": 4
+              },
+              {
+                "min": 90,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "The number of calendars expanded per group affects the scope and sensitivity of the free/busy information retrieved.",
+          "choices": null
+        },
+        {
+          "path": "calendarExpansionMax",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 20,
+                "max": 40,
+                "level": 4
+              },
+              {
+                "min": 40,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "ranges on value: number of calendars to expand",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "timeMin",
+        "timeMax",
+        "groupExpansionMax",
+        "calendarExpansionMax"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get-current-time",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "timeZone",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "respond-to-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "rsvp-state",
+            "description": "Accept/decline state on a single invitation \u2014 state only, no content.",
+            "scanned_level": 3
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "calendarId",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "eventId",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "account",
+          "status": "null",
+          "important": false,
+          "reason": "who the user is cannot be known from the id",
+          "choices": null
+        },
+        {
+          "path": "response",
+          "status": "null",
+          "important": false,
+          "reason": "two to four options only",
+          "choices": 4
+        },
+        {
+          "path": "comment",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        },
+        {
+          "path": "modificationScope",
+          "status": "null",
+          "important": false,
+          "reason": "two to four options only",
+          "choices": 2
+        },
+        {
+          "path": "originalStartTime",
+          "status": "null",
+          "important": false,
+          "reason": "a record inside an asset that another input already picked",
+          "choices": null
+        },
+        {
+          "path": "sendUpdates",
+          "status": "null",
+          "important": false,
+          "reason": "presentation",
+          "choices": 3
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "manage-accounts",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "connected-account-config",
+            "description": "Which Google accounts are linked and under what OAuth scope \u2014 this is the reach of every other tool in the catalog, so it matters independent of any single event's content.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "account-directory",
+            "description": "The list of linked accounts \u2014 existence only, no scope detail.",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "action",
+          "status": "null",
+          "important": false,
+          "reason": "two to four options",
+          "choices": 3
+        },
+        {
+          "path": "account_id",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "account_id"
+      ],
+      "rule_problems": {
+        "account_id": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    }
+  ],
+  "failed": []
+}

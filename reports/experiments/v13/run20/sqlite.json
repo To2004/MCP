@@ -1,0 +1,411 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22993162",
+  "prompt_sha256": "39e1e6d400b4b5f8e9b0bb8b2a045a00a0d82b53f329185a442d8144dc0154ae",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "low",
+                  "safe"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "medium"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "high"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The input decides which table is accessed.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "group by",
+                  "order by"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive_table_name",
+                  "confidential_column_name"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The SQL query can reveal sensitive information based on the tables and columns it accesses.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "update",
+                  "set"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "delete",
+                  "where"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "insert",
+                  "into"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "drop",
+                  "alter",
+                  "create"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The SQL query can carry sensitive operations and data.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "asset1",
+                  "asset2"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "asset3",
+                  "asset4"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "asset5",
+                  "asset6"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "asset7",
+                  "asset8"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The input decides which table is affected.",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "safest",
+                  "safe"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "ordinary"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "moreordinary"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The input decides what values are inserted into the table.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

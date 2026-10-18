@@ -79,6 +79,9 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Grade each policy-scheme arm (ISO/NIST/CIS) vs held-out org numbers | `uv run python scripts/compare_sens_schemes.py` |
 | **v7 scan** (policy written in the framework's own shape: ISO / NIST / CIS) | `sbatch scripts/scan_v7.sbatch <iso\|nist\|cis> [<stems>] [overwrite]` |
 | Compare the v7 framework arms against the v5r nacombo baseline | `uv run python scripts/compare_v7_frameworks.py` |
+| **v13 input levels** (one step: per tool input, a rule reaching all levels 1-5, or none; 1 GPU) | `sbatch scripts/derive_input_levels.sbatch`, then `python3 scripts/render_input_rule_levels.py --run reports/experiments/v13/runN` |
+| Check a v13 run: scenario pairs (policy / simple) and the real-call screen | `uv run python scripts/check_input_levels.py --run reports/experiments/v13/runN` |
+| Tool-input statistics of a v13 run (per server and tool, drop reasons, common names) | `uv run python scripts/input_level_stats.py --run reports/experiments/v13/runN` |
 | **v8 binding eval** (runtime asset resolution, no LLM, zero per-server config) | `uv run python scripts/evaluate_binding.py` |
 | v8 full tool x asset matrix (synthetic calls, keys given) | `uv run python scripts/evaluate_binding_synthetic.py [--held-out]` |
 | Package the scanner + all its inputs as a self-contained zip | `uv run python scripts/bundle_v5_scanner.py --arm nacombo --verify` |

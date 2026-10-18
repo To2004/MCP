@@ -1,0 +1,3708 @@
+{
+  "server": "calendar",
+  "catalog": {
+    "path": "reports/live_run/orgs_2026-07-29/verify_calendar.json",
+    "sha256": "939b5ede7488ff03f0f9e29be012947a09d305119ec325d68687e1da3708a2aa",
+    "package": "@cocal/google-calendar-mcp",
+    "captured": "2026-07-29"
+  },
+  "slurm_job": "22653393",
+  "prompt_sha256": "16dfe1211280c5054aeb490f478b03db19736d0feffe3cd6ccaa81ac65db6320",
+  "prompt": "prompt-rules-AS-RUN.md",
+  "policy_section": "calendar_aurora",
+  "importance_file": "calendar.importance.json",
+  "tools": [
+    {
+      "tool_name": "list-calendars",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "calendar-records",
+            "description": "Calendar-level attributes returned by a read.",
+            "scanned_level": 2
+          },
+          {
+            "asset": "calendar-directory",
+            "description": "The list of calendars that exist, no events inside them \u2014 existence with no content behind it.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": true,
+          "important_reason": "Listing calendars for sensitive accounts like 'executives' vs. less critical ones",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": 5,
+          "source": "policy",
+          "reason": "Listing all accounts is considered risky without specifying an account.",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "account"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public.",
+            "scanned_level": 1
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`calendarId` + `timeMin` + `timeMax`",
+            "normal": "one team calendar, about one week",
+            "unusual": "months of events, or any window on an exec or regulator calendar",
+            "basis": "`draft`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": true,
+          "important_reason": "Querying all accounts versus a single account like 'work'",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Querying all accounts is notable but not critical.",
+          "confidence": 0.8
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Access to executive or regulator calendars versus ordinary team calendars",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Access to executive or regulator calendars is critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "timeMin",
+          "important": true,
+          "important_reason": "named by the policy for this tool; Start of time range does not affect asset risk",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 5
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 3
+              },
+              {
+                "min": 0,
+                "max": 168,
+                "level": 3
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Reading events from the past or far future is notable.",
+          "confidence": 0.7
+        },
+        {
+          "path": "timeMax",
+          "important": true,
+          "important_reason": "named by the policy for this tool; End of time range does not affect asset risk",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 5
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 3
+              },
+              {
+                "min": 0,
+                "max": 168,
+                "level": 3
+              },
+              {
+                "min": 168,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Reading events from the past or far future is notable.",
+          "confidence": 0.7
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Time zone setting is for presentation and does not affect asset risk"
+        },
+        {
+          "path": "fields",
+          "important": true,
+          "important_reason": "Including sensitive fields like 'attendees' versus default fields",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "attendees"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "privateExtendedProperty",
+                  "sharedExtendedProperty"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Including sensitive fields like 'attendees' versus default fields"
+        },
+        {
+          "path": "fields[]",
+          "important": true,
+          "important_reason": "Including sensitive fields like 'attendees' versus default fields",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "attendees",
+                "level": 5
+              },
+              {
+                "value": "extendedProperties",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Including sensitive fields like 'attendees' is critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "privateExtendedProperty",
+          "important": false,
+          "important_reason": "Filtering by private extended properties does not affect asset risk"
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "important": false,
+          "important_reason": "Filtering by private extended properties does not affect asset risk"
+        },
+        {
+          "path": "sharedExtendedProperty",
+          "important": false,
+          "important_reason": "Filtering by shared extended properties does not affect asset risk"
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "important": false,
+          "important_reason": "Filtering by shared extended properties does not affect asset risk"
+        }
+      ],
+      "shortlist": [
+        "account",
+        "calendarId",
+        "timeMin",
+        "timeMax",
+        "fields",
+        "fields[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`calendarId` + `timeMin` + `timeMax`",
+            "normal": "one team calendar, about one week",
+            "unusual": "months of events, or any window on an exec or regulator calendar",
+            "basis": "`draft`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": true,
+          "important_reason": "Querying all accounts versus a single account",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Querying all accounts is notable.",
+          "confidence": 0.9
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Access to executive or regulator calendars versus ordinary team calendars",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Access to executive or regulator calendars is critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "query",
+          "important": true,
+          "important_reason": "Sensitive text query versus general search terms",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "executive",
+                  "regulator",
+                  "inspector"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive text queries are riskier.",
+          "confidence": 0.8
+        },
+        {
+          "path": "timeMin",
+          "important": true,
+          "important_reason": "A longer time range could expose more sensitive information than a shorter one.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -168,
+                "level": 4
+              },
+              {
+                "min": -168,
+                "max": -24,
+                "level": 3
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Longer past ranges are riskier.",
+          "confidence": 0.8
+        },
+        {
+          "path": "timeMax",
+          "important": true,
+          "important_reason": "A longer time range could expose more sensitive information than a shorter one.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -168,
+                "level": 4
+              },
+              {
+                "min": -168,
+                "max": -24,
+                "level": 3
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Longer past ranges are riskier.",
+          "confidence": 0.8
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Time zone setting does not affect asset risk"
+        },
+        {
+          "path": "fields",
+          "important": true,
+          "important_reason": "Including sensitive fields like attendees or extended properties increases risk.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "attendees",
+                "level": 4
+              },
+              {
+                "value": "extendedProperties",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Including sensitive fields increases risk.",
+          "confidence": 0.8
+        },
+        {
+          "path": "fields[]",
+          "important": false,
+          "important_reason": "Including sensitive fields versus default fields"
+        },
+        {
+          "path": "privateExtendedProperty",
+          "important": true,
+          "important_reason": "Filtering by private extended properties could reveal sensitive data.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Filtering by sensitive private properties is critical.",
+          "confidence": 0.8
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "important": false,
+          "important_reason": "Private extended properties do not affect asset risk"
+        },
+        {
+          "path": "sharedExtendedProperty",
+          "important": true,
+          "important_reason": "Filtering by shared extended properties could reveal less sensitive data than private ones.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Filtering by shared properties is less risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "important": false,
+          "important_reason": "Shared extended properties do not affect asset risk"
+        }
+      ],
+      "shortlist": [
+        "account",
+        "calendarId",
+        "query",
+        "timeMin",
+        "timeMax",
+        "fields",
+        "privateExtendedProperty",
+        "sharedExtendedProperty"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public.",
+            "scanned_level": 1
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect an asset; only specifies the account context."
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Can target sensitive calendars like executive or regulatory, which are critical assets.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 4
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Can target sensitive calendars like executive or regulatory, which are critical assets.",
+          "confidence": 0.9
+        },
+        {
+          "path": "eventId",
+          "important": true,
+          "important_reason": "Identifies the specific event to retrieve; can expose sensitive information depending on the calendar and event.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "executive",
+                "level": 5
+              },
+              {
+                "value": "regulatory",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies the specific event to retrieve; can expose sensitive information depending on the calendar and event.",
+          "confidence": 0.8
+        },
+        {
+          "path": "fields",
+          "important": false,
+          "important_reason": "Does not affect an asset directly; only specifies additional fields to include in the response."
+        },
+        {
+          "path": "fields[]",
+          "important": true,
+          "important_reason": "Can carry sensitive information such as attendee lists or event details that affect operational commitments.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "attendees",
+                  "extendedProperties"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "description",
+                  "location",
+                  "conferenceData"
+                ],
+                "level": 3
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Can carry sensitive information such as attendee lists or event details that affect operational commitments.",
+          "confidence": 0.85
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "eventId",
+        "fields[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list-colors",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "color-catalog",
+            "description": "The static UI colour palette \u2014 carries no organizational information at all.",
+            "scanned_level": 1
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect the color-catalog asset"
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          },
+          {
+            "arguments": "`attendees[].email`",
+            "rule": "An address outside the org sends an unrecallable invitation email under the org's identity.",
+            "gates_asset": "`outbound-invite-email`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`attendees[]`",
+            "normal": "a handful of internal people",
+            "unusual": "any external address",
+            "basis": "`stated`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Can target sensitive calendars like aurora-exec or aurora-regulatory",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 4
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Targets sensitive calendars like aurora-exec or aurora-regulatory.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "summary",
+          "important": true,
+          "important_reason": "Sensitive titles can disclose commercial decisions or regulatory activities",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "fleet",
+                  "order",
+                  "launch"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "audit",
+                  "inspection",
+                  "safety-board"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Sensitive titles can disclose commercial decisions or regulatory activities.",
+          "confidence": 1.0
+        },
+        {
+          "path": "description",
+          "important": true,
+          "important_reason": "Event description can carry sensitive information like commercial strategies or audit details",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "fleet",
+                  "order",
+                  "launch"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "audit",
+                  "inspection",
+                  "safety-board"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Event description can carry sensitive information like commercial strategies or audit details.",
+          "confidence": 1.0
+        },
+        {
+          "path": "start",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "end",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "location",
+          "important": false,
+          "important_reason": "Sensitive locations can disclose operational details or regulatory activities"
+        },
+        {
+          "path": "attendees",
+          "important": true,
+          "important_reason": "Number of attendees affects the risk, especially if external addresses are included",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 2
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 3
+              },
+              {
+                "min": 10,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Number of attendees affects the risk.",
+          "confidence": 0.8
+        },
+        {
+          "path": "attendees[].email",
+          "important": true,
+          "important_reason": "External email addresses can trigger unrecallable outbound invite emails",
+          "classification": "MODE",
+          "rule": {
+            "kind": "domain",
+            "internal": 3,
+            "external": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "External email addresses can trigger unrecallable outbound invite emails.",
+          "confidence": 0.9
+        },
+        {
+          "path": "attendees[].displayName",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "attendees[].optional",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "attendees[].responseStatus",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "attendees[].comment",
+          "important": false,
+          "important_reason": "Carries additional details that may be sensitive"
+        },
+        {
+          "path": "attendees[].additionalGuests",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "colorId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.useDefault",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "recurrence",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "recurrence[]",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "transparency",
+          "important": true,
+          "important_reason": "Setting an event as 'transparent' makes it visible, affecting operational commitments and sensitive schedules",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "opaque",
+                "level": 3
+              },
+              {
+                "value": "transparent",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Setting an event as 'transparent' makes it visible, affecting operational commitments and sensitive schedules.",
+          "confidence": 1.0
+        },
+        {
+          "path": "visibility",
+          "important": true,
+          "important_reason": "Visibility setting can make sensitive events public or private",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "default",
+                "level": 3
+              },
+              {
+                "value": "public",
+                "level": 5
+              },
+              {
+                "value": "private",
+                "level": 3
+              },
+              {
+                "value": "confidential",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Visibility setting can make sensitive events public or private.",
+          "confidence": 1.0
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "important": true,
+          "important_reason": "Allows or disallows external attendees to invite others, increasing risk of unauthorized access.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 5
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Allows or disallows external attendees to invite others, increasing risk of unauthorized access.",
+          "confidence": 1.0
+        },
+        {
+          "path": "guestsCanModify",
+          "important": true,
+          "important_reason": "Enables or disables the ability for attendees to modify event details, potentially altering critical operational commitments.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 5
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Enables attendees to modify event details, potentially altering critical operational commitments.",
+          "confidence": 0.9
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "important": true,
+          "important_reason": "Controls visibility of attendee list, affecting confidentiality and potential exposure to unauthorized individuals.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Controls visibility of attendee list, affecting confidentiality and potential exposure to unauthorized individuals.",
+          "confidence": 0.9
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "important": true,
+          "important_reason": "Enables or disables public self-adding capability, significantly increasing risk of unauthorized access and potential exposure.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 5
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Enables public self-adding capability, significantly increasing risk of unauthorized access and potential exposure.",
+          "confidence": 0.9
+        },
+        {
+          "path": "sendUpdates",
+          "important": true,
+          "important_reason": "Determines notification scope, potentially exposing sensitive information to external parties or regulators.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 4
+              },
+              {
+                "value": "externalOnly",
+                "level": 5
+              },
+              {
+                "value": "none",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Determines notification scope, potentially exposing sensitive information to external parties or regulators.",
+          "confidence": 0.9
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "important": false,
+          "important_reason": "Client-generated unique ID for idempotency; does not affect assets directly."
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "important": false,
+          "important_reason": "Selects conference solution type, affecting how the event is conducted but not directly altering assets."
+        },
+        {
+          "path": "attachments",
+          "important": true,
+          "important_reason": "Attachments can carry sensitive data or operational details, significantly impacting confidentiality and integrity of events.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Attachments can carry sensitive data or operational details.",
+          "confidence": 0.7
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "important": false,
+          "important_reason": "URL of the attached file, does not affect asset directly."
+        },
+        {
+          "path": "attachments[].title",
+          "important": false,
+          "important_reason": "Title of attachment; does not directly affect assets or risk."
+        },
+        {
+          "path": "attachments[].mimeType",
+          "important": false,
+          "important_reason": "MIME type of the attachment; does not directly affect assets or risk."
+        },
+        {
+          "path": "attachments[].iconLink",
+          "important": false,
+          "important_reason": "URL to icon for the attachment; does not directly affect assets or risk."
+        },
+        {
+          "path": "attachments[].fileId",
+          "important": true,
+          "important_reason": "ID of attached file in Google Drive, potentially carrying sensitive data or operational details.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "File attachments can carry sensitive data or operational details, impacting confidentiality and integrity.",
+          "confidence": 0.9
+        },
+        {
+          "path": "source.url",
+          "important": false,
+          "important_reason": "URL of the source; does not directly affect assets or risk."
+        },
+        {
+          "path": "source.title",
+          "important": false,
+          "important_reason": "Title of the source; does not directly affect assets or risk."
+        },
+        {
+          "path": "calendarsToCheck",
+          "important": true,
+          "important_reason": "Lists calendars to check for conflicts, potentially exposing sensitive operational commitments.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-crew-roster",
+                "level": 5
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Lists calendars to check for conflicts, potentially exposing sensitive operational commitments.",
+          "confidence": 0.9
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "important": false,
+          "important_reason": "Individual calendar IDs to check for conflicts, does not affect asset directly."
+        },
+        {
+          "path": "duplicateSimilarityThreshold",
+          "important": false,
+          "important_reason": "Controls duplicate event detection threshold."
+        },
+        {
+          "path": "allowDuplicates",
+          "important": true,
+          "important_reason": "Allows creation of exact duplicates, potentially exposing sensitive information.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 5
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Allows creation of exact duplicates, potentially exposing sensitive information.",
+          "confidence": 0.9
+        },
+        {
+          "path": "eventType",
+          "important": false,
+          "important_reason": "Determines the type of event created, affecting visibility and actionability."
+        },
+        {
+          "path": "focusTimeProperties.autoDeclineMode",
+          "important": false,
+          "important_reason": "Auto-decline mode for focus time events; does not directly affect assets or risk."
+        },
+        {
+          "path": "focusTimeProperties.chatStatus",
+          "important": false,
+          "important_reason": "Chat status during focus time; does not directly affect assets or risk."
+        },
+        {
+          "path": "focusTimeProperties.declineMessage",
+          "important": false,
+          "important_reason": "Decline message for focus time events; does not directly affect assets or risk."
+        },
+        {
+          "path": "outOfOfficeProperties.autoDeclineMode",
+          "important": false,
+          "important_reason": "Controls how to handle conflicting meetings during out of office events."
+        },
+        {
+          "path": "outOfOfficeProperties.declineMessage",
+          "important": false,
+          "important_reason": "Decline message for out-of-office events; does not directly affect assets or risk."
+        },
+        {
+          "path": "workingLocationProperties.type",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.label",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.buildingId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorSectionId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.deskId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "workingLocationProperties.customLocation.label",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "summary",
+        "description",
+        "attendees",
+        "attendees[].email",
+        "transparency",
+        "visibility",
+        "guestsCanInviteOthers",
+        "guestsCanModify",
+        "guestsCanSeeOtherGuests",
+        "anyoneCanAddSelf",
+        "sendUpdates",
+        "attachments",
+        "attachments[].fileId",
+        "calendarsToCheck",
+        "allowDuplicates"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": true,
+          "important_reason": "The account can be a sensitive internal user or an external one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "external"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Internal accounts are sensitive, external ones riskier.",
+          "confidence": 0.8
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Specific calendars like `aurora-crew-roster` and `aurora-maintenance` are critical operational records",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-crew-roster",
+                "level": 5
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Specific calendars are critical operational records.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "TimeZone only affects how times are interpreted, not the asset itself"
+        },
+        {
+          "path": "sendUpdates",
+          "important": true,
+          "important_reason": "Sending updates can notify external parties about sensitive events",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 5
+              },
+              {
+                "value": "externalOnly",
+                "level": 4
+              },
+              {
+                "value": "none",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Sending updates can notify external parties about sensitive events.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events",
+          "important": true,
+          "important_reason": "The number of events created affects the volume and impact of calendar activity.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 30,
+                "level": 3
+              },
+              {
+                "min": 30,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Number of events affects the volume and impact of calendar activity.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].summary",
+          "important": false,
+          "important_reason": "Summary does not directly affect an asset's risk."
+        },
+        {
+          "path": "events[].start",
+          "important": true,
+          "important_reason": "Start time can impact duty periods and safety-critical operations.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Start time can impact duty periods and safety-critical operations.",
+          "confidence": 0.9
+        },
+        {
+          "path": "events[].end",
+          "important": true,
+          "important_reason": "End time can impact duty periods and safety-critical operations.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "End time can impact duty periods and safety-critical operations.",
+          "confidence": 0.9
+        },
+        {
+          "path": "events[].calendarId",
+          "important": true,
+          "important_reason": "Specific calendars like `aurora-crew-roster` and `aurora-maintenance` are critical operational records",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-crew-roster",
+                "level": 5
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Specific calendars are critical operational records.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].account",
+          "important": true,
+          "important_reason": "The account can be a sensitive internal user or an external one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "external"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The account can be a sensitive internal user or an external one.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].timeZone",
+          "important": false,
+          "important_reason": "TimeZone only affects how times are interpreted, not the asset itself"
+        },
+        {
+          "path": "events[].description",
+          "important": true,
+          "important_reason": "Description can contain sensitive information about the event",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "sensitive"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "internal",
+                  "restricted"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive keywords in the description indicate higher risk.",
+          "confidence": 0.85
+        },
+        {
+          "path": "events[].location",
+          "important": false,
+          "important_reason": "Location does not affect an asset directly; it affects where the event occurs"
+        },
+        {
+          "path": "events[].attendees",
+          "important": true,
+          "important_reason": "External attendees can trigger outbound invite emails, which are sensitive",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "@external.com"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "internal",
+                  "private"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "External attendees can trigger outbound invite emails, which are sensitive.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].attendees[].email",
+          "important": true,
+          "important_reason": "Email addresses of external attendees can trigger outbound invite emails, which are sensitive",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "domain",
+            "internal": 3,
+            "external": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "External attendees can trigger outbound invite emails, which are sensitive.",
+          "confidence": 0.95
+        },
+        {
+          "path": "events[].attendees[].displayName",
+          "important": false,
+          "important_reason": "Display name does not affect an asset directly; it affects how the attendee is identified"
+        },
+        {
+          "path": "events[].attendees[].optional",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 2
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Optional attendees are less critical than required ones.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].attendees[].responseStatus",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "needsAction",
+                "level": 3
+              },
+              {
+                "value": "declined",
+                "level": 2
+              },
+              {
+                "value": "tentative",
+                "level": 4
+              },
+              {
+                "value": "accepted",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Accepted status is riskier as it confirms attendance.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].colorId",
+          "important": false,
+          "important_reason": "Color ID only affects visual representation, not the asset itself"
+        },
+        {
+          "path": "events[].reminders.useDefault",
+          "important": false,
+          "important_reason": "Reminder settings do not affect an asset directly; they affect how reminders are set"
+        },
+        {
+          "path": "events[].reminders.overrides",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default"
+        },
+        {
+          "path": "events[].reminders.overrides[].method",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "email",
+                "level": 4
+              },
+              {
+                "value": "popup",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Email reminders are riskier as they leave the org.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].reminders.overrides[].minutes",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 30,
+                "level": 5
+              },
+              {
+                "min": 30,
+                "max": 60,
+                "level": 4
+              },
+              {
+                "min": 60,
+                "max": 120,
+                "level": 3
+              },
+              {
+                "min": 120,
+                "max": null,
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Shorter reminders are riskier due to immediacy.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].recurrence",
+          "important": true,
+          "important_reason": "Recurrence can impact duty periods and safety-critical operations over time.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "RRULE:FREQ=WEEKLY"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "RRULE:FREQ=DAILY",
+                  "RRULE:FREQ=MONTHLY"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Recurrence can impact duty periods and safety-critical operations over time.",
+          "confidence": 0.7
+        },
+        {
+          "path": "events[].recurrence[]",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Recurrence rules impact duty periods and safety-critical operations over time.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].transparency",
+          "important": false,
+          "important_reason": "'opaque' blocks time, 'transparent' does not"
+        },
+        {
+          "path": "events[].visibility",
+          "important": true,
+          "important_reason": "'public' exposes event details to everyone, 'confidential' limits visibility",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "public",
+                "level": 5
+              },
+              {
+                "value": "confidential",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "'public' exposes event details to everyone, 'confidential' limits visibility.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].guestsCanInviteOthers",
+          "important": true,
+          "important_reason": "true allows attendees to invite others, false restricts invitations",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "true allows attendees to invite others, false restricts invitations.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].guestsCanModify",
+          "important": true,
+          "important_reason": "true lets attendees modify the event, false prevents modifications",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "true lets attendees modify the event, false prevents modifications.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].guestsCanSeeOtherGuests",
+          "important": true,
+          "important_reason": "true allows attendees to see other guests, false hides guest list",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "true allows attendees to see other guests, false hides guest list.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].anyoneCanAddSelf",
+          "important": true,
+          "important_reason": "true lets anyone add themselves, false restricts self-addition",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "true lets anyone add themselves, false restricts self-addition.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].sendUpdates",
+          "important": true,
+          "important_reason": "'all' sends updates to all attendees, 'none' sends no updates",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 4
+              },
+              {
+                "value": "externalOnly",
+                "level": 3
+              },
+              {
+                "value": "none",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "'all' sends updates to all attendees, 'none' sends no updates.",
+          "confidence": 0.8
+        },
+        {
+          "path": "events[].conferenceData.createRequest.requestId",
+          "important": false,
+          "important_reason": "idempotency key for request"
+        },
+        {
+          "path": "events[].conferenceData.createRequest.conferenceSolutionKey.type",
+          "important": false,
+          "important_reason": "'hangoutsMeet' sets up a Google Meet, 'eventHangout' creates an older Hangout"
+        }
+      ],
+      "shortlist": [
+        "account",
+        "calendarId",
+        "sendUpdates",
+        "events",
+        "events[].start",
+        "events[].end",
+        "events[].calendarId",
+        "events[].account",
+        "events[].description",
+        "events[].attendees",
+        "events[].attendees[].email",
+        "events[].attendees[].optional",
+        "events[].attendees[].responseStatus",
+        "events[].reminders.overrides",
+        "events[].reminders.overrides[].method",
+        "events[].reminders.overrides[].minutes",
+        "events[].recurrence",
+        "events[].recurrence[]",
+        "events[].visibility",
+        "events[].guestsCanInviteOthers",
+        "events[].guestsCanModify",
+        "events[].guestsCanSeeOtherGuests",
+        "events[].anyoneCanAddSelf",
+        "events[].sendUpdates"
+      ],
+      "missing_rules": [
+        "events[].reminders.overrides"
+      ],
+      "rule_problems": {
+        "events[].reminders.overrides": [
+          "rule is missing or of an unknown kind"
+        ]
+      }
+    },
+    {
+      "tool_name": "update-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          },
+          {
+            "arguments": "`attendees[].email`",
+            "rule": "An address outside the org sends an unrecallable invitation email under the org's identity.",
+            "gates_asset": "`outbound-invite-email`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Can target sensitive calendars like aurora-exec or aurora-regulatory",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 4
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Can target sensitive calendars like aurora-exec or aurora-regulatory.",
+          "confidence": 0.9
+        },
+        {
+          "path": "eventId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "summary",
+          "important": true,
+          "important_reason": "Can carry sensitive information like commercial decisions or inspection details",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "commercial",
+                  "decision",
+                  "inspection"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Can carry sensitive information like commercial decisions or inspection details.",
+          "confidence": 0.8
+        },
+        {
+          "path": "description",
+          "important": true,
+          "important_reason": "Can carry sensitive information like commercial decisions or inspection details",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "commercial",
+                  "decision",
+                  "inspection"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Can carry sensitive information like commercial decisions or inspection details.",
+          "confidence": 0.8
+        },
+        {
+          "path": "start",
+          "important": true,
+          "important_reason": "Altering start time can affect duty periods and maintenance windows",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Altering start time can affect duty periods and maintenance windows.",
+          "confidence": 0.8
+        },
+        {
+          "path": "end",
+          "important": true,
+          "important_reason": "Altering end time can affect duty periods and maintenance windows",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Altering end time can affect duty periods and maintenance windows.",
+          "confidence": 0.8
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "location",
+          "important": false,
+          "important_reason": "Can carry sensitive location information"
+        },
+        {
+          "path": "attendees",
+          "important": true,
+          "important_reason": "Can include sensitive contacts or send unrecallable emails to external attendees",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "domain",
+            "internal": 3,
+            "external": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "External attendees trigger unrecallable emails.",
+          "confidence": 0.9
+        },
+        {
+          "path": "attendees[].email",
+          "important": true,
+          "important_reason": "Can include sensitive contacts or send unrecallable emails to external attendees",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "domain",
+            "internal": 3,
+            "external": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Can include sensitive contacts or send unrecallable emails to external attendees.",
+          "confidence": 0.9
+        },
+        {
+          "path": "colorId",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.useDefault",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "recurrence",
+          "important": true,
+          "important_reason": "Can alter duty periods and maintenance windows over time",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 3
+              },
+              {
+                "min": 1,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Can alter duty periods and maintenance windows over time.",
+          "confidence": 0.8
+        },
+        {
+          "path": "recurrence[]",
+          "important": true,
+          "important_reason": "no pass answered this input; kept by default",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "rrule"
+                ],
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Recurrence rules can affect multiple events, but are not inherently risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "sendUpdates",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "modificationScope",
+          "important": true,
+          "important_reason": "Can modify a single event or all future events, affecting duty periods and maintenance windows",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 5
+              },
+              {
+                "value": "thisAndFollowing",
+                "level": 4
+              },
+              {
+                "value": "thisEventOnly",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "'all' affects all future events, which can be critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "originalStartTime",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "futureStartDate",
+          "important": true,
+          "important_reason": "Can drastically alter the timing of future safety-critical schedules or executive decisions.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Non-working hours are riskier.",
+          "confidence": 0.8
+        },
+        {
+          "path": "checkConflicts",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "calendarsToCheck",
+          "important": true,
+          "important_reason": "Lists calendars to check for conflicts, which can include sensitive assets.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-crew-roster",
+                "level": 5
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Checking sensitive calendars is notable.",
+          "confidence": 0.9
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "important": false,
+          "important_reason": "Does not affect an asset"
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "important": false,
+          "important_reason": "bookkeeping"
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "important": false,
+          "important_reason": "configuration detail"
+        },
+        {
+          "path": "transparency",
+          "important": true,
+          "important_reason": "'opaque' blocks time, 'transparent' does not",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "opaque",
+                "level": 3
+              },
+              {
+                "value": "transparent",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "'opaque' blocks time, which can be critical.",
+          "confidence": 0.8
+        },
+        {
+          "path": "visibility",
+          "important": true,
+          "important_reason": "'public' exposes to everyone, 'confidential' limits access",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "public",
+                "level": 5
+              },
+              {
+                "value": "private",
+                "level": 3
+              },
+              {
+                "value": "confidential",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "'public' exposes to everyone, which is risky.",
+          "confidence": 0.9
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "important": true,
+          "important_reason": "true allows attendees to invite others, false restricts invitations",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Allowing others to invite can spread access.",
+          "confidence": 0.8
+        },
+        {
+          "path": "guestsCanModify",
+          "important": true,
+          "important_reason": "true lets attendees modify the event, false does not",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Allowing others to modify can change the event.",
+          "confidence": 0.8
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "important": true,
+          "important_reason": "true allows seeing other guests, false hides them",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "True allows visibility of other guests, which is more risky.",
+          "confidence": 0.95
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "important": true,
+          "important_reason": "true lets anyone add themselves, false restricts self-addition",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "True allows anyone to add themselves, which is more risky.",
+          "confidence": 0.95
+        },
+        {
+          "path": "attachments",
+          "important": false,
+          "important_reason": "Attachments are related to the event but do not directly affect asset exposure or risk"
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "important": false,
+          "important_reason": "URL link to the attachment, not an asset decision"
+        },
+        {
+          "path": "attachments[].title",
+          "important": false,
+          "important_reason": "Title of attachment can reveal some information but does not directly affect asset exposure or risk"
+        },
+        {
+          "path": "attachments[].mimeType",
+          "important": false,
+          "important_reason": "MIME type detail, not an asset decision"
+        },
+        {
+          "path": "attachments[].iconLink",
+          "important": false,
+          "important_reason": "URL link to the attachment's icon, not an asset decision"
+        },
+        {
+          "path": "attachments[].fileId",
+          "important": true,
+          "important_reason": "ID of the attached Google Drive file can carry sensitive data",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "File IDs can carry sensitive data, which is risky.",
+          "confidence": 0.95
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "summary",
+        "description",
+        "start",
+        "end",
+        "attendees",
+        "attendees[].email",
+        "recurrence",
+        "recurrence[]",
+        "modificationScope",
+        "futureStartDate",
+        "calendarsToCheck",
+        "transparency",
+        "visibility",
+        "guestsCanInviteOthers",
+        "guestsCanModify",
+        "guestsCanSeeOtherGuests",
+        "anyoneCanAddSelf",
+        "attachments[].fileId"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "delete-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect an asset; only specifies the account."
+        },
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Can target sensitive calendars like aurora-exec or aurora-regulatory, which are critical assets.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-exec",
+                "level": 5
+              },
+              {
+                "asset": "aurora-regulatory",
+                "level": 4
+              },
+              {
+                "asset": "aurora-crew-roster",
+                "level": 3
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 3
+              },
+              {
+                "asset": "aurora-team",
+                "level": 3
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Targets sensitive calendars listed in the policy.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventId",
+          "important": true,
+          "important_reason": "Identifies the specific event to delete; affects the content of sensitive calendars.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "critical-event",
+                "level": 5
+              },
+              {
+                "value": "sensitive-event",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies specific events, some of which may be critical or sensitive.",
+          "confidence": 0.8
+        },
+        {
+          "path": "sendUpdates",
+          "important": false,
+          "important_reason": "Sending updates to all recipients versus none can affect confidentiality of sensitive events but is less impactful than other inputs."
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "eventId"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get-freebusy",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "free-busy-availability",
+            "description": "Busy/free blocks with no titles or attendees attached. Knowing someone is busy discloses far less than knowing why.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": true,
+          "important_reason": "Querying all accounts versus specific, less sensitive ones",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Querying all accounts is notable but not critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "calendars",
+          "important": true,
+          "important_reason": "Querying a critical calendar like maintenance windows against a less sensitive one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "executives",
+                  "regulators"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "flight crew",
+                  "operations"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "engineering",
+                  "maintenance"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Criticality varies by calendar content and sensitivity.",
+          "confidence": 0.8
+        },
+        {
+          "path": "calendars[].id",
+          "important": true,
+          "important_reason": "Querying a critical calendar ID like maintenance windows against a less sensitive one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Querying a critical calendar is notable but not critical.",
+          "confidence": 0.9
+        },
+        {
+          "path": "timeMin",
+          "important": true,
+          "important_reason": "Starting the query at a time when critical events are scheduled versus a non-critical period",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Non-working hours are riskier.",
+          "confidence": 0.9
+        },
+        {
+          "path": "timeMax",
+          "important": true,
+          "important_reason": "Ending the query at a time when critical events are scheduled versus a non-critical period",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hour_of_day",
+            "ranges": [
+              {
+                "min": null,
+                "max": 6,
+                "level": 5
+              },
+              {
+                "min": 6,
+                "max": 8,
+                "level": 4
+              },
+              {
+                "min": 8,
+                "max": 18,
+                "level": 3
+              },
+              {
+                "min": 18,
+                "max": 22,
+                "level": 4
+              },
+              {
+                "min": 22,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Non-working hours are riskier.",
+          "confidence": 0.9
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Time zone does not affect asset sensitivity"
+        },
+        {
+          "path": "groupExpansionMax",
+          "important": true,
+          "important_reason": "Expanding a large group versus a small one",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "schema",
+          "reason": "Expanding a large group is riskier.",
+          "confidence": 0.9
+        },
+        {
+          "path": "calendarExpansionMax",
+          "important": true,
+          "important_reason": "Expanding many calendars versus few",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 30,
+                "level": 3
+              },
+              {
+                "min": 30,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "schema",
+          "reason": "Expanding many calendars is riskier.",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "account",
+        "calendars",
+        "calendars[].id",
+        "timeMin",
+        "timeMax",
+        "groupExpansionMax",
+        "calendarExpansionMax"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get-current-time",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Does not affect an asset; only specifies account context."
+        },
+        {
+          "path": "timeZone",
+          "important": false,
+          "important_reason": "Does not affect an asset; only changes the time zone for display purposes."
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "respond-to-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering).",
+            "scanned_level": 3
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "rsvp-state",
+            "description": "Accept/decline state on a single invitation \u2014 state only, no content.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "calendarId",
+          "important": true,
+          "important_reason": "Responding to an event on a sensitive calendar like aurora-crew-roster versus a less critical one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "aurora-crew-roster",
+                "level": 5
+              },
+              {
+                "asset": "aurora-maintenance",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Sensitive calendars are critical for operational commitments.",
+          "confidence": 0.9
+        },
+        {
+          "path": "eventId",
+          "important": true,
+          "important_reason": "The specific event ID can determine the sensitivity of the response action, such as responding to an executive or regulator meeting versus a regular team meeting",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "executive-meeting",
+                "level": 5
+              },
+              {
+                "value": "regulator-review",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Specific event IDs can indicate sensitive meetings.",
+          "confidence": 0.7
+        },
+        {
+          "path": "account",
+          "important": false,
+          "important_reason": "Account selection does not directly affect asset sensitivity"
+        },
+        {
+          "path": "response",
+          "important": true,
+          "important_reason": "The response action can significantly impact the operational commitments, such as accepting a critical meeting versus declining it",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "accepted",
+                "level": 3
+              },
+              {
+                "value": "declined",
+                "level": 4
+              },
+              {
+                "value": "tentative",
+                "level": 4
+              },
+              {
+                "value": "needsAction",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Responses can impact operational commitments.",
+          "confidence": 0.8
+        },
+        {
+          "path": "comment",
+          "important": false,
+          "important_reason": "Comment is additional text and does not directly affect asset sensitivity"
+        },
+        {
+          "path": "modificationScope",
+          "important": true,
+          "important_reason": "Modifying all instances versus a single instance can have different operational impacts, especially for recurring critical events",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "thisEventOnly",
+                "level": 3
+              },
+              {
+                "value": "all",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Modifying all instances can have broader impacts.",
+          "confidence": 0.8
+        },
+        {
+          "path": "originalStartTime",
+          "important": false,
+          "important_reason": "Original start time is required metadata and does not directly affect asset sensitivity"
+        },
+        {
+          "path": "sendUpdates",
+          "important": true,
+          "important_reason": "Sending updates to all guests versus external only can expose sensitive information to a wider audience",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 5
+              },
+              {
+                "value": "externalOnly",
+                "level": 4
+              },
+              {
+                "value": "none",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Sending updates to all guests can expose sensitive information.",
+          "confidence": 0.8
+        }
+      ],
+      "shortlist": [
+        "calendarId",
+        "eventId",
+        "response",
+        "modificationScope",
+        "sendUpdates"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "manage-accounts",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "connected-account-config",
+            "description": "Which Google accounts are linked and under what OAuth scope \u2014 this is the reach of every other tool in the catalog, so it matters independent of any single event's content.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "account-directory",
+            "description": "The list of linked accounts \u2014 existence only, no scope detail.",
+            "scanned_level": 5
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`action`",
+            "rule": "Any action that adds or changes a linked account changes the reach of every other tool.",
+            "gates_asset": "`connected-account-config`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "action",
+          "important": true,
+          "important_reason": "The 'add' and 'remove' actions can change the reach of every other tool, while 'list' does not.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "add",
+                "level": 5
+              },
+              {
+                "value": "remove",
+                "level": 5
+              },
+              {
+                "value": "list",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "'add' and 'remove' actions change the reach of every other tool.",
+          "confidence": 0.0
+        },
+        {
+          "path": "account_id",
+          "important": true,
+          "important_reason": "Identifies which specific account is added or removed, affecting the list of linked accounts and potentially the reach of other tools.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": [
+              {
+                "asset": "connected-account-config",
+                "level": 5
+              },
+              {
+                "asset": "account-directory",
+                "level": 5
+              }
+            ]
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Identifies specific accounts linked to the system.",
+          "confidence": 1.0
+        }
+      ],
+      "shortlist": [
+        "action",
+        "account_id"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

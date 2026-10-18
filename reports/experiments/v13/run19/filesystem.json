@@ -1,0 +1,2504 @@
+{
+  "server": "filesystem",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/filesystem.json",
+    "sha256": "fa4ec1e1b7be4deb0343690d00cf33e0aafca4ea783ee37c13436dbd9aeecdee",
+    "package": "@modelcontextprotocol/server-filesystem",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22993028",
+  "prompt_sha256": "dc3473f1ce0d7bd4380ab6d0f2f5bc762b143c96d350d71f379cc3c909ccaa34",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": "fs_corp_filesystem",
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "read_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "audit-records",
+            "description": "Append-only action record; no single line matters, the whole is the evidence.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "onboarding-material",
+            "description": "Org charts and onboarding documents; near-public internally.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "description": "Published overview and README material.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "file-contents",
+            "description": "What a content read returns; inherits the most sensitive file in reach.",
+            "scanned_level": 5
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `paths[]`, `source`",
+            "rule": "Key material, certificates and credential-shaped content are Restricted wherever they sit; a `security/` or `secrets/` path is a strong cue but not a requirement. Any read or move of key material is prohibited outright.",
+            "gates_asset": "`security-keys`"
+          },
+          {
+            "arguments": "`path`, `paths[]`",
+            "rule": "Compensation and personnel data is Confidential; reading payroll is prohibited agent behavior.",
+            "gates_asset": "`payroll-records`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 3,
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is read, and the policy lists several assets with levels.",
+          "choices": null
+        },
+        {
+          "path": "tail",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The tail input decides how much of the file is read, specifically the last N lines.",
+          "choices": null
+        },
+        {
+          "path": "head",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The head input decides how much of the file is read, specifically the first N lines.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "tail",
+        "head"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_text_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "audit-records",
+            "description": "Append-only action record; no single line matters, the whole is the evidence.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "onboarding-material",
+            "description": "Org charts and onboarding documents; near-public internally.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "description": "Published overview and README material.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "file-contents",
+            "description": "What a content read returns; inherits the most sensitive file in reach.",
+            "scanned_level": 5
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `paths[]`, `source`",
+            "rule": "Key material, certificates and credential-shaped content are Restricted wherever they sit; a `security/` or `secrets/` path is a strong cue but not a requirement. Any read or move of key material is prohibited outright.",
+            "gates_asset": "`security-keys`"
+          },
+          {
+            "arguments": "`path`, `paths[]`",
+            "rule": "Compensation and personnel data is Confidential; reading payroll is prohibited agent behavior.",
+            "gates_asset": "`payroll-records`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 3,
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is read, and the policy lists assets by their sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "tail",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The tail parameter decides how much of the file is read, from the end.",
+          "choices": null
+        },
+        {
+          "path": "head",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The head parameter decides how much of the file is read, from the beginning.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "tail",
+        "head"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_media_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "onboarding-material",
+            "description": "Org charts and onboarding documents; near-public internally.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "description": "What an image or binary read returns.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "overview"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "directory",
+                  "structure",
+                  "contents"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "onboarding",
+                  "orgchart"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "media-records",
+                  "payroll",
+                  "product-source"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security-keys",
+                  "file-contents"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is read, and the organization's policy lists specific assets with their scanned levels.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_multiple_files",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "file-contents",
+            "description": "What a content read returns; inherits the most sensitive file in reach.",
+            "scanned_level": 5
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `paths[]`, `source`",
+            "rule": "Key material, certificates and credential-shaped content are Restricted wherever they sit; a `security/` or `secrets/` path is a strong cue but not a requirement. Any read or move of key material is prohibited outright.",
+            "gates_asset": "`security-keys`"
+          },
+          {
+            "arguments": "`path`, `paths[]`",
+            "rule": "Compensation and personnel data is Confidential; reading payroll is prohibited agent behavior.",
+            "gates_asset": "`payroll-records`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`paths[]`",
+            "normal": "one document at a time, in the scope a human named",
+            "unusual": "many documents in one call, or documents across scopes",
+            "basis": "`draft`"
+          }
+        ],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "paths",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "project",
+                  "schemas",
+                  "defect",
+                  "onboarding"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security",
+                  "secrets"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "scratch",
+                  "notes"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "general",
+                  "material"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The paths decide which files are read, and the tool can reach multiple types of sensitive data.",
+          "choices": null
+        },
+        {
+          "path": "paths[]",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "project",
+                  "schemas",
+                  "defect",
+                  "onboarding"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security",
+                  "secrets"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "scratch",
+                  "notes"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "general",
+                  "material"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The paths decide which files are read, and the tool can reach multiple types of sensitive data.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "paths",
+        "paths[]"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "audit-records",
+            "description": "Append-only action record; no single line matters, the whole is the evidence.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "onboarding-material",
+            "description": "Org charts and onboarding documents; near-public internally.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "file-records",
+            "description": "What a write, edit or move targets: any file in the share.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `source`, `destination`",
+            "rule": "Writes to product source require human confirmation: source that ships, so a write is a supply-chain change.",
+            "gates_asset": "`product-source`"
+          },
+          {
+            "arguments": "`path`, `source`",
+            "rule": "Any edit to the append-only audit record cannot be undone; modifying audit records is prohibited agent behavior.",
+            "gates_asset": "`audit-records`"
+          },
+          {
+            "arguments": "`path`",
+            "rule": "A full-file overwrite cannot be undone.",
+            "gates_asset": "`file-records`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 3,
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which file is overwritten, and the policy lists assets by their sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "content",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "schema",
+                  "defect list",
+                  "onboarding"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "compensation"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "private key",
+                  "certificate",
+                  "security key"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "org chart",
+                  "project document"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "scratch notes",
+                  "draft text"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The content of the file being written, which can reveal sensitive information.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "content"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "edit_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "audit-records",
+            "description": "Append-only action record; no single line matters, the whole is the evidence.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "onboarding-material",
+            "description": "Org charts and onboarding documents; near-public internally.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "file-records",
+            "description": "What a write, edit or move targets: any file in the share.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `source`, `destination`",
+            "rule": "Writes to product source require human confirmation: source that ships, so a write is a supply-chain change.",
+            "gates_asset": "`product-source`"
+          },
+          {
+            "arguments": "`path`, `source`",
+            "rule": "Any edit to the append-only audit record cannot be undone; modifying audit records is prohibited agent behavior.",
+            "gates_asset": "`audit-records`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"onboarding-material\"], \"level\": 3}, {\"contains\": [\"project-material\"], \"level\": 3}, {\"contains\": [\"audit-records\"], \"level\": 4}, {\"contains\": [\"payroll-records\"], \"level\": 4}, {\"contains\": [\"product-source\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}",
+          "choices": null
+        },
+        {
+          "path": "edits",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 1
+              },
+              {
+                "min": 1,
+                "max": 5,
+                "level": 2
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 3
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of edits decides how much content is changed.",
+          "choices": null
+        },
+        {
+          "path": "edits[].oldText",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "project",
+                  "schemas",
+                  "defects",
+                  "working"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "audit"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "product-source",
+                  "source-code"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The old text pattern decides what is being searched for and potentially replaced, which can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "edits[].newText",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "project",
+                  "schemas",
+                  "defects",
+                  "working"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "audit"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "product-source",
+                  "source-code"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The new text pattern decides what is being inserted into the file, which can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "dryRun",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [
+        "edits",
+        "edits[].oldText",
+        "edits[].newText"
+      ],
+      "missing_rules": [
+        "path"
+      ],
+      "rule_problems": {
+        "path": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"onboarding-material\"], \"level\": 3}, {\"contains\": [\"project-material\"], \"level\": 3}, {\"contains\": [\"audit-records\"], \"level\": 4}, {\"contains\": [\"payroll-records\"], \"level\": 4}, {\"contains\": [\"product-source\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "create_directory",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "directory-records",
+            "description": "What a directory create or move targets.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 3,
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which directory is created or ensured, and directories are listed assets.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "directory-contents",
+            "description": "One directory listing, with or without sizes; no contents.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "Enumerating the security scope is prohibited agent behavior. Elsewhere, names, layouts, sizes and permissions carry no content and are routine.",
+            "gates_asset": "`directory-structure`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 2,
+            "overrides": [
+              {
+                "asset": "directory-structure",
+                "level": 5
+              }
+            ],
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The path decides which directory's contents are listed, and the policy prohibits enumerating the security scope.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_directory_with_sizes",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "directory-contents",
+            "description": "One directory listing, with or without sizes; no contents.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "Enumerating the security scope is prohibited agent behavior. Elsewhere, names, layouts, sizes and permissions carry no content and are routine.",
+            "gates_asset": "`directory-structure`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "register",
+            "groups": [],
+            "default": 2,
+            "overrides": [
+              {
+                "asset": "directory-structure",
+                "level": 5
+              }
+            ],
+            "assets": {
+              "security-keys": 5,
+              "payroll-records": 4,
+              "audit-records": 4,
+              "product-source": 4,
+              "project-material": 3,
+              "onboarding-material": 3,
+              "public-overview": 1,
+              "file-contents": 5,
+              "media-records": 4,
+              "file-records": 3,
+              "directory-records": 3,
+              "directory-structure": 2,
+              "directory-contents": 2,
+              "file-directory": 2,
+              "file-metadata": 2,
+              "mount-directory": 2
+            }
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The `path` input decides which directory's contents are listed, and the policy prohibits enumerating the security scope.",
+          "choices": null
+        },
+        {
+          "path": "sortBy",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "directory_tree",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "directory-structure",
+            "description": "Recursive tree of names and paths, no contents.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "Enumerating the security scope is prohibited agent behavior. Elsewhere, names, layouts, sizes and permissions carry no content and are routine.",
+            "gates_asset": "`directory-structure`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`path`",
+            "normal": "the scope a human named",
+            "unusual": "the security scope, or the whole share",
+            "basis": "`draft`"
+          }
+        ],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "project",
+                  "schemas"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "defects",
+                  "onboarding"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "audit-records",
+                  "payroll-records"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security-keys",
+                  "product-source"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "directory-structure",
+                  "file-metadata"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The `path` input decides which part of the directory structure is read, and its content level is determined by keywords.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "The `excludePatterns` input only narrows the call, as it excludes certain patterns from being included in the tree view.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns[]",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Each item in `excludePatterns` only narrows the call, as it excludes certain patterns from being included in the tree view.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "move_file",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "security-keys",
+            "description": "Private key material and certificates, complete and usable alone.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "payroll-records",
+            "description": "Compensation records \u2014 one row per employee, the whole staff.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "audit-records",
+            "description": "Append-only action record; no single line matters, the whole is the evidence.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "description": "Product logic that ships to production.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "description": "Schemas, defect lists and working project documents.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "grant-and-compliance-records",
+            "description": "Grant proposals, funder financial terms and IRB/ethics compliance filings.",
+            "scanned_level": null
+          },
+          {
+            "asset": "file-records",
+            "description": "What a write, edit or move targets: any file in the share.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-records",
+            "description": "What a directory create or move targets.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`, `paths[]`, `source`",
+            "rule": "Key material, certificates and credential-shaped content are Restricted wherever they sit; a `security/` or `secrets/` path is a strong cue but not a requirement. Any read or move of key material is prohibited outright.",
+            "gates_asset": "`security-keys`"
+          },
+          {
+            "arguments": "`path`, `source`, `destination`",
+            "rule": "Writes to product source require human confirmation: source that ships, so a write is a supply-chain change.",
+            "gates_asset": "`product-source`"
+          },
+          {
+            "arguments": "`path`, `source`",
+            "rule": "Any edit to the append-only audit record cannot be undone; modifying audit records is prohibited agent behavior.",
+            "gates_asset": "`audit-records`"
+          }
+        ],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "source",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"project\"], \"level\": 1}, {\"contains\": [\"schemas\", \"defects\"], \"level\": 3}, {\"contains\": [\"payroll\", \"compensation\"], \"level\": 4}, {\"contains\": [\"audit\", \"action-record\"], \"level\": 4}, {\"contains\": [\"product-source\", \"source-code\"], \"level\": 4}, {\"contains\": [\"security-keys\", \"private-key\", \"certificate\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}",
+          "choices": null
+        },
+        {
+          "path": "destination",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"project\"], \"level\": 1}, {\"contains\": [\"schemas\", \"defects\"], \"level\": 3}, {\"contains\": [\"payroll\", \"compensation\"], \"level\": 4}, {\"contains\": [\"audit\", \"action-record\"], \"level\": 4}, {\"contains\": [\"product-source\", \"source-code\"], \"level\": 4}, {\"contains\": [\"security-keys\", \"private-key\", \"certificate\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "source",
+        "destination"
+      ],
+      "rule_problems": {
+        "source": [
+          "levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"project\"], \"level\": 1}, {\"contains\": [\"schemas\", \"defects\"], \"level\": 3}, {\"contains\": [\"payroll\", \"compensation\"], \"level\": 4}, {\"contains\": [\"audit\", \"action-record\"], \"level\": 4}, {\"contains\": [\"product-source\", \"source-code\"], \"level\": 4}, {\"contains\": [\"security-keys\", \"private-key\", \"certificate\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}"
+        ],
+        "destination": [
+          "levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"project\"], \"level\": 1}, {\"contains\": [\"schemas\", \"defects\"], \"level\": 3}, {\"contains\": [\"payroll\", \"compensation\"], \"level\": 4}, {\"contains\": [\"audit\", \"action-record\"], \"level\": 4}, {\"contains\": [\"product-source\", \"source-code\"], \"level\": 4}, {\"contains\": [\"security-keys\", \"private-key\", \"certificate\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "search_files",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "file-directory",
+            "description": "Search over names and paths.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "Enumerating the security scope is prohibited agent behavior. Elsewhere, names, layouts, sizes and permissions carry no content and are routine.",
+            "gates_asset": "`directory-structure`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`path`",
+            "normal": "the scope a human named",
+            "unusual": "the security scope, or the whole share",
+            "basis": "`draft`"
+          }
+        ],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-metadata",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public-overview"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "project-material",
+                  "onboarding-material"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "defects",
+                  "schemas"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll-records",
+                  "product-source"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security-keys"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The `path` input decides which part of the file system is searched.",
+          "choices": null
+        },
+        {
+          "path": "pattern",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public-overview"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "project-material",
+                  "onboarding-material"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "defects",
+                  "schemas"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "payroll-records",
+                  "product-source"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security-keys"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The `pattern` input decides which files and directories are matched based on the glob-style pattern.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "The `excludePatterns` input only narrows the call, so it is not rated.",
+          "choices": null
+        },
+        {
+          "path": "excludePatterns[]",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Each item in `excludePatterns[]` only narrows the call, so it is not rated.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "path",
+        "pattern"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_file_info",
+      "policy_slice": {
+        "org_context": "Industry / function: CBG's engineering organization \u2014 a general\ncorporate file share holding engineering material,\npayroll, security key material, grant and\ncompliance filings, and product source in one tree.\nRegulatory environment: Grant, funder and IRB/ethics compliance filings\ncarry legal exposure of their own. CBG does not\npublish the file listing: the layout maps which\nteams hold what, and the security scope's very\nexistence is a target.\nStakeholders & their stake: Staff \u2014 compensation records, one row per\nemployee, the whole staff.\nSecurity \u2014 key material and certificates are\nusable alone and reach systems beyond this share.\nProduct \u2014 source that ships; a write to it is a\nsupply-chain change.\nAudit \u2014 the append-only action record is evidence;\nbeing complete and intact is the asset.\nScope boundary: The 14-tool `fs:corp_filesystem` surface.\nClassify by data type.",
+        "normal_workflow": "Normal workflow: A general engineering assistant: read project documents\nand schemas, summarize defect lists, draft onboarding\ntext, write scratch notes \u2014 one document at a time, in\nthe scope a human named.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "file-metadata",
+            "description": "Sizes, timestamps and permissions; never contents.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": [],
+        "other_assets_of_the_organization": [
+          {
+            "asset": "audit-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "directory-contents",
+            "scanned_level": 2
+          },
+          {
+            "asset": "directory-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "directory-structure",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-contents",
+            "scanned_level": 5
+          },
+          {
+            "asset": "file-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "file-records",
+            "scanned_level": 3
+          },
+          {
+            "asset": "media-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "mount-directory",
+            "scanned_level": 2
+          },
+          {
+            "asset": "onboarding-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "payroll-records",
+            "scanned_level": 4
+          },
+          {
+            "asset": "product-source",
+            "scanned_level": 4
+          },
+          {
+            "asset": "project-material",
+            "scanned_level": 3
+          },
+          {
+            "asset": "public-overview",
+            "scanned_level": 1
+          },
+          {
+            "asset": "security-keys",
+            "scanned_level": 5
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "path",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"public\", \"overview\"], \"level\": 1}, {\"contains\": [\"project\", \"schema\", \"defects\", \"onboarding\"], \"level\": 3}, {\"contains\": [\"audit\", \"records\"], \"level\": 4}, {\"contains\": [\"payroll\", \"security\", \"keys\", \"product-source\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 2}",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "path"
+      ],
+      "rule_problems": {
+        "path": [
+          "levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"public\", \"overview\"], \"level\": 1}, {\"contains\": [\"project\", \"schema\", \"defects\", \"onboarding\"], \"level\": 3}, {\"contains\": [\"audit\", \"records\"], \"level\": 4}, {\"contains\": [\"payroll\", \"security\", \"keys\", \"product-source\"], \"level\": 5}, {\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 2}"
+        ]
+      }
+    },
+    {
+      "tool_name": "list_allowed_directories",
+      "arguments": [],
+      "no_declared_schema": true
+    }
+  ],
+  "failed": []
+}

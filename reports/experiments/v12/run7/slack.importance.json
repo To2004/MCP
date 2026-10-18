@@ -1,0 +1,1108 @@
+{
+  "server": "slack",
+  "catalog": {
+    "path": "reports/live_run/slack_real_toollist.json",
+    "sha256": "1867a2b90926feefbe9d3de02b0f272c98c01b466c6a0b23ba51dbddbb8acb81",
+    "package": "slack-mcp-server (korotovsky)",
+    "captured": "2026-07-06"
+  },
+  "slurm_job": "22128378",
+  "prompt_sha256": {
+    "importance": "a79263f952b06259c2aa9a6748bc57d32642868e6ee4501bdd46fa96fd0c8d6e",
+    "check": "cced1025dfb3e8ca1d2f4c003085a9596c20925bebe0f751146607ad8576b310"
+  },
+  "prompts": [
+    "prompt-importance-AS-RUN.md",
+    "prompt-importance-check-AS-RUN.md"
+  ],
+  "votes": 3,
+  "policy_section": "slack_vireo",
+  "tools": [
+    {
+      "tool_name": "channels_list",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": true,
+          "reason": "including private channels exposes sensitive content",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "reason": "Pagination does not change the call's risk level.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Pagination does not change the call's risk level."
+          }
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "a limit of 999 can return a large number of channels, potentially exposing more sensitive information",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "query",
+          "important": true,
+          "reason": "Query can filter and reveal sensitive channel names based on policy context.",
+          "decided_by": "consistency",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Filtering by query does not significantly change the call's risk level."
+          },
+          "consistency_check": {
+            "important": true,
+            "example": "A query like 'safety' could expose a list of sensitive channels related to patient safety and regulatory affairs.",
+            "reason": "Query can filter and reveal sensitive channel names based on policy context."
+          }
+        },
+        {
+          "path": "query_targets",
+          "important": false,
+          "reason": "Narrowing search fields within a chosen target reduces results, not risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Narrowing search fields within a chosen target reduces results, not risk."
+          }
+        },
+        {
+          "path": "sort",
+          "important": false,
+          "reason": "Sorting by popularity does not affect the overall risk of the call.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Sorting by popularity does not affect the overall risk of the call."
+          }
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "limit",
+        "query"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "channels_me",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": true,
+          "reason": "Including 'im' or 'mpim' can expose sensitive direct messages.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "reason": "Pagination does not affect the sensitivity of the call",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Pagination does not affect the sensitivity of the call"
+          }
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "A limit of 999 can expose a large number of sensitive channels at once.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "limit"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_add_message",
+      "arguments": [
+        {
+          "path": "blocks",
+          "important": true,
+          "reason": "The content of rich messages can be critical.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "Posting to the most sensitive channel is critical, while a less sensitive one is ordinary.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "content_type",
+          "important": false,
+          "reason": "Content type does not change the risk level of message content.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Content type does not change the risk level of message content."
+          }
+        },
+        {
+          "path": "text",
+          "important": true,
+          "reason": "The text of the message can be critical, especially in sensitive channels.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "thread_ts",
+          "important": true,
+          "reason": "The input can reach more sensitive content within the same channel.",
+          "decided_by": "consistency",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Thread timestamp does not significantly affect the risk level of the message content."
+          },
+          "consistency_check": {
+            "important": true,
+            "example": "A thread_ts value that reaches a sensitive vireo-unblinding conversation, breaking the blind.",
+            "reason": "The input can reach more sensitive content within the same channel."
+          }
+        }
+      ],
+      "shortlist": [
+        "blocks",
+        "channel_id",
+        "text",
+        "thread_ts"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_history",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "The unblinding channel is critical, a regular one is ordinary.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "reason": "Pagination does not change the call's risk level.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Pagination does not change the call's risk level."
+          }
+        },
+        {
+          "path": "include_activity_messages",
+          "important": false,
+          "reason": "Including activity messages barely changes the sensitivity of the returned data.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Including activity messages barely changes the sensitivity of the returned data."
+          }
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "Bulk-reading history is critical, a recent thread or page is ordinary.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_join",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "Joining the unblinding channel breaks study integrity as effectively as a leak",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_leave",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "Leaving a sensitive channel like vireo-unblinding or vireo-safety-pv is critical",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_mark",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "Marking a sensitive channel as read could expose unblinding or PII.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "ts",
+          "important": false,
+          "reason": "The timestamp only narrows the scope of messages marked, not the sensitivity.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "The timestamp only narrows the scope of messages marked, not the sensitivity."
+          }
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_replies",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "reason": "The unblinding channel is critical, a regular one is ordinary.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "reason": "Pagination does not change the call's risk level",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Pagination does not change the call's risk level"
+          }
+        },
+        {
+          "path": "include_activity_messages",
+          "important": false,
+          "reason": "Including activity messages barely changes the call's sensitivity",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Including activity messages barely changes the call's sensitivity"
+          }
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "Bulk-reading history is critical, a recent thread or page is ordinary.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "thread_ts",
+          "important": true,
+          "reason": "The specific thread can reach more sensitive content within the same channel",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": true,
+            "example": "A thread timestamp from a sensitive channel like 'vireo-unblinding' could expose unblinding information to unauthorized users.",
+            "reason": "The specific thread can reach more sensitive content within the same channel"
+          }
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit",
+        "thread_ts"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_search_messages",
+      "arguments": [
+        {
+          "path": "cursor",
+          "important": false,
+          "reason": "Pagination does not change the risk level.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Pagination does not change the risk level."
+          }
+        },
+        {
+          "path": "filter_date_after",
+          "important": false,
+          "reason": "Date filtering narrows results but does not affect overall risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Date filtering narrows results but does not affect overall risk."
+          }
+        },
+        {
+          "path": "filter_date_before",
+          "important": false,
+          "reason": "Date filtering narrows results but does not affect overall risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Date filtering narrows results but does not affect overall risk."
+          }
+        },
+        {
+          "path": "filter_date_during",
+          "important": false,
+          "reason": "Date filtering narrows results but does not affect overall risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Date filtering narrows results but does not affect overall risk."
+          }
+        },
+        {
+          "path": "filter_date_on",
+          "important": false,
+          "reason": "Date filtering narrows results but does not affect overall risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Date filtering narrows results but does not affect overall risk."
+          }
+        },
+        {
+          "path": "filter_in_channel",
+          "important": true,
+          "reason": "searching the unblinding channel is critical",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "filter_in_im_or_mpim",
+          "important": false,
+          "reason": "Narrowing to DMs/MPIMs does not increase risk significantly.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Narrowing to DMs/MPIMs does not increase risk significantly."
+          }
+        },
+        {
+          "path": "filter_threads_only",
+          "important": false,
+          "reason": "Limiting results to threads narrows the search but does not change risk level.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Limiting results to threads narrows the search but does not change risk level."
+          }
+        },
+        {
+          "path": "filter_users_from",
+          "important": false,
+          "reason": "User filtering narrows results but does not change overall risk significantly.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "User filtering narrows results but does not change overall risk significantly."
+          }
+        },
+        {
+          "path": "filter_users_with",
+          "important": false,
+          "reason": "Narrowing to specific users in threads and DMs does not affect overall risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Narrowing to specific users in threads and DMs does not affect overall risk."
+          }
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "a limit of 100 items can return a large number of sensitive messages",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "search_query",
+          "important": true,
+          "reason": "an unscoped search query can cross the blind boundary and is critical",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            false
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "filter_in_channel",
+        "limit",
+        "search_query"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_unreads",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": true,
+          "reason": "Filtering by 'all' channels versus specific types like 'dm' or 'internal' can significantly change the scope and sensitivity of the call.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "include_messages",
+          "important": true,
+          "reason": "Returning actual messages can expose sensitive content.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            true,
+            false
+          ],
+          "check": {
+            "important": true,
+            "example": "true, returns actual unread messages which could include sensitive content like unblinding information or subject identifiers.",
+            "reason": "Returning actual messages can expose sensitive content."
+          }
+        },
+        {
+          "path": "include_muted",
+          "important": false,
+          "reason": "Including muted channels does not significantly alter the call's risk profile.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            true
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Including muted channels does not significantly alter the call's risk profile."
+          }
+        },
+        {
+          "path": "max_channels",
+          "important": true,
+          "reason": "A larger number of channels can expose more sensitive information, making it a critical input.",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            false
+          ],
+          "check": null
+        },
+        {
+          "path": "max_messages_per_channel",
+          "important": true,
+          "reason": "Fetching more messages per channel can expose sensitive content.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            true
+          ],
+          "check": {
+            "important": true,
+            "example": "a high number, such as 100, could expose more sensitive content from additional messages.",
+            "reason": "Fetching more messages per channel can expose sensitive content."
+          }
+        },
+        {
+          "path": "mentions_only",
+          "important": false,
+          "reason": "Filtering by mentions only narrows down results but does not change the call's risk profile much.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Filtering by mentions only narrows down results but does not change the call's risk profile much."
+          }
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "include_messages",
+        "max_channels",
+        "max_messages_per_channel"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_create",
+      "arguments": [
+        {
+          "path": "channels",
+          "important": true,
+          "reason": "Mentioning sensitive channels exposes their content to group members",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "description",
+          "important": false,
+          "reason": "Description text does not significantly change the call's risk level",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Description text does not significantly change the call's risk level"
+          }
+        },
+        {
+          "path": "handle",
+          "important": true,
+          "reason": "The handle determines how the group is mentioned and accessed in Slack",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            false,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "name",
+          "important": true,
+          "reason": "Display name can indicate membership in a critical group, affecting risk level",
+          "decided_by": "check",
+          "votes": [
+            false,
+            true,
+            false
+          ],
+          "check": {
+            "important": true,
+            "example": "Riskiest: 'Unblinded Data Reviewers', reaches sensitive study team; Safest: 'New Hires'",
+            "reason": "Display name can indicate membership in a critical group, affecting risk level"
+          }
+        }
+      ],
+      "shortlist": [
+        "channels",
+        "handle",
+        "name"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_list",
+      "arguments": [
+        {
+          "path": "include_count",
+          "important": false,
+          "reason": "Including user counts does not significantly alter the call's risk.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Including user counts does not significantly alter the call's risk."
+          }
+        },
+        {
+          "path": "include_disabled",
+          "important": false,
+          "reason": "Including disabled groups does not increase the call's risk significantly.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Including disabled groups does not increase the call's risk significantly."
+          }
+        },
+        {
+          "path": "include_users",
+          "important": true,
+          "reason": "Including user IDs can expose sensitive membership details within regulated environments.",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": true,
+            "example": "true, which includes user IDs and could reveal sensitive membership information",
+            "reason": "Including user IDs can expose sensitive membership details within regulated environments."
+          }
+        }
+      ],
+      "shortlist": [
+        "include_users"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_me",
+      "arguments": [
+        {
+          "path": "action",
+          "important": true,
+          "reason": "'join' or 'leave' actions change group membership, which is critical",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "usergroup_id",
+          "important": true,
+          "reason": "The user group ID decides the sensitive access list that controls who sees unblinded channels",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "action",
+        "usergroup_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_update",
+      "arguments": [
+        {
+          "path": "channels",
+          "important": true,
+          "reason": "Changing default channels can expose sensitive information to unauthorized users",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "description",
+          "important": false,
+          "reason": "Secondary text next to the main content, does not change risk significantly",
+          "decided_by": "check",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Secondary text next to the main content, does not change risk significantly"
+          }
+        },
+        {
+          "path": "handle",
+          "important": true,
+          "reason": "Handle changes can affect how groups are mentioned and accessed, impacting risk",
+          "decided_by": "consistency",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "A mention handle change does not significantly alter risk"
+          },
+          "consistency_check": {
+            "important": true,
+            "example": {
+              "riskiest_value": "safetydata",
+              "reaches": "potentially sensitive group for safety data"
+            },
+            "reason": "Handle changes can affect how groups are mentioned and accessed, impacting risk"
+          }
+        },
+        {
+          "path": "name",
+          "important": true,
+          "reason": "Display name changes can indicate membership in a critical group, affecting risk level",
+          "decided_by": "consistency",
+          "votes": [
+            false,
+            false,
+            false
+          ],
+          "check": {
+            "important": false,
+            "example": null,
+            "reason": "Display name changes do not affect the security or sensitivity of group data"
+          },
+          "consistency_check": {
+            "important": true,
+            "example": {
+              "riskiest_value": "unblinded-team",
+              "reaches": "study team that should not have access to unblinded data"
+            },
+            "reason": "Display name changes can indicate membership in a critical group, affecting risk level"
+          }
+        },
+        {
+          "path": "usergroup_id",
+          "important": true,
+          "reason": "Identifies which user group is updated, critical for access control",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "channels",
+        "handle",
+        "name",
+        "usergroup_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_users_update",
+      "arguments": [
+        {
+          "path": "usergroup_id",
+          "important": true,
+          "reason": "The most sensitive user group is critical, a less sensitive one ordinary",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "users",
+          "important": true,
+          "reason": "Adding or removing users from the most sensitive user group can critically change access to protected information",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "usergroup_id",
+        "users"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "users_search",
+      "arguments": [
+        {
+          "path": "limit",
+          "important": true,
+          "reason": "A limit of 100 users is bulk, while 10 is ordinary",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        },
+        {
+          "path": "query",
+          "important": true,
+          "reason": "Querying for a sensitive user ID or email could expose protected health information",
+          "decided_by": "majority",
+          "votes": [
+            true,
+            true,
+            true
+          ],
+          "check": null
+        }
+      ],
+      "shortlist": [
+        "limit",
+        "query"
+      ],
+      "votes_failed": 0
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": []
+}

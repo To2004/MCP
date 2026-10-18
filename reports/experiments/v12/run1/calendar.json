@@ -1,0 +1,4634 @@
+{
+  "server": "calendar",
+  "policy_section": "calendar_aurora",
+  "catalog": {
+    "path": "reports/live_run/orgs_2026-07-29/verify_calendar.json",
+    "sha256": "939b5ede7488ff03f0f9e29be012947a09d305119ec325d68687e1da3708a2aa",
+    "package": "@cocal/google-calendar-mcp",
+    "captured": "2026-07-29"
+  },
+  "prompt_sha256": "580a94b350c4387ceaf15f676f0163406a170e7851734539b3339fc4e8553222",
+  "prompt": "prompt-AS-RUN.md",
+  "slurm_job": "21940519",
+  "tools": [
+    {
+      "tool_name": "list-calendars",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "calendar-records",
+            "description": "Calendar-level attributes returned by a read."
+          },
+          {
+            "asset": "calendar-directory",
+            "description": "The list of calendars that exist, no events inside them \u2014 existence with no content behind it."
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account[]",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Account nickname",
+          "bands": [
+            {
+              "level": "low",
+              "when": "common account nicknames like 'work' or 'personal'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "less common but still known account nicknames",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "nicknames for sensitive accounts like executive or regulatory calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy highlights the sensitivity of certain calendar types and their stakeholders.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 1,
+      "warnings": []
+    },
+    {
+      "tool_name": "list-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory."
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present."
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`calendarId` + `timeMin` + `timeMax`",
+            "normal": "one team calendar, about one week",
+            "unusual": "months of events, or any window on an exec or regulator calendar",
+            "basis": "`draft`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account[]",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Account nickname",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary account nicknames",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual or sensitive account nicknames",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Account nickname selects which accounts to query, affecting the scope of the call.",
+          "confidence": 0.85
+        },
+        {
+          "path": "calendarId[]",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Calendar identifier or name",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary team calendars within a week window",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "longer time windows on ordinary calendars or sensitive calendars like exec and regulatory",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "executive or regulator calendars at any window",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies that reading exec and regulatory calendars is prohibited, making them high risk.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeMin",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "within a week window",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "longer than one week but less than a month",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "months of events",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy defines a week window as normal, longer windows as unusual.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeMax",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "within a week window",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "longer than one week but less than a month",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "months of events",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy defines a week window as normal, longer windows as unusual.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Time zone is a setting that does not affect the risk.",
+          "confidence": 0.95
+        },
+        {
+          "path": "fields[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Fields are additional data points to include and do not affect the risk.",
+          "confidence": 0.95
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Private extended properties are filters and do not affect the risk.",
+          "confidence": 0.95
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Shared extended properties are filters and do not affect the risk.",
+          "confidence": 0.95
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "extended properties of events",
+          "bands": [
+            {
+              "level": "low",
+              "when": "common or non-sensitive properties",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "properties that may relate to sensitive contexts but are not explicitly named as such",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "properties related to executive or regulatory calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy indicates that certain properties may relate to sensitive assets like `aurora-exec` and `aurora-regulatory`.",
+          "confidence": 0.95
+        }
+      ],
+      "declared_arguments": 8,
+      "warnings": []
+    },
+    {
+      "tool_name": "search-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present."
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`calendarId` + `timeMin` + `timeMax`",
+            "normal": "one team calendar, about one week",
+            "unusual": "months of events, or any window on an exec or regulator calendar",
+            "basis": "`draft`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account[]",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary accounts like 'work' or 'personal'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "accounts not listed in policy, but potentially sensitive",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "executive or regulator accounts",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists exec and regulatory calendars as high risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarId[]",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary team calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "calendars not listed in policy, but potentially sensitive",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "executive or regulator calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists exec and regulatory calendars as high risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "query",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text search query is not an asset or range.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeMin",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Time ranges outside normal working hours are considered risky.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeMax",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Time ranges outside normal working hours are considered risky.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Time zone is not an asset or range.",
+          "confidence": 1.0
+        },
+        {
+          "path": "fields[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Additional fields are not an asset or range.",
+          "confidence": 1.0
+        },
+        {
+          "path": "privateExtendedProperty[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Private extended properties are not an asset or range.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sharedExtendedProperty[]",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event properties",
+          "bands": [
+            {
+              "level": "low",
+              "when": "properties that do not expose sensitive information",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "properties that may hint at sensitive events but are not conclusive",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "properties that directly expose sensitive information such as executive decisions or regulatory audits",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "The policy indicates different levels of sensitivity for various calendar assets.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sharedExtendedProperty",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "a small number of properties (1-2)",
+              "min": 1,
+              "max": 2
+            },
+            {
+              "level": "medium",
+              "when": "several properties (3-5)",
+              "min": 3,
+              "max": 5
+            },
+            {
+              "level": "high",
+              "when": "a large number of properties (>5)",
+              "min": 6,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The number of properties can affect the specificity and risk level of the search.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 9,
+      "warnings": []
+    },
+    {
+      "tool_name": "get-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory."
+          },
+          {
+            "asset": "event-attendee-lists",
+            "description": "Who is invited to an event \u2014 the people behind an entry, including outside regulator inspectors when one is present."
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "holidays",
+            "description": "The subscribed public holiday calendar \u2014 already public."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The executive and regulator calendars: reading them is prohibited for the agent.",
+            "gates_asset": "`aurora-exec`, `aurora-regulatory`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Account nickname",
+          "bands": [
+            {
+              "level": "low",
+              "when": "a personal or non-sensitive account",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "an account with moderate sensitivity",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "a sensitive or executive account",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Account nickname can identify a person or role with varying levels of sensitivity.",
+          "confidence": 0.85
+        },
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Calendar ID",
+          "bands": [
+            {
+              "level": "low",
+              "when": "the main calendar or a non-sensitive team calendar",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "a moderately sensitive calendar, such as an operations team calendar",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "an executive or regulatory calendar",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies that reading the executive and regulator calendars is prohibited.",
+          "confidence": 0.95
+        },
+        {
+          "path": "eventId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Event ID",
+          "bands": [
+            {
+              "level": "low",
+              "when": "an event with low sensitivity or public information",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "a moderately sensitive event, such as a crew duty period",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "an executive or regulatory event with high sensitivity",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy describes the sensitivity of different types of events.",
+          "confidence": 0.95
+        },
+        {
+          "path": "fields",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Fields are additional event details and do not change the context or identity of the call.",
+          "confidence": 0.95
+        },
+        {
+          "path": "fields[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Fields are additional event details and do not change the context or identity of the call.",
+          "confidence": 0.95
+        }
+      ],
+      "declared_arguments": 4,
+      "warnings": []
+    },
+    {
+      "tool_name": "list-colors",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "color-catalog",
+            "description": "The static UI colour palette \u2014 carries no organizational information at all."
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Account nickname",
+          "bands": [
+            {
+              "level": "low",
+              "when": "any account value, as the color catalog is static and does not contain organizational information",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "The policy states that the color-catalog asset carries no organizational information.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 1,
+      "warnings": []
+    },
+    {
+      "tool_name": "create-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory."
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent."
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          },
+          {
+            "arguments": "`attendees[].email`",
+            "rule": "An address outside the org sends an unrecallable invitation email under the org's identity.",
+            "gates_asset": "`outbound-invite-email`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`attendees[]`",
+            "normal": "a handful of internal people",
+            "unusual": "any external address",
+            "basis": "`stated`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account context",
+          "bands": [
+            {
+              "level": "low",
+              "when": "internal accounts",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unrecognized or external accounts",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The account context can change the scope of the event creation.",
+          "confidence": 0.85
+        },
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar container",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary team calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "executive or regulatory calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "crew roster or maintenance calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies different levels of risk for various calendar types.",
+          "confidence": 0.95
+        },
+        {
+          "path": "eventId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The event ID is a generated or custom identifier that does not affect risk.",
+          "confidence": 0.9
+        },
+        {
+          "path": "summary",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The summary is free text meant for human readers.",
+          "confidence": 0.9
+        },
+        {
+          "path": "description",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The description is free text meant for human readers.",
+          "confidence": 0.9
+        },
+        {
+          "path": "start",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "during usual working hours (9-18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning or late evening (7-9 and 18-22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The time of the event can affect its risk based on when it occurs.",
+          "confidence": 0.85
+        },
+        {
+          "path": "end",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "during usual working hours (9-18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning or late evening (7-9 and 18-22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The time of the event can affect its risk based on when it occurs.",
+          "confidence": 0.85
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The timezone is a setting that does not affect risk.",
+          "confidence": 0.9
+        },
+        {
+          "path": "location",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The location is free text meant for human readers.",
+          "confidence": 0.9
+        },
+        {
+          "path": "attendees",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event attendees",
+          "bands": [
+            {
+              "level": "low",
+              "when": "a handful of internal people",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual number or mix of attendees",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "any external address",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies risk levels for different types of attendees.",
+          "confidence": 0.95
+        },
+        {
+          "path": "attendees[].email",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event attendee email",
+          "bands": [
+            {
+              "level": "low",
+              "when": "internal addresses",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "external addresses",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "External attendees trigger unrecallable emails.",
+          "confidence": 0.95
+        },
+        {
+          "path": "attendees[].responseStatus",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The response status is a categorical value that does not affect risk.",
+          "confidence": 0.9
+        },
+        {
+          "path": "attendees[].email",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Email address of the attendee",
+          "bands": [
+            {
+              "level": "low",
+              "when": "internal addresses",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "a handful of internal people",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "any external address",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy states internal addresses are low risk, a handful of internal people is medium, and any external address is high.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].displayName",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Display name is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].optional",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Optional status is a simple on/off switch.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].responseStatus",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Response status is a small set of operating modes.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].comment",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Comment is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].additionalGuests",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 10 guests",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "above about 10 up to about 50 guests",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "above about 50 guests",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "A large number of additional guests can indicate a significant event.",
+          "confidence": 1.0
+        },
+        {
+          "path": "colorId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Color ID is a simple identifier for the event.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.useDefault",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Use default reminders is a simple on/off switch.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Custom reminders are a small set of operating modes.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Reminder method is a small set of operating modes.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "classification": "RANGE",
+          "subtype": "duration",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 30 minutes before the event",
+              "min": null,
+              "max": 30
+            },
+            {
+              "level": "medium",
+              "when": "between 30 and 120 minutes before the event",
+              "min": 30,
+              "max": 120
+            },
+            {
+              "level": "high",
+              "when": "more than about 120 minutes before the event",
+              "min": 120,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred from common practice for reminders.",
+          "confidence": 0.8
+        },
+        {
+          "path": "recurrence[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Recurrence rules are operational details.",
+          "confidence": 0.8
+        },
+        {
+          "path": "transparency",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event transparency setting",
+          "bands": [
+            {
+              "level": "low",
+              "when": "'transparent'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "'opaque'",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Opaque events block time on the calendar.",
+          "confidence": 0.8
+        },
+        {
+          "path": "visibility",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event visibility setting",
+          "bands": [
+            {
+              "level": "low",
+              "when": "'public', 'default'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "'private'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "'confidential'",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Confidential events are sensitive.",
+          "confidence": 0.8
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Operational detail.",
+          "confidence": 0.8
+        },
+        {
+          "path": "guestsCanModify",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Operational detail.",
+          "confidence": 0.8
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Operational detail.",
+          "confidence": 0.8
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Operational detail.",
+          "confidence": 0.8
+        },
+        {
+          "path": "sendUpdates",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event notification setting",
+          "bands": [
+            {
+              "level": "low",
+              "when": "'none'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "'externalOnly'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "'all'",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Sending updates to all can expose sensitive information.",
+          "confidence": 0.8
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Client-generated unique ID for ensuring idempotency is not a meaningful magnitude or asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Conference solution type is a small enum that changes behavior but not which thing the call acts on.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to a few attachments",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "a moderate number of attachments",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "many attachments, potentially large in size or count",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Number of file attachments can indicate the scale and importance of the event.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "URL of the attached file",
+          "bands": [
+            {
+              "level": "low",
+              "when": "public or generated files",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "shared folders with many readers",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "folders holding credentials, keys, personal or financial records, or another system's configuration",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "URL of the attached file can point to sensitive content.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].title",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Title of the attachment is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].mimeType",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "MIME type of the attachment is a categorical value that does not change which thing the call acts on.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].iconLink",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "URL of the icon for the attachment is a content locator but does not change which thing the call acts on.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].fileId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "ID of the attached file in Google Drive",
+          "bands": [
+            {
+              "level": "low",
+              "when": "public or generated files",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "shared folders with many readers",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "folders holding credentials, keys, personal or financial records, or another system's configuration",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "ID of the attached file in Google Drive can point to sensitive content.",
+          "confidence": 1.0
+        },
+        {
+          "path": "source.url",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "URL of the source",
+          "bands": [
+            {
+              "level": "low",
+              "when": "public or generated URLs",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "shared resources with many readers",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "URLs pointing to sensitive content or systems' configuration",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "URL of the source can point to sensitive content.",
+          "confidence": 1.0
+        },
+        {
+          "path": "source.title",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Title of the source is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarsToCheck",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar IDs to check for conflicts",
+          "bands": [
+            {
+              "level": "high",
+              "when": "includes `aurora-crew-roster` or `aurora-maintenance` calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "includes any other calendar with sensitive content",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "only includes non-sensitive calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies crew-roster and maintenance calendars as authoritative operational records.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar ID to check for conflicts",
+          "bands": [
+            {
+              "level": "high",
+              "when": "is `aurora-crew-roster` or `aurora-maintenance` calendar",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "is any other sensitive calendar",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "is a non-sensitive calendar",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy specifies crew-roster and maintenance calendars as authoritative operational records.",
+          "confidence": 1.0
+        },
+        {
+          "path": "duplicateSimilarityThreshold",
+          "classification": "RANGE",
+          "subtype": "percentage",
+          "range": {
+            "minimum": 0,
+            "maximum": 1,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "value is around the default (0.7)",
+              "min": 0.65,
+              "max": 0.75
+            },
+            {
+              "level": "medium",
+              "when": "value is significantly lower or higher than the default",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "schema",
+          "reason": "Schema defines minimum and maximum values.",
+          "confidence": 1.0
+        },
+        {
+          "path": "allowDuplicates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Boolean flag that does not select or name a specific asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventType",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "type of event",
+          "bands": [
+            {
+              "level": "high",
+              "when": "is `outOfOffice` or `workingLocation`",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "is `focusTime`",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "is `default`",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Out of Office and Working Location events require Google Workspace and only work on primary calendar, making them more sensitive.",
+          "confidence": 1.0
+        },
+        {
+          "path": "focusTimeProperties.autoDeclineMode",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum that changes behavior but not the context of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "focusTimeProperties.chatStatus",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum that changes behavior but not the context of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "focusTimeProperties.declineMessage",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text message that does not select or name a specific asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "outOfOfficeProperties.autoDeclineMode",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum that changes behavior but not the context of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "outOfOfficeProperties.declineMessage",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text message that does not select or name a specific asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.type",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "type of working location",
+          "bands": [
+            {
+              "level": "low",
+              "when": "homeOffice or customLocation",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "officeLocation",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The type of working location changes the context of the event.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.label",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The label is free text meant for a person to read.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.buildingId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "building identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "any buildingId",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The buildingId identifies a specific location within the organization.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "floor identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "any floorId",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The floorId identifies a specific location within the organization.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.floorSectionId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "floor section identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "any floorSectionId",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The floorSectionId identifies a specific location within the organization.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.officeLocation.deskId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "desk identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "any deskId",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The deskId identifies a specific location within the organization.",
+          "confidence": 1.0
+        },
+        {
+          "path": "workingLocationProperties.customLocation.label",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The label is free text meant for a person to read.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 31,
+      "warnings": []
+    },
+    {
+      "tool_name": "create-events",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent."
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "default account for all events",
+          "bands": [
+            {
+              "level": "medium",
+              "when": "any value not listed in the policy as sensitive or public"
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The account is a principal that can change the context of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "default calendar ID for all events",
+          "bands": [
+            {
+              "level": "high",
+              "when": "values 'aurora-crew-roster' or 'aurora-maintenance'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "any other value not listed in the policy as sensitive or public"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Special-value rules prohibit writes to specific calendars.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The timezone is a setting that does not select or name something.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sendUpdates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The notification setting is a mode that does not select or name something.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": 1,
+            "maximum": 50,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 10 events",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "between 10 and 40 events",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "above about 40 events",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The number of events created at once can affect the risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].summary",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The event title is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].start",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours (9 to 18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "edges of usual working hours (7 to 9 and 18 to 22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "outside usual working hours (22 to 7)",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The time of the event can affect its risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].end",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours (9 to 18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "edges of usual working hours (7 to 9 and 18 to 22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "outside usual working hours (22 to 7)",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The time of the event can affect its risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "override calendar ID for this event",
+          "bands": [
+            {
+              "level": "high",
+              "when": "values 'aurora-crew-roster' or 'aurora-maintenance'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "any other value not listed in the policy as sensitive or public"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Special-value rules prohibit writes to specific calendars.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "override account for this event",
+          "bands": [
+            {
+              "level": "medium",
+              "when": "any value not listed in the policy as sensitive or public"
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The account is a principal that can change the context of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Timezone is a setting that does not affect risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].description",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Description is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].location",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Location is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].attendees",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 5 attendees",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "6 to about 20 attendees",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "above about 20 attendees, since it involves many people at once.",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Number of attendees affects the scope and risk of the event.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].attendees[].email",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Email address of the attendee",
+          "bands": [
+            {
+              "level": "low",
+              "when": "internal Aurora Airways email addresses",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "external email addresses, as they can leak information outside the organization.",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "External attendees trigger outbound invite emails which are unrecallable once sent.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].attendees[].displayName",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Display name is free text meant for a person.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].attendees[].optional",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Optional status is a setting that does not affect risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].attendees[].responseStatus",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Response status is a setting that does not affect risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].colorId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Color ID is a setting that does not affect risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].reminders.useDefault",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Use default reminders is a setting that does not affect risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].reminders.overrides",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Array of custom reminders is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].reminders.overrides[].method",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum for reminder method is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].reminders.overrides[].minutes",
+          "classification": "RANGE",
+          "subtype": "duration",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": "minutes"
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 30 minutes before the event",
+              "min": null,
+              "max": 30
+            },
+            {
+              "level": "medium",
+              "when": "between 30 and 120 minutes before the event",
+              "min": 30,
+              "max": 120
+            },
+            {
+              "level": "high",
+              "when": "above about 120 minutes before the event",
+              "min": 120,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred bands based on common practice for reminder times.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].recurrence",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Array of recurrence rules is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].recurrence[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "String for recurrence rule is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].transparency",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum for event transparency is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].visibility",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event visibility level",
+          "bands": [
+            {
+              "level": "low",
+              "when": "'default' or 'public'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "'private'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "'confidential'",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred bands based on the sensitivity of visibility levels.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].guestsCanInviteOthers",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Boolean for guest permissions is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].guestsCanModify",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Boolean for guest permissions is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].guestsCanSeeOtherGuests",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Boolean for guest permissions is IGNORE as it does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].anyoneCanAddSelf",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Boolean flag that does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].sendUpdates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum that changes behavior but not the context or asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].conferenceData.createRequest.requestId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Unique ID for idempotency does not select an asset or have a meaningful magnitude.",
+          "confidence": 1.0
+        },
+        {
+          "path": "events[].conferenceData.createRequest.conferenceSolutionKey.type",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum that changes behavior but not the context or asset.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 5,
+      "warnings": []
+    },
+    {
+      "tool_name": "update-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "contacts",
+            "description": "One record per person, reachable through attendee fields on any event \u2014 identifies real individuals across the whole directory."
+          },
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent."
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          },
+          {
+            "arguments": "`attendees[].email`",
+            "rule": "An address outside the org sends an unrecallable invitation email under the org's identity.",
+            "gates_asset": "`outbound-invite-email`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account",
+          "bands": [
+            {
+              "level": "low",
+              "when": "accounts not listed as sensitive assets"
+            },
+            {
+              "level": "high",
+              "when": "sensitive accounts like exec or regulatory calendars"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists specific calendar types as sensitive.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar container",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary operations-team calendars"
+            },
+            {
+              "level": "high",
+              "when": "executive or regulatory calendars"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists specific calendar types as sensitive.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "events on ordinary operations-team calendars"
+            },
+            {
+              "level": "high",
+              "when": "events on executive or regulatory calendars"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists specific calendar types as sensitive.",
+          "confidence": 1.0
+        },
+        {
+          "path": "summary",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text meant for a person or search.",
+          "confidence": 1.0
+        },
+        {
+          "path": "description",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text meant for a person or search.",
+          "confidence": 1.0
+        },
+        {
+          "path": "start",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours"
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges"
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends and holidays"
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred from typical working hours.",
+          "confidence": 1.0
+        },
+        {
+          "path": "end",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "usual working hours"
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges"
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends and holidays"
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred from typical working hours.",
+          "confidence": 1.0
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Timezone setting does not select a sensitive asset.",
+          "confidence": 1.0
+        },
+        {
+          "path": "location",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Free text meant for a person or search.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "list of attendees",
+          "bands": [
+            {
+              "level": "low",
+              "when": "internal attendees"
+            },
+            {
+              "level": "high",
+              "when": "external attendees"
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy states external attendees trigger unrecallable emails.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attendees[].email",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Email address of the attendee",
+          "bands": [
+            {
+              "level": "high",
+              "when": "an external email address",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "an internal email address",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "An external attendee triggers an unrecallable outbound invite.",
+          "confidence": 1.0
+        },
+        {
+          "path": "colorId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Color ID is a cosmetic setting.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.useDefault",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean toggle for default reminders.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Custom reminders are a configuration detail.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides[].method",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Reminder method is a configuration detail.",
+          "confidence": 1.0
+        },
+        {
+          "path": "reminders.overrides[].minutes",
+          "classification": "RANGE",
+          "subtype": "duration",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": "minutes"
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "a typical reminder time (e.g., 15-60 minutes)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "an unusual reminder time (e.g., less than 15 or more than 60 minutes)",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Typical reminder times are low risk, while unusual ones may be out of pattern.",
+          "confidence": 1.0
+        },
+        {
+          "path": "recurrence[]",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Recurrence rules are a configuration detail.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sendUpdates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Notification setting is a configuration detail.",
+          "confidence": 1.0
+        },
+        {
+          "path": "modificationScope",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "Modification scope for recurring events",
+          "bands": [
+            {
+              "level": "low",
+              "when": "\"thisEventOnly\"",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "\"thisAndFollowing\"",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "\"all\"",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Modifying all events is the most impactful.",
+          "confidence": 1.0
+        },
+        {
+          "path": "originalStartTime",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "during usual working hours (9 to 18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges (7 to 9, 18 to 22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred from the tool's purpose and common practice.",
+          "confidence": 0.85
+        },
+        {
+          "path": "futureStartDate",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "during usual working hours (9 to 18)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning and evening edges (7 to 9, 18 to 22)",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "late night, weekends, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Inferred from the tool's purpose and common practice.",
+          "confidence": 0.85
+        },
+        {
+          "path": "checkConflicts",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean flag that does not select or name an asset.",
+          "confidence": 0.95
+        },
+        {
+          "path": "calendarsToCheck",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar IDs to check for conflicts",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary operations-team scheduling calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "executive or regulatory exposure calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "authoritative operational records (crew roster, maintenance)",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy defines the risk level of different calendar types.",
+          "confidence": 0.95
+        },
+        {
+          "path": "calendarsToCheck[]",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar IDs to check for conflicts",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary operations-team scheduling calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "executive or regulatory exposure calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "authoritative operational records (crew roster, maintenance)",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy defines the risk level of different calendar types.",
+          "confidence": 0.95
+        },
+        {
+          "path": "conferenceData.createRequest.requestId",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A unique ID for ensuring idempotency.",
+          "confidence": 0.95
+        },
+        {
+          "path": "conferenceData.createRequest.conferenceSolutionKey.type",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "An enum that does not change the context of the call.",
+          "confidence": 0.95
+        },
+        {
+          "path": "transparency",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "An enum that does not change the context of the call.",
+          "confidence": 0.95
+        },
+        {
+          "path": "visibility",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event visibility level",
+          "bands": [
+            {
+              "level": "low",
+              "when": "default or public visibility",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "private visibility",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "confidential visibility",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Visibility levels can affect the confidentiality of events.",
+          "confidence": 0.95
+        },
+        {
+          "path": "guestsCanInviteOthers",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean flag that does not select or name an asset.",
+          "confidence": 0.95
+        },
+        {
+          "path": "guestsCanModify",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean switch that changes behavior but not the context or target of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "guestsCanSeeOtherGuests",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean switch that changes behavior but not the context or target of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "anyoneCanAddSelf",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A boolean switch that changes behavior but not the context or target of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments",
+          "classification": "RANGE",
+          "subtype": "count",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 5 attachments",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "6 to about 20 attachments",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "above about 20 attachments, indicating a large number of files being attached at once.",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The number of attachments can indicate the scale and sensitivity of the event's content.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].fileUrl",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "URL link to the attachment",
+          "bands": [
+            {
+              "level": "low",
+              "when": "public or shared files",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "files with limited access but not sensitive content",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "sensitive or confidential files, such as those containing personal data or credentials",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The URL can point to sensitive content that affects the risk of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].title",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "A title is free text meant for a person to read and does not affect the risk of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].mimeType",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The MIME type is a format specifier and does not affect the risk of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].iconLink",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The icon link is a URL for an icon and does not affect the risk of the call.",
+          "confidence": 1.0
+        },
+        {
+          "path": "attachments[].fileId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "ID of the attached Google Drive file",
+          "bands": [
+            {
+              "level": "low",
+              "when": "public or shared files",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "files with limited access but not sensitive content",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "sensitive or confidential files, such as those containing personal data or credentials",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The file ID can point to sensitive content that affects the risk of the call.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 28,
+      "warnings": []
+    },
+    {
+      "tool_name": "delete-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-exec",
+            "description": "Officers' calendar: board sessions, fleet-order decisions, route-launch go/no-gos. A title alone discloses a commercial decision before its public filing \u2014 a disclosure that can't be undone once read (Stakeholder: Executives)."
+          },
+          {
+            "asset": "aurora-regulatory",
+            "description": "Regulator audits, certification inspections, safety-board reviews. Attendees identify the inspector and which report is under review (Stakeholder: Regulators)."
+          },
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "outbound-invite-email",
+            "description": "Mail that leaves the org under its own identity whenever an event with an external attendee is created, changed, or cancelled \u2014 unrecallable once sent."
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`calendarId`",
+            "rule": "The crew-roster and maintenance calendars are authoritative operational records: any write there is prohibited outright.",
+            "gates_asset": "`aurora-crew-roster`, `aurora-maintenance`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary accounts like 'work'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "accounts not listed in policy but with sensitive context",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "executive or regulatory accounts",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists sensitive executive and regulatory contexts.",
+          "confidence": 1.0
+        },
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar container",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary calendars like 'primary'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "calendars not listed in policy but with sensitive context",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "executive, regulatory, crew roster or maintenance calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists sensitive executive, regulatory, and operational contexts.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event identifier",
+          "bands": [
+            {
+              "level": "low",
+              "when": "ordinary event IDs on non-sensitive calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "event IDs not listed in policy but with sensitive context",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "IDs of events on executive, regulatory, crew roster or maintenance calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy lists sensitive executive, regulatory, and operational contexts.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sendUpdates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Enum values do not change which event is deleted.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 4,
+      "warnings": []
+    },
+    {
+      "tool_name": "get-freebusy",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "free-busy-availability",
+            "description": "Busy/free blocks with no titles or attendees attached. Knowing someone is busy discloses far less than knowing why."
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account(s)",
+          "bands": [
+            {
+              "level": "low",
+              "when": "common accounts like 'work' or 'personal'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual or less common account nicknames",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "accounts with sensitive information, such as executive calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Accounts can vary in sensitivity based on their role and the information they contain.",
+          "confidence": 0.95
+        },
+        {
+          "path": "calendars",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar(s) and/or group(s)",
+          "bands": [
+            {
+              "level": "low",
+              "when": "common calendars or groups like 'work' or 'personal'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual or less common calendar IDs",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "sensitive calendars such as executive or regulatory review calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Calendars can vary in sensitivity based on their role and the information they contain.",
+          "confidence": 0.95
+        },
+        {
+          "path": "calendars[].id",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar ID(s)",
+          "bands": [
+            {
+              "level": "low",
+              "when": "common calendar IDs like 'primary'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual or less common calendar IDs",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "sensitive calendar IDs such as executive or regulatory review calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Calendar IDs can vary in sensitivity based on their role and the information they contain.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeMin",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "within usual working hours and days",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning or late evening, weekends",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "outside usual working hours and days, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Time ranges outside normal business hours can be more sensitive.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeMax",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "within usual working hours and days",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "early morning or late evening, weekends",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "outside usual working hours and days, holidays",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "Time ranges outside normal business hours can be more sensitive.",
+          "confidence": 0.95
+        },
+        {
+          "path": "timeZone",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "Time zone is a setting that does not affect the sensitivity of the call.",
+          "confidence": 0.95
+        },
+        {
+          "path": "groupExpansionMax",
+          "classification": "RANGE",
+          "subtype": "limit",
+          "range": {
+            "minimum": -9007199254740991,
+            "maximum": 100,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 30 calendars expanded per group",
+              "min": -9007199254740991,
+              "max": 30
+            },
+            {
+              "level": "medium",
+              "when": "between 30 and 80 calendars expanded per group",
+              "min": 30,
+              "max": 80
+            },
+            {
+              "level": "high",
+              "when": "above about 80 calendars expanded per group",
+              "min": 80,
+              "max": 100
+            }
+          ],
+          "bands_source": "schema",
+          "reason": "The schema defines the maximum limit.",
+          "confidence": 0.95
+        },
+        {
+          "path": "calendarExpansionMax",
+          "classification": "RANGE",
+          "subtype": "limit",
+          "range": {
+            "minimum": -9007199254740991,
+            "maximum": 50,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "up to about 20 calendars expanded",
+              "min": -9007199254740991,
+              "max": 20
+            },
+            {
+              "level": "medium",
+              "when": "between 20 and 40 calendars expanded",
+              "min": 20,
+              "max": 40
+            },
+            {
+              "level": "high",
+              "when": "above about 40 calendars expanded",
+              "min": 40,
+              "max": 50
+            }
+          ],
+          "bands_source": "schema",
+          "reason": "The schema defines the maximum limit.",
+          "confidence": 0.95
+        }
+      ],
+      "declared_arguments": 7,
+      "warnings": []
+    },
+    {
+      "tool_name": "get-current-time",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar account",
+          "bands": [
+            {
+              "level": "low",
+              "when": "accounts with limited access or low sensitivity",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "accounts with moderate access or medium sensitivity",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "accounts with high access or high sensitivity, such as executive calendars",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The account can affect the context of calendar operations and its sensitivity varies.",
+          "confidence": 0.85
+        },
+        {
+          "path": "timeZone",
+          "classification": "RANGE",
+          "subtype": "temporal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [
+            {
+              "level": "low",
+              "when": "common time zones used within the organization's operational scope",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "less common or international time zones outside the organization's primary operational scope",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "high",
+              "when": "time zones that could affect critical operations, such as those in regions with different regulatory requirements",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The time zone can impact the scheduling and timing of events which may have varying levels of operational importance.",
+          "confidence": 0.85
+        }
+      ],
+      "declared_arguments": 2,
+      "warnings": []
+    },
+    {
+      "tool_name": "respond-to-event",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "aurora-crew-roster",
+            "description": "Crew duty periods, standby blocks, recurrent checks. Altering an entry changes a real operational commitment \u2014 a crew member can be pushed over a flight-time limit \u2014 independent of whether the entry is otherwise secret (Stakeholder: Flight crew & operations)."
+          },
+          {
+            "asset": "aurora-maintenance",
+            "description": "Hangar checks and aircraft-on-ground windows per aircraft tail. Moving a slot moves an airworthiness deadline \u2014 same real-commitment reasoning as the crew roster (Stakeholder: Engineering)."
+          },
+          {
+            "asset": "aurora-team",
+            "description": "Ordinary operations-team scheduling. Day-to-day and reversible; no executive or regulator exposure."
+          },
+          {
+            "asset": "event-records",
+            "description": "Generic target of any create, update, or delete \u2014 any event on any calendar in scope."
+          },
+          {
+            "asset": "rsvp-state",
+            "description": "Accept/decline state on a single invitation \u2014 state only, no content."
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "calendarId",
+          "classification": "ASSET",
+          "subtype": "container",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "calendar container",
+          "bands": [
+            {
+              "level": "high",
+              "when": "identifies sensitive operational commitments like crew duty periods or maintenance windows",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "identifies ordinary operations-team scheduling calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "identifies generic event records without specific operational impact",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy identifies sensitive assets like crew duty periods and maintenance windows as high risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "eventId",
+          "classification": "ASSET",
+          "subtype": "content_locator",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "event identifier",
+          "bands": [
+            {
+              "level": "high",
+              "when": "identifies sensitive operational commitments like crew duty periods or maintenance windows",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "identifies ordinary operations-team scheduling events",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "identifies generic event records without specific operational impact",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy identifies sensitive assets like crew duty periods and maintenance windows as high risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "account",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "account nickname",
+          "bands": [
+            {
+              "level": "high",
+              "when": "identifies accounts with access to sensitive operational commitments like crew duty periods or maintenance windows",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "identifies accounts with access to ordinary operations-team scheduling calendars",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "low",
+              "when": "identifies generic event records without specific operational impact",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Policy identifies sensitive assets like crew duty periods and maintenance windows as high risk.",
+          "confidence": 1.0
+        },
+        {
+          "path": "response",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The response is a categorical choice that does not select or identify sensitive assets.",
+          "confidence": 1.0
+        },
+        {
+          "path": "comment",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The comment is free text meant for a person and does not select or identify sensitive assets.",
+          "confidence": 1.0
+        },
+        {
+          "path": "modificationScope",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The modification scope is a categorical choice that does not select or identify sensitive assets.",
+          "confidence": 1.0
+        },
+        {
+          "path": "originalStartTime",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The original start time is a temporal value that does not select or identify sensitive assets.",
+          "confidence": 1.0
+        },
+        {
+          "path": "sendUpdates",
+          "classification": "IGNORE",
+          "subtype": null,
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": null,
+          "bands": [],
+          "bands_source": null,
+          "reason": "The send updates option is a categorical choice that does not select or identify sensitive assets.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 8,
+      "warnings": []
+    },
+    {
+      "tool_name": "manage-accounts",
+      "policy_slice": {
+        "org_context": "Industry / function: Commercial aviation \u2014 Aurora Airways' workplace-\nservices team, on the org's real Google Calendar\ndeployment.\nRegulatory environment: Aviation safety / airworthiness oversight \u2014\ncertification inspections and safety-board\nreviews appear directly on this calendar.\nStakeholders & their stake: Executives \u2014 fleet-order and route-launch\ndecisions must stay unannounced until filed.\nRegulators \u2014 audit integrity and inspector\nidentity must not leak ahead of a review.\nFlight crew & operations \u2014 duty periods and\nstandby blocks are safety-critical; an altered\nblock can push a crew over a flight-time limit.\nEngineering \u2014 maintenance and aircraft-on-ground\nwindows set airworthiness deadlines.\nScope boundary: Covers the 13-tool `calendar:aurora` surface\nonly. Excludes the rostering and engineering\nsystems of record \u2014 this calendar mirrors their\ncommitments but does not author them.",
+        "normal_workflow": "Normal workflow: Scheduling assistance for a named person: find a free slot,\nread the week, create or move one meeting on a team or\nexecutive-assistant calendar, RSVP. A handful of calls per\nrequest, always tied to a human's ask.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "connected-account-config",
+            "description": "Which Google accounts are linked and under what OAuth scope \u2014 this is the reach of every other tool in the catalog, so it matters independent of any single event's content."
+          },
+          {
+            "asset": "account-directory",
+            "description": "The list of linked accounts \u2014 existence only, no scope detail."
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`action`",
+            "rule": "Any action that adds or changes a linked account changes the reach of every other tool.",
+            "gates_asset": "`connected-account-config`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "action",
+          "classification": "ASSET",
+          "subtype": "category",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "the action to perform on accounts",
+          "bands": [
+            {
+              "level": "low",
+              "when": "'list' action",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "'add' or 'remove' actions",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "policy",
+          "reason": "Special-value rule states that adding or changing a linked account changes the reach of every other tool.",
+          "confidence": 1.0
+        },
+        {
+          "path": "account_id",
+          "classification": "ASSET",
+          "subtype": "principal",
+          "range": {
+            "minimum": null,
+            "maximum": null,
+            "unit": null
+          },
+          "asset_concept": "the nickname of the Google account",
+          "bands": [
+            {
+              "level": "low",
+              "when": "commonly used nicknames like 'work' or 'personal'",
+              "min": null,
+              "max": null
+            },
+            {
+              "level": "medium",
+              "when": "unusual or sensitive account names",
+              "min": null,
+              "max": null
+            }
+          ],
+          "bands_source": "inferred",
+          "reason": "The account nickname can represent different levels of sensitivity.",
+          "confidence": 1.0
+        }
+      ],
+      "declared_arguments": 2,
+      "warnings": []
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": []
+}

@@ -1,0 +1,224 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22955819",
+  "prompt_sha256": "3ad3af0ddb0a66e1d7baad1cf11a4ef8ff646655ce7cbbf32a010a247aee4e97",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 3,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "table"
+      ],
+      "rule_problems": {
+        "table": [
+          "levels [1, 4] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "usernames"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "passwords"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "credit card"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "personal data"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "changelog"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "rates the sensitivity of the query's content",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "sql"
+      ],
+      "rule_problems": {
+        "sql": [
+          "levels [1] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "critical_table"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "sensitive_table"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "internal_table"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "public_table"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "test_table"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "rates based on the table name, covering all levels",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "password"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "credit_card"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "personal_data"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "public_info"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "test_data"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The values carried in the row insertion.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

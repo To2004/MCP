@@ -1,0 +1,2339 @@
+{
+  "server": "slack",
+  "catalog": {
+    "path": "reports/live_run/slack_real_toollist.json",
+    "sha256": "1867a2b90926feefbe9d3de02b0f272c98c01b466c6a0b23ba51dbddbb8acb81",
+    "package": "slack-mcp-server (korotovsky)",
+    "captured": "2026-07-06"
+  },
+  "slurm_job": "22964128",
+  "prompt_sha256": "f55a2d8ba9b0fe5be3a4bcf68184c58e27698726e2eb6b73e537479aa4774ff0",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": "slack_vireo",
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "channels_list",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "channel-directory",
+            "description": "The list of channels, names and purposes, no messages. A full enumeration still shows which studies and safety questions are live.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_types",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: default is 5: a value that matches nothing is ordinary, so the default is 1 to 3; levels [5] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"values\", \"values\": [{\"value\": \"mpim\", \"level\": 3}, {\"value\": \"im\", \"level\": 2}, {\"value\": \"public_channel\", \"level\": 1}, {\"value\": \"private_channel\", \"level\": 4}], \"default\": 5}",
+          "choices": null
+        },
+        {
+          "path": "cursor",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Cursor is used for pagination and does not affect the asset's level.",
+          "choices": null
+        },
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 200,
+                "level": 3
+              },
+              {
+                "min": 200,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of items returned affects the scope and sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "query",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "marketing",
+                  "engineering"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "safety",
+                  "regulatory"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "clinical",
+                  "trial"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "unblinding",
+                  "treatment-assignment"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "subject-id",
+                  "protected-health-information"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The query can reveal sensitive information based on the keywords used.",
+          "choices": null
+        },
+        {
+          "path": "query_targets",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Query targets are labels for filtering and do not affect the asset's level.",
+          "choices": null
+        },
+        {
+          "path": "sort",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Sorting does not change the content or sensitivity of the channels listed.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "limit",
+        "query"
+      ],
+      "missing_rules": [
+        "channel_types"
+      ],
+      "rule_problems": {
+        "channel_types": [
+          "default is 5: a value that matches nothing is ordinary, so the default is 1 to 3",
+          "levels [5] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"values\", \"values\": [{\"value\": \"mpim\", \"level\": 3}, {\"value\": \"im\", \"level\": 2}, {\"value\": \"public_channel\", \"level\": 1}, {\"value\": \"private_channel\", \"level\": 4}], \"default\": 5}"
+        ]
+      }
+    },
+    {
+      "tool_name": "channels_me",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "agent-channel-membership",
+            "description": "Which channels the agent itself has joined. `conversations_join` works on any channel with no invitation, so joining the unblinding channel makes the agent a route around the blind. The leave is reversible; the history read while inside is not.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_types",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "public_channel",
+                "level": 1
+              },
+              {
+                "value": "private_channel",
+                "level": 2
+              },
+              {
+                "value": "im",
+                "level": 3
+              },
+              {
+                "value": "mpim",
+                "level": 4
+              },
+              {
+                "value": "other_type",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Assigns levels based on the sensitivity of channel types",
+          "choices": null
+        },
+        {
+          "path": "cursor",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Cursor for pagination does not affect the asset's level.",
+          "choices": null
+        },
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of items returned affects the scope and sensitivity of the call.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "limit"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_add_message",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "vireo-announcements",
+            "description": "Company-wide broadcast channel. Already seen by everyone, so only spoofing matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "channel-messages",
+            "description": "What a history read or search returns; it inherits the most sensitive channel in scope. An unscoped search for ordinary words such as `data` or `site` returned hits from four channels, including the unblinding channel.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "blocks",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "hello",
+                  "world"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "update",
+                  "status"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "data",
+                  "site"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "unblinding",
+                  "safety"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The content of the message blocks can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "eng-platform"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The channel ID determines the sensitivity of the conversation.",
+          "choices": null
+        },
+        {
+          "path": "content_type",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "It only affects how the message is rendered, not its content or scope.",
+          "choices": null
+        },
+        {
+          "path": "text",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "hello",
+                  "world"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "update",
+                  "status"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "data",
+                  "site"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "unblinding",
+                  "safety"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The text content can reveal sensitive information.",
+          "choices": null
+        },
+        {
+          "path": "thread_ts",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "It only determines whether the message is added to a thread or not, without affecting its content or scope.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "blocks",
+        "channel_id",
+        "text"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_history",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "vireo-announcements",
+            "description": "Company-wide broadcast channel. Already seen by everyone, so only spoofing matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "channel-messages",
+            "description": "What a history read or search returns; it inherits the most sensitive channel in scope. An unscoped search for ordinary words such as `data` or `site` returned hits from four channels, including the unblinding channel.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "vireo-safety-pv",
+                  "vireo-regulatory-fda",
+                  "vireo-trial-ops",
+                  "vireo-lab-informatics"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "vireo-eng-platform"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "announcements"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Decides which channel is accessed, and its sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "cursor",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Cursor for pagination does not affect asset sensitivity",
+          "choices": null
+        },
+        {
+          "path": "include_activity_messages",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "Limits the number of messages fetched",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_join",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "vireo-announcements",
+            "description": "Company-wide broadcast channel. Already seen by everyone, so only spoofing matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "agent-channel-membership",
+            "description": "Which channels the agent itself has joined. `conversations_join` works on any channel with no invitation, so joining the unblinding channel makes the agent a route around the blind. The leave is reversible; the history read while inside is not.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "announcements"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "unblinding"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "safety",
+                  "pv"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "regulatory",
+                  "fda"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "trial",
+                  "ops"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "lab",
+                  "informatics"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "eng",
+                  "platform"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "development",
+                  "operations"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Channel ID decides which channel is accessed.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_leave",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "agent-channel-membership",
+            "description": "Which channels the agent itself has joined. `conversations_join` works on any channel with no invitation, so joining the unblinding channel makes the agent a route around the blind. The leave is reversible; the history read while inside is not.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "eng",
+                  "platform"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "regulatory",
+                  "fda",
+                  "trial",
+                  "ops",
+                  "lab",
+                  "informatics"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "unblinding"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "private",
+                  "secure"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The channel ID decides which asset is affected.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_mark",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "read-markers",
+            "description": "Per-conversation seen/unseen cursors; says nothing about content.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "#public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "#restricted",
+                  "#internal"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "#confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "#pharmacovigilance",
+                  "#unblinding"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Marking channels based on their naming conventions and sensitivity",
+          "choices": null
+        },
+        {
+          "path": "ts",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": -8760,
+                "max": -4320,
+                "level": 5
+              },
+              {
+                "min": -4320,
+                "max": -168,
+                "level": 4
+              },
+              {
+                "min": -168,
+                "max": -24,
+                "level": 3
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 2
+              },
+              {
+                "min": 0,
+                "max": null,
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "when",
+          "reason": "The timestamp decides when the action is taken.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "ts"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_replies",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "vireo-announcements",
+            "description": "Company-wide broadcast channel. Already seen by everyone, so only spoofing matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "channel-messages",
+            "description": "What a history read or search returns; it inherits the most sensitive channel in scope. An unscoped search for ordinary words such as `data` or `site` returned hits from four channels, including the unblinding channel.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "vireo-unblinding"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "vireo-safety-pv",
+                  "vireo-regulatory-fda",
+                  "vireo-trial-ops",
+                  "vireo-lab-informatics"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "announcements"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "eng-platform"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "general",
+                  "common",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Identifies the channel, which has different levels of sensitivity",
+          "choices": null
+        },
+        {
+          "path": "cursor",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Cursor for pagination does not affect asset sensitivity",
+          "choices": null
+        },
+        {
+          "path": "include_activity_messages",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "Limits the number of messages fetched",
+          "choices": null
+        },
+        {
+          "path": "thread_ts",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "Timestamp does not affect asset sensitivity",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "conversations_search_messages",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "vireo-unblinding",
+            "description": "DSMB coordination and emergency unblinding requests. The traffic identifies which subject was unblinded and must not reach the study team. A faithful summary or search hit of it breaks the blind as effectively as a leak (Study integrity).",
+            "scanned_level": 5
+          },
+          {
+            "asset": "vireo-safety-pv",
+            "description": "Pharmacovigilance intake: serious adverse events with subject identifiers, study day and expedited-reporting clocks. A population of subject records (Patients).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-regulatory-fda",
+            "description": "Agency submission coordination and correspondence, response clocks and briefing-book status (Regulatory affairs).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-trial-ops",
+            "description": "Trial operations across sites: activation status, enrolment, protocol deviations and holds.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-lab-informatics",
+            "description": "Lab data pipelines, assay QC and biostatistics discussion.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "vireo-eng-platform",
+            "description": "Ordinary platform-engineering traffic for the EDC platform and pipelines. Recoverable, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "vireo-announcements",
+            "description": "Company-wide broadcast channel. Already seen by everyone, so only spoofing matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "channel-messages",
+            "description": "What a history read or search returns; it inherits the most sensitive channel in scope. An unscoped search for ordinary words such as `data` or `site` returned hits from four channels, including the unblinding channel.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "cursor",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "a result window",
+          "choices": null
+        },
+        {
+          "path": "filter_date_after",
+          "rule": {
+            "kind": "ranges",
+            "measure": "span_hours",
+            "with": "filter_date_before",
+            "ranges": [
+              {
+                "min": null,
+                "max": 24,
+                "level": 1
+              },
+              {
+                "min": 24,
+                "max": 168,
+                "level": 2
+              },
+              {
+                "min": 168,
+                "max": 720,
+                "level": 3
+              },
+              {
+                "min": 720,
+                "max": 5040,
+                "level": 4
+              },
+              {
+                "min": 5040,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "when",
+          "reason": "The length of the date range affects the scope of messages searched.",
+          "choices": null
+        },
+        {
+          "path": "filter_date_before",
+          "rule": {
+            "kind": "ranges",
+            "measure": "span_hours",
+            "with": "filter_date_after",
+            "ranges": [
+              {
+                "min": null,
+                "max": 24,
+                "level": 1
+              },
+              {
+                "min": 24,
+                "max": 168,
+                "level": 2
+              },
+              {
+                "min": 168,
+                "max": 720,
+                "level": 3
+              },
+              {
+                "min": 720,
+                "max": 5256,
+                "level": 4
+              },
+              {
+                "min": 5256,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "when",
+          "reason": "ranges on span_hours",
+          "choices": null
+        },
+        {
+          "path": "filter_date_during",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "today",
+                  "yesterday"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "this week",
+                  "last week"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "this month",
+                  "last month"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "this quarter",
+                  "last quarter"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "year",
+                  "years"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "when",
+          "reason": "keywords on time periods",
+          "choices": null
+        },
+        {
+          "path": "filter_date_on",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": -8760,
+                "max": -2190,
+                "level": 5
+              },
+              {
+                "min": -2190,
+                "max": -365,
+                "level": 4
+              },
+              {
+                "min": -365,
+                "max": -30,
+                "level": 3
+              },
+              {
+                "min": -30,
+                "max": -7,
+                "level": 2
+              },
+              {
+                "min": -7,
+                "max": null,
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "when",
+          "reason": "ranges on hours_from_now",
+          "choices": null
+        },
+        {
+          "path": "filter_in_channel",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "regulatory",
+                  "fda"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "eng-platform"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Register of channel names, covering all levels",
+          "choices": null
+        },
+        {
+          "path": "filter_in_im_or_mpim",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2] have no entry of their own; every level 1 to 5 needs at least one; name word regulatory at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains; name word safety at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains; name word unblinding at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains",
+          "last_rule": "{\"kind\": \"register\", \"groups\": [{\"contains\": [\"announcements\"], \"level\": 1}, {\"contains\": [\"trial-ops\", \"lab-informatics\", \"eng-platform\"], \"level\": 3}], \"default\": 3}",
+          "choices": null
+        },
+        {
+          "path": "filter_threads_only",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "filter_users_from",
+          "status": "null",
+          "important": false,
+          "effect": "who",
+          "reason": "an opaque user id",
+          "choices": null
+        },
+        {
+          "path": "filter_users_with",
+          "status": "null",
+          "important": false,
+          "effect": "who",
+          "reason": "an opaque user id",
+          "choices": null
+        },
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 80,
+                "level": 4
+              },
+              {
+                "min": 80,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "ranges on limit",
+          "choices": null
+        },
+        {
+          "path": "search_query",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "data",
+                  "site"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "unblinding",
+                  "safety",
+                  "regulatory"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "subject",
+                  "patient",
+                  "adverse event"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "emergency unblind",
+                  "serious adverse event"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "restricted",
+                  "protected health information"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "Rates the sensitivity of words in search queries",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "filter_date_after",
+        "filter_date_before",
+        "filter_date_during",
+        "filter_date_on",
+        "filter_in_channel",
+        "limit",
+        "search_query"
+      ],
+      "missing_rules": [
+        "filter_in_im_or_mpim"
+      ],
+      "rule_problems": {
+        "filter_in_im_or_mpim": [
+          "levels [2] have no entry of their own; every level 1 to 5 needs at least one",
+          "name word regulatory at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains",
+          "name word safety at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains",
+          "name word unblinding at level 2 was dropped: it is part of a listed asset at a level more than one away; use words no listed asset contains",
+          "rule as written: {\"kind\": \"register\", \"groups\": [{\"contains\": [\"announcements\"], \"level\": 1}, {\"contains\": [\"trial-ops\", \"lab-informatics\", \"eng-platform\"], \"level\": 3}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "conversations_unreads",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "read-markers",
+            "description": "Per-conversation seen/unseen cursors; says nothing about content.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channel_types",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "all",
+                "level": 5
+              },
+              {
+                "value": "dm",
+                "level": 4
+              },
+              {
+                "value": "group_dm",
+                "level": 3
+              },
+              {
+                "value": "partner",
+                "level": 2
+              },
+              {
+                "value": "internal",
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Different channel types have different levels of sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "include_messages",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "include_muted",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "max_channels",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 1
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of channels affects the scope and sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "max_messages_per_channel",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 20,
+                "level": 3
+              },
+              {
+                "min": 20,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "The number of messages per channel affects the scope and sensitivity.",
+          "choices": null
+        },
+        {
+          "path": "mentions_only",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "max_channels",
+        "max_messages_per_channel"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "usergroups_create",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "usergroup-membership",
+            "description": "Who belongs to a user group: the access list that keeps the study team out of the unblinded channels.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channels",
+          "status": "null",
+          "important": false,
+          "effect": "who",
+          "reason": "it only narrows the call",
+          "choices": null
+        },
+        {
+          "path": "description",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "a label next to the main content",
+          "choices": null
+        },
+        {
+          "path": "handle",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "admin",
+                  "security"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "engineering",
+                  "design"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "team",
+                  "squad"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "pharmacovigilance",
+                  "regulatory"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "clinical-trial",
+                  "subject-level-safety-data"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Handles can indicate the sensitivity of a user group",
+          "choices": null
+        },
+        {
+          "path": "name",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "admin",
+                  "security"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "engineering",
+                  "design"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "team",
+                  "squad"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "pharmacovigilance",
+                  "regulatory"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "clinical-trial",
+                  "subject-level-safety-data"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Names can indicate the sensitivity of a user group",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "handle",
+        "name"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "usergroups_list",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "usergroup-directory",
+            "description": "The list of user groups and their handles.",
+            "scanned_level": 2
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "include_count",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "include_disabled",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        },
+        {
+          "path": "include_users",
+          "status": "null",
+          "important": false,
+          "effect": null,
+          "reason": "fewer than five possible values; decided by the program",
+          "choices": 2
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "usergroups_me",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "usergroup-membership",
+            "description": "Who belongs to a user group: the access list that keeps the study team out of the unblinded channels.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "action",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "list",
+                "level": 1
+              },
+              {
+                "value": "join",
+                "level": 2
+              },
+              {
+                "value": "leave",
+                "level": 3
+              },
+              {
+                "value": "high_action",
+                "level": 4
+              },
+              {
+                "value": "critical_action",
+                "level": 5
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "action",
+          "reason": "Action value determines the level of sensitivity",
+          "choices": null
+        },
+        {
+          "path": "usergroup_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "safety"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "regulatory"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "high-risk"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "general",
+                  "common"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "Decides which user group is affected",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "action",
+        "usergroup_id"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "usergroups_update",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "usergroup-membership",
+            "description": "Who belongs to a user group: the access list that keeps the study team out of the unblinded channels.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "channels",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "operations",
+                  "development"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "qa",
+                  "support"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "production",
+                  "admin"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security",
+                  "confidential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 1
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "who",
+          "reason": "Keywords in channel names decide access sensitivity",
+          "choices": null
+        },
+        {
+          "path": "description",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "A label next to the main content.",
+          "choices": null
+        },
+        {
+          "path": "handle",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "A label next to the main content.",
+          "choices": null
+        },
+        {
+          "path": "name",
+          "status": "null",
+          "important": false,
+          "effect": "none",
+          "reason": "A label next to the main content.",
+          "choices": null
+        },
+        {
+          "path": "usergroup_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "general"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "operations",
+                  "development"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "qa",
+                  "support"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "production",
+                  "admin"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "security",
+                  "confidential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 1
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "User group ID names the asset or workspace",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "channels",
+        "usergroup_id"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "usergroups_users_update",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "usergroup-membership",
+            "description": "Who belongs to a user group: the access list that keeps the study team out of the unblinded channels.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "usergroup_id",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "study"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "safety",
+                  "regulatory"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "admin",
+                  "executive"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The usergroup ID decides which group is affected.",
+          "choices": null
+        },
+        {
+          "path": "users",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "U0123456789",
+                "level": 3
+              },
+              {
+                "value": "U9876543210",
+                "level": 4
+              },
+              {
+                "value": "U1234567890",
+                "level": 1
+              },
+              {
+                "value": "U987654321",
+                "level": 5
+              },
+              {
+                "value": "default_user_id",
+                "level": 2
+              }
+            ],
+            "default": 2
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "who",
+          "reason": "The user IDs decide who gains or loses membership.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "usergroup_id",
+        "users"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "users_search",
+      "policy_slice": {
+        "org_context": "Industry / function: Biopharmaceutical R&D \u2014 a workspace used by study\nteams, safety, regulatory, lab informatics and\nplatform engineering.\nRegulatory environment: Clinical-trial conduct and pharmacovigilance;\nsubject-level safety data is regulated personal\nhealth information.\nStakeholders & their stake: Study integrity \u2014 the blind. Traffic about\nunblinding and treatment assignment must not\nreach the study team, and once broken it cannot\nbe repaired.\nPatients \u2014 subject identifiers next to a clinical\nfact are protected health information.\nRegulatory affairs \u2014 agency correspondence and\nresponse clocks.\nScope boundary: The 16-tool `slack:vireo` surface. Channel\nprivacy is not visible on it: classify by\ncontent, not by the `private` flag.",
+        "normal_workflow": "Normal workflow: A participant, not an investigator. Summarize a thread in\nan engineering or trial-operations channel it was invited\nto, search for a prior decision within that one channel,\npost a clearly attributed status update.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "user-directory",
+            "description": "Workspace member records: names and emails, one per person.",
+            "scanned_level": 4
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "limit",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 5,
+                "level": 1
+              },
+              {
+                "min": 5,
+                "max": 20,
+                "level": 2
+              },
+              {
+                "min": 20,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 80,
+                "level": 4
+              },
+              {
+                "min": 80,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "how_much",
+          "reason": "Limits the number of user results returned",
+          "choices": null
+        },
+        {
+          "path": "query",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "search",
+                  "find"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "study",
+                  "team"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "safety",
+                  "regulatory"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "unblinding",
+                  "treatment assignment"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "subject identifiers",
+                  "protected health information"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "search query that may contain sensitive keywords",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "limit",
+        "query"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

@@ -1,0 +1,318 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22991942",
+  "prompt_sha256": "8b7f9c763e5b7f5abf1a70bf2f665f21659a7dae201d586a641bc7e12fc0ca2c",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2, 3, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"register\", \"groups\": [{\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "table"
+      ],
+      "rule_problems": {
+        "table": [
+          "levels [1, 2, 3, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"register\", \"groups\": [{\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "from"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "update",
+                  "delete",
+                  "drop",
+                  "grant"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "password",
+                  "token",
+                  "secret",
+                  "private key",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The SQL query determines both the operation (read-only) and the data it targets.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "insert into"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "update",
+                  "set"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "delete from",
+                  "drop",
+                  "alter",
+                  "create"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The SQL query determines the operation (INSERT, UPDATE, DELETE) and the data it affects.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2, 3, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"register\", \"groups\": [{\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "summary"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "report",
+                  "update"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "data",
+                  "record"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential",
+                  "personal"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "password",
+                  "secret",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "passwd",
+                  "secret",
+                  "token",
+                  "credential",
+                  "api_key",
+                  "apikey",
+                  "api key",
+                  "access_key",
+                  "private key",
+                  "private_key",
+                  "id_rsa",
+                  "id_ed25519",
+                  "id_ecdsa",
+                  ".ssh",
+                  ".env",
+                  ".pem"
+                ],
+                "level": 5,
+                "added_by": "program"
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The input carries the data to be inserted into a row, which can include sensitive information.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "values"
+      ],
+      "missing_rules": [
+        "table"
+      ],
+      "rule_problems": {
+        "table": [
+          "levels [1, 2, 3, 4] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"register\", \"groups\": [{\"contains\": [\"password\", \"passwd\", \"secret\", \"token\", \"credential\", \"api_key\", \"apikey\", \"api key\", \"access_key\", \"private key\", \"private_key\", \"id_rsa\", \"id_ed25519\", \"id_ecdsa\", \".ssh\", \".env\", \".pem\"], \"level\": 5, \"added_by\": \"program\"}], \"default\": 3}"
+        ]
+      }
+    }
+  ],
+  "failed": []
+}

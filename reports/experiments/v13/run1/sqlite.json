@@ -1,0 +1,199 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22955070",
+  "prompt_sha256": "8e58bb649af60e7d778da49227e5a50e0653fc5d0e19ac10af581aaf18c8e804",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 3,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "null",
+          "important": false,
+          "reason": "text next to the main content",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "join"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "group by",
+                  "having"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  ".env",
+                  "password",
+                  "secret",
+                  "token",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "The SQL query is rated based on keywords indicating the sensitivity of the operation",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2, 3] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "sql"
+      ],
+      "rule_problems": {
+        "sql": [
+          "levels [1, 2, 3] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 3, 5] have no entry of their own; every level 1 to 5 needs at least one",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "public",
+                  "readme"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "cache",
+                  "test"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "report",
+                  "notes"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "customer",
+                  "payroll",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "token",
+                  ".env",
+                  "id_rsa"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "reason": "The input contains a body of data.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "values"
+      ],
+      "missing_rules": [
+        "table"
+      ],
+      "rule_problems": {
+        "table": [
+          "levels [1, 3, 5] have no entry of their own; every level 1 to 5 needs at least one"
+        ]
+      }
+    }
+  ],
+  "failed": []
+}

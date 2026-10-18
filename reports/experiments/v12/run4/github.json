@@ -1,0 +1,4035 @@
+{
+  "server": "github",
+  "catalog": {
+    "path": "reports/live_run/github_real_toollist.json",
+    "sha256": "1328e369f75259dfd0458993aecad2d66123f995afd2bbe1517978d928914ecc",
+    "package": "@modelcontextprotocol/server-github",
+    "captured": "2026-07-06"
+  },
+  "slurm_job": "22110963",
+  "prompt_sha256": "a36bd145cbdcdf8551caeca373581fe2e6a2910271de5de126903d6f41f9685f",
+  "prompt": "prompt-rules-AS-RUN.md",
+  "policy_section": "github_helios",
+  "importance_file": "github.importance.json",
+  "tools": [
+    {
+      "tool_name": "create_or_update_file",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "repository-contents",
+            "description": "What a file read or write reaches: code bodies across every repository in scope.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "branch-heads",
+            "description": "Where each branch points. A merge or force-move rewrites what deploys inside the perimeter. Nothing on this catalog can delete a branch, so a move cannot be taken back.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "A path that looks credential-shaped (keys, tokens, `.env`, secrets) is as weighty as the perimeter assets, in any repository.",
+            "gates_asset": "`repository-contents`"
+          },
+          {
+            "arguments": "`repo` + `branch`",
+            "rule": "The two perimeter repositories fall under CIP change control: a named human approver and an evidence record, which an agent cannot supply.",
+            "gates_asset": "`branch-heads`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy lists assets this tool can reach.",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy lists assets this tool can reach.",
+          "confidence": 0.9
+        },
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "picks where the data ends up",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  ".env"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Special-value rules apply to paths that look credential-shaped.",
+          "confidence": 0.9
+        },
+        {
+          "path": "content",
+          "important": true,
+          "important_reason": "carries the content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Content containing sensitive keywords is risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "message",
+          "important": true,
+          "important_reason": "Commit messages can indicate sensitive changes, especially in regulated environments",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Commit messages containing sensitive keywords are risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "branch",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy lists assets this tool can reach.",
+          "confidence": 0.9
+        },
+        {
+          "path": "sha",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "SHA presence indicates an update operation.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "path",
+        "content",
+        "message",
+        "branch",
+        "sha"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_repositories",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "repository-catalog",
+            "description": "The list of repository names, descriptions and visibility, with no code. A full enumeration still maps the security perimeter, so it is not negligible.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "query",
+          "important": true,
+          "important_reason": "changes what repositories are searched",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "control-room",
+                  "grid-ops",
+                  "trading"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "public",
+                  "readme",
+                  "docs"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords indicate sensitivity of repositories searched.",
+          "confidence": 0.8
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number does not affect the risk level of repository search."
+        },
+        {
+          "path": "perPage",
+          "important": true,
+          "important_reason": "sets how much is read per page",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 15,
+                "level": 2
+              },
+              {
+                "min": 15,
+                "max": 30,
+                "level": 3
+              },
+              {
+                "min": 30,
+                "max": 75,
+                "level": 4
+              },
+              {
+                "min": 75,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 3,
+          "source": "schema",
+          "reason": "Default and maximum values guide the ranges.",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "query",
+        "perPage"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_repository",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "org-external-copies",
+            "description": "Forks and repositories created outside the org boundary. BES Cyber System Information leaves the perimeter the moment the copy exists, and cannot be pulled back.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "repository-records",
+            "description": "What a repository-level write creates.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`organization`",
+            "rule": "Any destination outside the org boundary exits BES Cyber System Information.",
+            "gates_asset": "`org-external-copies`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "name",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords indicate sensitivity or public nature of the repository name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "description",
+          "important": true,
+          "important_reason": "Can expose sensitive information",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords in the description can expose sensitive information.",
+          "confidence": 0.8
+        },
+        {
+          "path": "private",
+          "important": true,
+          "important_reason": "widens who can see it",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 3
+              },
+              {
+                "value": "false",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Public repositories widen visibility to everyone.",
+          "confidence": 1.0
+        },
+        {
+          "path": "autoInit",
+          "important": false,
+          "important_reason": "Does not affect risk level"
+        }
+      ],
+      "shortlist": [
+        "name",
+        "description",
+        "private"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_file_contents",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "repository-contents",
+            "description": "What a file read or write reaches: code bodies across every repository in scope.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "A path that looks credential-shaped (keys, tokens, `.env`, secrets) is as weighty as the perimeter assets, in any repository.",
+            "gates_asset": "`repository-contents`"
+          }
+        ],
+        "baseline": [
+          {
+            "arguments": "`owner` + `repo` + `path`",
+            "normal": "one repository named in the task",
+            "unusual": "a perimeter repository, or many repositories in a row",
+            "basis": "`stated`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository owner's assets",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository's assets",
+          "confidence": 0.9
+        },
+        {
+          "path": "path",
+          "important": true,
+          "important_reason": "picks what the call touches and carries content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  ".env"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "special-value rules apply to credential-shaped paths",
+          "confidence": 0.9
+        },
+        {
+          "path": "branch",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "main",
+                "level": 5
+              },
+              {
+                "value": "master",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "main and master branches are sensitive",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "path",
+        "branch"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "push_files",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "repository-contents",
+            "description": "What a file read or write reaches: code bodies across every repository in scope.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "branch-heads",
+            "description": "Where each branch points. A merge or force-move rewrites what deploys inside the perimeter. Nothing on this catalog can delete a branch, so a move cannot be taken back.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`path`",
+            "rule": "A path that looks credential-shaped (keys, tokens, `.env`, secrets) is as weighty as the perimeter assets, in any repository.",
+            "gates_asset": "`repository-contents`"
+          },
+          {
+            "arguments": "`repo` + `branch`",
+            "rule": "The two perimeter repositories fall under CIP change control: a named human approver and an evidence record, which an agent cannot supply.",
+            "gates_asset": "`branch-heads`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy lists assets this tool can reach.",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy lists assets this tool can reach.",
+          "confidence": 0.9
+        },
+        {
+          "path": "branch",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "main",
+                "level": 5
+              },
+              {
+                "value": "master",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The policy states that perimeter repositories fall under CIP change control.",
+          "confidence": 0.9
+        },
+        {
+          "path": "files",
+          "important": true,
+          "important_reason": "sets how much is written",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The number of files pushed can indicate the scale and risk.",
+          "confidence": 0.9
+        },
+        {
+          "path": "files[].path",
+          "important": true,
+          "important_reason": "content sent to another party",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  ".env"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "Paths that look credential-shaped are as weighty as perimeter assets.",
+          "confidence": 0.9
+        },
+        {
+          "path": "files[].content",
+          "important": true,
+          "important_reason": "content sent to another party",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Content that contains sensitive keywords is risky.",
+          "confidence": 0.9
+        },
+        {
+          "path": "message",
+          "important": true,
+          "important_reason": "Commit message can indicate changes to sensitive assets",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Commit messages that contain sensitive keywords are risky.",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "branch",
+        "files",
+        "files[].path",
+        "files[].content",
+        "message"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_issue",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "issue-records",
+            "description": "What an issue write creates or edits.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "title",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "judges content sensitivity",
+          "confidence": 0.0
+        },
+        {
+          "path": "body",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "judges content sensitivity",
+          "confidence": 0.0
+        },
+        {
+          "path": "assignees",
+          "important": true,
+          "important_reason": "widens who can see, join or change something"
+        },
+        {
+          "path": "assignees[]",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "milestone",
+          "important": true,
+          "important_reason": "sets when or for how long",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "judges milestone size",
+          "confidence": 0.0
+        },
+        {
+          "path": "labels",
+          "important": true,
+          "important_reason": "widens who can see, join or change something",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "labels[]",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "internal",
+                  "private"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "public",
+                  "general"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Labels can indicate the sensitivity of an issue.",
+          "confidence": 0.8
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "title",
+        "body",
+        "assignees",
+        "assignees[]",
+        "milestone",
+        "labels",
+        "labels[]"
+      ],
+      "missing_rules": [
+        "assignees"
+      ],
+      "rule_problems": {
+        "assignees": [
+          "rule is missing or of an unknown kind"
+        ]
+      }
+    },
+    {
+      "tool_name": "create_pull_request",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-request-records",
+            "description": "What a pull-request write creates, edits or merges.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The repository owner can be an organization or user with varying levels of access.",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The repository name determines the specific asset being modified.",
+          "confidence": 0.9
+        },
+        {
+          "path": "title",
+          "important": true,
+          "important_reason": "The title can indicate urgency or sensitivity of the pull request.",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "urgent",
+                  "critical",
+                  "emergency"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords in the title can indicate urgency or sensitivity.",
+          "confidence": 0.8
+        },
+        {
+          "path": "body",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "password",
+                  "token",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The body can contain sensitive information.",
+          "confidence": 0.8
+        },
+        {
+          "path": "head",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The branch name can indicate the sensitivity of changes.",
+          "confidence": 0.9
+        },
+        {
+          "path": "base",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "The base branch can indicate the sensitivity of changes.",
+          "confidence": 0.9
+        },
+        {
+          "path": "draft",
+          "important": true,
+          "important_reason": "Draft status affects visibility and timing of the pull request's exposure.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 2
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Draft status affects visibility and timing of the pull request's exposure.",
+          "confidence": 0.8
+        },
+        {
+          "path": "maintainer_can_modify",
+          "important": true,
+          "important_reason": "This setting can affect control over changes and compliance with regulatory requirements.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "true",
+                "level": 4
+              },
+              {
+                "value": "false",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "This setting can affect control over changes and compliance with regulatory requirements.",
+          "confidence": 0.8
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "title",
+        "body",
+        "head",
+        "base",
+        "draft",
+        "maintainer_can_modify"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "fork_repository",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "org-external-copies",
+            "description": "Forks and repositories created outside the org boundary. BES Cyber System Information leaves the perimeter the moment the copy exists, and cannot be pulled back.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`organization`",
+            "rule": "Any destination outside the org boundary exits BES Cyber System Information.",
+            "gates_asset": "`org-external-copies`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affects asset reach",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "bidding"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, sensitive repository names are critical",
+          "confidence": 0.9
+        },
+        {
+          "path": "organization",
+          "important": true,
+          "important_reason": "appears in special-value rule and affects asset reach",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "org-external-copies",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "special-value rule affects asset reach, external forks are critical",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "organization"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_branch",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "branch-heads",
+            "description": "Where each branch points. A merge or force-move rewrites what deploys inside the perimeter. Nothing on this catalog can delete a branch, so a move cannot be taken back.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "branch-directory",
+            "description": "Branch names and refs, no contents.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository owner's risk level from policy assets.",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository's risk level from policy assets.",
+          "confidence": 0.0
+        },
+        {
+          "path": "branch",
+          "important": true,
+          "important_reason": "names a new branch, which can be sensitive",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "keywords indicate sensitive or temporary branch names.",
+          "confidence": 0.0
+        },
+        {
+          "path": "from_branch",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the source branch's risk level from policy assets.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "branch",
+        "from_branch"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_commits",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "branch-directory",
+            "description": "Branch names and refs, no contents.",
+            "scanned_level": 2
+          },
+          {
+            "asset": "commit-list",
+            "description": "Commit messages and metadata, no diffs.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the organization's assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "sha",
+          "important": false,
+          "important_reason": "SHA is a page number for commits and does not affect risk."
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number does not influence the sensitivity of commit listing."
+        },
+        {
+          "path": "perPage",
+          "important": true,
+          "important_reason": "sets how much is read",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 30,
+                "level": 3
+              },
+              {
+                "min": 30,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "limits the number of commits returned",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "perPage"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_issues",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "issue-catalog",
+            "description": "Issue listings and search hit lists, no bodies.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, default to highest scanned level among assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, default to highest scanned level among assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "direction",
+          "important": false,
+          "important_reason": "Sort order does not affect risk."
+        },
+        {
+          "path": "labels",
+          "important": true,
+          "important_reason": "scopes or filters the call",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "restricted"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "internal",
+                  "private"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "public",
+                  "general",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Labels can scope to sensitive or public issues.",
+          "confidence": 0.0
+        },
+        {
+          "path": "labels[]",
+          "important": true,
+          "important_reason": "scopes or filters the call",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "labels can indicate sensitive or public content",
+          "confidence": 0.0
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number does not affect risk."
+        },
+        {
+          "path": "per_page",
+          "important": true,
+          "important_reason": "sets how much is read",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 50,
+                "level": 2
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 4
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "limits the number of issues returned per page",
+          "confidence": 0.0
+        },
+        {
+          "path": "since",
+          "important": true,
+          "important_reason": "sets when or for how long",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "hours_from_now",
+            "ranges": [
+              {
+                "min": null,
+                "max": -24,
+                "level": 3
+              },
+              {
+                "min": -24,
+                "max": 0,
+                "level": 4
+              },
+              {
+                "min": 0,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "filters issues based on time since the call",
+          "confidence": 0.0
+        },
+        {
+          "path": "sort",
+          "important": true,
+          "important_reason": "Sorting by creation date can expose recent, potentially sensitive changes.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "created",
+                "level": 4
+              },
+              {
+                "value": "updated",
+                "level": 3
+              },
+              {
+                "value": "comments",
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "sorting by creation date can expose recent changes",
+          "confidence": 0.0
+        },
+        {
+          "path": "state",
+          "important": true,
+          "important_reason": "scopes or filters the call",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "open",
+                "level": 4
+              },
+              {
+                "value": "closed",
+                "level": 2
+              },
+              {
+                "value": "all",
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "filtering by state can expose sensitive open issues or all issues",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "labels",
+        "labels[]",
+        "per_page",
+        "since",
+        "sort",
+        "state"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "update_issue",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "issue-records",
+            "description": "What an issue write creates or edits.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the scanned level of assets this tool can reach",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the scanned level of assets this tool can reach",
+          "confidence": 0.0
+        },
+        {
+          "path": "issue_number",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 2
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 3
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "smaller issue numbers are less risky",
+          "confidence": 0.0
+        },
+        {
+          "path": "title",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "keywords indicate sensitive content",
+          "confidence": 0.0
+        },
+        {
+          "path": "body",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "keywords indicate sensitive content",
+          "confidence": 0.0
+        },
+        {
+          "path": "assignees",
+          "important": true,
+          "important_reason": "widens who can see, join or change something"
+        },
+        {
+          "path": "assignees[]",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the scanned level of assets this tool can reach",
+          "confidence": 0.0
+        },
+        {
+          "path": "milestone",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "smaller milestone numbers are less risky",
+          "confidence": 0.0
+        },
+        {
+          "path": "labels",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "length",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 2
+              },
+              {
+                "min": 1,
+                "max": 5,
+                "level": 3
+              },
+              {
+                "min": 5,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "The number of labels can indicate the complexity or sensitivity of an issue.",
+          "confidence": 0.7
+        },
+        {
+          "path": "labels[]",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "confidential",
+                  "critical"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "high-priority",
+                  "urgent"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "low-priority",
+                  "minor"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Labels can indicate the sensitivity of an issue.",
+          "confidence": 0.8
+        },
+        {
+          "path": "state",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "open",
+                "level": 3
+              },
+              {
+                "value": "closed",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Closing an issue can signify a change in status that may require review.",
+          "confidence": 0.8
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "issue_number",
+        "title",
+        "body",
+        "assignees",
+        "assignees[]",
+        "milestone",
+        "labels",
+        "labels[]",
+        "state"
+      ],
+      "missing_rules": [
+        "assignees"
+      ],
+      "rule_problems": {
+        "assignees": [
+          "rule is missing or of an unknown kind"
+        ]
+      }
+    },
+    {
+      "tool_name": "add_issue_comment",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "issue-records",
+            "description": "What an issue write creates or edits.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the scanned level of assets this tool can reach.",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "matches the scanned level of assets this tool can reach.",
+          "confidence": 0.0
+        },
+        {
+          "path": "issue_number",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 2
+              },
+              {
+                "min": 100,
+                "max": 500,
+                "level": 3
+              },
+              {
+                "min": 500,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "higher issue numbers may indicate more sensitive or bulk operations.",
+          "confidence": 0.0
+        },
+        {
+          "path": "body",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "keywords indicating sensitive content.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "issue_number",
+        "body"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_code",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-ot-runbooks",
+            "description": "Switching procedures, patch windows and CIP evidence collection. This is BES Cyber System Information in prose form: it describes the estate rather than running it, but the CIP duty attaches to the description.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-public-site",
+            "description": "The public website and network status pages. Already published, so only tampering matters.",
+            "scanned_level": 1
+          },
+          {
+            "asset": "code-records",
+            "description": "Code search results: snippets from every private repository the token can see, in one call. A single search crosses the whole estate, so it outweighs any single repository read.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": [
+          {
+            "arguments": "`q` + `per_page` + `page`",
+            "normal": "one repository (`repo:` qualifier), a single page of results",
+            "unusual": "an unscoped query, or paging through the whole result set",
+            "basis": "`stated`"
+          }
+        ]
+      },
+      "arguments": [
+        {
+          "path": "q",
+          "important": true,
+          "important_reason": "changes what code is searched, potentially reaching sensitive repositories",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "id_rsa",
+                  ".env",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords can indicate sensitive or public content.",
+          "confidence": 0.8
+        },
+        {
+          "path": "order",
+          "important": false,
+          "important_reason": "Sort order does not affect the risk level of the search."
+        },
+        {
+          "path": "page",
+          "important": true,
+          "important_reason": "Paging can lead to accessing more data than intended, potentially exposing sensitive information.",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 1,
+                "level": 3
+              },
+              {
+                "min": 1,
+                "max": 5,
+                "level": 4
+              },
+              {
+                "min": 5,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 3,
+          "source": "inferred",
+          "reason": "Higher page numbers can indicate a broader search scope.",
+          "confidence": 0.7
+        },
+        {
+          "path": "per_page",
+          "important": true,
+          "important_reason": "sets how much is read in one call, potentially exposing more code",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 30,
+                "level": 3
+              },
+              {
+                "min": 30,
+                "max": 50,
+                "level": 4
+              },
+              {
+                "min": 50,
+                "max": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 1,
+          "source": "schema",
+          "reason": "Higher per_page values can expose more code in one call.",
+          "confidence": 0.9
+        }
+      ],
+      "shortlist": [
+        "q",
+        "page",
+        "per_page"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_issues",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          },
+          {
+            "asset": "issue-catalog",
+            "description": "Issue listings and search hit lists, no bodies.",
+            "scanned_level": 2
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "q",
+          "important": true,
+          "important_reason": "content sent to another party",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Keywords can indicate sensitive content.",
+          "confidence": 0.8
+        },
+        {
+          "path": "order",
+          "important": false,
+          "important_reason": "Sort order does not affect the risk level of the call."
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number does not impact the sensitivity or scope of data retrieved."
+        },
+        {
+          "path": "per_page",
+          "important": true,
+          "important_reason": "sets how much is read",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "schema",
+          "reason": "Schema defines the range of per_page.",
+          "confidence": 0.9
+        },
+        {
+          "path": "sort",
+          "important": true,
+          "important_reason": "Sorting criteria can lead to exposure of more sensitive information based on user engagement.",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "comments",
+                "level": 4
+              },
+              {
+                "value": "reactions",
+                "level": 4
+              },
+              {
+                "value": "interactions",
+                "level": 4
+              },
+              {
+                "value": "created",
+                "level": 3
+              },
+              {
+                "value": "updated",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sorting by user engagement can expose more sensitive information.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "q",
+        "per_page",
+        "sort"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "search_users",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "platform-user-directory",
+            "description": "Public GitHub account and organization records the org can search. Already public.",
+            "scanned_level": 1
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "q",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "password",
+                  "token",
+                  "secret"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "admin",
+                  "root",
+                  "superuser"
+                ],
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "keywords indicating sensitive content are riskier"
+        },
+        {
+          "path": "order",
+          "important": false,
+          "important_reason": "Sort order does not affect the risk level of user search."
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number does not influence the sensitivity or scope of the data retrieved."
+        },
+        {
+          "path": "per_page",
+          "important": true,
+          "important_reason": "sets how much is read",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "schema",
+          "reason": "limits the number of results per page"
+        },
+        {
+          "path": "sort",
+          "important": false,
+          "important_reason": "Sorting by followers, repositories, or joined date does not change the risk level."
+        }
+      ],
+      "shortlist": [
+        "q",
+        "per_page"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_issue",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "issues-and-comments",
+            "description": "Issue threads and comments: engineering and change-review discussion, meant to stay in-org.",
+            "scanned_level": 3
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "issue_number",
+          "important": true,
+          "important_reason": "changes which specific issue is retrieved, potentially sensitive content",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher issue numbers may indicate more sensitive content.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "issue_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_pull_request",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes which pull request is retrieved, impacting risk based on content and state of the specific PR",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher pull numbers may indicate more recent or less reviewed changes.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "list_pull_requests",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, policy lists assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, policy lists assets",
+          "confidence": 0.0
+        },
+        {
+          "path": "state",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "open",
+                "level": 3
+              },
+              {
+                "value": "closed",
+                "level": 2
+              },
+              {
+                "value": "all",
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "changes what the operation does, 'open' and 'closed' are normal states, 'all' is broader",
+          "confidence": 0.0
+        },
+        {
+          "path": "head",
+          "important": true,
+          "important_reason": "filters the call, leaving it out widens the call",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 4,
+          "source": "inferred",
+          "reason": "filters the call, leaving it out widens the call to all heads",
+          "confidence": 0.0
+        },
+        {
+          "path": "base",
+          "important": true,
+          "important_reason": "filters the call, leaving it out widens the call",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 4,
+          "source": "inferred",
+          "reason": "filters the call, leaving it out widens the call to all bases",
+          "confidence": 0.0
+        },
+        {
+          "path": "sort",
+          "important": false,
+          "important_reason": "Sorting does not affect the sensitivity of pull requests listed."
+        },
+        {
+          "path": "direction",
+          "important": false,
+          "important_reason": "Sort direction does not change the risk level of the call."
+        },
+        {
+          "path": "per_page",
+          "important": true,
+          "important_reason": "sets how much is read",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 10,
+                "level": 2
+              },
+              {
+                "min": 10,
+                "max": 50,
+                "level": 3
+              },
+              {
+                "min": 50,
+                "max": 100,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "schema",
+          "reason": "sets how much is read, max value is 100",
+          "confidence": 0.0
+        },
+        {
+          "path": "page",
+          "important": false,
+          "important_reason": "Page number only affects pagination and does not influence sensitivity or scope."
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "state",
+        "head",
+        "base",
+        "per_page"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "create_pull_request_review",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-request-records",
+            "description": "What a pull-request write creates, edits or merges.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affecting CIP change control",
+          "confidence": 0.9
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affecting CIP change control",
+          "confidence": 0.9
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes which pull request is reviewed, affecting CIP change control",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "higher pull numbers may indicate more sensitive or bulk changes",
+          "confidence": 0.8
+        },
+        {
+          "path": "commit_id",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affecting CIP change control",
+          "confidence": 0.9
+        },
+        {
+          "path": "body",
+          "important": true,
+          "important_reason": "content written or sent in review",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "content written or sent in review may contain sensitive information",
+          "confidence": 0.8
+        },
+        {
+          "path": "event",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "APPROVE",
+                "level": 5
+              },
+              {
+                "value": "REQUEST_CHANGES",
+                "level": 4
+              },
+              {
+                "value": "COMMENT",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "changes what the operation does, affecting CIP change control",
+          "confidence": 0.9
+        },
+        {
+          "path": "comments",
+          "important": true,
+          "important_reason": "content written or sent in comments",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "password",
+                  "secret",
+                  "credential"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "comments can contain sensitive information",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number",
+        "commit_id",
+        "body",
+        "event",
+        "comments"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "merge_pull_request",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "helios-grid-infra-config",
+            "description": "Infrastructure and deploy configuration for systems inside the CIP security perimeter. A merge reconfigures the perimeter, which can change what supplies power (Grid operations).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "helios-scada-gateway",
+            "description": "The protocol gateway between the control room and field RTUs. It is a BES cyber system, and a release here reaches the dispatch path.",
+            "scanned_level": 5
+          },
+          {
+            "asset": "helios-market-bidding-engine",
+            "description": "Day-ahead and intraday bidding strategy and settlement code. The parameters are the position, so a leak discloses the model (Market trading).",
+            "scanned_level": 4
+          },
+          {
+            "asset": "branch-heads",
+            "description": "Where each branch points. A merge or force-move rewrites what deploys inside the perimeter. Nothing on this catalog can delete a branch, so a move cannot be taken back.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-request-records",
+            "description": "What a pull-request write creates, edits or merges.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [
+          {
+            "arguments": "`repo` + `branch`",
+            "rule": "The two perimeter repositories fall under CIP change control: a named human approver and an evidence record, which an agent cannot supply.",
+            "gates_asset": "`branch-heads`"
+          }
+        ],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository owner's risk level"
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 5
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "registers the repository name's risk level"
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 5,
+          "source": "inferred",
+          "reason": "Absence of pull number indicates an unspecified operation which is risky.",
+          "confidence": 0.8
+        },
+        {
+          "path": "commit_title",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "sensitive keywords indicate risk"
+        },
+        {
+          "path": "commit_message",
+          "important": true,
+          "important_reason": "content written or sent",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "sensitive keywords indicate risk"
+        },
+        {
+          "path": "merge_method",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": "rebase",
+                "level": 4
+              },
+              {
+                "value": "squash",
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "rebase and squash methods are more risky"
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number",
+        "commit_title",
+        "commit_message",
+        "merge_method"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_pull_request_files",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher pull numbers may indicate more recent or less reviewed changes.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_pull_request_status",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes which pull request's status is retrieved, impacting risk based on the PR content and scope",
+          "classification": "RANGE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher pull numbers may indicate more recent and potentially riskier changes.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "update_pull_request_branch",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "branch-heads",
+            "description": "Where each branch points. A merge or force-move rewrites what deploys inside the perimeter. Nothing on this catalog can delete a branch, so a move cannot be taken back.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          },
+          {
+            "asset": "pull-request-records",
+            "description": "What a pull-request write creates, edits or merges.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affecting risk level based on asset scanned_level",
+          "confidence": 0.0
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "policy",
+          "reason": "picks what the call touches, affecting risk level based on asset scanned_level",
+          "confidence": 0.0
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "values",
+            "values": [
+              {
+                "value": null,
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": 5,
+          "source": "inferred",
+          "reason": "Pull number identifies the specific pull request to update.",
+          "confidence": 0.8
+        },
+        {
+          "path": "expected_head_sha",
+          "important": true,
+          "important_reason": "it affects whether the update can proceed without conflicts",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "SHA should not contain sensitive information.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number",
+        "expected_head_sha"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_pull_request_comments",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher pull numbers may indicate more sensitive or recent changes.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "get_pull_request_reviews",
+      "policy_slice": {
+        "org_context": "Industry / function: Electricity transmission \u2014 the system operator for\na national network (42 GW peak, 14 million\nconnected customers). Repositories behind this\nserver include code on the control-room path.\nRegulatory environment: NERC CIP (part of the estate is in scope).\nRepository and file names are BES Cyber System\nInformation: they map the electronic security\nperimeter.\nStakeholders & their stake: Grid operations \u2014 a change that reaches a BES\ncyber system can cause loss of supply and a\nmandatory regulator notification.\nMarket trading \u2014 a bidding position is\nexploitable the day it leaks and stays\nsensitive after the trading day.\nRegulator \u2014 CIP change control needs a named human\napprover and an evidence record.\nScope boundary: The 26-tool `github:helios` surface. Excludes\nthe control-room systems themselves; this server\nonly reaches the code and configuration for them.",
+        "normal_workflow": "Normal workflow: Read files, search code, list commits and issues, open a\npull request, comment on a review. Proposal only, one\nrepository at a time, outside the perimeter repositories\nby preference. No merges, no direct pushes, no forks.",
+        "assets_this_tool_can_reach": [
+          {
+            "asset": "pull-requests-and-reviews",
+            "description": "Proposed changes and their approvals: the CIP change-control gate itself, carrying unmerged code.",
+            "scanned_level": 4
+          }
+        ],
+        "special_value_rules": [],
+        "baseline": []
+      },
+      "arguments": [
+        {
+          "path": "owner",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "repo",
+          "important": true,
+          "important_reason": "picks what the call touches",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "control-room"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Identifies sensitive repositories by name.",
+          "confidence": 0.8
+        },
+        {
+          "path": "pull_number",
+          "important": true,
+          "important_reason": "changes what the operation does",
+          "classification": "MODE",
+          "rule": {
+            "kind": "ranges",
+            "measure": "value",
+            "ranges": [
+              {
+                "min": null,
+                "max": 100,
+                "level": 3
+              },
+              {
+                "min": 100,
+                "max": null,
+                "level": 4
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Higher pull numbers may indicate more recent or sensitive changes.",
+          "confidence": 0.7
+        }
+      ],
+      "shortlist": [
+        "owner",
+        "repo",
+        "pull_number"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

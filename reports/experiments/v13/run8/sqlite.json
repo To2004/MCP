@@ -1,0 +1,310 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22964141",
+  "prompt_sha256": "f55a2d8ba9b0fe5be3a4bcf68184c58e27698726e2eb6b73e537479aa4774ff0",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 6,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "public"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "internal"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "private"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "confidential"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "topsecret"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The table name can indicate the sensitivity of its contents.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "join",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "order by",
+                  "group by"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "delete",
+                  "update",
+                  "insert"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "drop",
+                  "truncate",
+                  "grant"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The query text determines the sensitivity of the operation.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select",
+                  "from",
+                  "where"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "update set"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "delete from"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "insert into"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "drop table",
+                  "alter table",
+                  "create table"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "Rates the query based on its operation and sensitivity",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "test",
+                  "dev"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "staging"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "production",
+                  "main"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "critical",
+                  "confidential"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The table name indicates the level of sensitivity and criticality.",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "password",
+                  "secret"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "personal",
+                  "private"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "sensitive"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "public",
+                  "shared"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "test",
+                  "demo"
+                ],
+                "level": 1
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The content of the values can reveal sensitive information.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

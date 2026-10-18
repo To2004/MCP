@@ -79,11 +79,16 @@ def query_ollama(
     timeout: int = DEFAULT_TIMEOUT,
     host: str = OLLAMA_HOST,
     options: dict | None = None,
+    json_mode: bool = False,
+    json_schema: dict | None = None,
 ) -> dict | None:
     """Send a prompt to the local model and parse a JSON object from the reply.
 
     Decoding is greedy and fixed-seed by default (:data:`DEFAULT_OPTIONS`) so a
-    given prompt is reproducible; pass ``options`` to override. Returns the
+    given prompt is reproducible; pass ``options`` to override. ``json_mode``
+    asks the server to constrain the reply to valid JSON (Ollama's ``format``),
+    for prompts whose replies are long enough to break by hand; ``json_schema``
+    goes further and constrains it to that JSON schema. Returns the
     decoded ``dict`` on success, or ``None`` if the request fails, the model is
     unreachable, or the response is not valid JSON. Never raises for these
     expected failure modes — callers degrade gracefully.
@@ -96,6 +101,8 @@ def query_ollama(
                 "prompt": prompt,
                 "stream": False,
                 "options": DEFAULT_OPTIONS if options is None else options,
+                **({"format": json_schema} if json_schema
+                   else {"format": "json"} if json_mode else {}),
             },
             timeout=timeout,
         )

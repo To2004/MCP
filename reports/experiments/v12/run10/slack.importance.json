@@ -1,0 +1,2838 @@
+{
+  "server": "slack",
+  "catalog": {
+    "path": "reports/live_run/slack_real_toollist.json",
+    "sha256": "1867a2b90926feefbe9d3de02b0f272c98c01b466c6a0b23ba51dbddbb8acb81",
+    "package": "slack-mcp-server (korotovsky)",
+    "captured": "2026-07-06"
+  },
+  "slurm_job": "22637057",
+  "prompt_sha256": "0b1209147e6521a007c5f97f73234b0c3f729e59d6a364aa2c7295fff396d48a",
+  "prompt": "prompt-importance-AS-RUN.md",
+  "votes": 3,
+  "keep_gap": 2,
+  "policy_section": "slack_vireo",
+  "tools": [
+    {
+      "tool_name": "channels_list",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "'public_channel'",
+          "safest_level": 2.0,
+          "riskiest": "'private_channel,mpim,im'",
+          "riskiest_level": 5.0,
+          "reason": "Private channels and direct messages are more sensitive.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'public_channel'",
+              "safest_level": 2,
+              "riskiest": "'private_channel,mpim,im'",
+              "riskiest_level": 5,
+              "reason": "Private channels and direct messages are more sensitive."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'public_channel'",
+              "safest_level": 2,
+              "riskiest": "'private_channel,im,mpim'",
+              "riskiest_level": 5,
+              "reason": "Private channels and direct messages can contain sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "public_channel",
+              "safest_level": 2,
+              "riskiest": "private_channel,im,mpim",
+              "riskiest_level": 5,
+              "reason": "Private and direct channels contain more sensitive information."
+            }
+          ]
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Cursor values do not affect risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not affect risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not affect risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            }
+          ]
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "10 rows",
+          "safest_level": 2.0,
+          "riskiest": "999 rows",
+          "riskiest_level": 5.0,
+          "reason": "Returning more channels increases the risk of exposing sensitive information.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "999 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more channels increases the risk of exposing sensitive information."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "999 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more rows increases the risk of exposing sensitive information."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 items",
+              "safest_level": 2,
+              "riskiest": "999 items",
+              "riskiest_level": 5,
+              "reason": "A larger limit could expose more sensitive information."
+            }
+          ]
+        },
+        {
+          "path": "query",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "a common term like 'marketing'",
+          "safest_level": 3.0,
+          "riskiest": "a specific identifier or protected health information",
+          "riskiest_level": 5.0,
+          "reason": "Specific identifiers can expose sensitive data.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a common term like 'marketing'",
+              "safest_level": 3,
+              "riskiest": "a specific identifier or protected health information",
+              "riskiest_level": 5,
+              "reason": "Specific identifiers can expose sensitive data."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "'marketing'",
+              "safest_level": 2,
+              "riskiest": "'unblinding,assignment'",
+              "riskiest_level": 5,
+              "reason": "Queries for unblinding and treatment assignment are highly sensitive."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a common term like 'marketing'",
+              "safest_level": 3,
+              "riskiest": "a specific identifier or a regulated keyword",
+              "riskiest_level": 5,
+              "reason": "A query for sensitive keywords could expose protected health information."
+            }
+          ]
+        },
+        {
+          "path": "query_targets",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "'name'",
+          "safest_level": 2.0,
+          "riskiest": "'topic,purpose,name'",
+          "riskiest_level": 5.0,
+          "reason": "Searching all fields increases the risk of exposing sensitive information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'name'",
+              "safest_level": 2,
+              "riskiest": "'topic,purpose,name'",
+              "riskiest_level": 5,
+              "reason": "Searching all fields increases the risk of exposing sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'name'",
+              "safest_level": 2,
+              "riskiest": "'topic,purpose,name'",
+              "riskiest_level": 5,
+              "reason": "Searching all fields increases the risk of exposing sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "name",
+              "safest_level": 2,
+              "riskiest": "topic,purpose,name",
+              "riskiest_level": 5,
+              "reason": "Searching all fields increases the risk of exposing sensitive data."
+            }
+          ]
+        },
+        {
+          "path": "sort",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Sorting does not affect risk.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Sorting does not affect risk."
+            },
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Sorting does not affect risk."
+            },
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "popularity",
+              "safest_level": 3,
+              "riskiest": "popularity",
+              "riskiest_level": 3,
+              "reason": "Sorting by popularity does not affect risk."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "limit",
+        "query",
+        "query_targets"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "channels_me",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 1.0,
+          "safest": "public_channel,private_channel",
+          "safest_level": 3.0,
+          "riskiest": "mpim,im",
+          "riskiest_level": 4.0,
+          "reason": "Private messages and multi-person direct messages can contain sensitive information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "public_channel,private_channel",
+              "safest_level": 2,
+              "riskiest": "mpim,im",
+              "riskiest_level": 4,
+              "reason": "Private messages and multi-person direct messages can contain more sensitive content."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "public_channel,private_channel",
+              "safest_level": 3,
+              "riskiest": "mpim,im",
+              "riskiest_level": 4,
+              "reason": "Private messages and multi-person direct messages can contain sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "public_channel,private_channel",
+              "safest_level": 3,
+              "riskiest": "im,mpim",
+              "riskiest_level": 4,
+              "reason": "Direct messages and multi-person direct messages can contain more sensitive content."
+            }
+          ]
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Cursor values do not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values are unique identifiers and do not indicate risk."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not affect risk."
+            }
+          ]
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "10 items",
+          "safest_level": 2.0,
+          "riskiest": "999 items",
+          "riskiest_level": 5.0,
+          "reason": "A larger limit can expose more sensitive information.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 items",
+              "safest_level": 2,
+              "riskiest": "999 items",
+              "riskiest_level": 5,
+              "reason": "A larger limit can expose more sensitive information."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "999 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more items increases the risk of exposing sensitive data."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "100 items",
+              "safest_level": 2,
+              "riskiest": "999 items",
+              "riskiest_level": 5,
+              "reason": "Larger limits expose more data at once."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "limit"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_add_message",
+      "arguments": [
+        {
+          "path": "blocks",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a simple greeting message",
+          "safest_level": 2.0,
+          "riskiest": "a message containing sensitive subject identifiers and clinical facts",
+          "riskiest_level": 5.0,
+          "reason": "The content can vary from safe greetings to highly sensitive patient information.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple greeting message",
+              "safest_level": 3,
+              "riskiest": "a message containing sensitive subject identifiers and clinical facts",
+              "riskiest_level": 5,
+              "reason": "The content can vary from safe greetings to highly sensitive patient information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a routine message, 2",
+              "safest_level": 2,
+              "riskiest": "a confidential or sensitive statement, 5",
+              "riskiest_level": 5,
+              "reason": "The content can vary from ordinary messages to highly sensitive information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple text message fallback",
+              "safest_level": 2,
+              "riskiest": "confidential clinical data and unblinding details",
+              "riskiest_level": 5,
+              "reason": "Content can vary from safe to highly sensitive"
+            }
+          ]
+        },
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "vireo-announcements",
+          "safest_level": 2.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "The channel can range from a public announcement to sensitive unblinding requests.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The channel can range from a public announcement to sensitive unblinding requests."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements, 2",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding, 5",
+              "riskiest_level": 5,
+              "reason": "Channels vary in sensitivity from public to highly confidential."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Different channels have different levels of sensitivity"
+            }
+          ]
+        },
+        {
+          "path": "content_type",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 1.0,
+          "safest": "text/plain",
+          "safest_level": 2.0,
+          "riskiest": "text/markdown",
+          "riskiest_level": 3.0,
+          "reason": "Markdown can include more complex formatting and potentially sensitive content.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "text/plain",
+              "safest_level": 3,
+              "riskiest": "text/markdown",
+              "riskiest_level": 4,
+              "reason": "Markdown can include more complex formatting and potentially sensitive content."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "text/plain, 2",
+              "safest_level": 2,
+              "riskiest": "text/markdown, 3",
+              "riskiest_level": 3,
+              "reason": "Markdown can include more complex and potentially sensitive content."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "text/plain",
+              "safest_level": 2,
+              "riskiest": "text/markdown",
+              "riskiest_level": 3,
+              "reason": "Markdown can include more complex content"
+            }
+          ]
+        },
+        {
+          "path": "text",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a simple greeting message",
+          "safest_level": 2.0,
+          "riskiest": "a message containing sensitive subject identifiers and clinical facts",
+          "riskiest_level": 5.0,
+          "reason": "The content can vary from safe greetings to highly sensitive patient information.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple greeting message",
+              "safest_level": 3,
+              "riskiest": "a message containing sensitive subject identifiers and clinical facts",
+              "riskiest_level": 5,
+              "reason": "The content can vary from safe greetings to highly sensitive patient information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a routine message, 2",
+              "safest_level": 2,
+              "riskiest": "a confidential or sensitive statement, 5",
+              "riskiest_level": 5,
+              "reason": "The content can vary from ordinary messages to highly sensitive information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple text message",
+              "safest_level": 2,
+              "riskiest": "confidential clinical data and unblinding details",
+              "riskiest_level": 5,
+              "reason": "Content can vary from safe to highly sensitive"
+            }
+          ]
+        },
+        {
+          "path": "thread_ts",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any valid timestamp",
+          "safest_level": 3.0,
+          "riskiest": "any valid timestamp",
+          "riskiest_level": 3.0,
+          "reason": "The value itself does not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid timestamp",
+              "safest_level": 3,
+              "riskiest": "any valid timestamp",
+              "riskiest_level": 3,
+              "reason": "The value itself does not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any, 3",
+              "safest_level": 3,
+              "riskiest": "any, 3",
+              "riskiest_level": 3,
+              "reason": "The timestamp itself does not indicate risk level."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid timestamp",
+              "safest_level": 3,
+              "riskiest": "any valid timestamp",
+              "riskiest_level": 3,
+              "reason": "Timestamp itself does not indicate risk level"
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "blocks",
+        "channel_id",
+        "text"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_history",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "vireo-eng-platform",
+          "safest_level": 2.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "The unblinding channel is the most sensitive asset.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive asset."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive, while platform engineering traffic is less critical."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive asset."
+            }
+          ]
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Cursor values do not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values are not indicative of risk."
+            }
+          ]
+        },
+        {
+          "path": "include_activity_messages",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 1.0,
+          "safest": "false",
+          "safest_level": 2.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Including activity messages can reveal more information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages can reveal more information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages adds more details, potentially increasing risk."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages can expose more sensitive information."
+            }
+          ]
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "1d",
+          "safest_level": 2.0,
+          "riskiest": "90d",
+          "riskiest_level": 5.0,
+          "reason": "A larger time range or number of messages increases the risk.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "A larger time range or number of messages increases the risk."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "A longer time frame or higher number of messages increases the risk."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "A larger limit can expose more historical data."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_join",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 4.0,
+          "safest": "vireo-announcements",
+          "safest_level": 1.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "Joining the unblinding channel breaks study integrity.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 1,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Joining the unblinding channel breaks study integrity."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 1,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Joining the unblinding channel can break study integrity."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 1,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Joining the unblinding channel breaks study integrity."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_leave",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "vireo-eng-platform",
+          "safest_level": 2.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "Leaving a less sensitive channel is safer than leaving a highly sensitive one.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Leaving a less sensitive channel is safer than leaving a highly sensitive one."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Leaving a less sensitive channel is safer than leaving a highly sensitive one."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Leaving a less sensitive channel poses lower risk than leaving a highly sensitive one."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_mark",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "#general",
+          "safest_level": 2.0,
+          "riskiest": "@study_team",
+          "riskiest_level": 5.0,
+          "reason": "Marking a sensitive channel as read could expose confidential information.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "#general",
+              "safest_level": 2,
+              "riskiest": "@study_team",
+              "riskiest_level": 5,
+              "reason": "Marking a sensitive channel as read could expose confidential information."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "#general",
+              "safest_level": 2,
+              "riskiest": "@study_team",
+              "riskiest_level": 5,
+              "reason": "The study team channel contains sensitive information."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "#general",
+              "safest_level": 2,
+              "riskiest": "@admin",
+              "riskiest_level": 5,
+              "reason": "Marks a less sensitive channel vs. a more sensitive user DM."
+            }
+          ]
+        },
+        {
+          "path": "ts",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "time",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "now",
+          "safest_level": 2.0,
+          "riskiest": "start_of_study",
+          "riskiest_level": 5.0,
+          "reason": "Marking a very old timestamp as read could inadvertently reveal sensitive historical data.",
+          "answers": [
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "now",
+              "safest_level": 2,
+              "riskiest": "start_of_study",
+              "riskiest_level": 5,
+              "reason": "Marking a very old timestamp as read could inadvertently reveal sensitive historical data."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "now",
+              "safest_level": 3,
+              "riskiest": "three_at_night_weekend",
+              "riskiest_level": 5,
+              "reason": "Marking messages as read during unusual hours can be risky."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "a recent message timestamp",
+              "safest_level": 2,
+              "riskiest": "an old message timestamp",
+              "riskiest_level": 5,
+              "reason": "Marks a recent message vs. an old message as read, impacting more history."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "ts"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_replies",
+      "arguments": [
+        {
+          "path": "channel_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "vireo-eng-platform",
+          "safest_level": 2.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "The unblinding channel is the most sensitive.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 1,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-eng-platform",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive asset."
+            }
+          ]
+        },
+        {
+          "path": "cursor",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Cursor values do not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor value does not influence risk."
+            }
+          ]
+        },
+        {
+          "path": "include_activity_messages",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 1.0,
+          "safest": "false",
+          "safest_level": 2.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Including activity messages can reveal more information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages can reveal more information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages increases the risk of revealing sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including activity messages can expose more sensitive information."
+            }
+          ]
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "1d",
+          "safest_level": 2.0,
+          "riskiest": "90d",
+          "riskiest_level": 5.0,
+          "reason": "Reading a larger time range or number of messages increases risk.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "Reading a larger time range or number of messages increases risk."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "Larger limits expose more historical data."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1d",
+              "safest_level": 2,
+              "riskiest": "90d",
+              "riskiest_level": 5,
+              "reason": "Reading more history increases the risk of exposure."
+            }
+          ]
+        },
+        {
+          "path": "thread_ts",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Timestamp values do not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Timestamp values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Timestamp values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Timestamp alone does not influence risk."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_id",
+        "limit"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_search_messages",
+      "arguments": [
+        {
+          "path": "cursor",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any",
+          "safest_level": 3.0,
+          "riskiest": "any",
+          "riskiest_level": 3.0,
+          "reason": "Cursor values do not affect risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not affect risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any",
+              "safest_level": 3,
+              "riskiest": "any",
+              "riskiest_level": 3,
+              "reason": "Cursor values do not indicate risk level."
+            }
+          ]
+        },
+        {
+          "path": "filter_date_after",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "time",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "today",
+          "safest_level": 2.0,
+          "riskiest": "a long time ago",
+          "riskiest_level": 4.0,
+          "reason": "Filtering for recent dates is safer than searching through a large date range.",
+          "answers": [
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through a large date range."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "a recent date",
+              "safest_level": 2,
+              "riskiest": "an ancient date",
+              "riskiest_level": 4,
+              "reason": "A very old date can expose more data."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through old data."
+            }
+          ]
+        },
+        {
+          "path": "filter_date_before",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "time",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "today",
+          "safest_level": 2.0,
+          "riskiest": "a long time ago",
+          "riskiest_level": 4.0,
+          "reason": "Filtering for recent dates is safer than searching through a large date range.",
+          "answers": [
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through a large date range."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "a recent date",
+              "safest_level": 2,
+              "riskiest": "an ancient date",
+              "riskiest_level": 4,
+              "reason": "A very old date can expose more data."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through old data."
+            }
+          ]
+        },
+        {
+          "path": "filter_date_during",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "time",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "today",
+          "safest_level": 2.0,
+          "riskiest": "a long time ago",
+          "riskiest_level": 4.0,
+          "reason": "Filtering for recent dates is safer than searching through a large date range.",
+          "answers": [
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through a large date range."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "a short period",
+              "safest_level": 2,
+              "riskiest": "an extensive period",
+              "riskiest_level": 4,
+              "reason": "A long time span can expose more data."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today or this week",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through old data."
+            }
+          ]
+        },
+        {
+          "path": "filter_date_on",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "time",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "today",
+          "safest_level": 2.0,
+          "riskiest": "a long time ago",
+          "riskiest_level": 4.0,
+          "reason": "Filtering for recent dates is safer than searching through a large date range.",
+          "answers": [
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through a large date range."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "a recent date",
+              "safest_level": 2,
+              "riskiest": "an ancient date",
+              "riskiest_level": 4,
+              "reason": "A very old date can expose more data."
+            },
+            {
+              "kind": "time",
+              "rankable": true,
+              "safest": "today or this week",
+              "safest_level": 2,
+              "riskiest": "a long time ago",
+              "riskiest_level": 4,
+              "reason": "Filtering for recent dates is safer than searching through old data."
+            }
+          ]
+        },
+        {
+          "path": "filter_in_channel",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "vireo-announcements",
+          "safest_level": 2.0,
+          "riskiest": "vireo-unblinding",
+          "riskiest_level": 5.0,
+          "reason": "The unblinding channel is the most sensitive.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "vireo-announcements",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "Sensitivity of the channel matters."
+            }
+          ]
+        },
+        {
+          "path": "filter_in_im_or_mpim",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "an ordinary DM or MPIM",
+          "safest_level": 2.0,
+          "riskiest": "a critical DM or MPIM",
+          "riskiest_level": 5.0,
+          "reason": "Direct messages can vary in sensitivity.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "an ordinary DM or MPIM",
+              "safest_level": 2,
+              "riskiest": "a critical DM or MPIM",
+              "riskiest_level": 4,
+              "reason": "Direct messages can vary in sensitivity."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a general DM conversation",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding",
+              "riskiest_level": 5,
+              "reason": "The unblinding channel is the most sensitive."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a colleague's DM",
+              "safest_level": 2,
+              "riskiest": "an unknown outside address",
+              "riskiest_level": 5,
+              "reason": "Sensitivity of the channel matters."
+            }
+          ]
+        },
+        {
+          "path": "filter_threads_only",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "false",
+          "safest_level": 3.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Filtering threads only does not change the risk level.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Filtering threads only does not change the risk level."
+            },
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Filtering threads does not change the risk."
+            },
+            {
+              "kind": "choice",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Filtering for threads only does not affect risk level."
+            }
+          ]
+        },
+        {
+          "path": "filter_users_from",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "recipient",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "an ordinary user",
+          "safest_level": 2.0,
+          "riskiest": "a sensitive user",
+          "riskiest_level": 5.0,
+          "reason": "Sensitive users can have more critical information.",
+          "answers": [
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "an ordinary user",
+              "safest_level": 2,
+              "riskiest": "a sensitive user",
+              "riskiest_level": 4,
+              "reason": "Sensitive users can have more critical information."
+            },
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "a general user name",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding coordinator",
+              "riskiest_level": 5,
+              "reason": "Sensitive users can expose sensitive data."
+            },
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "a colleague",
+              "safest_level": 2,
+              "riskiest": "an unknown outside address",
+              "riskiest_level": 5,
+              "reason": "Sensitivity of the user matters."
+            }
+          ]
+        },
+        {
+          "path": "filter_users_with",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "recipient",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "an ordinary user",
+          "safest_level": 2.0,
+          "riskiest": "a sensitive user",
+          "riskiest_level": 5.0,
+          "reason": "Sensitive users can have more critical information.",
+          "answers": [
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "an ordinary user",
+              "safest_level": 2,
+              "riskiest": "a sensitive user",
+              "riskiest_level": 4,
+              "reason": "Sensitive users can have more critical information."
+            },
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "a general user name",
+              "safest_level": 2,
+              "riskiest": "vireo-unblinding coordinator",
+              "riskiest_level": 5,
+              "reason": "Sensitive users can expose sensitive data."
+            },
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "a colleague",
+              "safest_level": 2,
+              "riskiest": "an unknown outside address",
+              "riskiest_level": 5,
+              "reason": "Sensitivity of the user matters."
+            }
+          ]
+        },
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "10 items",
+          "safest_level": 2.0,
+          "riskiest": "100 items",
+          "riskiest_level": 5.0,
+          "reason": "A larger limit can expose more sensitive information.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 items",
+              "safest_level": 2,
+              "riskiest": "100 items",
+              "riskiest_level": 5,
+              "reason": "A larger limit can expose more sensitive information."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1 item",
+              "safest_level": 2,
+              "riskiest": "100 items",
+              "riskiest_level": 5,
+              "reason": "Returning more items can expose more data."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 items",
+              "safest_level": 2,
+              "riskiest": "100 items",
+              "riskiest_level": 5,
+              "reason": "Larger limits expose more data."
+            }
+          ]
+        },
+        {
+          "path": "search_query",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "an ordinary search term",
+          "safest_level": 2.0,
+          "riskiest": "a critical or confidential term",
+          "riskiest_level": 5.0,
+          "reason": "Critical terms can lead to exposure of sensitive information.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "an ordinary search term",
+              "safest_level": 2,
+              "riskiest": "a critical or confidential term",
+              "riskiest_level": 5,
+              "reason": "Critical terms can lead to exposure of sensitive information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a routine query",
+              "safest_level": 2,
+              "riskiest": "a query targeting sensitive content",
+              "riskiest_level": 5,
+              "reason": "Sensitive queries can expose sensitive data."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a routine search term",
+              "safest_level": 3,
+              "riskiest": "a sensitive or confidential term",
+              "riskiest_level": 5,
+              "reason": "The content of the query affects risk."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "filter_date_after",
+        "filter_date_before",
+        "filter_date_during",
+        "filter_date_on",
+        "filter_in_channel",
+        "filter_in_im_or_mpim",
+        "filter_users_from",
+        "filter_users_with",
+        "limit",
+        "search_query"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "conversations_unreads",
+      "arguments": [
+        {
+          "path": "channel_types",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "'dm'",
+          "safest_level": 2.0,
+          "riskiest": "'all'",
+          "riskiest_level": 5.0,
+          "reason": "Direct messages are the least risky, while fetching all types can expose sensitive information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'dm'",
+              "safest_level": 2,
+              "riskiest": "'all'",
+              "riskiest_level": 5,
+              "reason": "Direct messages are the least risky, while fetching all types can expose sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'dm'",
+              "safest_level": 2,
+              "riskiest": "'all'",
+              "riskiest_level": 5,
+              "reason": "Direct messages are the safest, while fetching from all types is riskier."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'dm'",
+              "safest_level": 2,
+              "riskiest": "'internal'",
+              "riskiest_level": 4,
+              "reason": "Direct messages are safer than internal channels."
+            }
+          ]
+        },
+        {
+          "path": "include_messages",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "false",
+          "safest_level": 2.0,
+          "riskiest": "true",
+          "riskiest_level": 5.0,
+          "reason": "Returning only a summary is safer than returning actual unread messages.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 5,
+              "reason": "Returning only a summary is safer than returning actual unread messages."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 5,
+              "reason": "Including only summaries is safer than fetching actual messages."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 4,
+              "reason": "Returning only a summary is safer than returning actual messages."
+            }
+          ]
+        },
+        {
+          "path": "include_muted",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "false",
+          "safest_level": 2.0,
+          "riskiest": "true",
+          "riskiest_level": 5.0,
+          "reason": "Including muted channels can expose more sensitive information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 5,
+              "reason": "Including muted channels can expose more sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 5,
+              "reason": "Excluding muted channels is safer than including them."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "false",
+              "safest_level": 2,
+              "riskiest": "true",
+              "riskiest_level": 4,
+              "reason": "Excluding muted channels is safer than including them."
+            }
+          ]
+        },
+        {
+          "path": "max_channels",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "10",
+          "safest_level": 2.0,
+          "riskiest": "500",
+          "riskiest_level": 5.0,
+          "reason": "Fetching fewer channels is safer than fetching a large number of channels.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10",
+              "safest_level": 2,
+              "riskiest": "500",
+              "riskiest_level": 5,
+              "reason": "Fetching fewer channels is safer than fetching a large number of channels."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10",
+              "safest_level": 2,
+              "riskiest": "500",
+              "riskiest_level": 5,
+              "reason": "Fetching from fewer channels is safer than a large number."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10",
+              "safest_level": 2,
+              "riskiest": "500",
+              "riskiest_level": 4,
+              "reason": "Fetching fewer channels is safer than fetching many."
+            }
+          ]
+        },
+        {
+          "path": "max_messages_per_channel",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "1",
+          "safest_level": 2.0,
+          "riskiest": "50",
+          "riskiest_level": 5.0,
+          "reason": "Fetching fewer messages per channel is safer than fetching a large number of messages.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1",
+              "safest_level": 2,
+              "riskiest": "50",
+              "riskiest_level": 5,
+              "reason": "Fetching fewer messages per channel is safer than fetching a large number of messages."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1",
+              "safest_level": 2,
+              "riskiest": "50",
+              "riskiest_level": 5,
+              "reason": "Fetching fewer messages per channel is safer than a large number."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "1",
+              "safest_level": 2,
+              "riskiest": "50",
+              "riskiest_level": 4,
+              "reason": "Fetching fewer messages per channel is safer than fetching many."
+            }
+          ]
+        },
+        {
+          "path": "mentions_only",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "true",
+          "safest_level": 2.0,
+          "riskiest": "false",
+          "riskiest_level": 5.0,
+          "reason": "Returning only channels with mentions is safer than returning all unread messages.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "true",
+              "safest_level": 2,
+              "riskiest": "false",
+              "riskiest_level": 5,
+              "reason": "Returning only channels with mentions is safer than returning all unread messages."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "true",
+              "safest_level": 2,
+              "riskiest": "false",
+              "riskiest_level": 5,
+              "reason": "Fetching only channels with mentions is safer than fetching all."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "true",
+              "safest_level": 2,
+              "riskiest": "false",
+              "riskiest_level": 4,
+              "reason": "Returning only channels with mentions is safer than all unread channels."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channel_types",
+        "include_messages",
+        "include_muted",
+        "max_channels",
+        "max_messages_per_channel",
+        "mentions_only"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_create",
+      "arguments": [
+        {
+          "path": "channels",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a public channel",
+          "safest_level": 2.0,
+          "riskiest": "a restricted system channel",
+          "riskiest_level": 5.0,
+          "reason": "Restricted channels contain sensitive information.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel",
+              "safest_level": 2,
+              "riskiest": "a restricted system channel",
+              "riskiest_level": 5,
+              "reason": "Restricted channels contain sensitive information."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel ID",
+              "safest_level": 2,
+              "riskiest": "an internal or restricted channel ID",
+              "riskiest_level": 5,
+              "reason": "Internal channels may contain sensitive information."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel",
+              "safest_level": 2,
+              "riskiest": "a restricted study team channel",
+              "riskiest_level": 5,
+              "reason": "Restricted channels contain sensitive information."
+            }
+          ]
+        },
+        {
+          "path": "description",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a general description",
+          "safest_level": 2.0,
+          "riskiest": "a description with protected health information",
+          "riskiest_level": 5.0,
+          "reason": "Descriptions containing sensitive data are riskier.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general description",
+              "safest_level": 2,
+              "riskiest": "a description with protected health information",
+              "riskiest_level": 5,
+              "reason": "Descriptions containing sensitive data are riskier."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general description like 'Engineering Team'",
+              "safest_level": 2,
+              "riskiest": "a description with patient identifiers or unblinding information",
+              "riskiest_level": 5,
+              "reason": "Descriptions containing sensitive data are critical."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "general description, e.g., 'Engineering Team'",
+              "safest_level": 2,
+              "riskiest": "a description containing protected health information",
+              "riskiest_level": 5,
+              "reason": "Descriptions with sensitive content increase risk."
+            }
+          ]
+        },
+        {
+          "path": "handle",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "name_or_path",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "engineering",
+          "safest_level": 2.0,
+          "riskiest": "unblinded-data-team",
+          "riskiest_level": 5.0,
+          "reason": "Handles that expose sensitive groups are riskier.",
+          "answers": [
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "engineering",
+              "safest_level": 2,
+              "riskiest": "unblinded-data-team",
+              "riskiest_level": 5,
+              "reason": "Handles that expose sensitive groups are riskier."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a generic handle like 'engineering'",
+              "safest_level": 2,
+              "riskiest": "a handle that may expose sensitive data, e.g., 'unblinded-ops'",
+              "riskiest_level": 5,
+              "reason": "Handles that suggest sensitive content are more risky."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "engineering",
+              "safest_level": 2,
+              "riskiest": "study-team-unblinded",
+              "riskiest_level": 5,
+              "reason": "Handles that reveal sensitive group names increase risk."
+            }
+          ]
+        },
+        {
+          "path": "name",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "Engineering Team",
+          "safest_level": 2.0,
+          "riskiest": "Unblinded Data Reviewers",
+          "riskiest_level": 5.0,
+          "reason": "Names that expose sensitive groups are riskier.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "Engineering Team",
+              "safest_level": 2,
+              "riskiest": "Unblinded Data Reviewers",
+              "riskiest_level": 5,
+              "reason": "Names that expose sensitive groups are riskier."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general name like 'Engineering Team'",
+              "safest_level": 2,
+              "riskiest": "a name that may expose sensitive data, e.g., 'Unblinded-Operations'",
+              "riskiest_level": 5,
+              "reason": "Names containing sensitive information are critical."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "Engineering Team",
+              "safest_level": 2,
+              "riskiest": "Study Team Unblinded",
+              "riskiest_level": 5,
+              "reason": "Names that reveal sensitive group details increase risk."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channels",
+        "description",
+        "handle",
+        "name"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_list",
+      "arguments": [
+        {
+          "path": "include_count",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "none",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "false",
+          "safest_level": 3.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Including user counts does not change the risk level.",
+          "answers": [
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user counts does not change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user count does not significantly change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user counts does not change the risk level."
+            }
+          ]
+        },
+        {
+          "path": "include_disabled",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "none",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "false",
+          "safest_level": 3.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Including disabled groups does not change the risk level.",
+          "answers": [
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including disabled groups does not change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including disabled groups does not significantly change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including disabled groups does not change the risk level."
+            }
+          ]
+        },
+        {
+          "path": "include_users",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "none",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "false",
+          "safest_level": 3.0,
+          "riskiest": "true",
+          "riskiest_level": 3.0,
+          "reason": "Including user IDs does not change the risk level.",
+          "answers": [
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user IDs does not change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user IDs does not significantly change the risk level."
+            },
+            {
+              "kind": "none",
+              "rankable": false,
+              "safest": "false",
+              "safest_level": 3,
+              "riskiest": "true",
+              "riskiest_level": 3,
+              "reason": "Including user IDs does not change the risk level."
+            }
+          ]
+        }
+      ],
+      "shortlist": [],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_me",
+      "arguments": [
+        {
+          "path": "action",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "choice",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "list",
+          "safest_level": 2.0,
+          "riskiest": "leave",
+          "riskiest_level": 4.0,
+          "reason": "Leaving a group can affect access to sensitive information.",
+          "answers": [
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "list",
+              "safest_level": 2,
+              "riskiest": "leave",
+              "riskiest_level": 4,
+              "reason": "Leaving a group can affect access to sensitive information."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "list",
+              "safest_level": 2,
+              "riskiest": "leave",
+              "riskiest_level": 4,
+              "reason": "Leaving a group can affect membership visibility and access."
+            },
+            {
+              "kind": "choice",
+              "rankable": true,
+              "safest": "'list'",
+              "safest_level": 2,
+              "riskiest": "'leave'",
+              "riskiest_level": 4,
+              "reason": "Listing memberships is safer than joining or leaving groups."
+            }
+          ]
+        },
+        {
+          "path": "usergroup_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a non-sensitive user group ID",
+          "safest_level": 2.0,
+          "riskiest": "an unblinded channel's user group ID",
+          "riskiest_level": 5.0,
+          "reason": "Access to unblinded channels involves sensitive study data.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a non-sensitive user group ID",
+              "safest_level": 2,
+              "riskiest": "an unblinded channel's user group ID",
+              "riskiest_level": 5,
+              "reason": "Access to unblinded channels involves sensitive study data."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a non-sensitive user group ID",
+              "safest_level": 2,
+              "riskiest": "an unblinded study team user group ID",
+              "riskiest_level": 5,
+              "reason": "Access to sensitive groups can breach confidentiality and regulatory compliance."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid ID",
+              "safest_level": 3,
+              "riskiest": "any valid ID",
+              "riskiest_level": 3,
+              "reason": "The usergroup ID itself does not indicate risk level."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "action",
+        "usergroup_id"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_update",
+      "arguments": [
+        {
+          "path": "channels",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a public channel ID",
+          "safest_level": 2.0,
+          "riskiest": "an internal or restricted channel ID",
+          "riskiest_level": 5.0,
+          "reason": "Internal channels may contain sensitive information.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel ID",
+              "safest_level": 2,
+              "riskiest": "an internal or restricted channel ID",
+              "riskiest_level": 5,
+              "reason": "Internal channels may contain sensitive information."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel",
+              "safest_level": 2,
+              "riskiest": "a restricted system channel",
+              "riskiest_level": 5,
+              "reason": "Updating default channels can expose sensitive information based on the channel's sensitivity."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public channel ID",
+              "safest_level": 2,
+              "riskiest": "an unblinded, restricted system channel ID",
+              "riskiest_level": 5,
+              "reason": "Risk depends on the sensitivity of the default channels set"
+            }
+          ]
+        },
+        {
+          "path": "description",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a general description",
+          "safest_level": 2.0,
+          "riskiest": "a description containing protected health information or unblinding details",
+          "riskiest_level": 5.0,
+          "reason": "Descriptions can contain sensitive content.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general description",
+              "safest_level": 2,
+              "riskiest": "a description containing protected health information or unblinding details",
+              "riskiest_level": 5,
+              "reason": "Descriptions can contain sensitive content."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general description",
+              "safest_level": 2,
+              "riskiest": "a description containing PII or sensitive details",
+              "riskiest_level": 5,
+              "reason": "Descriptions can contain sensitive information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a general description",
+              "safest_level": 2,
+              "riskiest": "a description containing unblinded clinical facts and subject identifiers",
+              "riskiest_level": 5,
+              "reason": "Risk depends on the content of the group's description"
+            }
+          ]
+        },
+        {
+          "path": "handle",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "name_or_path",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a generic handle",
+          "safest_level": 2.0,
+          "riskiest": "a handle that reveals protected health information or unblinding details",
+          "riskiest_level": 5.0,
+          "reason": "Handles can reveal sensitive content.",
+          "answers": [
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a generic handle",
+              "safest_level": 2,
+              "riskiest": "a handle that reveals protected health information or unblinding details",
+              "riskiest_level": 5,
+              "reason": "Handles can reveal sensitive content."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "an internal handle",
+              "safest_level": 2,
+              "riskiest": "a handle containing PII or sensitive details",
+              "riskiest_level": 5,
+              "reason": "Handles can reveal sensitive information when they contain sensitive data."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a generic handle",
+              "safest_level": 2,
+              "riskiest": "a handle that could expose sensitive information",
+              "riskiest_level": 5,
+              "reason": "Risk depends on the content of the @mention handle"
+            }
+          ]
+        },
+        {
+          "path": "name",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "name_or_path",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a generic name",
+          "safest_level": 2.0,
+          "riskiest": "a name that reveals protected health information or unblinding details",
+          "riskiest_level": 5.0,
+          "reason": "Names can reveal sensitive content.",
+          "answers": [
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a generic name",
+              "safest_level": 2,
+              "riskiest": "a name that reveals protected health information or unblinding details",
+              "riskiest_level": 5,
+              "reason": "Names can reveal sensitive content."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "an internal group name",
+              "safest_level": 2,
+              "riskiest": "a name containing PII or sensitive details",
+              "riskiest_level": 5,
+              "reason": "Group names can reveal sensitive information."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a generic name",
+              "safest_level": 2,
+              "riskiest": "a name that could expose sensitive information",
+              "riskiest_level": 5,
+              "reason": "Risk depends on the content of the group's display name"
+            }
+          ]
+        },
+        {
+          "path": "usergroup_id",
+          "important": false,
+          "decided_by": "two_questions",
+          "kind": "record_id",
+          "rankable": false,
+          "gap": 0.0,
+          "safest": "any valid ID",
+          "safest_level": 3.0,
+          "riskiest": "any valid ID",
+          "riskiest_level": 3.0,
+          "reason": "The value itself does not indicate risk.",
+          "answers": [
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid ID",
+              "safest_level": 3,
+              "riskiest": "any valid ID",
+              "riskiest_level": 3,
+              "reason": "The value itself does not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid ID",
+              "safest_level": 3,
+              "riskiest": "any valid ID",
+              "riskiest_level": 3,
+              "reason": "The usergroup ID itself does not indicate risk."
+            },
+            {
+              "kind": "record_id",
+              "rankable": false,
+              "safest": "any valid user group ID",
+              "safest_level": 3,
+              "riskiest": "any valid user group ID",
+              "riskiest_level": 3,
+              "reason": "Risk cannot be ranked by the value of this input"
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "channels",
+        "description",
+        "handle",
+        "name"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "usergroups_users_update",
+      "arguments": [
+        {
+          "path": "usergroup_id",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a non-sensitive user group ID",
+          "safest_level": 2.0,
+          "riskiest": "an ID for a sensitive user group, e.g., unblinded channels access list",
+          "riskiest_level": 5.0,
+          "reason": "Sensitive groups contain critical information like unblinding details.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a non-sensitive user group ID",
+              "safest_level": 2,
+              "riskiest": "an ID for a sensitive user group, e.g., unblinded channels access list",
+              "riskiest_level": 5,
+              "reason": "Sensitive groups contain critical information like unblinding details."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "least sensitive group, e.g., engineering team",
+              "safest_level": 2,
+              "riskiest": "most sensitive group, e.g., unblinded safety data reviewers",
+              "riskiest_level": 5,
+              "reason": "The sensitivity of the user group defines the risk."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public user group",
+              "safest_level": 2,
+              "riskiest": "a restricted system user group",
+              "riskiest_level": 5,
+              "reason": "The sensitivity of the user group affects risk."
+            }
+          ]
+        },
+        {
+          "path": "users",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a list of non-sensitive user IDs",
+          "safest_level": 2.0,
+          "riskiest": "a list including sensitive users, e.g., those with access to unblinded data",
+          "riskiest_level": 5.0,
+          "reason": "Including sensitive users can expose critical information.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a list of non-sensitive user IDs",
+              "safest_level": 2,
+              "riskiest": "a list including sensitive users, e.g., those with access to unblinded data",
+              "riskiest_level": 5,
+              "reason": "Including sensitive users can expose critical information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a list of safe users, e.g., engineering team members",
+              "safest_level": 2,
+              "riskiest": "a list including sensitive user IDs, e.g., study team and unblinded reviewers",
+              "riskiest_level": 5,
+              "reason": "The sensitivity of the included user IDs defines the risk."
+            },
+            {
+              "kind": "recipient",
+              "rankable": true,
+              "safest": "internal users only",
+              "safest_level": 2,
+              "riskiest": "external and internal users mixed",
+              "riskiest_level": 5,
+              "reason": "Adding external users to a group can expose sensitive information."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "usergroup_id",
+        "users"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "users_search",
+      "arguments": [
+        {
+          "path": "limit",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "number",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "10 rows",
+          "safest_level": 2.0,
+          "riskiest": "100 rows",
+          "riskiest_level": 5.0,
+          "reason": "Returning more results exposes more user data.",
+          "answers": [
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "100 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more results exposes more user data."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "100 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more users exposes more personal information."
+            },
+            {
+              "kind": "number",
+              "rankable": true,
+              "safest": "10 rows",
+              "safest_level": 2,
+              "riskiest": "100 rows",
+              "riskiest_level": 5,
+              "reason": "Returning more results exposes potentially sensitive user data."
+            }
+          ]
+        },
+        {
+          "path": "query",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a common name or email",
+          "safest_level": 2.0,
+          "riskiest": "a query for sensitive personal health information",
+          "riskiest_level": 5.0,
+          "reason": "Sensitive queries can expose protected health information.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a common name or email",
+              "safest_level": 2,
+              "riskiest": "a query for sensitive personal health information",
+              "riskiest_level": 5,
+              "reason": "Sensitive queries can expose protected health information."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a common name or email part",
+              "safest_level": 3,
+              "riskiest": "a full subject identifier or a Slack user ID",
+              "riskiest_level": 5,
+              "reason": "Queries that match specific personal health information are highly sensitive."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a common name or email domain",
+              "safest_level": 2,
+              "riskiest": "a specific identifier like a Slack ID or exact email address",
+              "riskiest_level": 5,
+              "reason": "A precise query can directly expose sensitive user details."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "limit",
+        "query"
+      ],
+      "votes_failed": 0
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": []
+}

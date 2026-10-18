@@ -1,0 +1,213 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22653392",
+  "prompt_sha256": "16dfe1211280c5054aeb490f478b03db19736d0feffe3cd6ccaa81ac65db6320",
+  "prompt": "prompt-rules-AS-RUN.md",
+  "policy_section": null,
+  "importance_file": "sqlite.importance.json",
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "important": true,
+          "important_reason": "Describing a sensitive table versus an innocuous one changes the risk.",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Describing a sensitive table is riskier.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "table"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "important": true,
+          "important_reason": "A query that reads sensitive data is riskier than one that does not",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "id_rsa",
+                  ".env",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Queries involving sensitive keywords are riskier.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "important": true,
+          "important_reason": "A query that deletes or updates sensitive data is riskier than one that inserts non-sensitive data",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "delete from",
+                  "update"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "insert into"
+                ],
+                "level": 3
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Deletion and update queries are riskier than insertions.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "important": true,
+          "important_reason": "Inserting into a sensitive table versus an innocuous one",
+          "classification": "ASSET",
+          "rule": {
+            "kind": "register",
+            "default": 4,
+            "overrides": []
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Inserting into a listed asset is notable.",
+          "confidence": 0.0
+        },
+        {
+          "path": "values",
+          "important": true,
+          "important_reason": "Values can carry sensitive data or harmless information",
+          "classification": "CONTENT",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "secret",
+                  "password",
+                  "credential",
+                  "token"
+                ],
+                "level": 5
+              },
+              {
+                "contains": [
+                  "payroll",
+                  "salary",
+                  "medical",
+                  "contract"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "tmp",
+                  "scratch",
+                  "public",
+                  "readme"
+                ],
+                "level": 2
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "source": "inferred",
+          "reason": "Sensitive keywords in values are critical.",
+          "confidence": 0.0
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

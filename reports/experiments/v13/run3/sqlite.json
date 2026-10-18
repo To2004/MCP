@@ -1,0 +1,241 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22958668",
+  "prompt_sha256": "3cc57089d47c7a11b1e628afd9c1128e2bbf2b3c8fa7df7ac4edf8bf6c1e1fe0",
+  "prompt": "prompt-levels-AS-RUN.md",
+  "policy_section": null,
+  "rounds": 3,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [2, 3, 5] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"register\", \"groups\": [{\"contains\": [\"demo\", \"test\"], \"level\": 1}, {\"contains\": [\"prod\", \"billing\"], \"level\": 4}], \"default\": 3}",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "table"
+      ],
+      "rule_problems": {
+        "table": [
+          "levels [2, 3, 5] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"register\", \"groups\": [{\"contains\": [\"demo\", \"test\"], \"level\": 1}, {\"contains\": [\"prod\", \"billing\"], \"level\": 4}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "read_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "select"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "from",
+                  "where"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "join"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "update",
+                  "delete"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "drop",
+                  "truncate"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "rates the content of the query",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    },
+    {
+      "tool_name": "write_query",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "sql",
+          "status": "broken",
+          "important": true,
+          "reason": "the rule never passed the check: levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "last_rule": "{\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"insert\"], \"level\": 3}, {\"contains\": [\"update\"], \"level\": 4}, {\"contains\": [\"delete\"], \"level\": 5}], \"default\": 3}",
+          "choices": null
+        }
+      ],
+      "shortlist": [],
+      "missing_rules": [
+        "sql"
+      ],
+      "rule_problems": {
+        "sql": [
+          "levels [1, 2] have no entry of their own; every level 1 to 5 needs at least one",
+          "rule as written: {\"kind\": \"keywords\", \"groups\": [{\"contains\": [\"insert\"], \"level\": 3}, {\"contains\": [\"update\"], \"level\": 4}, {\"contains\": [\"delete\"], \"level\": 5}], \"default\": 3}"
+        ]
+      }
+    },
+    {
+      "tool_name": "insert_row",
+      "policy_slice": {},
+      "arguments": [
+        {
+          "path": "table",
+          "rule": {
+            "kind": "register",
+            "groups": [
+              {
+                "contains": [
+                  "test",
+                  "temp"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "user",
+                  "account"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "invoice",
+                  "order"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "salary",
+                  "payment"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "private_key",
+                  "secret"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "which",
+          "reason": "The table names decide the level.",
+          "choices": null
+        },
+        {
+          "path": "values",
+          "rule": {
+            "kind": "keywords",
+            "groups": [
+              {
+                "contains": [
+                  "test",
+                  "temp"
+                ],
+                "level": 1
+              },
+              {
+                "contains": [
+                  "user",
+                  "account"
+                ],
+                "level": 2
+              },
+              {
+                "contains": [
+                  "invoice",
+                  "order"
+                ],
+                "level": 3
+              },
+              {
+                "contains": [
+                  "salary",
+                  "payment"
+                ],
+                "level": 4
+              },
+              {
+                "contains": [
+                  "private_key",
+                  "secret"
+                ],
+                "level": 5
+              }
+            ],
+            "default": 3
+          },
+          "when_absent": null,
+          "status": "rule",
+          "important": true,
+          "effect": "carried",
+          "reason": "The content of the values decides the level.",
+          "choices": null
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "missing_rules": [],
+      "rule_problems": {}
+    }
+  ],
+  "failed": []
+}

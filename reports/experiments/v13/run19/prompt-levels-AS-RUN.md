@@ -1,0 +1,221 @@
+<!-- sha256: dc3473f1ce0d7bd4380ab6d0f2f5bc762b143c96d350d71f379cc3c909ccaa34 · source: docs/standards/tool-input-levels.md -->
+
+# Tool Input Levels
+
+For each input of the tool below, first say what the input decides about the asset, then either write a rule that turns the input's value into a level from 1 to 5, using all five levels, or answer `null`. A gateway applies the rules to every call an AI agent makes to the tool, with no model involved, and a call's level is the highest level among its inputs.
+
+## What you are given
+
+- the tool name and description;
+- the inputs to answer, with their description and schema facts (type, format, enum values, minimum, maximum, whether it is required, default, and `domain`: whether the values form an open or a closed set). An input that is one end of a read window carries `window_with`, the other end;
+- the tool's other inputs, for context only: the ones answered in another batch, and switches, short choice lists, paging and email inputs the program decides;
+- optionally, the organization's policy for this tool: a short description, its normal workflow, the assets this tool can reach with a `scanned_level` from 1 to 5, its rules for special values of this tool's inputs (`special_value_rules`), what it calls normal and unusual for them (`baseline`), the rest of its assets by name and level (`other_assets_of_the_organization`), the levels all those assets reach (`asset_levels`), and the levels none reaches (`name_words_needed_for`). Any part may be empty;
+- on a second try, an input may carry `your_last_rule` and `problems_last_time`: the rule you wrote for it and the checks it failed. Repair that rule: fix each problem listed and keep the rest.
+
+Use the whole tool as context. The purpose of the tool and the sibling inputs decide what an input means.
+
+## The five levels
+
+| Level | Meaning |
+|---|---|
+| 1 | The safest realistic value. |
+| 2 | Safe. |
+| 3 | Ordinary. |
+| 4 | High: a sensitive target, a lot at once, outside working hours. |
+| 5 | Critical: restricted or credential-bearing, bulk, or leaving the organization. |
+
+A value typical of the normal workflow gets 1, 2 or 3, unless it names data the policy rates higher.
+
+**Use only what can be known.** Build each level from what the value itself shows, from the tool, or from what you are given. The words in a name or a path are part of the value: a repository called `team-docs` shows it holds documents. Never make a level that needs facts nobody gave you, such as who a person is behind an opaque user id.
+
+**Follow the policy where it speaks.** When a special-value rule or a baseline row names an input, its levels follow it: what the policy calls normal gets 1 to 3, what it calls unusual 4, what it prohibits or calls the heaviest case 5. An asset's description says what its data is about: in a search text or a body, the words that name that data sit at that asset's level, never below. Numbers and cut-offs the policy does not give are yours.
+
+## Step 1: what does the input decide?
+
+Name it in `effect`:
+
+| effect | the input decides | examples |
+|---|---|---|
+| `which` | which asset is touched, or the account, owner or workspace it lives in | a repository and its owner, a folder, a path, a channel, a calendar, an account, a table, a database |
+| `how_much` | how much of it | a limit, a page size, a count, a number of items or recipients |
+| `who` | who receives it, is notified, or gains access | a recipient, an attendee, a member, a list of channels to add |
+| `action` | what is done to it | a mode with five or more options |
+| `when` | when, or over what span | a start, an end, a window, a recurrence, a schedule |
+| `carried` | what is written into it, sent out of it, or run against it | a body, a message, a file's content, a description sent to attendees, a query or command that runs, a search text |
+| `none` | nothing about the asset | see below |
+
+## Step 2: the rule, or `null`
+
+Write a rule for every input whose effect is not `none`, with four exceptions where the answer is `null`:
+
+1. **It only narrows the call**: an exclude list, a first or last number of lines of a file that is read anyway, a maximum depth. Leaving it out reads the same or more.
+2. **It is a label next to the main content**: a title, a commit message or a display name, when the same tool has a separate body or content input that carries the main content.
+3. **Its levels would need facts nobody has**: an opaque user id, where the level depends on who the person is.
+4. **It has fewer than five possible values**, even when the schema does not list them: four conversation types, three actions, a direction.
+
+`effect: none`, and so `null`, is for: how the result is shown, sorted, formatted or translated; a time zone, a color, a tag; a reminder and its minutes; the result window (a page number, an offset, a cursor); bookkeeping (a request id, an idempotency key, a version token copied from an earlier reply); a record inside an asset another input already picked (an issue or pull request number, an event id, a message timestamp, a comment id, a commit); custom metadata properties attached to records.
+
+**Never `null`**: an input that names the asset or where it lives (a repository, an owner, an organization, a channel, a calendar, an account the tool reads or writes data in, a path, a table); the body, content, chat or mail message, description or query that is written, sent or run; a limit, a page size or a count; a time, a window or a recurrence; a recipient or member list.
+
+Two inputs that name one asset together (an owner and a repository, an account and a calendar) both get a rule.
+
+## Rule kinds
+
+Every rule must reach each level 1, 2, 3, 4 and 5 with at least one entry of its own. `default` is the level for a value that matches nothing; it does not count as an entry. Such a value is ordinary, so `default` is 1, 2 or 3, never 4 or 5. Write one entry for each level 1 to 5, so that none is forgotten.
+
+The examples below show the shape only. Their fragments are placeholders in angle brackets: **write real words** for this tool's own data and the organization's assets, and your own cut-offs. A fragment with an angle bracket, or the placeholder words themselves, is rejected.
+
+### `ranges`: a number, a count, a size, a length or a time
+
+```json
+{"kind": "ranges", "measure": "value", "ranges": [
+  {"min": null, "max": 5, "level": 1},
+  {"min": 5, "max": 20, "level": 2},
+  {"min": 20, "max": 200, "level": 3},
+  {"min": 200, "max": 2000, "level": 4},
+  {"min": 2000, "max": null, "level": 5}], "default": 3}
+```
+
+| measure | computed from the value | use it for |
+|---|---|---|
+| `value` | the number itself | counts, limits, page sizes, amounts |
+| `length` | the number of items in a list, or characters in a string | how many files, recipients or attendees. `length` is a measure of a `ranges` rule, not a kind of its own |
+| `span_hours` | hours between this date-time and the sibling named in `with`, **in hours**: a day is 24, a week 168, a month 720, a year 8760 | a window given by a start and an end |
+| `hour_of_day` | the hour of a date-time, 0 to 24 | when a change or a meeting happens |
+| `hours_from_now` | hours from the call to this date-time, **in hours**; negative is the past | how far ahead a change takes effect, or how far back a read starts |
+
+- A range matches when `min <= x < max`; `null` is open. Ranges are tried in order and the first match wins, so a range that only repeats earlier ones never decides a level and does not count. For `value`, `length` and `span_hours`, the last range is open at the top.
+- **A read window**: an input with `window_with` gets a `span_hours` rule naming that sibling in `with`, and so does the sibling. The length of the window is what matters, not how far away it is. Never `hours_from_now` for such an input.
+- **A single date that opens a read up to now** (an after or since filter, only when the tool has no end input for it; a tool with a start and an end has a window): `hours_from_now`, where further in the past reads more: a day back at 1, a week at 2, a month at 3, a year at 4, more than a year at 5. The ranges go from the most negative number up.
+- **Time of day**: peak working hours are the safest, levels 1 and 2; late night is 5.
+
+### `register`: the value is a listed asset's own name or id, or the account or owner it lives in
+
+Use `register` only when this input's values are the assets' own names or ids as the list writes them: a repository, a channel, a calendar. When the listed assets are kinds of data (key material, payroll, project documents) and the value is a path, a file name or a text, the value never contains those names, and a `register` rule would give every value its `default`. Use `keywords` for it instead: the words that mark each kind of data in such a value, taken from the asset's description and the policy's rules, at that asset's level.
+
+```json
+{"kind": "register", "groups": [
+  {"contains": ["<name words for level 2>"], "level": 2},
+  {"contains": ["<name words for level 3>"], "level": 3}], "default": 3}
+```
+
+At run time the program looks the value up in the organization's whole asset list, this tool's assets and the others: a value that names a listed asset gets that asset's `scanned_level`, and those levels count as entries. Write `groups` of name fragments **only for the levels in `name_words_needed_for`**, so that a name not on the list can still be rated by what the name itself says. When `name_words_needed_for` is empty, write no groups at all: `{"kind": "register", "groups": [], "default": 3}`; a name not on the list gets `default`. Do not repeat the listed assets in `groups`, and never put a word from a listed asset's name at a level far from that asset: `scada` cannot be level 1 when the listed `plant-scada-gateway` is 5. With no asset list, the groups must reach all five levels.
+
+Worked example: `asset_levels` is `[1, 4, 5]` and `name_words_needed_for` is `[2, 3]`. The rule above needs exactly those two groups, one at level 2 and one at level 3, filled with words that names of this kind of asset carry.
+
+When a special-value rule says that, for this tool, an asset is prohibited or the heaviest case, raise that asset with `overrides`: `"overrides": [{"asset": "<asset name>", "level": 5}]`. A scanned level says how sensitive an asset is in general; the policy's rule says what this tool may do to it, such as a write to a record that must not be changed. Only raise, and only for an asset the policy's rule names.
+
+An owner, an account or a workspace gets the same kind of rule as the asset it holds, with the same `name_words_needed_for`.
+
+### `keywords`: a path, a query, a body, a command, a search text
+
+```json
+{"kind": "keywords", "groups": [
+  {"contains": ["<safest words>"], "level": 1},
+  {"contains": ["<safe words>"], "level": 2},
+  {"contains": ["<ordinary words>"], "level": 3},
+  {"contains": ["<sensitive words>"], "level": 4},
+  {"contains": ["<critical words>"], "level": 5}], "default": 3}
+```
+
+The value is lowercased and checked for each fragment; the highest matching group wins. Write fragments in lower case, as plain text, never as regular expressions. A fragment matches when the value contains it, so write the shortest form that still names the thing: `unblind` matches unblind, unblinded and unblinding, while `unblinding` matches only the last. Rate what the text touches or reveals: for a query, the operation it performs (`select` reads, `drop` destroys) and the data it names. The program adds the credential words (password, secret, token, private key, `.env`, `id_rsa` and the like) at level 5 to every `keywords` rule, so your groups must reach levels 1 to 4; add your own level-5 words for what the policy prohibits or calls the heaviest case, and the words of a level-5 asset.
+
+### `values`: a choice of five or more options
+
+```json
+{"kind": "values", "values": [
+  {"value": "a", "level": 1}, {"value": "b", "level": 2}, {"value": "c", "level": 3},
+  {"value": "d", "level": 4}, {"value": "e", "level": 5}], "default": 3}
+```
+
+Compared with each listed value, ignoring case.
+
+### `email`: an email address
+
+```json
+{"kind": "email"}
+```
+
+The levels are fixed and come from the organization's policy, where its own people are the normal audience and any outside address is unusual: its own domain 1, a partner domain it lists 2, an address with no readable domain 3, another organization 4, a personal mailbox such as a free webmail account or a domain the policy flags 5. Write nothing else in this rule.
+
+## Absent inputs and lists
+
+- `when_absent` is the level when the call leaves the input out. Set it only when the policy or the normal workflow says that leaving the input out is unusual or risky, such as a search the policy wants scoped to one channel; otherwise it is `null`, and an input with a default is rated at its default. When the policy says what leaving it out means, follow it: a special-value rule or baseline row about an input "with no `x`" makes `x`'s `when_absent` 4 (unusual) or 5 (the heaviest case).
+- For a list item (a path with `[]`), the rule is applied to every item and the highest level counts. To rate how many items there are, put a `length` rule on the list itself.
+
+## Examples
+
+These come from products unlike the one you are judging; they show the reasoning only.
+
+| Tool and input | effect | Answer |
+|---|---|---|
+| export_records `limit` | `how_much` | `ranges` on `value`, five ranges from a handful to the whole table |
+| list_invoices `from` and `to` | `when` | on both, `ranges` on `span_hours` with the other: below 24 (a day), 24 to 168 (a week), 168 to 720 (a month), 720 to 8760 (a year), 8760 and up. Only a read of more than a year is bulk |
+| schedule_job `start` | `when` | `ranges` on `hour_of_day`: midday at 1, the edges of the working day at 2, early morning and evening at 3, late evening at 4, night at 5 |
+| query_db `database`, assets listed at 1, 3 and 5 | `which` | `register`, name words for 2 and 4 |
+| query_db `database`, assets listed at every level | `which` | `register` with no groups |
+| query_db `workspace`, the account the databases live in | `which` | `register`, name words for all levels the assets miss |
+| open_document `path`, the listed assets are kinds of data, not file names | `which` | `keywords`, not `register`: a path never contains an asset's name, so the words that mark each kind in a path, from the policy, at that kind's level |
+| run_report `sql`, an analytics query | `carried` | `keywords`: read-only words low, writes high, destructive or permission changes at 5, sensitive table names raising it |
+| send_mail `to[]` | `who` | `email` |
+| send_mail `body` | `carried` | `keywords` on what the body reveals |
+| send_mail `subject`, with a body input | `carried` | `null`: a label next to the main content |
+| backup_bucket `skip[]` | `how_much` | `null`: it only narrows the call |
+| fetch_page `max_chars`, characters of a page that is fetched anyway | `how_much` | `null`: it only narrows the call |
+| list_orders `status`, four order states | `which` | `null`: fewer than five possible values |
+| search_mail `after`, no end input | `when` | `ranges` on `hours_from_now`, further back is higher |
+| add_member `user_id`, opaque | `who` | `null`: who the user is cannot be known from the id |
+| get_ticket `ticket_id`, project chosen by another input | `none` | `null`: a record inside the chosen project |
+| list_files `order_by` | `none` | `null`: presentation |
+
+## Before you answer, check
+
+1. Does every rule reach each level 1 to 5 with an entry of its own? For `register`, do your name words cover exactly the levels in `name_words_needed_for`? For `keywords`, do your groups reach 1 to 4 (the program adds level 5)?
+2. Where the policy has a special-value rule or a baseline row for an input, do its levels follow it?
+3. Does an ordinary call get 1, 2 or 3 from every rule?
+4. Is every `null` either `effect: none` or one of the four exceptions, named in `reason`?
+5. Did you write this tool's own words, not placeholders?
+6. Is any of these given a rule? They are always `null`: a reminder or its minutes; custom metadata or extended properties; the first or last lines of a file read anyway; an exclude list.
+
+## Rules
+
+1. Answer every input listed under Inputs exactly once, using the same path, including nested ones (`files[].path`). Answer none that is not listed there.
+2. Every level and `default` is a whole number from 1 to 5.
+3. `reason` comes before `rule`: one short sentence on what decides the levels and where it comes from (the policy, the schema, common knowledge), or why the answer is `null`.
+
+## Output
+
+Output one JSON object in this shape:
+
+```json
+{"tool_name": "<name>", "inputs": [
+  {"path": "<input path>",
+   "effect": "which | how_much | who | action | when | carried | none",
+   "reason": "<one short sentence>",
+   "rule": {"kind": "ranges | register | keywords | values | email", "...": "fields of that kind"},
+   "when_absent": null},
+  {"path": "<input path>", "effect": "none", "reason": "<why>", "rule": null, "when_absent": null}
+]}
+```
+
+Some large tools are given in more than one batch, each with its own inputs and the others listed for context. Answer only the inputs in `<inputs>`.
+
+<tool>
+{tool_json}
+</tool>
+
+<inputs>
+{inputs_json}
+</inputs>
+
+Other inputs of this tool, for context only:
+
+<other_inputs>
+{context_inputs_json}
+</other_inputs>
+
+Organization's policy for this tool (may be empty):
+
+<policy>
+{policy_json}
+</policy>

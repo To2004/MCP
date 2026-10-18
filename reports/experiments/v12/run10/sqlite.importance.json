@@ -1,0 +1,273 @@
+{
+  "server": "sqlite",
+  "catalog": {
+    "path": "reports/experiments/static_scanner/inputs/sqlite.json",
+    "sha256": "852db5e46f557798ee74e6c6b7901819543b5987efa85b533a56f75cb29957f9",
+    "package": "cbg-sqlite-server",
+    "captured": "2026-06-08"
+  },
+  "slurm_job": "22637057",
+  "prompt_sha256": "0b1209147e6521a007c5f97f73234b0c3f729e59d6a364aa2c7295fff396d48a",
+  "prompt": "prompt-importance-AS-RUN.md",
+  "votes": 3,
+  "keep_gap": 2,
+  "policy_section": null,
+  "tools": [
+    {
+      "tool_name": "list_tables",
+      "arguments": [],
+      "no_declared_schema": true
+    },
+    {
+      "tool_name": "describe_table",
+      "arguments": [
+        {
+          "path": "table",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "name_or_path",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a public table",
+          "safest_level": 2.0,
+          "riskiest": "a restricted table with sensitive data",
+          "riskiest_level": 5.0,
+          "reason": "The sensitivity of the table's contents determines risk.",
+          "answers": [
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a public table",
+              "safest_level": 2,
+              "riskiest": "a restricted table with sensitive data",
+              "riskiest_level": 5,
+              "reason": "The sensitivity of the table's contents determines risk."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a public table name",
+              "safest_level": 2,
+              "riskiest": "a restricted table of sensitive data",
+              "riskiest_level": 5,
+              "reason": "The risk depends on the sensitivity of the table named."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a public table",
+              "safest_level": 2,
+              "riskiest": "a restricted table with sensitive data",
+              "riskiest_level": 5,
+              "reason": "Risk depends on the sensitivity of the table's contents."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "table"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "read_query",
+      "arguments": [
+        {
+          "path": "sql",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "a small select query",
+          "safest_level": 3.0,
+          "riskiest": "a complex query exposing sensitive data",
+          "riskiest_level": 5.0,
+          "reason": "the content of the SQL query determines its risk level",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a small select query",
+              "safest_level": 3,
+              "riskiest": "a complex query exposing sensitive data",
+              "riskiest_level": 5,
+              "reason": "the content of the SQL query determines its risk level"
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple select query with a small result set",
+              "safest_level": 3,
+              "riskiest": "a complex query that reads large amounts of sensitive data",
+              "riskiest_level": 5,
+              "reason": "the content of the SQL can vary from safe to very risky"
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple select statement",
+              "safest_level": 3,
+              "riskiest": "a complex query exposing sensitive data",
+              "riskiest_level": 5,
+              "reason": "The content of the SQL query can vary from safe to highly sensitive."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "write_query",
+      "arguments": [
+        {
+          "path": "sql",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 2.0,
+          "safest": "a small update statement",
+          "safest_level": 3.0,
+          "riskiest": "a delete statement affecting many rows",
+          "riskiest_level": 5.0,
+          "reason": "the content of the query determines its risk level",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a small update statement",
+              "safest_level": 3,
+              "riskiest": "a delete statement affecting many rows",
+              "riskiest_level": 5,
+              "reason": "the content of the query determines its risk level"
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a small update query, e.g., updating a single row's status",
+              "safest_level": 3,
+              "riskiest": "an export or delete statement affecting many rows",
+              "riskiest_level": 5,
+              "reason": "the content of the SQL query can vary from safe updates to risky deletions"
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "an update query with a where clause limiting the change to one record",
+              "safest_level": 3,
+              "riskiest": "a delete query without a where clause, deleting all records in a table",
+              "riskiest_level": 5,
+              "reason": "the content of sql can range from safe updates to destructive deletes"
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "sql"
+      ],
+      "votes_failed": 0
+    },
+    {
+      "tool_name": "insert_row",
+      "arguments": [
+        {
+          "path": "table",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "asset_id",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "a public table",
+          "safest_level": 2.0,
+          "riskiest": "a restricted system table",
+          "riskiest_level": 5.0,
+          "reason": "The sensitivity of the table determines the risk.",
+          "answers": [
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public table",
+              "safest_level": 2,
+              "riskiest": "a restricted system table",
+              "riskiest_level": 5,
+              "reason": "The sensitivity of the table determines the risk."
+            },
+            {
+              "kind": "name_or_path",
+              "rankable": true,
+              "safest": "a temporary table",
+              "safest_level": 2,
+              "riskiest": "a table of sensitive user data",
+              "riskiest_level": 5,
+              "reason": "Tables can vary in sensitivity based on the type and volume of data they contain."
+            },
+            {
+              "kind": "asset_id",
+              "rankable": true,
+              "safest": "a public table",
+              "safest_level": 2,
+              "riskiest": "a restricted system table",
+              "riskiest_level": 5,
+              "reason": "Tables vary in sensitivity based on their purpose and data."
+            }
+          ]
+        },
+        {
+          "path": "values",
+          "important": true,
+          "decided_by": "two_questions",
+          "kind": "content",
+          "rankable": true,
+          "gap": 3.0,
+          "safest": "non-sensitive data",
+          "safest_level": 2.0,
+          "riskiest": "confidential or personal data",
+          "riskiest_level": 5.0,
+          "reason": "The content of the values determines the risk.",
+          "answers": [
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "non-sensitive data",
+              "safest_level": 2,
+              "riskiest": "confidential or personal data",
+              "riskiest_level": 5,
+              "reason": "The content of the values determines the risk."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "a simple value like 'test'",
+              "safest_level": 2,
+              "riskiest": "personal or sensitive data",
+              "riskiest_level": 5,
+              "reason": "The content of the values can range from harmless to highly sensitive."
+            },
+            {
+              "kind": "content",
+              "rankable": true,
+              "safest": "non-sensitive data insertion",
+              "safest_level": 2,
+              "riskiest": "insertion of sensitive or personal data",
+              "riskiest_level": 5,
+              "reason": "Content can range from harmless to highly confidential."
+            }
+          ]
+        }
+      ],
+      "shortlist": [
+        "table",
+        "values"
+      ],
+      "votes_failed": 0
+    }
+  ],
+  "failed": [],
+  "no_declared_schema": [
+    "list_tables"
+  ]
+}
