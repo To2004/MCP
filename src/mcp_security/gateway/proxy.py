@@ -46,7 +46,7 @@ from mcp_security.gateway.config import (
     load_config,
 )
 from mcp_security.gateway.effects import EffectMap
-from mcp_security.gateway.framework import RouteScorer, load_artifacts
+from mcp_security.gateway.framework import RouteScorer, behaviour_fields, load_artifacts
 from mcp_security.gateway.http_wire import (
     MessageTap,
     Network,
@@ -60,6 +60,7 @@ from mcp_security.gateway.oauth import NO_TOKEN, AuthError, TokenVerifier
 from mcp_security.gateway.pseudonym import Pseudonymizer
 from mcp_security.gateway.wire_log import (
     CALL_METHOD,
+    INIT_METHOD,
     TO_AGENT,
     TO_SERVER,
     Exchange,
@@ -134,7 +135,12 @@ class Gateway:
         self.scorers: dict[str, RouteScorer] = {}
         for name, upstream in config.upstreams.items():
             artifacts = load_artifacts(
-                name, upstream.scan, upstream.breadth, upstream.rules, upstream.kind
+                name,
+                upstream.scan,
+                upstream.breadth,
+                upstream.rules,
+                upstream.kind,
+                upstream.behaviour_policy,
             )
             if artifacts and upstream.scoring != "off":
                 self.scorers[name] = RouteScorer(name, artifacts, history=upstream.history)
@@ -174,7 +180,9 @@ class Gateway:
         for message in messages or [None]:  # a bodiless GET/DELETE still shows up
             record = self._log(exchange, TO_SERVER, None, message)
             if message and message.get("method") == CALL_METHOD:
-                self._schedule(upstream, exchange, message, record["ts"])
+                self._schedule(upstream, exchange, message, record)
+            elif message and message.get("method"):
+                self._in_order(upstream, self._observe, exchange, record)
         try:
             reply = await self.client.send(
                 self.client.build_request(
@@ -209,14 +217,11 @@ class Gateway:
                 yield chunk
                 for message in tap.feed(chunk):
                     logged = True
-                    self._watch_catalog(
-                        exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
-                    )
+                    self._answered(exchange, self._log(exchange, TO_AGENT, reply.status_code,
+                                                       message))
             for message in tap.close():
                 logged = True
-                self._watch_catalog(
-                    exchange, self._log(exchange, TO_AGENT, reply.status_code, message)
-                )
+                self._answered(exchange, self._log(exchange, TO_AGENT, reply.status_code, message))
             if not logged:  # 202 to a notification, a DELETE's answer: the status still counts
                 self._log(exchange, TO_AGENT, reply.status_code, None)
         finally:
@@ -284,26 +289,57 @@ class Gateway:
             }
             self.log.write(name, gateway_record(name, notice, **fields))
 
-    def _schedule(self, upstream: Upstream, exchange: Exchange, call: dict, ts: float) -> None:
+    def _schedule(self, upstream: Upstream, exchange: Exchange, call: dict, record: dict) -> None:
         """Inline: score now, before forwarding. Background: score once the call is on its
         way upstream, on the same event loop, in arrival order (FIFO)."""
-        if upstream.scoring == "background":
-            asyncio.get_running_loop().call_soon(self._decide, exchange, call, ts)
-        else:
-            self._decide(exchange, call, ts)
+        self._in_order(upstream, self._decide, exchange, call, record)
 
-    def _decide(self, exchange: Exchange, call: dict, ts: float) -> None:
+    @staticmethod
+    def _in_order(upstream: Upstream, work, *args: object) -> None:
+        """Run ``work`` now (inline scoring) or queued on the event loop (background), so the
+        scorer sees every message in arrival order either way."""
+        if upstream.scoring == "background":
+            asyncio.get_running_loop().call_soon(work, *args)
+        else:
+            work(*args)
+
+    def _observe(self, exchange: Exchange, record: dict) -> None:
+        """A request that is not a tool call: the behaviour layer learns origin and handshake."""
+        scorer = self.scorers.get(exchange.route)
+        if scorer is None:
+            return
+        try:
+            scorer.observe(record.get("mcp.method.name"), record["ts"], **behaviour_fields(record))
+        except Exception as exc:  # noqa: BLE001 — scoring must never break the agent's request
+            error = f"{type(exc).__name__}: {exc}"
+            self._notice(exchange, "behaviour_error", **{"gateway.error": error})
+
+    def _answered(self, exchange: Exchange, record: dict) -> None:
+        """A reply line: watch for an unscanned tool list, and for the session ``initialize``
+        opened (the request carried no session id; the reply's header assigns it)."""
+        self._watch_catalog(exchange, record)
+        scorer = self.scorers.get(exchange.route)
+        session = record.get("mcp.session.id")  # as logged, so offline sees the same id
+        if scorer and session and record.get("mcp.method.name") == INIT_METHOD:
+            caller = behaviour_fields(record)["caller"]
+            upstream = self.config.upstreams[exchange.route]
+            self._in_order(upstream, scorer.session_initialized, caller, session, record["ts"])
+
+    def _decide(self, exchange: Exchange, call: dict, record: dict) -> None:
         """Score one tools/call with the route's framework and log the verdict."""
         scorer = self.scorers.get(exchange.route)
         if scorer is None:
             return
         params = call.get("params") or {}
+        ts = record["ts"]
         try:
+            fields = behaviour_fields(record)
             decision = scorer.score(
                 params.get("name"),
                 params.get("arguments") or {},
                 ts,
-                caller=exchange.agent_id or exchange.agent,
+                fields.pop("caller"),
+                **fields,
             )
         except Exception as exc:  # noqa: BLE001 — a scoring bug must never break the agent's call; it is logged, not hidden
             decision = {"error": f"{type(exc).__name__}: {exc}"}
@@ -333,7 +369,7 @@ class Gateway:
             try:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 partial = target.with_suffix(target.suffix + ".partial")
-                partial.write_text(json.dumps(scorer.snapshot_all()), encoding="utf-8")
+                partial.write_text(json.dumps(scorer.state()), encoding="utf-8")
                 partial.replace(target)
             except OSError as exc:
                 print(f"gateway: could not save state for {name}: {exc}", file=sys.stderr)
@@ -341,8 +377,8 @@ class Gateway:
     def _restore_state(self, upstream: Upstream) -> None:
         """Continue the route's dynamic history where the last run stopped, if it was saved."""
         if upstream.state_file and Path(upstream.state_file).exists():
-            snapshot = json.loads(Path(upstream.state_file).read_text(encoding="utf-8"))
-            self.scorers[upstream.name].restore_all(snapshot)
+            saved = json.loads(Path(upstream.state_file).read_text(encoding="utf-8"))
+            self.scorers[upstream.name].load_state(saved)
 
     def _watch_catalog(self, exchange: Exchange, record: dict) -> None:
         """Save a tool list this route's scan was not run on, once, for the static scan."""

@@ -82,6 +82,7 @@ class Upstream:
     scoring: str = "inline"  # "inline" before forwarding, "background" after, or "off"
     state_file: str | None = None  # dynamic history: loaded at start, saved at shutdown
     state_every: int = 0  # also save after every N scored calls (0: only at shutdown)
+    behaviour_policy: str | None = None  # behaviour layer's limits/steps (behaviour/policy.py)
 
     def __post_init__(self) -> None:
         if self.scoring not in SCORING_MODES:

@@ -16,10 +16,16 @@ import csv
 import json
 from pathlib import Path
 
-from mcp_security.gateway.framework import RouteScorer, load_artifacts
+from mcp_security.gateway.framework import RouteScorer, behaviour_fields, load_artifacts
 from mcp_security.gateway.proxy import load_config
 from mcp_security.gateway.log_file import read_log
-from mcp_security.gateway.wire_log import CALL_METHOD, TO_AGENT, TO_SERVER, TOOL_ERROR
+from mcp_security.gateway.wire_log import (
+    CALL_METHOD,
+    INIT_METHOD,
+    TO_AGENT,
+    TO_SERVER,
+    TOOL_ERROR,
+)
 
 COLUMNS = [
     "ts",
@@ -40,6 +46,10 @@ COLUMNS = [
     "risk",
     "input_level",
     "input_set_by",
+    "behaviour",
+    "behaviour_reason",
+    "static_level",
+    "dynamic_risk",
     "score_us",
     "reasons",
 ]
@@ -55,7 +65,7 @@ def pair_calls(records: list[dict]) -> list[dict]:
     """
     calls: list[dict] = []
     pending: dict[tuple, dict] = {}
-    for record in records:
+    for line, record in enumerate(records):
         message = record.get("message")
         key = (record.get("gateway.agent"), record.get("mcp.session.id"), _request_id(record))
         direction = record["gateway.direction"]
@@ -69,6 +79,8 @@ def pair_calls(records: list[dict]) -> list[dict]:
                 "args": (params.get("arguments") or {}) if message is not None else None,
                 "outcome": "no_response",
                 "latency_s": None,
+                "line": line,  # its place in the log: other requests are replayed around it
+                "behaviour": behaviour_fields(record),
             }
             calls.append(call)
             pending[key] = call
@@ -101,23 +113,56 @@ def _outcome(record: dict) -> str:
     return TOOL_ERROR if (message.get("result") or {}).get("isError") else "ok"
 
 
-def score_calls(calls: list[dict], scorer: RouteScorer | None) -> list[dict]:
+def score_calls(
+    calls: list[dict], scorer: RouteScorer | None, records: list[dict] | None = None
+) -> list[dict]:
     """Each call with its score, in order; a route without a scan gets no score, and nor
-    does a call whose arguments were not logged (the live decision line still has it)."""
+    does a call whose arguments were not logged (the live decision line still has it).
+
+    Pass the log's ``records`` too and the behaviour layer also sees the other requests
+    (initialize, tools/list) and the session each ``initialize`` opened, in log order, as the
+    live gateway did: then the ``behaviour`` numbers match the live decision lines.
+    """
     if scorer is None:
         return [{**call, "reasons": "route not scanned"} for call in calls]
-    return [
-        {**call, **scorer.score(call["tool"], call["args"], call["ts"])}
-        if call["args"] is not None
-        else {**call, "reasons": ARGS_NOT_LOGGED}
-        for call in calls
-    ]
+    events = _behaviour_events(records) if records else []
+    rows, done = [], 0
+    for call in calls:
+        while done < len(events) and events[done][0] < call.get("line", -1):
+            events[done][1](scorer)
+            done += 1
+        if call["args"] is None:
+            rows.append({**call, "reasons": ARGS_NOT_LOGGED})
+            continue
+        fields = dict(call.get("behaviour") or {})
+        caller = fields.pop("caller", None)
+        rows.append({**call, **scorer.score(call["tool"], call["args"], call["ts"], caller,
+                                            **fields)})
+    return rows
+
+
+def _behaviour_events(records: list[dict]) -> list[tuple]:
+    """(line, apply) for every request that is not a tool call, and for every reply that
+    opened a session on ``initialize``, in log order."""
+    events = []
+    for line, record in enumerate(records):
+        method, direction = _method(record), record.get("gateway.direction")
+        if direction == TO_SERVER and method and method != CALL_METHOD:
+            fields, ts = behaviour_fields(record), record["ts"]
+            events.append((line, lambda s, f=fields, m=method, t=ts: s.observe(m, t, **f)))
+        elif direction == TO_AGENT and method == INIT_METHOD and record.get("mcp.session.id"):
+            caller = behaviour_fields(record)["caller"]
+            session, ts = record["mcp.session.id"], record["ts"]
+            events.append(
+                (line, lambda s, c=caller, i=session, t=ts: s.session_initialized(c, i, t))
+            )
+    return events
 
 
 def write_csv(rows: list[dict], path: Path) -> None:
     """The scored calls, one row each; ``args`` as JSON."""
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=COLUMNS)
+        writer = csv.DictWriter(handle, fieldnames=COLUMNS, extrasaction="ignore")
         writer.writeheader()
         for row in rows:
             args = None if row["args"] is None else json.dumps(row["args"], ensure_ascii=False)
@@ -134,11 +179,18 @@ def main() -> None:
     config = load_config(args.config)
     upstream = config.upstreams[args.route]
     log_path = config.log_dir / f"{args.route}.jsonl"
-    calls = pair_calls(read_log(log_path))
+    records = read_log(log_path)
+    calls = pair_calls(records)
     artifacts = load_artifacts(
-        args.route, upstream.scan, upstream.breadth, upstream.rules, upstream.kind
+        args.route,
+        upstream.scan,
+        upstream.breadth,
+        upstream.rules,
+        upstream.kind,
+        upstream.behaviour_policy,
     )
-    rows = score_calls(calls, RouteScorer(args.route, artifacts) if artifacts else None)
+    scorer = RouteScorer(args.route, artifacts, history=upstream.history) if artifacts else None
+    rows = score_calls(calls, scorer, records)
 
     out = log_path.with_name(f"{args.route}_scored.csv")
     write_csv(rows, out)

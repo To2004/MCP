@@ -1,6 +1,6 @@
 # Dynamic layer dimensions: summary
 
-This is a one-page summary of what the dynamic layer should measure, how well each choice works, and what it needs from the log. Details are in [HIGH_LEVEL.md](HIGH_LEVEL.md) (no call content), [REPORT.md](REPORT.md) (full report, scale and identity) and [DIMENSIONS_GUIDE.md](DIMENSIONS_GUIDE.md) (every dimension with a scenario).
+This is a one-page summary of what the dynamic layer should measure, how well each choice works, and what it needs from the log. The short version for reviewers and clients, with the formula, is [FORMULA.md](FORMULA.md). Details are in [HIGH_LEVEL.md](HIGH_LEVEL.md) (no call content), [REPORT.md](REPORT.md) (full report, scale and identity) and [DIMENSIONS_GUIDE.md](DIMENSIONS_GUIDE.md) (every dimension with a scenario).
 
 ## Scope
 

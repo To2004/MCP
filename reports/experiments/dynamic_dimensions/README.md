@@ -4,6 +4,9 @@ Which runtime dimensions (time, volume, repetition, reach, breadth, order, size,
 
 ## Start here
 
+- [DIMENSION_FORMULAS.md](DIMENSION_FORMULAS.md): **the current design.** The exact formula for each of the 15 dimensions (Timing, Footprint, Origin, Request). Each gives a score from 0 to 1 using only fractions and averages, with no bits. The strangest dimension sets a multiplier from 0.7 to 5: ordinary calls stay at or below 1, and there is a warm-up of 5 calls. Static × dynamic stays between 0.7 and 25.
+- [FORMULA.md](FORMULA.md): the short version for reviewers and clients: three questions (Pace, Path, Place), the `e` formula that joins them, and what a deployment needs.
+- [SCENARIOS.md](SCENARIOS.md): the formula run on 15 concrete scenarios by a reference engine, where it breaks, and two new ideas that fix the breaks (crowd: one agent or everyone; settling: changed or misbehaving).
 - [SUMMARY.md](SUMMARY.md): one-page summary of everything: results, the recommended set, what to add or remove, what the high level cannot see, identity, log and scale.
 - [REPORT.md](REPORT.md): the big summary. Which dimensions, how well they work, how to run them for 10,000 agents, who sent the call, and what the log needs.
 - [HIGH_LEVEL.md](HIGH_LEVEL.md): the dimensions that work **without looking inside any call** (tool, operation, asset type, time, volume, general client/network): the recommended set, specialists, what to remove and what the high level cannot see.
@@ -32,6 +35,11 @@ Which runtime dimensions (time, volume, repetition, reach, breadth, order, size,
 | `identity_variants.py`, `identity_eval.py`, `w2/run_identity.sh` | Identity test: the same traffic seen as one token per person, one token shared by 10 people, or session-only identity. |
 | `engine_scale.py` | Cost test: a lean engine for the core set run with 10,000 agents (throughput, latency, memory, weekly peers). |
 | `dims4.py`, `dims5.py`, `dims6.py`, `high_level_eval.py`, `w2/run_high_level.sh` | High-level dimensions (no call content) and their evaluation; see HIGH_LEVEL.md. |
+| `dynamic_engine.py`, `scenarios.py`, `idea_eval.py` | A reference engine for the formula with the two new ideas; 15 scripted scenarios on a simulated GitHub organisation; both ideas on the 9 organisations. See SCENARIOS.md. |
+| `self_only_dims.py`, `self_only_eval.py` | Self-only dimensions (no user id, no comparison with other users) and identity variants. |
+| `vkp_extra_dims.py`, `vkp_eval.py`, `vkp_greedy.py`, `vkp_engine.py`, `vkp_scenarios.py` | The Velocity / Knowledge / Place baseline: every proposed dimension alone and drop-one, the smallest set, average vs max inside a family, and the scenarios. |
+| `family_formula.py` | The three families (Pace, Path, Place) and the `e` formula: four ways to turn surprise into a signal × four ways to join the families; see FORMULA.md. |
+| `formula_compare.py`, `formula_test.py`, `formula_test2.py` | Earlier tests of how to combine the dimensions into one score: strongest signal vs adding vs multiplying, at equal analyst load. |
 | `results/` | `results_seed{1,2}.md` (per-dimension experiments), `plans.md`, `drift.txt`, `focus.md` (combined by strongest signal), `focus_accumulated.md` (combined by adding risk per caller-day), `visibility.md` (reading nothing vs static-kept inputs), `learned.md`, `hybrid.md`, `new_dims.md`, `select_pick*_v2.md`, `logging_essence.md` (what logs contain and what analytics use, across non-MCP domains). |
 
 ## Reproduce

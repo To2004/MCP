@@ -7,7 +7,13 @@ This connects the existing pieces and adds no risk logic of its own:
 - **dynamic** — the runtime factor ``B × L``: ``gate_runtime.GateScorer``, which learns
   from every call it scores, so calls must reach it in arrival order;
 - **input rules** — stage 2: ``input_rules.evaluate_call``, the call's input level 1–5,
-  reported beside the risk (how the two combine is not decided).
+  reported beside the risk (how the two combine is not decided);
+- **behaviour** — the dynamic layer's behaviour multiplier ×0.7–5:
+  ``behaviour.BehaviourEngine``, which compares each caller with his own last 90 days (rate,
+  session length, request size, tool, asset, time of day, network, client, policy rules)
+  without reading the arguments. It sees every request message, not only tool calls, so
+  ``observe`` and ``session_initialized`` must be called in arrival order too. Reported as
+  ``behaviour`` and ``dynamic_risk`` = static level (1–5) × behaviour (0.7–25).
 
 The gateway calls ``RouteScorer.score`` live, before forwarding; ``score.py`` calls it over
 a saved log. Same object, same order, same numbers. Every result carries the digests of the
@@ -26,6 +32,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
 
+from mcp_security.behaviour import BehaviourConfig, BehaviourEngine, Message
+from mcp_security.behaviour.policy import load_policy
 from mcp_security.binding.scoring import MatrixScorer
 from mcp_security.input_rules import CallLevel, evaluate_call
 
@@ -36,6 +44,9 @@ GATEWAY_ORG = "gateway"
 DIGEST_CHARS = 12
 MICROSECONDS = 1_000_000
 NO_CELLS = "no-cells"
+CALL_METHOD = "tools/call"
+WRITE_IMPACT = 4  # the scan's impact ladder: 4 = write, 5 = remove, 3 and below = read
+STATE_VERSION = 2  # saved state: {"version", "gate", "behaviour"}; older files are gate-only
 
 Rules = dict[str, tuple[list[dict], dict[str, int]]]
 
@@ -49,6 +60,7 @@ class Artifacts:
     rules: Rules | None
     kind: str
     digests: dict[str, str]  # artifact name -> sha256 of the file read
+    behaviour: BehaviourConfig | None = None  # the behaviour layer's policy; None = defaults
 
     @property
     def scanned_catalog(self) -> str | None:
@@ -57,7 +69,12 @@ class Artifacts:
 
 
 def load_artifacts(
-    route: str, scan: str | None, breadth: str | None, rules: str | None, kind: str | None
+    route: str,
+    scan: str | None,
+    breadth: str | None,
+    rules: str | None,
+    kind: str | None,
+    behaviour_policy: str | None = None,
 ) -> Artifacts | None:
     """The route's static artifacts from its config paths; None for a route with no scan."""
     if not scan:
@@ -71,12 +88,15 @@ def load_artifacts(
         specs = gate_runtime().load_gate_specs()
     if rules:
         digests["rules"] = _digest(rules)
+    if behaviour_policy:
+        digests["behaviour_policy"] = _digest(behaviour_policy)
     return Artifacts(
         scan=json.loads(Path(scan).read_text(encoding="utf-8")),
         specs=specs,
         rules=load_rules(Path(rules)) if rules else None,
         kind=kind,
         digests=digests,
+        behaviour=load_policy(behaviour_policy) if behaviour_policy else None,
     )
 
 
@@ -106,6 +126,7 @@ class RouteScorer:
         self._connections: dict[str, object] = {}
         self._cells: OrderedDict[tuple[str, str], object] = OrderedDict()
         self._score_max = float(artifacts.scan.get("score_max", DEFAULT_SCORE_MAX))
+        self.behaviour = BehaviourEngine(artifacts.behaviour)
 
     def connection(self, caller: str | None):  # -> gate_runtime.Connection
         """The dynamic layer's scope for this call: the route, or the caller on it."""
@@ -116,15 +137,58 @@ class RouteScorer:
             )
         return self._connections[owner]
 
-    def score(self, tool: str, args: dict, ts: float, caller: str | None = None) -> dict:
-        """Static cell, runtime factor, risk and input level for one call; learns from it."""
+    def observe(
+        self,
+        method: str | None,
+        ts: float,
+        caller: str | None = None,
+        session: str | None = None,
+        address: str | None = None,
+        client: str | None = None,
+        size: int = 0,
+    ) -> None:
+        """A request message that is not a tool call (initialize, tools/list, ...): the
+        behaviour layer learns the caller's origin and handshake from it."""
+        self.behaviour.observe(
+            Message(ts, caller or GATEWAY_ORG, method or "", session, address=address,
+                    client=client, size=size)
+        )
+
+    def session_initialized(self, caller: str | None, session: str, ts: float) -> None:
+        """The server assigned ``session`` in its reply to ``initialize``: the session started
+        properly (the request itself carried no session id yet)."""
+        self.behaviour.observe(Message(ts, caller or GATEWAY_ORG, "initialize", session))
+
+    def score(
+        self,
+        tool: str,
+        args: dict,
+        ts: float,
+        caller: str | None = None,
+        *,
+        session: str | None = None,
+        address: str | None = None,
+        client: str | None = None,
+        size: int = 0,
+    ) -> dict:
+        """Static cell, runtime factor, risk, input level and behaviour for one call; learns
+        from it."""
         started = time.perf_counter()
         cell = self._cell(tool, args)
         factor, reasons = self._gate.score(self.connection(caller), tool, args)
         level = self._input_level(tool, args, ts)
-        elapsed = time.perf_counter() - started
         scan = self.artifacts.scan
         known = cell.basis != NO_CELLS
+        impact = scan.get("tool_impact", {}).get(tool)
+        verdict = self.behaviour.observe(Message(
+            ts, caller or GATEWAY_ORG, CALL_METHOD, session, tool=tool,
+            asset=cell.driver if known else None,
+            sensitivity=scan.get("asset_sensitivity", {}).get(cell.driver) if known else None,
+            operation=None if impact is None else ("write" if impact >= WRITE_IMPACT else "read"),
+            address=address, client=client, size=size,
+        ))
+        elapsed = time.perf_counter() - started
+        static_level = cell.severity ** (1 / 3) if known and cell.severity else None
         result = {
             "asset": cell.driver,
             "basis": cell.basis,
@@ -133,6 +197,10 @@ class RouteScorer:
             "risk": round(min(self._score_max, cell.severity * factor), 3) if known else None,
             "input_level": level.level if level else None,
             "input_set_by": ",".join(level.set_by) if level else None,
+            "behaviour": round(verdict.multiplier, 3),
+            "behaviour_reason": _behaviour_reason(verdict),
+            "static_level": round(static_level, 3) if static_level else None,
+            "dynamic_risk": round(static_level * verdict.multiplier, 3) if static_level else None,
             "score_us": round(elapsed * MICROSECONDS),
             "reasons": "; ".join(reasons) if known else "tool not in scan",
         }
@@ -172,6 +240,20 @@ class RouteScorer:
             caller = None if owner == GATEWAY_ORG else owner
             self._gate.rehydrate(self.connection(caller), payload)
 
+    def state(self) -> dict:
+        """Everything learned on this route: the runtime factor's history and the behaviour
+        layer's, as the gateway saves it to the route's ``state_file``."""
+        return {"version": STATE_VERSION, "gate": self.snapshot_all(),
+                "behaviour": self.behaviour.snapshot()}
+
+    def load_state(self, data: dict) -> None:
+        """Load ``state`` output; a file saved before the behaviour layer is gate-only."""
+        if data.get("version") == STATE_VERSION:
+            self.restore_all(data["gate"])
+            self.behaviour.restore(data["behaviour"])
+        else:
+            self.restore_all(data)
+
     def _cell(self, tool: str, args: dict):  # -> binding.scoring result
         """The matrix lookup, memoised: same (tool, arguments), same answer."""
         key = (tool, json.dumps(args, sort_keys=True, default=str))
@@ -193,6 +275,31 @@ class RouteScorer:
         return evaluate_call(
             rows, args, assets=assets, now=datetime.fromtimestamp(ts, timezone.utc)
         )
+
+
+def behaviour_fields(record: dict) -> dict:
+    """Who sent a request, from where, with what, and how big — read from its log line, so
+    the live gateway and an offline re-score of the log feed the behaviour layer exactly the
+    same values."""
+    return {
+        "caller": record.get("gateway.agent_id") or record.get("gateway.agent"),
+        "session": record.get("mcp.session.id"),
+        "address": record.get("client.address"),
+        "client": record.get("gateway.client"),
+        "size": record.get("gateway.message_bytes", 0),
+    }
+
+
+def _behaviour_reason(verdict) -> str | None:  # -> behaviour.Verdict
+    """Why the behaviour multiplier is what it is: the dimension that set it, and the others
+    past the edge of ordinary (ties at the top of a review list break on those)."""
+    if verdict.learning:
+        return "learning (warm-up)"
+    if verdict.strongest is None:
+        return None
+    hot = [d for d in verdict.above_ordinary if d != verdict.strongest]
+    text = f"{verdict.strongest} {verdict.score:.2f}"
+    return f"{text}; also {', '.join(hot)}" if hot else text
 
 
 def load_rules(path: Path) -> Rules:

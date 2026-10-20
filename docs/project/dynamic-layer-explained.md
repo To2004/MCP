@@ -461,3 +461,4 @@ caller.
 | shape / noise floor / separation | `scripts/dynamic_design/report_org_run.py` |
 | ablation, sensitivity, poisoning, controls | `scripts/dynamic_design/evaluate_dynamic.py` |
 | tests | `tests/test_dynamic_v2.py`, `tests/test_org_traffic.py`, `tests/scanner/test_breadth.py` |
+| behaviour multiplier (×0.7–5: who, when, how often, from where; no arguments), run by the gateway beside the factor above | `src/mcp_security/behaviour/engine.py` — design and stress test: `reports/experiments/dynamic_dimensions/DIMENSION_FORMULAS.md`; tests: `tests/behaviour/test_engine.py` |

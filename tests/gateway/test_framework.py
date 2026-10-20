@@ -140,9 +140,10 @@ async def test_live_decisions_equal_an_offline_rescore_of_the_same_log(tmp_path:
     live = [r["gateway.decision"] for r in _decisions(config)]
     route = config.upstreams["github"]
     fresh = RouteScorer("github", load_artifacts("github", route.scan, route.breadth, None, "gh"))
-    offline = score_calls(pair_calls(read_log(config.log_dir / "github.jsonl")), fresh)
+    records = read_log(config.log_dir / "github.jsonl")
+    offline = score_calls(pair_calls(records), fresh, records)
 
-    keys = ("asset", "cell", "factor", "risk", "input_level")
+    keys = ("asset", "cell", "factor", "risk", "input_level", "behaviour", "dynamic_risk")
     assert [tuple(d.get(k) for k in keys) for d in live] == [
         tuple(r.get(k) for k in keys) for r in offline
     ]
@@ -251,3 +252,70 @@ async def test_a_restarted_gateway_continues_the_dynamic_history(tmp_path: Path)
     assert factors(tmp_path / "first") + factors(tmp_path / "second") == factors(
         tmp_path / "straight"
     )
+
+
+async def test_the_decision_line_carries_the_behaviour_multiplier_and_dynamic_risk(
+    tmp_path: Path,
+) -> None:
+    gateway, _, config = _gateway(tmp_path, SCANNED_TOOLS)
+    await _session(gateway, [_call(i, "repo-a") for i in range(2, 14)])
+
+    decisions = [r["gateway.decision"] for r in _decisions(config)]
+    first = decisions[0]
+    assert (first["behaviour"], first["behaviour_reason"]) == (1.0, "learning (warm-up)")
+    assert first["static_level"] == pytest.approx(20.0 ** (1 / 3), abs=1e-3)  # cell 20 -> 2.71
+    for decision in decisions:
+        assert 0.7 <= decision["behaviour"] <= 5.0
+        assert decision["dynamic_risk"] == pytest.approx(
+            decision["static_level"] * decision["behaviour"], abs=0.01
+        )
+
+
+def _behaviour_traffic(n: int) -> list[tuple[str, dict, str, dict]]:
+    """Remote-scan traffic with what the behaviour layer reads: session, address, client."""
+    return [
+        (tool, args, caller, {"session": f"{caller}-{i // 20}", "address": f"10.{i % 2}.0.1",
+                              "client": "claude-desktop/1.0", "size": 180})
+        for i, (tool, args, caller) in enumerate(_traffic(n))
+    ]
+
+
+def test_saved_state_carries_the_behaviour_layer_through_a_restart() -> None:
+    first, traffic = _remote_scorer("caller"), _behaviour_traffic(400)
+    for i, (tool, args, caller, fields) in enumerate(traffic[:300]):
+        first.score(tool, args, 600.0 * i, caller, **fields)
+    restored = _remote_scorer("caller")
+    restored.load_state(json.loads(json.dumps(first.state())))  # through JSON, as on disk
+    for i, (tool, args, caller, fields) in enumerate(traffic[300:], start=300):
+        again = restored.score(tool, args, 600.0 * i, caller, **fields)
+        original = first.score(tool, args, 600.0 * i, caller, **fields)
+        assert (again["factor"], again["behaviour"]) == (original["factor"], original["behaviour"])
+
+
+def test_a_state_file_saved_before_the_behaviour_layer_still_loads() -> None:
+    old, traffic = _remote_scorer("caller"), _traffic(50)
+    for i, (tool, args, caller) in enumerate(traffic):
+        old.score(tool, args, float(i), caller=caller)
+    restored = _remote_scorer("caller")
+    restored.load_state(json.loads(json.dumps(old.snapshot_all())))  # the pre-behaviour format
+    assert set(restored.snapshot_all()) == {"a0", "a1", "a2"}
+
+
+async def test_a_route_scores_with_its_behaviour_policy_file(tmp_path: Path) -> None:
+    policy = tmp_path / "policy.json"
+    policy.write_text(
+        json.dumps({"warmup_calls": 0, "requires_before": {"get_file_contents": ["list_commits"]}})
+    )
+    upstream = Upstream_(tmp_path / "logs" / "github.jsonl", SCANNED_TOOLS)
+    route = replace(_route_files(tmp_path), behaviour_policy=str(policy))
+    config = GatewayConfig(upstreams={"github": route}, log_dir=tmp_path / "logs")
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app=upstream.app()))
+    app = create_app(config, client=client)
+    gateway = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gw")
+    await _session(gateway, [_call(2, "repo-a")])  # no list_commits earlier in the session
+
+    [record] = _decisions(config)
+    decision = record["gateway.decision"]
+    assert "behaviour_policy" in decision["artifacts"]
+    assert decision["behaviour_reason"].startswith("sequence")
+    assert decision["behaviour"] == pytest.approx(3.62, abs=0.01)

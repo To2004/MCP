@@ -2,7 +2,8 @@
 
 An MCP gateway that sits between agents and an **external** MCP server, records every
 JSON-RPC message, and runs the whole framework on each call — the static scan's cell, the
-dynamic layer's runtime factor and the input rules — *before* forwarding it. It never blocks.
+dynamic layer's runtime factor, the input rules and the behaviour multiplier — *before*
+forwarding it. It never blocks.
 
 ## How it sits in the path
 
@@ -13,7 +14,11 @@ agents ──HTTP JSON-RPC──► gateway /{route} ─────────
                               │     static:  arguments → asset → cell  (scan cells)
                               │     dynamic: B × L, learned from earlier calls
                               │     input rules: input level 1–5
+                              │     behaviour: ×0.7–5, this caller vs his own last 90 days
+                              │       → dynamic_risk = static level (1–5) × behaviour
                               │     → decision line in the log
+          every other request ┼─► behaviour layer learns origin and handshake
+          (initialize, list…) │     (and the session an initialize reply opens)
                               │
           tools/list reply ───┼─► tool list the scan was not run on?
                               │     → saved to <log_dir>/catalogs/, notice in the log
@@ -45,6 +50,7 @@ back byte for byte with no added headers, so the model sees exactly what the ser
 | `pseudonym.py` | Keyed HMAC pseudonyms for session ids, arguments and recipients |
 | `http_wire.py` | Client address behind trusted proxies, `Mcp-Name` decoding, JSON-RPC from bodies and SSE |
 | `framework.py` | The connection: a route's static artifacts loaded once, one call scored at a time |
+| `../behaviour/engine.py` | The behaviour multiplier (×0.7–5): rate, session length, request size, tool, asset, time of day, network, client, policy rules; each caller against his own past |
 | `catalog.py` | Pulls the server's tool list out of the log, in the shape `static-scan` reads |
 | `static_cells.py` | Combines `static-scan`'s three levels into cells: the repo's v5 formula, max 125 |
 | `score.py` | Re-scores a saved log offline with the same `framework.py`: gives the logged numbers, or what a new scan changes |
@@ -65,6 +71,13 @@ back byte for byte with no added headers, so the model sees exactly what the ser
   `caller` (one per signed-in caller: issuer, app and user).
 - `state_file` — where the runtime history is saved at shutdown and loaded at start, so a
   restart continues where it stopped; `state_every` also saves after every N scored calls.
+  The file holds both the runtime factor's history and the behaviour layer's
+  (`{"version": 2, "gate": …, "behaviour": …}`); a file saved before the behaviour layer
+  still loads (its behaviour history starts empty). The behaviour layer is always per caller.
+- `behaviour_policy` — the behaviour layer's policy file (rule values, burst and request
+  limits, required earlier steps; `behaviour/policy.py`). Leave it out for the defaults.
+  Until the organisation writes one, learn it from the route's own log:
+  `uv run python -m mcp_security.behaviour.policy --log <log> --out <policy.json> --days 30`.
 - `importance` (per route) — the static scan's `<server>.importance.json`; adds typed effect
   fields (`gateway.effects`) to every `tools/call` line.
 - `log_bodies` (per route) — `all` (default), `requests` (no reply bodies) or `none` (no
@@ -105,7 +118,7 @@ OpenTelemetry MCP semantic conventions where one exists; the gateway's own field
 | What | `mcp.method.name`, `gen_ai.operation.name` (`execute_tool`), `gen_ai.tool.name`, `jsonrpc.request.id` (string), `mcp.protocol.version`, `gateway.arg_keys`, `gateway.args_hash` (pseudonym of the canonical arguments), `gateway.effects`, `gateway.message_bytes` (UTF-8), `gateway.header_mismatch` (`Mcp-Method` / `Mcp-Name` naming another call than the body), `message` (per `log_bodies`) |
 | What came back | `http.response.status_code`, `rpc.response.status_code` (JSON-RPC code), `error.type` (a real error: the code, `tool_error`, or an exception class; not -32700/-32600/-32601/-32602/-32002), `gateway.duration_s` |
 | Protocol | `gateway.catalog_sha256` (the tool list a session saw), `gateway.tool_listed` (was the called tool in it) |
-| Decision (one per `tools/call`, before forwarding) | `gateway.decision`: `asset`, `basis`, `sensitivity`, `impact`, `blast`, `band`, `cell`, `factor`, `risk`, `input_level`, `input_set_by`, `score_us`, `reasons`, `artifacts` (digests of the scan, breadth and rules files); `gateway.catalog_match` (is the session's tool list the scanned one) |
+| Decision (one per `tools/call`, before forwarding) | `gateway.decision`: `asset`, `basis`, `sensitivity`, `impact`, `blast`, `band`, `cell`, `factor`, `risk`, `input_level`, `input_set_by`, `behaviour` (×0.7–5), `behaviour_reason` (the dimension that set it, and any others past ordinary; `learning (warm-up)` for a caller's first 5 calls), `static_level` (the cell's cube root: the geometric mean of its three 1–5 levels), `dynamic_risk` (`static_level` × `behaviour`, 0.7–25), `score_us`, `reasons`, `artifacts` (digests of the scan, breadth and rules files); `gateway.catalog_match` (is the session's tool list the scanned one) |
 | Notice (`gateway.notice`) | `catalog_not_scanned` (+ `gateway.catalog_file`); `auth_failed` (+ `gateway.reason`: `no_bearer_token`, `token_expired`, `wrong_audience`, `wrong_issuer`, `bad_signature`, `unknown_signing_key`, `missing_claim` or `invalid_token`); `unknown_route` (in `_gateway.jsonl`); `session_agent_mismatch` (+ `gateway.session_owner`, `gateway.session_owner_id`, `gateway.session_ended`); `upstream_unreachable` (+ `error.type`, `gateway.error`); `gateway_started` / `gateway_stopped` (+ `gateway.config_sha256`, `gateway.artifacts`, `gateway.effects_sha256`, `gateway.log_bodies`, `gateway.pseudonyms_keyed`, `gateway.auth`, `gateway.oauth_issuer`) |
 | Integrity | `gateway.prev_sha256`: SHA-256 of the previous line in the file. `uv run python -m mcp_security.gateway.log_file verify <log.jsonl>` reports where the chain breaks |
 
