@@ -252,7 +252,7 @@ async def run(kind: str, n: int, pace: float, seed: int, out: Path) -> int:
                     status = "OK"
                     try:
                         result = await session.call_tool(tool, args)
-                        if getattr(result, "isError", False):
+                        if result.is_error:
                             status = "ERROR"
                             failed += 1
                         else:

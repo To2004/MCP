@@ -196,13 +196,35 @@ every message, and scores what it saw. How it fits together:
 | Command | Description |
 |---------|-------------|
 | `uv run python -m mcp_security.gateway.proxy --config <routes.json>` | Start the gateway on 127.0.0.1:8765; scanned routes are scored live, before forwarding |
-| `uv run python scripts/gateway_replay_corpus.py [--limit N] [--writes skip\|scratch]` | Replay the org corpus through it, one session per persona |
+| `uv run python scripts/gateway_demo_agent.py --route github\|deepwiki [--direct <upstream url>] [--protocol legacy\|modern]` | Drive one route the way an agent would: list tools, then a few read-only calls; `--direct` checks the gateway returns the upstream's exact catalog |
+| `uv run python scripts/gateway_replay_corpus.py [--limit N] [--writes skip\|scratch] [--protocol legacy\|modern]` | Replay the org corpus through it, one session per persona |
 | `uv run python -m mcp_security.gateway.catalog --config <routes.json> --route <r>` | The server's tool list, from the log, in `static-scan`'s input shape |
 | `sbatch --export=ALL,NAME=github_remote scripts/gateway_static_scan.sbatch` | Static side on 1 GPU: `static-scan`, breadth pass, levels → cells |
 | `uv run python -m mcp_security.gateway.score --config <routes.json> --route <r>` | Re-score a saved log with the same scorer → `<route>_scored.csv` |
-| `uv run python -m mcp_security.behaviour.policy --log <log.jsonl> --out <policy.json> --days 30` | Learn the behaviour layer's policy (burst and request limits, required earlier steps) from a route's own traffic → set it as the route's `behaviour_policy` |
+| `uv run python -m mcp_security.behaviour.policy --log <log.jsonl> --out <policy.json> --days 30 [--design v1\|v2\|v3\|v4]` | Learn the behaviour layer's policy (burst limit, request limits overall and per tool, required earlier steps added to the written ones) from a route's own traffic → set it as the route's `behaviour_policy`. These are the limits of the Red Flags rules. The policy also picks the design: v4 by default; v1–v3 stay runnable |
 | `uv run python -m mcp_security.gateway.log_view <log.jsonl> [--grouped] [--out view.txt]` | Render a log for reading: one line per event with agent id, user id, session and request columns (`--grouped`: by session, request → verdict → reply) |
 | `uv run python -m mcp_security.gateway.log_file verify <log.jsonl>...` | Check each log's hash chain; exit 1 and the line numbers where it breaks |
+| `sbatch --export=ALL,NAME=<n>,DIR=<folder>,POLICY=<policy.md> scripts/gateway_static_scan.sbatch` | The same static side for a server outside `reports/experiments/gateway/<n>/` with its own policy file (the MCPHunt servers) |
+| `uv run python scripts/mcphunt_to_gateway_log.py --traces external/mcphunt/traces --out <dir> --clock real\|spread [--days 90]` | Turn MCPHunt's recorded calls (outside traffic, labelled benign / risky / hard negative) into one gateway log per server; `spread` places the runs over `--days` days |
+| `uv run python scripts/judge_mcphunt_calls.py sample --logs <dir> --out <sample.jsonl>`, then `sbatch scripts/judge_mcphunt_calls.sbatch` (1 GPU, `gemma3:27b`), then `... grade --sample <s> --verdicts <v> --out <report.md>` | An independent judge rates a stratified sample of MCPHunt calls 1-5 from the policy, the tool and the call; `grade` checks the judge against MCPHunt's labels, then the framework against the judge |
+| `uv run python scripts/evaluate_mcphunt_scores.py --logs <dir> --out <report.md>` | Join the scored MCPHunt calls to MCPHunt's labels: per route, per run group, run-level and call-level AUC ([experiment](../../reports/experiments/gateway/mcphunt/README.md)) |
+| `uv run python scripts/call_distributions.py --out reports/experiments/call_distributions`, then `uv run --with matplotlib python scripts/plot_call_distributions.py --results <out>/results.json` | Shape of MCP call traffic (tool mix by rank, calls per session, gaps, reply size, time of week) in MCPHunt, our simulated worlds and earlier corpora, fitted and set beside published numbers ([experiment](../../reports/experiments/call_distributions/README.md)) |
+
+Both agent scripts take `--protocol`: `legacy` (the default) starts each connection with the
+`initialize` handshake (2025-11-25), as every run before the mcp 2.x port did; `modern` uses
+the stateless 2026-07-28 protocol (`server/discover`, no session), which the upstream has to
+speak. The shared client code is `src/mcp_security/agent_session.py`.
+
+## Human study of the dynamic layer (Bot Day Check)
+
+Details: [`reports/experiments/dynamic_dimensions/human_study/README.md`](../../reports/experiments/dynamic_dimensions/human_study/README.md).
+
+| Command | Description |
+|---------|-------------|
+| `uv run python reports/experiments/dynamic_dimensions/human_study/make_items.py [--cache <scores.pkl>] [--require-clean]` | Build the item bank (`items.json`, private `key.json`, `cards.txt`) from the v4 engine on the main organisation |
+| `uv run python reports/experiments/dynamic_dimensions/human_study/build_page.py` | Embed `items.json` into the participant page (`web/index.html`) |
+| `uv run python reports/experiments/dynamic_dimensions/human_study/collect_responses.py --store <export.json> --codes <codes.txt> --claude <claude_ratings.json> --out responses.json` | Gather store answers, pasted answer codes and Claude runs into one list |
+| `uv run python reports/experiments/dynamic_dimensions/human_study/analyse_responses.py --responses responses.json --key <key.json> --items <items.json> --out results.md` | The analysis: per stratum and per card, pairs, reasons, agreement |
 
 ## Testing
 

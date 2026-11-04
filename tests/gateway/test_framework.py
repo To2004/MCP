@@ -262,7 +262,12 @@ async def test_the_decision_line_carries_the_behaviour_multiplier_and_dynamic_ri
 
     decisions = [r["gateway.decision"] for r in _decisions(config)]
     first = decisions[0]
-    assert (first["behaviour"], first["behaviour_reason"]) == (1.0, "learning (warm-up)")
+    # the caller's first day is his warm-up; repo-a (sensitivity 4) is a first look all day,
+    # which design v4 scores as a floor on the asset dimension
+    assert (first["behaviour"], first["behaviour_reason"]) == (
+        pytest.approx(2.63, abs=0.01),
+        "asset 0.80 (warm-up)",
+    )
     assert first["static_level"] == pytest.approx(20.0 ** (1 / 3), abs=1e-3)  # cell 20 -> 2.71
     for decision in decisions:
         assert 0.7 <= decision["behaviour"] <= 5.0
@@ -319,3 +324,20 @@ async def test_a_route_scores_with_its_behaviour_policy_file(tmp_path: Path) -> 
     assert "behaviour_policy" in decision["artifacts"]
     assert decision["behaviour_reason"].startswith("sequence")
     assert decision["behaviour"] == pytest.approx(3.62, abs=0.01)
+
+
+async def test_a_route_can_keep_an_earlier_behaviour_design(tmp_path: Path) -> None:
+    policy = tmp_path / "policy.json"
+    policy.write_text(json.dumps({"design": "v1"}))
+    upstream = Upstream_(tmp_path / "logs" / "github.jsonl", SCANNED_TOOLS)
+    route = replace(_route_files(tmp_path), behaviour_policy=str(policy))
+    config = GatewayConfig(upstreams={"github": route}, log_dir=tmp_path / "logs")
+    client = httpx.AsyncClient(transport=httpx.ASGITransport(app=upstream.app()))
+    app = create_app(config, client=client)
+    gateway = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://gw")
+    await _session(gateway, [_call(2, "repo-a")])
+
+    [record] = _decisions(config)
+    decision = record["gateway.decision"]
+    # v1 has no first-look rule: the first call is plain warm-up
+    assert (decision["behaviour"], decision["behaviour_reason"]) == (1.0, "learning (warm-up)")

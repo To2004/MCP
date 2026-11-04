@@ -86,7 +86,7 @@ These are declared in `pyproject.toml` at the project root:
 
 | Package | Minimum version | Installed | Latest (PyPI) | What it does |
 |---------|----------------|-----------|---------------|-------------|
-| `mcp` | `>=1.26.0` | `1.26.0` | `1.27.0` ⚠️ | Anthropic's official Python SDK for talking to MCP servers over stdio |
+| `mcp` | `>=2.3,<3` | `2.3.0` | `2.3.0` | Anthropic's official Python SDK for talking to MCP servers over stdio |
 | `requests` | `>=2.32.0` | — | — | Standard Python HTTP library (used for HTTP-transport servers like dvmcp) |
 | `pytest` | `>=8.0.0` | — | — | Runs the unit tests |
 | `ruff` | `>=0.11.0` | — | — | Linter and formatter |

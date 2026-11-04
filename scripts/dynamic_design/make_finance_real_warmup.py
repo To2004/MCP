@@ -40,15 +40,17 @@ import re
 import subprocess
 import sys
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "logs" / "proxy" / "scripts"))
 sys.path.insert(0, str(REPO / "src"))
 
+import httpx2  # noqa: E402
 from mcp import ClientSession  # noqa: E402
 from mcp.client.sse import sse_client  # noqa: E402
-from mcp.client.streamable_http import streamablehttp_client  # noqa: E402
+from mcp.client.streamable_http import streamable_http_client  # noqa: E402
 
 import run_mitm_finance as rmf  # noqa: E402 - reuse launch config + subprocess helpers
 
@@ -236,6 +238,16 @@ def load_safe_tools(server: str) -> dict[str, dict]:
     return schemas
 
 
+@asynccontextmanager
+async def _streamable_http_client(url: str, headers: dict[str, str]):
+    """mcp 2.x Streamable HTTP streams, the headers riding on the caller-built httpx2 client."""
+    async with (
+        httpx2.AsyncClient(headers=headers, timeout=rmf.HTTP_TIMEOUT) as http_client,
+        streamable_http_client(url, http_client=http_client) as streams,
+    ):
+        yield streams
+
+
 async def _drive(client_url: str, transport: str, tool_schemas: dict[str, dict],
                   n: int, pace: float, seed: int, out_path: Path, org: str) -> None:
     rng = random.Random(seed)
@@ -247,7 +259,7 @@ async def _drive(client_url: str, transport: str, tool_schemas: dict[str, dict],
     def _client(headers):
         if transport == "sse":
             return sse_client(client_url, headers=headers)
-        return streamablehttp_client(client_url, headers=headers)
+        return _streamable_http_client(client_url, headers)
 
     headers = {"Authorization": "Bearer placeholder-token-for-real-warmup",
                "X-Agent-Id": org}
@@ -274,7 +286,7 @@ async def _drive(client_url: str, transport: str, tool_schemas: dict[str, dict],
                     try:
                         result = await asyncio.wait_for(
                             session.call_tool(tool, call_args), timeout=30)
-                        if getattr(result, "isError", False):
+                        if result.is_error:
                             status = "ERROR"
                             failed += 1
                         else:

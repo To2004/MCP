@@ -21,7 +21,7 @@ sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 SERVER_PORT = 8080
 MITM_PORT = 9090
@@ -104,7 +104,7 @@ async def run() -> None:
     # 3) run calls through mitmdump → FastMCP server
     print(f"[3/3] Running {len(CALLS)} calls through {CLIENT_URL} ...")
     try:
-        async with streamablehttp_client(CLIENT_URL) as (read, write, _):
+        async with streamable_http_client(CLIENT_URL) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 for i, (cat, tool, args) in enumerate(CALLS, 1):

@@ -1,0 +1,681 @@
+{
+ "server": "mcphunt_browser",
+ "model": "qwen2.5:32b",
+ "tools": {
+  "browser_close": {
+   "inputs": []
+  },
+  "browser_resize": {
+   "inputs": [
+    {
+     "name": "width",
+     "kind": "magnitude",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "stored data untouched",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "height",
+     "kind": "magnitude",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "stored data untouched",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_console_messages": {
+   "inputs": [
+    {
+     "name": "level",
+     "kind": "none",
+     "breadth": 3,
+     "ceiling": null,
+     "default": "info",
+     "source": "schema+llm",
+     "why": "enum: a fixed choice, not a quantity",
+     "resource_role": "sizes_amount",
+     "external_effect": false
+    },
+    {
+     "name": "all",
+     "kind": "none",
+     "breadth": 3,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "returns messages since the beginning or just since last navigation",
+     "resource_role": "sizes_amount",
+     "external_effect": false
+    },
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "saves messages to a file instead of returning as text",
+     "resource_role": "no_data_effect",
+     "external_effect": true
+    }
+   ]
+  },
+  "browser_handle_dialog": {
+   "inputs": [
+    {
+     "name": "accept",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "decides whether the dialog is accepted or not",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "promptText",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes the text of the prompt in case of a prompt dialog",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_evaluate": {
+   "inputs": [
+    {
+     "name": "function",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes the JavaScript expression evaluated on page or element",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "permits interaction with a different element on the page",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "targets a different exact element reference from the snapshot",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "saves result to a different file or returns as text if not provided",
+     "resource_role": "alters_reach",
+     "external_effect": true
+    }
+   ]
+  },
+  "browser_file_upload": {
+   "inputs": [
+    {
+     "name": "paths",
+     "kind": "count",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "array: its length is the breadth of the call",
+     "resource_role": "names_resource",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_fill_form": {
+   "inputs": [
+    {
+     "name": "fields",
+     "kind": "count",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "array: its length is the breadth of the call",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_press_key": {
+   "inputs": [
+    {
+     "name": "key",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different key is pressed or different character generated",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_type": {
+   "inputs": [
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different element is interacted with",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different exact target element reference is used",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "text",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different text is typed into the element",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "submit",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "decides whether to submit entered text",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "slowly",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes how the text is typed into the element",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_navigate": {
+   "inputs": [
+    {
+     "name": "url",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "navigates to a different URL",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_navigate_back": {
+   "inputs": []
+  },
+  "browser_network_requests": {
+   "inputs": [
+    {
+     "name": "static",
+     "kind": "none",
+     "breadth": 3,
+     "ceiling": null,
+     "default": false,
+     "source": "llm",
+     "why": "changes whether static resources are included in the output",
+     "resource_role": "sizes_amount",
+     "external_effect": false
+    },
+    {
+     "name": "requestBody",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": false,
+     "source": "llm",
+     "why": "changes whether request bodies are included in the output",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    },
+    {
+     "name": "requestHeaders",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": false,
+     "source": "llm",
+     "why": "changes whether request headers are included in the output",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    },
+    {
+     "name": "filter",
+     "kind": "none",
+     "breadth": 3,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "narrows which network requests are returned based on URL matching",
+     "resource_role": "sizes_amount",
+     "external_effect": false
+    },
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes where the output is saved, if not provided returns as text",
+     "resource_role": "no_data_effect",
+     "external_effect": true
+    }
+   ]
+  },
+  "browser_run_code": {
+   "inputs": [
+    {
+     "name": "code",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes the Playwright actions executed on the page",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "loads and executes code from a different file",
+     "resource_role": "names_resource",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_take_screenshot": {
+   "inputs": [
+    {
+     "name": "type",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": "png",
+     "source": "schema+llm",
+     "why": "enum: a fixed choice, not a quantity",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    },
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "names the file where the screenshot is saved",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "specifies which element to screenshot instead of the viewport",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "provides the exact target element reference for the screenshot",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "fullPage",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "decides whether to take a full page or viewport screenshot",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_snapshot": {
+   "inputs": [
+    {
+     "name": "filename",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "snapshot is saved to a different file",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "depth",
+     "kind": "magnitude",
+     "breadth": 3,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "narrows the depth of the snapshot tree",
+     "resource_role": "sizes_amount",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_click": {
+   "inputs": [
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different element description used for permission",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "clicks on a different exact target element",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "doubleClick",
+     "kind": "none",
+     "breadth": 2,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "performs double click instead of single click",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    },
+    {
+     "name": "button",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "enum: a fixed choice, not a quantity",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "modifiers",
+     "kind": "count",
+     "breadth": 2,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "array: its length is the breadth of the call",
+     "resource_role": "shapes_output",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_drag": {
+   "inputs": [
+    {
+     "name": "startElement",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different source element is interacted with",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "startRef",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different source element reference is used for interaction",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "endElement",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different target element is interacted with",
+     "resource_role": "names_resource",
+     "external_effect": false
+    },
+    {
+     "name": "endRef",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different target element reference is used for interaction",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_hover": {
+   "inputs": [
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different element description shown for permission",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "different exact target element is hovered over",
+     "resource_role": "names_resource",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_select_option": {
+   "inputs": [
+    {
+     "name": "element",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "stored data untouched, changes which element is interacted with",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "ref",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "stored data untouched, changes which element is interacted with",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "values",
+     "kind": "count",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "array: its length is the breadth of the call",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_tabs": {
+   "inputs": [
+    {
+     "name": "action",
+     "kind": "none",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "schema+llm",
+     "why": "enum: a fixed choice, not a quantity",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "index",
+     "kind": "magnitude",
+     "breadth": 5,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "selects or closes a different tab",
+     "resource_role": "names_resource",
+     "external_effect": false
+    }
+   ]
+  },
+  "browser_wait_for": {
+   "inputs": [
+    {
+     "name": "time",
+     "kind": "magnitude",
+     "breadth": 1,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes how long the system waits",
+     "resource_role": "no_data_effect",
+     "external_effect": false
+    },
+    {
+     "name": "text",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes which text appearance to wait for",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    },
+    {
+     "name": "textGone",
+     "kind": "none",
+     "breadth": 4,
+     "ceiling": null,
+     "default": null,
+     "source": "llm",
+     "why": "changes which text disappearance to wait for",
+     "resource_role": "alters_reach",
+     "external_effect": false
+    }
+   ]
+  }
+ },
+ "kinds": {
+  "magnitude": 5,
+  "none": 44,
+  "count": 4
+ },
+ "sources": {
+  "llm": 45,
+  "schema+llm": 8
+ },
+ "seconds": 80.7
+}

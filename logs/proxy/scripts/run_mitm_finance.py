@@ -42,12 +42,18 @@ import sys
 import time
 from pathlib import Path
 
+import httpx2
+
 sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
+
+#: mcp 1.x's streamable-HTTP timeouts (30 s; 300 s to read a held-open stream). mcp 2.x takes
+#: headers on a caller-built httpx2 client, so the timeouts have to be set on it as well.
+HTTP_TIMEOUT = httpx2.Timeout(30.0, read=300.0)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SESSIONS_DIR = REPO_ROOT / "logs" / "proxy" / "sessions"
@@ -374,9 +380,13 @@ async def _drive_session(
             async with ClientSession(read, write) as session:
                 return await _run_calls(session, party, calls)
     else:
-        async with streamablehttp_client(url, headers=headers) as (read, write, _):
-            async with ClientSession(read, write) as session:
-                return await _run_calls(session, party, calls)
+        http_client = httpx2.AsyncClient(headers=headers, timeout=HTTP_TIMEOUT)
+        async with (
+            http_client,
+            streamable_http_client(url, http_client=http_client) as (read, write),
+            ClientSession(read, write) as session,
+        ):
+            return await _run_calls(session, party, calls)
 
 
 async def run_server(name: str, cfg: dict, server_port: int, mitm_port: int) -> bool:

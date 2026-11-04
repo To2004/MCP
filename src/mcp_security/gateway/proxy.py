@@ -28,7 +28,7 @@ import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import asdict, replace
+from dataclasses import replace
 from pathlib import Path
 
 import httpx
@@ -43,6 +43,7 @@ from mcp_security.gateway.config import (
     GatewayConfig,
     Identity,
     Upstream,
+    digest_view,
     load_config,
 )
 from mcp_security.gateway.effects import EffectMap
@@ -403,8 +404,9 @@ def _policy(upstream: Upstream, pseudonyms: Pseudonymizer) -> LogPolicy:
 
 
 def _config_digest(upstream: Upstream) -> str:
-    """Digest of one route's config (env var *names* only — no secret is in it)."""
-    canonical = json.dumps(asdict(upstream), sort_keys=True)
+    """Digest of one route's config (env var *names* only — no secret is in it). v5 route
+    fields still at their defaults are left out, so a v1-v4 route keeps its pre-v5 digest."""
+    canonical = json.dumps(digest_view(upstream), sort_keys=True)
     return hashlib.sha256(canonical.encode()).hexdigest()[:DIGEST_CHARS]
 
 

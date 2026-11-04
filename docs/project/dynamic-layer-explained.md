@@ -461,4 +461,4 @@ caller.
 | shape / noise floor / separation | `scripts/dynamic_design/report_org_run.py` |
 | ablation, sensitivity, poisoning, controls | `scripts/dynamic_design/evaluate_dynamic.py` |
 | tests | `tests/test_dynamic_v2.py`, `tests/test_org_traffic.py`, `tests/scanner/test_breadth.py` |
-| behaviour multiplier (×0.7–5: who, when, how often, from where; no arguments), run by the gateway beside the factor above | `src/mcp_security/behaviour/engine.py` — design and stress test: `reports/experiments/dynamic_dimensions/DIMENSION_FORMULAS.md`; tests: `tests/behaviour/test_engine.py` |
+| behaviour multiplier (×0.7–5: who, when, how often, from where; no arguments), run by the gateway beside the factor above | `src/mcp_security/behaviour/engine.py` (design v4 by default: three groups, Typical Cadence, Typical Footprint and Red Flags; v1–v3 with `"design"` in a route's behaviour policy) — design and simulation: `reports/experiments/dynamic_dimensions/DIMENSION_FORMULAS.md` (v1–v3: `DIMENSION_FORMULAS_v1.md` to `_v3.md`); paper notes: `paper_v5/DYNAMIC-LAYER-V4-NOTES.md`; tests: `tests/behaviour/test_engine_designs.py` (v2–v4), `tests/behaviour/test_engine.py` (v1) |

@@ -1,5 +1,6 @@
-"""The behaviour multiplier: ordinary stays at or below x1, strong things flare, nothing leaves
-[0.7, 5]. The cases are the stress-tested edge cases (DIMENSION_FORMULAS.md)."""
+"""Design v1 of the behaviour multiplier, kept runnable: ordinary stays at or below x1, strong
+things flare, nothing leaves [0.7, 5]. The cases are v1's stress-tested edge cases
+(DIMENSION_FORMULAS_v1.md); v2 and v3 are in test_engine_designs.py."""
 
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from mcp_security.behaviour.engine import (
 DAY = 86_400.0
 MONDAY = datetime(2026, 6, 1, tzinfo=timezone.utc).timestamp()  # a Monday, 00:00 UTC
 ORDINARY = 1.0 + 1e-9
+V1 = BehaviourConfig(design="v1")
 
 
 def session(
@@ -90,7 +92,7 @@ def history(days=60, **kw):
     return [m for d in range(days) if d % 7 < 5 for m in workday(d, **kw)]
 
 
-def run(warm, test, config=None):
+def run(warm, test, config=V1):
     engine = BehaviourEngine(config)
     for m in warm:
         engine.observe(m)
@@ -243,7 +245,7 @@ def test_a_write_to_a_sensitive_asset_never_read_is_a_problematic_sequence() -> 
 
 
 def test_a_tool_that_needs_a_step_before_it_flares_without_that_step() -> None:
-    config = BehaviourConfig(requires_before={"merge": frozenset({"review"})})
+    config = BehaviourConfig(design="v1", requires_before={"merge": frozenset({"review"})})
     reviewed = session(at(10), "s1", tools=("review", "merge"), n=2)
     unreviewed = session(at(11), "s2", tools=("merge",), n=1)
     assert SEQUENCE not in run(BASE + reviewed[:-1], reviewed[-1:], config)[-1].scores
@@ -291,10 +293,10 @@ def test_any_stream_stays_between_point_seven_and_five() -> None:
 def test_a_restored_engine_continues_exactly_where_the_saved_one_stopped() -> None:
     first, rest = BASE[: len(BASE) // 2], BASE[len(BASE) // 2 :] + workday(TEST_DAY)
     straight = run(first, rest)
-    saved = BehaviourEngine()
+    saved = BehaviourEngine(V1)
     for m in first:
         saved.observe(m)
-    restored = BehaviourEngine()
+    restored = BehaviourEngine(V1)
     restored.restore(json.loads(json.dumps(saved.snapshot())))
     # open sessions are not saved; the continuation starts new sessions on new days anyway
     resumed = [restored.observe(m) for m in rest]

@@ -31,7 +31,7 @@ sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 ADDON  = Path(__file__).parent.parent / "analysis" / "mitm_capture.py"
 HEAVY  = "=" * 80
@@ -405,7 +405,7 @@ def write_report(out_dir: Path, calls: list[tuple], capture_path: Path, label: s
 
 
 async def _run_calls(url: str, calls: list[tuple]) -> None:
-    async with streamablehttp_client(url) as (read, write, _):
+    async with streamable_http_client(url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             await session.list_tools()  # explicit discovery — appears first in trace before any tool calls

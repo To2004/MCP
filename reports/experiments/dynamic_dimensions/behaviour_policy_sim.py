@@ -119,9 +119,10 @@ def measure(M: np.ndarray, top: list, stream: list[Message], meta: dict) -> dict
 
 def run(name: str) -> dict:
     stream, meta = messages(name)
-    learned = derive_policy(m for m in stream if m.ts < START + CAL_DAYS * DAY)
+    v1 = BehaviourConfig(design="v1")  # this experiment measured design v1
+    learned = derive_policy((m for m in stream if m.ts < START + CAL_DAYS * DAY), base=v1)
     result = {"policy": config_to_json(learned)}
-    for label, config in (("default", BehaviourConfig()), ("learned", learned)):
+    for label, config in (("default", v1), ("learned", learned)):
         M, top = score(stream, config)
         result[label] = measure(M, top, stream, meta)
     print(f"done {name}", flush=True)

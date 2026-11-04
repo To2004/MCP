@@ -1,0 +1,1006 @@
+{
+  "server": "mcphunt_sqlite",
+  "tool_version": "3.1.0",
+  "started": "2026-11-01T11:21:05+00:00",
+  "finished": "2026-11-01T11:25:55+00:00",
+  "catalog": {
+    "path": "/home/ovadyat/MCP/reports/experiments/gateway/mcphunt/sqlite/mcphunt_sqlite.json",
+    "sha256": "7d282710f9677d3a27ed7fb2a1d14dd70934e5c52456463de45ae91165d232d0"
+  },
+  "policy": {
+    "path": "/home/ovadyat/MCP/reports/experiments/gateway/mcphunt/sqlite/mcphunt_sqlite.md",
+    "sha256": "ee2a3f5ff551f705f514e77d0a337da85fabf52e75f9c1c58703d9c9f5e84bb1",
+    "classification_sha256": "fea98a6b070ebe11cc071d0aacbd08e4f9dd69ed63efaf8ee58f27da310789a3"
+  },
+  "scanner": "scanner-v1",
+  "prompts_sha256": {
+    "scan_preamble": "542614909bce6b4ef073d53717d9e1b2fca7faa781bf708e6bea17de84e8b282",
+    "scan_domain": "68c1eab81602ad799b2371ebd367b9708a86e5d78efc47c41ad09036362abd69",
+    "scan_impact": "f849daba055b1af4afc83b62645fd18850b59559b11baa8d627f856e1f32f0ba",
+    "scan_sensitivity_task": "33265646007f0c342d40bde59a222127651733f3c68202226647e3e7dafbff72",
+    "scan_sensitivity_item": "ebbf5b328f203b11e5843cc0097624655b0e2c889966067b499a65a58a4fedfe",
+    "scan_blast_task": "b65ebb27d4b6a78caf1a5e64c64befabca4c724b926849e8002de3d41f1391b1",
+    "scan_blast_item": "64b7240868aa66460601015b7bef1dad45d3197c90266b8484bdfbbb93a3c742"
+  },
+  "prompts_validated": true,
+  "model": {
+    "name": "qwen2.5:32b",
+    "digest": "9f13ba1299afea09d9a956fc6a85becc99115a6d596fae201a5487a03bdc4368",
+    "parameter_size": "32.8B",
+    "quantization": "Q4_K_M",
+    "ollama_version": "0.30.6",
+    "num_ctx": 16384
+  },
+  "decoding": {
+    "temperature": 0,
+    "seed": 0,
+    "top_p": 1.0
+  },
+  "slurm_job": "23768679",
+  "levels": "each part is its own 1-5 level; nothing is multiplied or combined",
+  "unverified_tools": [],
+  "domain": {
+    "mcp_kind": "SQL database",
+    "content_unit": "a row",
+    "contents_definition": "CONTENTS are the values within a row as opposed to metadata about it.",
+    "confidence": 0.95,
+    "needs_human_review": false
+  },
+  "assets": [
+    {
+      "asset": "api-keys",
+      "description": "API keys issued to users, with their scopes (admin, write, read-only) (loss axis: C>I>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 5,
+      "policy_class": "Restricted",
+      "reasoning": "The asset holds API keys issued to users with their scopes (admin, write, read-only). According to the policy, any value that is a key or token is classified as Restricted because it can open a production system.",
+      "confidence": 1.0
+    },
+    {
+      "asset": "credentials",
+      "description": "Service accounts (cloud, code hosting) with their usernames and passwords (loss axis: C>I>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 5,
+      "policy_class": "Restricted",
+      "reasoning": "The asset 'credentials' holds service accounts with usernames and passwords, which are classified as Restricted according to the organization's policy because a leak or copy of these credentials opens a production system.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "oauth-tokens",
+      "description": "Access and refresh tokens the sign-in service holds for code hosting and chat (loss axis: C>I>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 5,
+      "policy_class": "Restricted",
+      "reasoning": "The asset holds access and refresh tokens which are classified as Restricted according to the organization's policy because a leaked key or token opens a production system.",
+      "confidence": 1.0
+    },
+    {
+      "asset": "employees",
+      "description": "Payroll records: employee names, social security numbers and salaries (loss axis: C>I>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [
+        "population"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 5,
+      "policy_class": "Restricted",
+      "reasoning": "The asset holds employee names, social security numbers and salaries which are classified as Restricted according to the policy because a leak exposes employees' personal data and must be notified.",
+      "confidence": 1.0
+    },
+    {
+      "asset": "users",
+      "description": "The service's user directory: names, emails and roles (loss axis: C>I>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [
+        "population"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 3,
+      "policy_class": "Confidential",
+      "reasoning": "The user directory with emails and roles is classified as Confidential according to the organization's policy.",
+      "confidence": 1.0
+    },
+    {
+      "asset": "audit-log",
+      "description": "The record of who changed what; empty until something writes to it (loss axis: I>C>A)",
+      "register_tools": [
+        "read_query",
+        "write_query"
+      ],
+      "flags": [],
+      "cia": "I>C>A",
+      "sensitivity": 3,
+      "policy_class": "Confidential",
+      "reasoning": "The audit log is classified as Confidential because altering it can hide misuse.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "new-tables",
+      "description": "Tables an agent creates, and the rows it inserts into them (loss axis: C>I>A)",
+      "register_tools": [
+        "create_table",
+        "write_query",
+        "read_query"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 5,
+      "policy_class": "Restricted",
+      "reasoning": "According to the policy's recognition rules, a table an agent creates is classed by what it holds. Since such tables could potentially hold Restricted data (e.g., API keys, service credentials, sign-in tokens, social security numbers and salaries), they are classified as Restricted.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "insight-memo",
+      "description": "The server's business-insight memo that `append_insight` adds to (loss axis: C>I>A)",
+      "register_tools": [
+        "append_insight"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 3,
+      "policy_class": "Confidential",
+      "reasoning": "The insight memo is classified as Confidential according to the asset register provided by the organization's description. It is used for writing business insights without secret values, but the policy prohibits copying secrets into memos, indicating its sensitivity.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "schema",
+      "description": "Table names and column definitions, no rows (loss axis: C>I>A)",
+      "register_tools": [
+        "list_tables",
+        "describe_table"
+      ],
+      "flags": [
+        "metadata-only"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 2,
+      "policy_class": "Routine",
+      "reasoning": "The schema asset holds only table names and column definitions with no rows, which is classified as Routine according to the organization's policy.",
+      "confidence": 0.95
+    }
+  ],
+  "tools": [
+    {
+      "tool": "read_query",
+      "impact": 5,
+      "decided_by": "rules",
+      "operation": "remove",
+      "evidence": [
+        "remove verbs: \\bexecut(e|ing)\\b"
+      ],
+      "rules_impact": 5,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "raw-query: `query` takes a raw query string \u2014 the caller composes the operation (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 5
+    },
+    {
+      "tool": "write_query",
+      "impact": 5,
+      "decided_by": "rules",
+      "operation": "remove",
+      "evidence": [
+        "remove verbs: \\bdelete\\b, \\bexecut(e|ing)\\b"
+      ],
+      "rules_impact": 5,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "raw-query: `query` takes a raw query string \u2014 the caller composes the operation (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 5
+    },
+    {
+      "tool": "create_table",
+      "impact": 4,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bcreate\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "raw-query: `query` takes a raw query string \u2014 the caller composes the operation (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool creates a new table in the SQLite database based on the provided SQL statement. This operation involves writing to the database and creating a new structure which falls under an ordinary write operation.",
+      "model_confidence": 1.0,
+      "impact_as_answered": 4
+    },
+    {
+      "tool": "list_tables",
+      "impact": 2,
+      "decided_by": "rules",
+      "operation": "metadata",
+      "evidence": [
+        "metadata verbs: \\blist\\b"
+      ],
+      "rules_impact": 2,
+      "rules_confidence": 0.8,
+      "capability_flags": [],
+      "is_bulk": false,
+      "impact_as_answered": 2
+    },
+    {
+      "tool": "describe_table",
+      "impact": 2,
+      "decided_by": "rules",
+      "operation": "metadata",
+      "evidence": [
+        "only generic read verbs; a metadata verb also fired -> metadata",
+        "metadata verbs: \\bschema\\b, \\bdescribe\\b"
+      ],
+      "rules_impact": 2,
+      "rules_confidence": 0.8,
+      "capability_flags": [],
+      "is_bulk": false,
+      "impact_as_answered": 2
+    },
+    {
+      "tool": "append_insight",
+      "impact": 3,
+      "decided_by": "rules",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bappend\\b",
+        "the amount written is limited (\"append\") -> 3"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.8,
+      "capability_flags": [],
+      "is_bulk": false,
+      "impact_as_answered": 3
+    }
+  ],
+  "reach": [
+    {
+      "tool": "read_query",
+      "asset": "api-keys",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system;",
+      "reasoning": "The tool 'read_query' is listed in the organization's register as reaching this asset, and it can execute SELECT queries on the SQLite database where API keys are stored.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "read_query",
+      "asset": "credentials",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system; a leaked payroll row is a breach that must be notified. Table and column names carry no class on their own.",
+      "reasoning": "The tool 'read_query' is listed in the organization's register as reaching this asset, and it can execute SELECT queries on the SQLite database which includes service accounts with usernames and passwords.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "read_query",
+      "asset": "oauth-tokens",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system;",
+      "reasoning": "The tool is listed in the organization's register as reaching this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "read_query",
+      "asset": "employees",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked payroll row is a breach that must be notified.",
+      "reasoning": "The tool 'read_query' is listed in the organization's register as reaching this asset, and it can execute SELECT queries on the SQLite database which includes the 'employees' table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "read_query",
+      "asset": "users",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system; a leaked payroll row is a breach that must be notified. Table and column names carry no class on their own.",
+      "reasoning": "The tool 'read_query' is listed in the organization's register as reaching this asset, and it can execute SELECT queries on the SQLite database which includes the user directory.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "read_query",
+      "asset": "audit-log",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "",
+      "reasoning": "The tool 'read_query' is listed in the organization's register as reaching this asset, and it can execute SELECT queries on the audit log.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "read_query",
+      "asset": "new-tables",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A table an agent creates is classed by what it holds. Table and column names are Routine. Aggregation: a query that returns every row of a table ranks a step above a query for one row, and a join that puts names next to keys or social security numbers ranks at least as high as its most sensitive column.",
+      "reasoning": "The organization's register lists read_query as a tool that reaches new-tables.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "read_query",
+      "asset": "insight-memo",
+      "in_register": false,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "API keys issued to users, with their scopes (admin, write, read-only)",
+      "reasoning": "The tool 'read_query' can execute SELECT queries on the SQLite database, which includes reading from the 'api-keys' asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "read_query",
+      "asset": "schema",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "",
+      "confidence": 0.95
+    },
+    {
+      "tool": "write_query",
+      "asset": "api-keys",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "API keys issued to users, with their scopes (admin, write, read-only)",
+      "reasoning": "The tool can execute INSERT, UPDATE, or DELETE queries on the SQLite database, which includes the 'api-keys' asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "write_query",
+      "asset": "credentials",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system; a leaked payroll row is a breach that must be notified. Table and column names carry no class on their own.",
+      "reasoning": "The tool can execute INSERT, UPDATE, or DELETE queries on the SQLite database which contains service accounts with usernames and passwords.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "write_query",
+      "asset": "oauth-tokens",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system;",
+      "reasoning": "The tool can execute INSERT, UPDATE, or DELETE queries on the SQLite database, which includes the oauth-tokens asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "write_query",
+      "asset": "employees",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked payroll row is a breach that must be notified.",
+      "reasoning": "The tool 'write_query' is listed in the organization's register as reaching this asset, and it can execute INSERT, UPDATE, or DELETE queries on the SQLite database which includes the 'employees' table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "write_query",
+      "asset": "users",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A leaked key or token opens a production system; a leaked payroll row is a breach that must be notified. Table and column names carry no class on their own.",
+      "reasoning": "The tool 'write_query' is listed in the organization's register as reaching this asset, and it can execute INSERT, UPDATE, or DELETE queries on the user directory.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "write_query",
+      "asset": "audit-log",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "altering it hides misuse",
+      "reasoning": "The tool 'write_query' is listed in the organization's register as reaching this asset, and it can execute INSERT, UPDATE, or DELETE queries on the audit log.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "write_query",
+      "asset": "new-tables",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "A table an agent creates is classed by what it holds. Table and column names are Routine. Aggregation: a query that returns every row of a table ranks a step above a query for one row, and a join that puts names next to keys or social security numbers ranks at least as high as its most sensitive column.",
+      "reasoning": "The tool 'write_query' is listed in the organization's register as reaching this asset, and it can execute INSERT, UPDATE, or DELETE queries on tables an agent creates.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "write_query",
+      "asset": "insight-memo",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register specifies that only the `append_insight` tool is intended to modify the insight memo, not `write_query`. The `write_query` tool is designed for more general SQL operations and does not specifically target or recognize the insight memo as a special asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "write_query",
+      "asset": "schema",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'write_query' tool is intended for executing INSERT, UPDATE, or DELETE queries which operate on rows of data rather than the schema itself. The asset 'schema', as described, consists only of table names and column definitions with no rows.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "api-keys",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is not listed in the organization's register as reaching this asset, and it does not inherently interact with existing data like API keys. It creates new tables but does not modify or access the contents of existing ones.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "credentials",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is not listed in the organization's register as reaching this asset, and its operation does not directly interact with existing data or metadata of the 'credentials' asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "oauth-tokens",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is not listed in the organization's register as a tool that reaches the 'oauth-tokens' asset. The tool creates new tables but does not directly interact with existing data such as OAuth tokens.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "employees",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is used to create new tables in the SQLite database, but it does not directly interact with or modify existing payroll records (the 'employees' asset). The organization's register lists 'read_query' and 'write_query' as tools that reach this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "users",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is not listed in the organization's register as reaching this asset, and its function to create new tables does not directly interact with or modify existing user directory data.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "audit-log",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The 'create_table' tool is not listed in the organization's register as a tool that reaches the audit-log asset. The create_table operation does not inherently interact with or modify the contents of the audit-log.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "new-tables",
+      "in_register": true,
+      "reaches": true,
+      "blast": 1,
+      "reaches_as_answered": true,
+      "blast_as_answered": 1,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'create_table' is listed in the organization's register as reaching this asset, and it directly creates new tables which are part of the 'new-tables' asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "create_table",
+      "asset": "insight-memo",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'create_table' is not listed in the organization's register as reaching this asset, and its operation of creating a new table does not directly affect or modify the 'insight-memo'. The 'append_insight' tool is specifically designed to add content to the memo.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "create_table",
+      "asset": "schema",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'create_table' is not listed in the organization's register as reaching this asset, and its primary function of creating new tables does not directly impact the existing schema metadata without additional context or action.",
+      "confidence": 0.9
+    },
+    {
+      "tool": "list_tables",
+      "asset": "api-keys",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the names of tables and does not interact with the contents of the 'api-keys' asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "credentials",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the names of tables and does not interact with the contents of the 'credentials' asset, which includes usernames and passwords.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "oauth-tokens",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the names of tables and does not interact with the contents of any table, including 'oauth-tokens'. The organization's register specifies that 'read_query', 'write_query' are the tools that reach this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "employees",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the names of tables and does not interact with the contents of the 'employees' asset, which includes sensitive payroll records.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "users",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the tables in the database and does not interact with or modify the contents of any specific table, including the 'users' asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "audit-log",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the tables in the database and does not interact with the contents of any specific table, including the audit log.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "new-tables",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' only lists the tables in the database and does not interact with or modify the contents of 'new-tables'. The organization's register does not list this tool as reaching the asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "insight-memo",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' does not operate on or affect the 'insight-memo'. The register specifies that only 'append_insight' can modify this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "list_tables",
+      "asset": "schema",
+      "in_register": true,
+      "reaches": true,
+      "blast": 1,
+      "reaches_as_answered": true,
+      "blast_as_answered": 1,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'list_tables' is listed in the organization's register as reaching this asset, and it operates on table names which are part of the schema.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "describe_table",
+      "asset": "api-keys",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information, not the contents of rows within the table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "credentials",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information, not the contents of the table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "oauth-tokens",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information for a specific table, which does not directly interact with the contents of the 'oauth-tokens' asset. The register lists 'read_query' and 'write_query' as relevant tools for this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "employees",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information, not the contents of the table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "users",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information, not the contents of the table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "audit-log",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information for a specific table, which does not affect the contents of the audit log. The organization's register lists 'read_query' and 'write_query' as tools that can reach this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "new-tables",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' retrieves schema information for a specific table, which does not directly interact with or modify the contents of 'new-tables'. The asset 'new-tables' is created and managed through other tools like 'create_table', 'read_query', and 'write_query'.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "insight-memo",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' is not listed in the organization's register as reaching this asset, and its function of describing table schemas does not inherently interact with or modify the 'insight-memo'.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "describe_table",
+      "asset": "schema",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'describe_table' is listed in the organization's register as reaching this asset, and it retrieves schema information for a specific table.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "api-keys",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to a memo and does not interact with the 'api-keys' asset directly.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "credentials",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to a memo and does not interact with the credentials asset directly.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "oauth-tokens",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to the memo and does not interact with OAuth tokens directly. The organization's register lists 'read_query' and 'write_query' as tools that can reach this asset, but 'append_insight' is not listed.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "employees",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to a memo and does not interact with the payroll records directly.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "users",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to the memo and does not interact with the user directory asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "audit-log",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to the memo, not to modify or read from the audit log. The organization's register does not list this tool as reaching the audit log.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "new-tables",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to the memo, not to create or manipulate tables. The asset 'new-tables' involves creating and inserting rows into new tables.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "append_insight",
+      "asset": "insight-memo",
+      "in_register": true,
+      "reaches": true,
+      "blast": 1,
+      "reaches_as_answered": true,
+      "blast_as_answered": 1,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool `append_insight` is explicitly listed in the organization's register as reaching this asset, and its description matches the purpose of adding insights to the memo.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "append_insight",
+      "asset": "schema",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'append_insight' is intended to add insights to a memo, not to modify or read the schema. The organization's register does not list this tool as reaching the asset.",
+      "confidence": 1.0
+    }
+  ],
+  "adjustments": [],
+  "review": {
+    "unanswered": [],
+    "register_pairs_not_reached": [],
+    "pairs_outside_register": [
+      {
+        "tool": "read_query",
+        "asset": "insight-memo",
+        "blast": 5
+      }
+    ],
+    "tools_reaching_nothing": [],
+    "fives_without_a_quote": [
+      {
+        "tool": "read_query",
+        "asset": "audit-log",
+        "escape": "Q2",
+        "escape_evidence": ""
+      }
+    ]
+  },
+  "failed": []
+}

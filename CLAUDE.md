@@ -63,9 +63,10 @@ Full details: [docs/project/overview.md](docs/project/overview.md).
 | Capture real MCP traffic with per-call caller identity (headers via mitmdump) | `uv run python logs/proxy/scripts/run_mitm_finance.py --only yahoo_finance` |
 | **Gateway** — observe-only proxy in front of an external MCP (logs every message, scores each call live before forwarding) | `uv run python -m mcp_security.gateway.proxy --config src/mcp_security/gateway/routes.example.json` |
 | Re-score a gateway log offline (same scorer as live; re-run after a new scan) | `uv run python -m mcp_security.gateway.score --config <routes.json> --route <r>` |
-| Learn a route's behaviour policy (limits, required steps) from its gateway log; set it as `behaviour_policy` | `uv run python -m mcp_security.behaviour.policy --log <log.jsonl> --out <policy.json> --days 30` |
+| Learn a route's behaviour policy (limits per tool, required steps; design v4, or keep `--design v1\|v2\|v3`) from its gateway log; set it as `behaviour_policy` | `uv run python -m mcp_security.behaviour.policy --log <log.jsonl> --out <policy.json> --days 30` |
 | Check a gateway log's hash chain (gateway-log/3: edited/inserted/deleted lines) | `uv run python -m mcp_security.gateway.log_file verify <log.jsonl>` |
 | Replay the org corpus through the gateway (one session per persona, reads only) | `uv run python scripts/gateway_replay_corpus.py` |
+| Outside traffic: MCPHunt calls → gateway logs → scores vs its labels ([experiment](reports/experiments/gateway/mcphunt/README.md)) | `uv run python scripts/mcphunt_to_gateway_log.py --traces external/mcphunt/traces --out <dir> --clock spread`, then `gateway.score`, then `scripts/evaluate_mcphunt_scores.py` |
 | Static side for a gateway-captured catalog (static-scan + breadth + cells, 1 GPU) | `sbatch --export=ALL,NAME=github_remote scripts/gateway_static_scan.sbatch` |
 | Rebuild the realistic-misuse corpora | `python3 scripts/dynamic_design/make_realistic_misuse.py` |
 | Rebuild the catalog prior (synthetic static corpus) | `python3 scripts/dynamic_design/gen_static_corpus.py` |

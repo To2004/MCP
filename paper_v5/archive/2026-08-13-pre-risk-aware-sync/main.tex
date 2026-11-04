@@ -1,0 +1,842 @@
+% ---------------------------------------------------------------------------
+% McpRisk v5 -- policy-grade static severity scoring for MCP servers.
+% AAMAS 2027 format (26th ICAAMAS, 3-7 May 2027, JW Marriott Hanoi, Vietnam).
+%
+% AAMAS uses the ACM `acmart' class in sigconf mode with the IFAAMAS copyright
+% block. Section numbering is arabic by default here (1, 1.1, 1.1.1) -- no
+% override needed, unlike IEEEtran.
+%
+% Overleaf: upload this folder, compiler pdfLaTeX, main document main.tex.
+% `acmart' and ACM-Reference-Format.bst ship with Overleaf's TeX Live.
+%
+% SUBMISSION vs CAMERA-READY -----------------------------------------------
+% AAMAS main-track review is double-blind. For submission, switch the class
+% option line below to the `anonymous' variant and keep \settopmatter{
+% printfolios=true} so reviewers get page numbers. Confirm the page limit and
+% anonymity policy against the AAMAS 2027 submission instructions when they
+% are published (deadline listed as early Oct 2026, TBC).
+% ---------------------------------------------------------------------------
+
+% -- SUBMISSION (double-blind, page numbers on):
+% \documentclass[sigconf, anonymous, review]{acmart}
+% \settopmatter{printacmref=false, printfolios=true}
+
+% -- CAMERA-READY / working draft (current):
+\documentclass[sigconf]{acmart}
+\settopmatter{printacmref=false}
+
+% AAMAS boilerplate: no ACM reference block, no copyright footnote, no running
+% headers. These three lines are prescribed by the IFAAMAS template.
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain}
+
+% NOTE ON \setcopyright: the AAMAS template prescribes \setcopyright{ifaamas},
+% but `ifaamas' is NOT a value in the stock acmart.cls -- it only exists in the
+% patched acmart.cls that IFAAMAS ships inside the official AAMAS template
+% bundle. Compiling against stock acmart with it raises
+%   "Package xkeyval Error: value `ifaamas' is not allowed."
+% So this draft uses a stock-safe value. When you drop the official AAMAS
+% bundle's acmart.cls into this folder, swap the two lines below.
+% \setcopyright{ifaamas}
+\setcopyright{rightsretained}
+
+\acmConference[AAMAS '27]{Proc.\ of the 26th International Conference on
+Autonomous Agents and Multiagent Systems (AAMAS 2027)}{May 3 -- 7,
+2027}{Hanoi, Vietnam}
+\acmYear{2027}
+\copyrightyear{2027}
+\acmDOI{}
+\acmPrice{}
+\acmISBN{}
+\acmSubmissionID{}
+
+% --------------------------------------------------------------- packages ---
+% acmart already loads amsmath, booktabs, graphicx and xcolor -- loading
+% amssymb on top of it clashes with \Bbbk from the Libertine math setup.
+\usepackage{balance}
+\usepackage{enumitem}   % optional args on enumerate (contributions list)
+
+% ---------------------------------------------------------------- shortcuts ---
+\newcommand{\eg}{e.g.,\ }
+\newcommand{\ie}{i.e.,\ }
+\newcommand{\framework}{\textsc{McpRisk}}
+
+% Placeholder marker for sections not yet written. Delete the macro once the
+% skeleton is filled in; it renders visibly so nothing ships by accident.
+\newcommand{\stub}[1]{\textit{\textcolor{gray}{[To be written: #1]}}}
+
+\begin{document}
+
+% ------------------------------------------------------------------- title ---
+\title{Deriving Design-Time Risk Severity for Model Context Protocol Servers
+from Organizational Policy Alone}
+
+\author{Tomer Ovadya}
+\affiliation{%
+  \institution{Ben-Gurion University of the Negev}
+  \department{Software and Information Systems Engineering}
+  \city{Beer-Sheva}
+  \country{Israel}}
+\email{ovadyat@post.bgu.ac.il}
+
+\author{Asaf Shabtai}
+\affiliation{%
+  \institution{Ben-Gurion University of the Negev}
+  \department{Software and Information Systems Engineering}
+  \city{Beer-Sheva}
+  \country{Israel}}
+\email{shabtaia@bgu.ac.il}
+
+\renewcommand{\shortauthors}{Ovadya and Shabtai}
+
+% ---------------------------------------------------------------- abstract ---
+\begin{abstract}
+\stub{abstract --- write last, once the evaluation section is fixed.}
+\end{abstract}
+
+% ------------------------------------------------------------ CCS + keywords ---
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10002978.10003006.10003013</concept_id>
+       <concept_desc>Security and privacy~Distributed systems security</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10002978.10002991.10002995</concept_id>
+       <concept_desc>Security and privacy~Access control</concept_desc>
+       <concept_significance>300</concept_significance>
+       </concept>
+   <concept>
+       <concept_id>10010147.10010178.10010179</concept_id>
+       <concept_desc>Computing methodologies~Intelligent agents</concept_desc>
+       <concept_significance>300</concept_significance>
+       </concept>
+ </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Security and privacy~Distributed systems security}
+\ccsdesc[300]{Security and privacy~Access control}
+\ccsdesc[300]{Computing methodologies~Intelligent agents}
+
+\keywords{Model Context Protocol; AI agents; risk scoring; security
+categorization; data classification policy; LLM security; access control}
+
+\maketitle
+
+% ---------------------------------------------------------------------------
+% Section 1 -- Introduction (short paper: FLAT, no subsections)
+%
+% Structure follows the "technical-challenge version 2" template from the
+% research-paper-writing skill: our insight has historical roots in a
+% traditional line (risk-adaptive access control, 2007-2011), so that line is
+% used as conceptual backing before showing why modern MCP defenses still fail.
+%
+% Paragraph roles:
+%   P1 opening    -- agentic applications and MCP
+%   P2 direction  -- server as protected resource; misuse through legitimate access
+%   P3 challenge  -- RBAC/ABAC answer "may it?", not "how dangerous is it?"
+%   P4 challenge  -- risk-based access control already solves this shape, but
+%                    not for agents; current MCP defenses remain binary
+%   P5 insight    -- what the risk must be computed from (static, dynamic, history)
+%   P6 method     -- our methodology
+%   P7 evidence   -- implementation, evaluation, three contributions
+%
+% Budget: ~850 words. Citations: 24 of the 37 in refs.bib.
+%
+% EXPECTED: \ref to sec:framework / sec:eval typesets as "??" until those
+% sections exist. Not a build error.
+% ------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+AI agents no longer only generate text; they act. They read data, modify files,
+update databases, and call external services for their users. The Model Context
+Protocol (MCP)~\cite{anthropic2024mcp} standardizes this exchange: a server
+publishes tools, and a connected agent discovers and invokes them over
+JSON-RPC~\cite{mcp2026spec}. The public server ecosystem is growing quickly~\cite{hou2026mcp}, and audits of deployed servers find recurring weaknesses~\cite{hasan2025firstglance}. An agent's decision
+now lands directly on the systems and resources behind those tools. These tools let agent decisions directly affect organizational resources. MCP
+standardizes how tools are discovered and invoked, but it does not assess the
+risk of a specific call. Its annotations describe the tool rather than the
+resource it affects, so a destructive tool receives the same label whether it
+targets a temporary file or a production database.
+
+Most MCP and agent security research studies how malicious servers or tools can
+harm the agents that use
+them~\cite{invariant2025toolpoisoning,shi2025toolhijacker}. Other work audits
+MCP server implementations and exposed capabilities for software weaknesses or
+excessive privilege~\cite{kumar2026mcpinsos,huang2026auditing}. At runtime,
+MTGuard inspects invocation parameters and observed execution to detect policy
+violations~\cite{he2026mtguard}. These approaches identify vulnerabilities,
+excessive permissions, or unsafe behavior. They do not estimate the consequence
+of an authorized invocation from the sensitivity and scope of the resource it
+affects. Our work provides this estimate.
+
+
+We study \emph{misuse}: a legitimate capability used beyond what the task requires~\cite{anderson1980threat}. It needs no malicious agent and no malicious server. It can start with an operator who states a task loosely, delegates too broadly, or grants excess permission~ \cite{owasp2025llm06} . Studies of MCP
+applications and servers report broad system access and over-privileged
+tools~\cite{li2025privilege,huang2026auditing}. Misuse can also result from
+model behavior: an agent may select an available but inappropriate
+tool~\cite{yin2025reasoningtrap}, or recognize a risk in general but fail to
+account for it during execution~\cite{tang2025riskknowledge}. We do not ask why the agent made the call. We assess what the call can do.
+Reading a build log and reading stored credentials may use the same tool, but
+the risks are different. We therefore analyze the full invocation: the tool,
+the resource it affects, the arguments, the execution context, and the agent's
+recent actions.
+
+
+
+Access control decides whether a request is allowed. Role and attribute-based
+models~\cite{sandhu1996rbac,hu2014abac} evaluate permissions under a policy,
+but they do not normally assign a risk level to an allowed request. This gap
+also appears in agent frameworks: exposing a tool does not ensure that each call
+is authorized using its actual argument values~\cite{mellafe2026capability}.
+Authentication identifies the caller, and authorization defines what the caller
+may do. Neither measures the possible consequence of a specific authorized
+call.
+
+
+Adding risk to an access-control decision is not new. Early work quantified risk
+during authorization~\cite{cheng2007fuzzymls}, and later work incorporated
+risk-adaptive access control into an attribute-based
+framework~\cite{kandala2011radac}. The area has since been widely
+studied~\cite{atlam2020riskbased}. Recent work extends this idea to agents,
+using an LLM judge to consider task risk, resource risk, and model
+uncertainty~\cite{fleming2025tbac}. However, these models do not define an
+MCP-specific consequence score for a concrete invocation based on the tool, the
+sensitivity of the affected resource, and the scope of the call.
+
+
+To our knowledge, no existing method estimates the consequence of a concrete
+MCP invocation from the sensitivity and scope of the resource it affects. Many
+defenses operate at the agent, client, or middleware layer, where they restrict
+available tools or authorize calls before
+execution~\cite{shi2025progent,zhu2025miniscope,betser2026agentrim,
+li2026conleash,abaev2026agentguardian}. Server-side authorization has also begun
+to appear: IGAC checks a proposed call and its payload against the user's
+declared intent~\cite{zhu2026igac}. Other runtime systems return safety scores
+or decisions such as allow, review, or
+block~\cite{yang2026agenttrust,zhang2026stars,hossain2026nexus}. These outputs
+indicate whether a call is permitted, suspicious, or requires intervention, but
+they do not estimate the severity of an authorized call for the specific
+organizational resource it affects.
+
+Vulnerability-scoring frameworks do not address this problem either. CVSS
+scores the severity of software, hardware, and firmware
+vulnerabilities~\cite{first2023cvss}, while AIVSS extends vulnerability scoring
+with factors specific to agentic AI systems~\cite{huang2026aivss}. Neither
+estimates the consequence of a concrete MCP invocation. Our method provides
+this consequence score and uses it to allow, review, or refuse each call.
+
+
+Risk belongs to a tool--resource pair, not to the tool alone. For example,: \texttt{read\_file} poses little risk when applied to a public document but
+substantial risk when applied to regulated data. We therefore compute a
+baseline from three factors: tool impact, resource sensitivity, and
+\emph{blast radius}, meaning the portion of the resource affected by one call.
+The call's arguments may change this baseline, while its context and the
+agent's recent activity may indicate whether the call is unusual.
+
+We compute risk at two stages. At design time, we assign a baseline score to
+each tool--resource pair exposed by the server. The score combines tool impact,
+resource sensitivity, and blast radius. Resource sensitivity is derived from
+the organization's information-classification policy, following established
+guidance for mapping information types to impact
+categories~\cite{nist2004fips199,nist2008sp80060}. At request time, we update
+the baseline using the call's arguments, execution context, and the agent's
+recent activity. The result is an auditable score an organization can compare
+with thresholds of its own choosing; deciding whether to approve a call,
+require human review, or refuse it remains the organization's
+(\S\ref{sec:framework}).
+
+Adjustable autonomy studies when an agent should act independently and when
+control should pass to a person~\cite{pynadath2002adjustable}. Our score
+provides a measurable basis for this decision. We implement the method as an
+enforcement framework and evaluate it using tool catalogs from real vendor MCP
+servers, together with organizational policies, resource inventories, and
+invocation scenarios (\S\ref{sec:eval}).
+
+This paper makes three contributions. First, a \textbf{risk-analysis methodology}
+for assessing the misuse risk of an MCP invocation from tool impact, resource
+sensitivity, blast radius, runtime arguments, execution context, and the agent's
+recent activity, deriving resource sensitivity from organizational policy rather
+than from a fully labeled asset inventory. Second, an \textbf{enforcement
+framework} that combines the design-time and request-time assessments and uses
+them to make risk-based access-control decisions for MCP servers. Third, an
+\textbf{evaluation setting} that pairs tool catalogs from real vendor MCP servers
+with an organizational policy, resource registers, and live invocation traffic,
+together with a descriptive report of what the framework produces over sixteen
+server deployments and an explicit account of what that report does not
+establish.
+% ---------------------------------------------------------------------------
+% Section 2 -- Related Work (short paper: FLAT, four thematic strands)
+%
+% Not a paper list. Four strands, each one paragraph, each closing on the
+% sentence that says why that strand does not answer our question. Bold run-in
+% headings instead of \subsection -- subsections cost vertical space and invite
+% padding (WRITING-GUIDE.md sec. 7).
+%
+% Paragraph roles:
+%   P1 (a) MCP security        -- the field protects the agent from the server
+%   P2 (b) agent/MCP defenses  -- they end at an enforcement verdict
+%   P3 (c) access control      -- KEY STRAND: RBAC/ABAC permit; risk-adaptive
+%                                 access control conditions on a computed risk
+%                                 value. fleming2025tbac is the NEAREST work and
+%                                 is named as such -- the gap is the *input*
+%                                 (a decomposed per-invocation estimate), not
+%                                 the absence of any risk value for agents.
+%   P4 (d) risk scoring        -- scores the server, the tool, or the log
+%
+% Deliberately NOT repeated here (sec. 1 and sec. 3 already carry it, with the
+% same keys): the four-route misuse taxonomy -- yin2025reasoningtrap,
+% tang2025riskknowledge, zhan2024injecagent, lynch2025misalignment. P2's job is
+% what the defenses *produce*, not why they are needed.
+%
+% Budget: 600-700 words, ~31 citation keys, all from refs.bib.
+% ---------------------------------------------------------------------------
+\section{Related Work}
+\label{sec:related}
+
+\textbf{MCP Server Security and Risk Assessment.} 
+Prior work surveys security risks across the MCP
+ecosystem~\cite{hou2026mcp} and audits open-source MCP servers for
+software weaknesses, MCP-specific vulnerabilities, and maintainability
+problems~\cite{hasan2025firstglance}. Several studies examine attacks in which
+a malicious server, tool description, or external input influences the
+agent~\cite{invariant2025toolpoisoning,shi2025toolhijacker,
+zhao2025parasites}. We study the opposite direction: an agent sends a call that
+may harm the MCP server or an organizational resource reached through it.
+Server-to-agent attacks are outside our scope. We assume only that each tool
+performs the operation represented by its declared interface and resource
+mapping.
+
+Other work examines the capabilities and weaknesses of MCP servers. Li et al.
+analyze 2,562 MCP applications and measure their use of file, network, system,
+and memory APIs~\cite{li2025privilege}. Huang et al. combine static pattern
+matching with sandboxed execution to detect capabilities such as file access,
+network requests, and command execution~\cite{huang2026auditing}. MCP-in-SoS
+scans 222 server repositories for code weaknesses, maps them to CWE and CAPEC
+entries, and derives repository-level risk from the likelihood and severity
+those catalogs assign~\cite{kumar2026mcpinsos}. All three assess the server as
+an artifact, independently of the resources a given installation holds, so the
+same server receives the same assessment wherever it is deployed.
+
+ConLeash checks whether an MCP call stays within an approved consent boundary~\cite{li2026conleash}. However, it does not estimate the risk or possible impact of a call that is already allowed. Our work addresses this gap by assessing the risk of each invocation from the server side.
+
+
+
+
+\textbf{Defenses for MCP and tool-using agents.} 
+IGAC checks whether an MCP invocation and its arguments remain within the user’s stated intent, while MTGuard compares invocation parameters, runtime behavior, and results against safety policies~\cite{zhu2026igac,he2026mtguard}. Progent and MiniScope enforce least-privilege authorization, whereas AgentGuardian learns admissible tool inputs and invocation sequences from normal executions~\cite{shi2025progent,zhu2025miniscope,abaev2026agentguardian}. These systems check whether a tool call follows the user’s request, the security policy, or the agent’s normal behavior. However, a call can pass all these checks and still cause serious damage. For example, an agent may be allowed to delete files, but deleting a temporary file and deleting a critical production file do not have the same risk; our work measures this difference at the MCP server.
+
+\textbf{Access control.} 
+RBAC assigns permissions through roles, while ABAC evaluates attributes of the
+caller, resource, requested action, and environment
+conditions~\cite{sandhu1996rbac,hu2014abac}. These models can express
+fine-grained policies, but they do not directly estimate the possible
+consequence of a permitted request.
+
+Risk-adaptive access control adds a calculated risk value to the authorization
+decision~\cite{cheng2007fuzzymls}. Kandala et al. place risk within an
+attribute-based framework, but leave the concrete risk-calculation method
+outside their scope~\cite{kandala2011radac}. Ni et al. use fuzzy rules over
+subject and object security information to estimate the risk of an access
+operation~\cite{ni2010fuzzy}. Shaikh et al. dynamically calculate trust and
+risk for each subject--object pair from the user's past
+behavior~\cite{shaikh2012dynamic}. Atlam et al. survey the wider family of
+risk-based access-control models~\cite{atlam2020riskbased}.
+
+For agentic systems, Fleming et al. use an LLM judge to create a task policy,
+combine static risk values for its tools and resources, and estimate
+uncertainty~\cite{fleming2025tbac}. A limitation is that risk is computed for
+the whole task and is not updated for each call. For example, reading one
+database record and exporting a full table may use the same tool risk value.
+Our work instead scores each MCP invocation using its runtime details.
+
+\textbf{Risk scoring for MCP and agents.} 
+CVSS scores the severity of software vulnerabilities. A study of 196 evaluators
+applying CVSS v3.1 found differences between evaluators, and a follow-up found
+that 68% assigned a different severity level to vulnerabilities they had
+scored before~\cite{first2023cvss,wunder2024cvss}. AIVSS extends vulnerability
+scoring to agentic AI systems~\cite{owasp2026aivss}. These frameworks score
+vulnerabilities rather than concrete tool calls.
+
+FIPS 199 and NIST SP 800-60 classify information types and systems by the
+potential impact of losing confidentiality, integrity, or
+availability~\cite{nist2004fips199,nist2008sp80060}. These classifications
+provide an organizational view of consequence that our method uses when
+assessing the resource affected by a call.
+
+Work closer to our setting studies risk at different stages. MCP-in-SoS scores
+weaknesses in an MCP server repository~\cite{kumar2026mcpinsos}, while
+AgenTRIM assigns risk levels to tools and applies stronger checks to riskier
+ones~\cite{betser2026agentrim}. STARS scores proposed skill invocations using
+the request, capability, and runtime context before
+execution~\cite{zhang2026stars}. Owiredu-Ashley instead grades the harm of
+actions recorded after execution~\cite{owireduashley2026severity}. Together,
+These methods answer different risk questions: they assess server weaknesses,
+tool capabilities, invocation safety, or harm after execution. They do not
+provide a common measure of the consequence to the organization affected by
+the call. For example, deleting a temporary cache and deleting payroll records
+may use the same tool and both be irreversible, but their organizational impact
+is very different. Our work connects each MCP call to the organization’s
+resource policy and estimates its risk before execution.
+
+% ---------------------------------------------------------------------------
+% Section 3 -- Problem Setting and Threat Model
+%
+% Job: make the setting precise enough that Section 4 can be formal.
+%   (a) the MCP mechanics,          (b) actors and who is protected from whom,
+%   (c) how harm arises,            (d) the server's observation set,
+%   (e) assumptions and scope,      (f) the decision problem, stated formally.
+%
+% Budget: ~650 words + one small table.
+%
+% TERMINOLOGY: "resource" is reserved for r, the thing a call touches. The
+% server is the "protected party", never "the protected resource", and the word
+% "asset" does not appear here. Sec.4/5 still say "asset register" and
+% "(tool, asset) cell" -- one sweep would make the paper uniform.
+%
+% THE ROUTES-TO-HARM LIST is now ONE sentence with grouped citations: Sec.1 P2
+% and Sec.2 P1/P2 already carry the same six keys, and this was the third
+% telling of the same list.
+%
+% The risk-adaptive AC pattern is established here and nowhere else: the old
+% Sec.4.7 (Enforcement) that re-stated it with the same three keys has been
+% removed, since Sec.4 now stops at rho(c).
+% ---------------------------------------------------------------------------
+\section{Problem Setting and Threat Model}
+\label{sec:threat}
+
+\textbf{The setting.}
+An MCP server publishes a catalog of tools over JSON-RPC. A client uses
+\texttt{tools/list} to obtain each tool's name, description, and argument
+schema, and then invokes a tool with concrete
+arguments~\cite{anthropic2024mcp,mcp2026spec}. A tool is only an interface to
+an operation. The actual target may be an organizational file, database,
+service, or other protected resource. When an agent invokes a tool, the MCP
+server performs the requested operation on that resource.
+
+
+\textbf{Actors.}
+The organization deploys the MCP server, owns the connected assets, and defines
+the policies used to classify them. The user gives a task to the agent. The
+agent chooses a tool and provides the arguments for the call. The MCP server
+receives the call, maps it to the relevant asset, and performs the requested
+operation. 
+
+
+\textbf{How harm arises.}
+We assume no adversary. Harm can still arise during normal use. The user may
+give an incomplete or unclear request. When the agent converts this request into
+a tool call, it may select the wrong tool or produce arguments that do not match
+the task. Prior work reports parameter errors and task deviations caused by
+ambiguous requests and model limitations~\cite{xiong2025butterfly}. An agent
+may also understand that an action is risky but still perform it in a concrete
+situation~\cite{tang2025riskknowledge}.
+
+Some of these mistakes still produce a schema-valid, authenticated, and
+permitted call. Such calls matter because MCP applications can reach system,
+network, file, and memory resources~\cite{li2025privilege}. Our work assesses
+the possible consequence of the call without trying to determine where the
+mistake began. Deliberate attacks by users, agents, or MCP servers are outside
+our scope.
+
+
+\textbf{What the server observes.} At assessment time---after authorization but before execution---the server receives the five quantities in Table~\ref{tab:observables}, together with the caller's authorization context. Identity is not included among the five because the same authorized caller may issue either an appropriate or a mistaken invocation, so identity alone does not distinguish their risk. Moreover, the standard MCP \texttt{tools/call} request carries the tool name and arguments, but no protocol-defined field containing the principal's instruction or the agent's intent~\cite{mcp2026spec}. From the invocation alone, the server therefore cannot determine whether an unusually large transfer is a typo or an approved operation. The estimate below is consequently a function of the five observed quantities, not of what the agent meant.
+
+
+\begin{table}[t]
+  \caption{What an MCP server can observe about an invocation before executing
+  it. Intent is not among them.}
+  \label{tab:observables}
+  \begin{tabular}{@{}cl@{}}
+    \toprule
+    & Observable \\
+    \midrule
+    $t$ & the tool named in the request \\
+    $r$ & the resource(s) that request resolves to \\
+    $a$ & the argument values, valid against the tool's schema \\
+    $x$ & session context: the calls already made on this connection \\
+    $h$ & the prior invocations already recorded for this deployment \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Assumptions.} \emph{(i)} Authentication and transport security are assumed to work correctly. We focus only on the possible consequence of executing the request.
+\emph{(ii)} The tool catalog is truthful --- a tool's name,
+description, and schema describe what invoking it does --- and no party acts
+with intent to harm. A call may be wrong for the task; it is not an attack.
+Poisoned descriptions and a compromised server are a separate problem and are
+scoped out. \emph{(iii)} The organization provides a classification policy based on security
+categorization standards~\cite{nist2004fips199,nist2008sp80060}. The policy
+defines resource classes by their possible impact and gives rules for deciding
+which class each resource belongs to. The organization registers the resources
+used by the MCP server, but does not assign a sensitivity score to each one in
+advance. Instead, the policy rules are used to classify both existing and newly
+created resources.
+\emph{(iv)} The server uses the selected tool and its arguments to identify the
+resource affected by the call. \emph{(v)} The server records the calls it
+receives, so previous calling history $h$ is available when the risk is
+assessed. Our framework only reports the risk score. The organization decides
+whether to log it, send it for review, or use it to block a call.
+
+\textbf{The assessment problem.}
+We represent an invocation as
+$c=\langle t,r,a,x,h\rangle$, because its risk depends on the full call and not
+only on the selected tool. We model the result of existing access control as
+$\mathrm{perm}(c)\in{0,1}$. Our method considers only permitted calls, for
+which $\mathrm{perm}(c)=1$.
+
+The goal is to compute a numerical consequence score $\rho(c)$ that ranks
+permitted calls by their possible harm. Our work reports this score but does
+not decide whether a call should be allowed, reviewed, or blocked.
+Risk-adaptive access control can use a calculated risk value when making such
+decisions~\cite{cheng2007fuzzymls,kandala2011radac}, but each organization
+decides how to use the score.
+
+The score has two main properties. First, it is numerical rather than limited
+to labels such as low, medium, and high. This supports finer comparison between
+calls and allows an organization to choose its own thresholds. Second, the
+score is explainable: its factors are reported separately so that security
+teams can inspect and discuss them. Section~\ref{sec:framework} explains how
+$\rho(c)$ is calculated.
+% ---------------------------------------------------------------------------
+% Section 4 -- The Framework
+%
+% Budget: 1,400-1,700 words (WRITING-GUIDE.md Sec.5). Largest prose section.
+%
+% Structure: 4.1 Framework Overview (why the two layers are separate kinds of
+% evidence) -> 4.2 The Static Layer (4.2.1 Tool Impact, which absorbs the old
+% rules-to-model hand-off; 4.2.2 Resource Sensitivity; 4.2.3 Blast Radius) ->
+% 4.3 The Dynamic Layer, ending at rho(c).
+%
+% Enforcement is out of scope. Sec.3 states that the framework reports the
+% score and does not decide whether a call is allowed, reviewed, or blocked, so
+% Sec.4 must not instantiate a threshold gate.
+%
+% Narrative contract inherited from the Introduction:
+%   * tension 1 "the inventory does not exist"  -> paid off in Sec.4.2.2
+%   * tension 3 "is the model just guessing?"   -> set up in Sec.4.2.1,
+%     paid off by the 55/55 result in the Evaluation, NOT here.
+%
+% Every number below appears verbatim in GROUND-TRUTH.md. Citations are sparse
+% by design (WRITING-GUIDE.md Sec.6: method sections cite only what grounds a
+% design decision).
+%
+% Terminology: "resource" throughout, matching Sec.1 and Sec.3 (Table
+% tab:observables writes the resource r). The policy's inventory of resources
+% is "the register".
+%
+% NOTE for the next build pass: this section resolves \ref{sec:threat} and
+% \ref{sec:eval}, so 03-05 must all be \input in main.tex before the
+% cross-references typeset.
+% ---------------------------------------------------------------------------
+\section{The Framework}
+\label{sec:framework}
+
+\framework{} computes the score $\rho(c)$ of \S\ref{sec:threat} in two layers.
+A \emph{static} layer estimates, before any particular call occurs, the
+inherent consequence of every (tool, resource) pairing a server exposes; a
+\emph{dynamic} layer refines that baseline at request time with the concrete
+arguments supplied and the deployment's own history of prior calls. The output is an
+auditable score and an ordinal band. The framework assesses risk; it does not
+define an allow, review, or block policy.
+
+\subsection{Framework Overview}
+\label{sec:overview}
+
+The design choice underneath both layers is to keep capability separate from
+context. The same tool has very different consequences depending on which
+resource it reaches, and the same (tool, resource) pairing becomes more or less
+concerning depending on the concrete request and the caller's recent behaviour.
+These are different questions, and collapsing them into a single opaque model
+decision loses the ability to say which of the two produced a high score.
+
+The static layer holds the facts that are stable across calls: what operation
+the tool performs, how sensitive the resource is, and how far one use of that
+tool against that resource can propagate. Because none of these depends on a
+particular invocation, they are computed ahead of time and reused, giving every
+pairing a baseline consequence an operator can inspect factor by factor. The
+dynamic layer is separate because the remaining evidence does not exist until a
+request arrives: the argument values actually supplied, and whether this action
+is usual for the deployment that issued it. Keeping the
+two apart also means transient behavioural evidence never rewrites the
+underlying classification --- an anomalous call raises the assessment of that
+call, not the tier of the tool that served it.
+
+The static layer reads exactly two documents: the tool catalog the server
+advertises over \texttt{tools/list}, and the section of the organization's
+policy that covers this server. Neither is a \framework{}-specific artifact:
+the server already publishes the catalog, and a security team already maintains
+the policy. The policy supplies a register of the resources behind the server
+and the tools that touch them, named classes, and
+the rules by which the organization's own staff recognise them; it states no
+severity number anywhere. The organization's per-resource sensitivity table
+never reaches the scorer. Here it is an evaluation instrument only --- the
+artifact a deployment would not have, which is what lets it serve as an oracle.
+\S\ref{sec:eval} separates the real captures from what was written for this
+study.
+
+Three primitives carry the static baseline, and they ask deliberately different
+questions: impact is about the verb, what one call does; sensitivity about the
+noun, what the call touches; blast radius about the quantifier, how far the
+consequence travels. Each names a source of consequence the other two cannot
+express, which is why none of them is redundant. They are multiplied rather
+than averaged (Eq.~\ref{eq:score}), which keeps a low factor influential: a
+destructive tool aimed at a worthless resource cannot reach the top of the
+range, since only a call severe on every axis gets there. The dynamic layer
+then adjusts that product with request-time evidence to produce $\rho(c)$.
+\framework{} stops there --- how an organization turns a band into an
+operational action is its own decision, not part of the framework.
+
+\subsection{The Static Layer}
+\label{sec:static}
+
+The static layer builds a reusable baseline for every (tool, resource) pairing
+the server exposes. It estimates three primitives, each on a 1--5 scale, and
+multiplies them:
+\begin{equation}
+\mathrm{score} = \mathrm{sensitivity} \times \mathrm{blast} \times
+                 \mathrm{impact}, \qquad \mathrm{score} \in [1, 125].
+\label{eq:score}
+\end{equation}
+Impact is a property of the tool and sensitivity a property of the resource,
+while blast radius is a property of the pairing, because how far a consequence
+travels depends on both the operation and what it reaches. The layer runs when
+the catalog, the register, or the classification policy changes; it is not
+recomputed per invocation.
+
+A scan issues four \emph{kinds} of prompt: stage~0 infers the server's domain
+once, fixing the vocabulary for what follows; stage~1 assigns tool impact per
+tool, rules first and the model only on abstention; stage~2 assigns resource
+sensitivity per register row; stage~3 assigns blast radius per (tool, resource)
+cell. The last stage dominates a scan's prompt count --- 26 tools over 20
+resources is 520 cells. Everything afterwards is deterministic. An assembly pass reconciles
+twin tools (a bulk variant of a singular tool, or a deprecated alias of a
+canonical one, is tied to its twin so neither can be priced below the other)
+and applies a blast floor; a banding function then maps the product onto
+$\{\textrm{low}, \textrm{medium}, \textrm{high}, \textrm{critical}\}$. Banding
+is not a raw threshold: it encodes explicit security floors --- any
+irreversible operation is at least medium --- derived by measuring where an LLM
+reviewer systematically disagreed with raw thresholds. Determinism buys exactly
+one thing, and we claim only that: band boundaries, twin reconciliation and the
+floor do not drift between runs. The residual run-to-run variance sits in the
+LLM stages, and blast radius is where it concentrates.
+
+\subsubsection{Tool Impact}
+\label{sec:impact}
+
+Tool impact asks one question of a tool's own declaration: is this operation a
+read, a write, or a removal? Table~\ref{tab:ladder} is the resulting ladder,
+matched by a vocabulary of 281 patterns --- 16 for \emph{none}, 52 metadata, 46
+read, 122 write, 45 remove --- plus 119 ambiguous single words matched against
+the tool name only, 10 generic read verbs, and 9 parameter detectors. That last
+scoping matters: matched across a description instead, the ambiguous words make
+a listing tool look destructive.
+
+\begin{table}[t]
+\caption{The tool-impact ladder. One question --- read, write, or removal ---
+decides the tier.}
+\label{tab:ladder}
+\small
+\begin{tabular}{@{}cp{0.80\columnwidth}@{}}
+\toprule
+Tier & Operation \\
+\midrule
+1 & \textbf{none} --- the server talks about itself: ping, health, version,
+    whoami \\
+2 & \textbf{metadata} --- names, ids, counts, sizes, timestamps, permissions,
+    schema, listings; consumption state \\
+3 & \textbf{content read or limited write} --- append a line, add a comment,
+    set one named field \\
+4 & \textbf{ordinary write} --- the caller supplies what the item says \\
+5 & \textbf{removal or execution} --- delete, wipe, drop, purge, truncate;
+    execute code; move money \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The tier 3/4 boundary --- limited write against ordinary write --- is not
+invented here: two published standards draw it in the same place. HTTP
+separates \texttt{PATCH}, a partial modification leaving unmentioned fields
+untouched~\cite{dusseault2010patch}, from \texttt{PUT}, where the client sends
+the complete representation~\cite{fielding2022http}; CVSS~v4.0 separates
+integrity impact \texttt{VI:L}, ``the amount of modification is limited'', from
+\texttt{VI:H}, ``a total loss of integrity''~\cite{first2023cvss4}. Writing a
+file is a 4; writing one sentence into it is a 3.
+
+Breadth is deliberately absent from the ladder: how many items a call reaches
+is coverage, which blast radius scores, so the rules read no breadth vocabulary
+(\emph{all}, \emph{every}, \emph{bulk}, \emph{batch}), no glob and no recursion
+switch. Parameter detectors are recorded as capability
+flags but never move a tier: what a caller \emph{could} pass is not what a call
+\emph{does} pass, which is a request-time fact. MCP tool annotations are
+recorded the same way, as evidence and never as a
+bound~\cite{mcp2026spec} --- an annotation is a component's self-assessment
+rather than an independent measurement, and no component sets the ceiling on
+its own risk score.
+
+Which scorer decides the tier is settled by a confidence schedule, so the model
+enters this axis only where the rules cannot see far enough.
+The rules report a confidence with every tier: \textbf{0.35} when no tier verb
+matched, \textbf{0.8} when a verb fired, and \textbf{0.95} when a verb fired and
+an MCP annotation corroborated it. The model is consulted only below
+\textbf{0.5}. An annotation therefore raises confidence, and can suppress the
+model's review, but never sets or caps the tier itself.
+
+The model is asked where the rules do not know --- a write whose declaration
+never says whether it is bounded --- not where two rules disagree, which the
+precedence order settles. What the
+arrangement buys is attributability rather than call volume: stages~2 and~3
+already spend a prompt per cell, so the tool axis is not where a scan's prompt
+volume lives. Every tier the rules decide traces to a named pattern, and a per-tool
+field records which scorer decided, so no tier is unattributable. On the
+catalogs we scan, the rules answer most of the tool axis and the model is
+consulted on the rest; \S\ref{sec:eval} reports the split and where it falls.
+
+\subsubsection{Resource Sensitivity}
+\label{sec:sensitivity}
+
+The input a risk model most wants is the one an organization is least able to
+publish. A per-resource sensitivity inventory is expensive to build, sensitive
+in itself --- filenames can be protected health information --- and stale the
+moment a new resource appears. What organizations do publish is a data
+classification policy.
+
+\framework{} therefore derives sensitivity by \emph{classify-then-map},
+splitting the labour so neither party does the other's job. The organization
+states each class's consequence of loss in its own words ---
+statutory breach, patient injury, privilege waiver, recoverable embarrassment
+--- and writes no numbers. \framework{} owns the 1--5 scale, maps that
+adverse-impact language onto it, and classifies each register row into one of
+the organization's classes, using the row's description and the policy's own
+recognition and aggregation rules. Classify-then-map follows the security
+categorization procedure of FIPS~199 and
+SP~800-60~\cite{nist2004fips199,nist2008sp80060} --- impact language first,
+category second --- applied to a document the organization already maintains
+rather than to a labelled inventory. A rule, unlike an inventory row, still
+classifies a resource created after the policy was written --- a property of
+the construction, not a result we measure.
+
+\subsubsection{Blast Radius}
+\label{sec:blast}
+
+Blast radius is scored per (tool, resource) pairing: how far one call's
+consequences propagate, which subjects and systems are different afterwards.
+The rubric numbers that propagation. (1)~Almost nobody depends on what was
+touched; (2)~a few subjects; (3)~a group, the people or systems
+attached to what was touched, and the normal case; (4)~the whole population
+inside the resource boundary, the subjects the register says one resource
+holds; (5)~beyond that boundary. Tier~5 requires a route the organization's own
+register sanctions: the resource is a hub other systems
+authenticate against, what the call returns is usable on its own elsewhere, one
+call reaches the resource's entire population, or the resource is destroyed
+with nothing left to restore. Counting items would break on the obvious case:
+reading one credential file touches one item and compromises every system that
+credential opens.
+
+One deterministic pass then acts on the number: a floor ties blast radius to
+the sensitivity of the resource and to irreversible operations. That breaks the
+primitives' independence on purpose, in one direction only --- sensitivity can
+raise blast, never lower it --- because a call reaching a crown-jewel resource
+is not a pinpoint consequence whatever its verb. An earlier version also
+applied a roof; it was removed, because a roof can only
+ever under-score. Blast radius carries the widest run-to-run variation of the
+three stages; \S\ref{sec:limits} gives the scope of the present measurement.
+
+\subsection{The Dynamic Layer}
+\label{sec:dynamic}
+
+The static table answers how bad a call would be if it happened; it cannot see
+which calls this deployment actually makes, or how large the arguments of this
+one are. The dynamic layer supplies those two facts and nothing else: a runtime
+signal never gets a scale of its own, it moves a dimension Eq.~\ref{eq:score}
+already has. Sensitivity and impact describe the world and one invocation
+cannot change them; likelihood is the slot the scan pins at~1, and argument
+magnitude is the one respect in which a call may differ from the typical call
+the scan priced. Two factors and one bound therefore compose the layer:
+\begin{equation}
+\rho(c) = \min\Bigl(125,\; \max\bigl(\mathrm{score}(t,r) \times
+          \mathrm{lik}(c) \times \mathrm{esc}(c),\;
+          \mathrm{floor}(t,r)\bigr)\Bigr),
+\label{eq:rho}
+\end{equation}
+with $\mathrm{lik} \in [0.1, 1.0]$ and $\mathrm{esc} \in \{0.9, 1.0, 1.3\}$.
+Only the static score can make $\rho(c)$ large: likelihood can only shrink it,
+escalation nudges it either way, and the floor stops the shrinking, so nothing
+observed at runtime invents risk the scan did not already price.
+
+\textbf{Likelihood} asks how usual this action is here, as share of traffic
+rather than count --- an agent that makes ten thousand calls does not thereby
+earn trust on all of them. With $n$ calls recorded at this deployment, $k_t$ of
+them on tool $t$, catalog size $V$, and $\pi(t)$ the tool's share of the
+catalog,
+\begin{equation}
+p = \frac{k_{t} + \alpha\,\pi(t)}{n + \alpha}, \qquad
+\mathrm{lik} = 0.1 + 0.9\,
+  \mathrm{clamp}\!\left(\frac{\log_2 (1/p)}{\log_2 (n+V)},\, 0,\, 1\right).
+\label{eq:lik}
+\end{equation}
+Rarity enters as surprisal because traffic shares span orders of magnitude, and
+normalising by the largest surprisal the history admits keeps the value
+comparable as that history grows. The prior removes cold start: at $\alpha =
+30$ every tool has support from the first call, and a few dozen observations
+are enough for evidence to dominate. The key is (deployment, tool) --- not the
+resource, which is already inside the cell, and not the individual agent, since
+in our corpora no agent spans more than a single day, at a median of 32 calls,
+so per-agent history never accumulates. A tool never seen, a deployment too new
+to judge, and a call whose resource did not resolve all return $\mathrm{lik} =
+1.0$: absence of evidence is not evidence of safety.
+
+\textbf{Escalation} asks whether this call is large \emph{for this deployment}.
+A \texttt{limit} of 30 is unremarkable on one server and unheard of on another,
+so the deployment's own history sets the cut points, as Tukey's fences $[Q_1 -
+1.5\,\mathrm{IQR},\; Q_3 + 1.5\,\mathrm{IQR}]$ over the values passed for that
+argument~\cite{tukey1977eda}: above the upper fence 1.3, below the lower 0.9,
+between them 1.0. Quartiles are rank-based, so they assume no distribution and
+are not dragged around by the very extremes they exist to find, and Tukey's 1.5
+leaves roughly 0.7\% of well-behaved values outside, so the bin fires rarely by
+construction. Only quantities are binned --- array lengths, and numerics the
+scan marked with a critical trigger --- never identifiers: PR~\#25 is not
+larger than PR~\#7, and binning it would manufacture risk out of a meaningless
+order. Below 20 observations the factor returns 1.0.
+
+\textbf{The floor} is the lower boundary of the band the cell occupied
+\emph{before} anything moved it --- an absolute score, and read from the
+pre-change cell, so escalation cannot also raise the floor beneath the call it
+raises. The runtime may reorder calls inside a band, and may push one up into a
+higher band, but can never discount a call out of the band the scan put it in.
+The asymmetry is deliberate: wrongly demoting a call lets something through,
+while wrongly promoting one costs a reviewer's attention. CVSS~v3.1 bounds its
+temporal modifiers the same way, to at most a fifth off the base
+score~\cite{first2019cvss31}. So a cell of 27 that a tool accounting for 8\% of
+this deployment's traffic discounts to 14.2 is reported as 17, the bottom of
+its own band --- moved within the band, not out of it.
+
+$\rho(c)$ is reported with the evidence that produced it, in the organization's
+own terms: the three primitives of Eq.~\ref{eq:score}, the policy class the
+resource was mapped to (\S\ref{sec:sensitivity}), the operation tier and the
+scorer that produced it (\S\ref{sec:impact}), the share of traffic that
+discounted the result, and the fence the arguments crossed. Two of the three
+primitives are model-assigned, so this is not a model-free audit trail; what
+the decomposition gives an operator is a named class and a named operation to
+dispute, in place of a single opaque number. Session-level evidence ($x$ in
+Table~\ref{tab:observables}) is observable and is not part of this composition,
+and \S\ref{sec:limits} gives the scope of the present results. The
+framework ends here: it reports risk and prescribes no enforcement mechanism.
+
+
+
+\input{sections/05-evaluation}
+
+% ------------------------------------------------------------ bibliography ---
+% DRAFTING AID -- remove before submission. Forces every curated reference into
+% the bibliography, so the full reading set is visible while sections 2+ are
+% still unwritten.
+\nocite{*}
+
+\balance
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}

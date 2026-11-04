@@ -1,4 +1,4 @@
-"""CBG research-lab SQLite MCP server — FastMCP over Streamable HTTP.
+"""CBG research-lab SQLite MCP server — MCPServer (mcp SDK 2.x) over Streamable HTTP.
 
 Accepts the DB path as sys.argv[1] (defaults to demo/cbg_sqlite/cbg.db).
 Tools:
@@ -15,11 +15,13 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 DB_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("demo/cbg_sqlite/cbg.db")
 
-mcp = FastMCP("cbg-sqlite", port=8097)
+PORT = 8097
+
+mcp = MCPServer("cbg-sqlite")
 
 
 def _conn() -> sqlite3.Connection:
@@ -100,4 +102,4 @@ def insert_row(table: str, values: str) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", port=PORT)

@@ -6,9 +6,11 @@ from __future__ import annotations
 
 import uuid
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("google-calendar-mock", port=8093)
+PORT = 8093
+
+mcp = MCPServer("google-calendar-mock")
 
 EVENTS: dict[str, dict] = {
     "evt_001": {"title": "Team standup",     "date": "2026-05-05", "time": "09:00"},
@@ -41,4 +43,4 @@ def delete_event(event_id: str) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", port=PORT)

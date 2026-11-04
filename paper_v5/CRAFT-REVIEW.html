@@ -1,0 +1,862 @@
+<title>Risk-Aware MCP Review</title>
+<style>
+  :root {
+    --paper: #EEF1EC;
+    --paper-raised: #F8FAF7;
+    --ink: #1C2620;
+    --ink-soft: #4A5850;
+    --ink-faint: #7C8A81;
+    --accent: #2B5F5A;
+    --accent-soft: #DCEAE7;
+    --rule: #C9D2CB;
+    --good: #2F6B3D;
+    --good-soft: #E3EFDE;
+    --warn: #8A5A17;
+    --warn-soft: #F5E9D2;
+    --critical: #8C2F2A;
+    --critical-soft: #F5DEDB;
+    --neutral: #5B6B62;
+    --neutral-soft: #E4E9E3;
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "URW Palladio L", serif;
+    --font-body: Charter, "Bitstream Charter", "Sitka Text", Georgia, serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10140F;
+      --paper-raised: #1A211B;
+      --ink: #E8ECE5;
+      --ink-soft: #ABB9AD;
+      --ink-faint: #7E8C81;
+      --accent: #74C7BD;
+      --accent-soft: #1D3733;
+      --rule: #2B342C;
+      --good: #86C592;
+      --good-soft: #1E3322;
+      --warn: #E2B564;
+      --warn-soft: #3A2E14;
+      --critical: #E6938C;
+      --critical-soft: #3B1F1D;
+      --neutral: #9AAAA0;
+      --neutral-soft: #232B24;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #10140F;
+    --paper-raised: #1A211B;
+    --ink: #E8ECE5;
+    --ink-soft: #ABB9AD;
+    --ink-faint: #7E8C81;
+    --accent: #74C7BD;
+    --accent-soft: #1D3733;
+    --rule: #2B342C;
+    --good: #86C592;
+    --good-soft: #1E3322;
+    --warn: #E2B564;
+    --warn-soft: #3A2E14;
+    --critical: #E6938C;
+    --critical-soft: #3B1F1D;
+    --neutral: #9AAAA0;
+    --neutral-soft: #232B24;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, .rail__link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    padding: 3rem 1.5rem 2.25rem;
+  }
+  .masthead__inner {
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.9rem;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(2rem, 4vw, 2.7rem);
+    line-height: 1.15;
+    margin: 0 0 0.6rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .dek {
+    font-size: 1.08rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0 0 1.6rem;
+  }
+
+  .tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--rule);
+  }
+  .tally__item { display: flex; align-items: baseline; gap: 0.5rem; }
+  .tally__count {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .tally__label {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .tally__item--good .tally__count { color: var(--good); }
+  .tally__item--warn .tally__count { color: var(--warn); }
+  .tally__item--neutral .tally__count { color: var(--neutral); }
+  .tally__item--critical .tally__count { color: var(--critical); }
+
+  .layout {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2.25rem 1.5rem 5rem;
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .rail {
+    position: sticky;
+    top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .rail__group-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 1.1rem 0 0.4rem;
+  }
+  .rail__group-label:first-child { margin-top: 0; }
+  .rail__link {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    border-left: 2px solid transparent;
+  }
+  .rail__link:hover { color: var(--ink); background: var(--paper-raised); }
+  .rail__count {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+  }
+
+  main { min-width: 0; }
+
+  .callout {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    margin-bottom: 2.75rem;
+  }
+  .callout h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.15rem;
+    margin: 0 0 0.6rem;
+  }
+  .callout p { margin: 0 0 0.6rem; color: var(--ink-soft); font-size: 0.96rem; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout ul { margin: 0.6rem 0 0; padding-left: 1.2rem; }
+  .callout li { margin-bottom: 0.4rem; font-size: 0.96rem; color: var(--ink-soft); }
+  .callout code { color: var(--ink); }
+
+  section.paper-section {
+    margin-bottom: 3.25rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.6rem;
+  }
+  h2.section-title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.55rem;
+    margin: 0;
+  }
+  .section-scope {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .card {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 1.25rem 1.4rem 1.4rem;
+    margin-bottom: 1.1rem;
+    border-left-width: 4px;
+  }
+  .card--good { border-left-color: var(--good); }
+  .card--warn { border-left-color: var(--warn); }
+  .card--neutral { border-left-color: var(--neutral); }
+  .card--critical { border-left-color: var(--critical); }
+
+  .card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+  .loc {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.12rem 0.5rem;
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .badge--good { background: var(--good-soft); color: var(--good); }
+  .badge--warn { background: var(--warn-soft); color: var(--warn); }
+  .badge--neutral { background: var(--neutral-soft); color: var(--neutral); }
+  .badge--critical { background: var(--critical-soft); color: var(--critical); }
+  .tag-flag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 0.18rem 0.5rem;
+  }
+
+  .field-label {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block;
+    margin: 0.85rem 0 0.25rem;
+  }
+  .field-label:first-of-type { margin-top: 0; }
+  .card p { margin: 0; max-width: 68ch; }
+  .card .issue, .card .suggestion { font-size: 0.98rem; }
+  .card .quote { font-style: italic; color: var(--ink-soft); }
+
+  .grounding {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .grounding__paper {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+  }
+  .grounding__venue {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    margin-left: 0.4rem;
+  }
+  .grounding p { font-size: 0.94rem; color: var(--ink-soft); margin-top: 0.35rem; }
+  .grounding .verdict-note { color: var(--ink); }
+
+  footer.colophon {
+    max-width: 68ch;
+    border-top: 1px solid var(--rule);
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+  footer.colophon p { margin: 0 0 0.8rem; }
+  footer.colophon code { font-family: var(--font-mono); font-size: 0.85em; }
+
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+    .rail {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 1.5rem;
+    }
+    .rail__group-label { display: none; }
+    .rail__link {
+      border: 1px solid var(--rule);
+      border-left: 1px solid var(--rule);
+    }
+  }
+</style>
+
+<header class="masthead">
+  <div class="masthead__inner">
+    <p class="eyebrow">Craft review &middot; read-only &middot; AAMAS 2027 draft</p>
+    <h1>Every suggestion, checked against a real paper</h1>
+    <p class="dek">37 prose-craft findings across <code>paper_v5/main.tex</code>. Fourteen agents did the work: two read your own house-style guides and bibliography first, six reviewed one section each against that standard, and six more independently re-checked every cited paper before it was allowed to stay on this page. Nothing was edited.</p>
+    <div class="tally">
+      <div class="tally__item tally__item--good"><span class="tally__count">21</span><span class="tally__label">Confirmed</span></div>
+      <div class="tally__item tally__item--warn"><span class="tally__count">9</span><span class="tally__label">Unverified</span></div>
+      <div class="tally__item tally__item--neutral"><span class="tally__count">5</span><span class="tally__label">No citation needed</span></div>
+      <div class="tally__item tally__item--critical"><span class="tally__count">2</span><span class="tally__label">Fabricated &mdash; dropped</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="rail">
+    <a class="rail__link" href="#correctness">Correctness catches</a>
+    <p class="rail__group-label">Sections</p>
+    <a class="rail__link" href="#abstract-intro">Abstract + Intro <span class="rail__count">(6)</span></a>
+    <a class="rail__link" href="#related-work">Related Work <span class="rail__count">(6)</span></a>
+    <a class="rail__link" href="#threat-conclusion">Threat + Conclusion <span class="rail__count">(6)</span></a>
+    <a class="rail__link" href="#methodology">Methodology <span class="rail__count">(6)</span></a>
+    <a class="rail__link" href="#implementation">Implementation <span class="rail__count">(7)</span></a>
+    <a class="rail__link" href="#evaluation">Evaluation + Results <span class="rail__count">(6)</span></a>
+    <p class="rail__group-label">&nbsp;</p>
+    <a class="rail__link" href="#already-tracked">Already tracked elsewhere</a>
+  </nav>
+
+  <main>
+
+    <div class="callout" id="correctness">
+      <h2>Two of these aren't style nits</h2>
+      <p>Everything else on this page is prose craft &mdash; sentence shape, tone, repetition. These two are internal contradictions a reviewer will read as a threat-model bug, not a wording choice:</p>
+      <ul>
+        <li><strong>Implementation, line&nbsp;~910</strong> calls the MCP server itself &ldquo;possibly untrusted&rdquo; &mdash; the inverse of the project's own non-negotiable framing (servers are the protected asset, agents are the threat), and it contradicts this same section's &ldquo;benign-server assumption&rdquo; stated only 26 lines earlier. See the Implementation section below for the fix and why the field treats these as two genuinely distinct threat categories.</li>
+        <li><strong>Implementation, lines&nbsp;955&ndash;956</strong> claims a verdict &ldquo;cannot be steered by text an attacker writes,&rdquo; while the two mechanisms named one sentence earlier are, by construction, driven by that same text. The claim is true in a narrower sense than it's stated.</li>
+      </ul>
+    </div>
+
+    <section class="paper-section" id="abstract-intro">
+      <div class="section-head">
+        <h2 class="section-title">Abstract + Introduction</h2>
+        <span class="section-scope">lines 96&ndash;108, 163&ndash;325</span>
+      </div>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 170&ndash;171</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Two consecutive sentences restate the identical claim &mdash; that an agent's decision lands on organizational assets &mdash; with only surface rewording.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Delete one (keep the tighter &ldquo;An agent's decision now lands directly on the systems and assets behind those tools&rdquo;) and let the MCP sentence follow directly.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Jafarikhah et al., &ldquo;From Description to Score&rdquo;<span class="grounding__venue">ACM SAC 2026 &middot; arXiv:2512.06781</span></span>
+          <p>Already this project's own length-calibration anchor. Verifier fetched the actual text: ~526 words, and no adjacent sentence pair restates a prior claim &mdash; every sentence adds something new.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 99, 189, 217, 225, 231, 233, 237</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Seven &ldquo;X, Y, or Z&rdquo; triads in ~1,500 words &mdash; every enumerable claim gets stretched to exactly three items. No single instance is wrong; the repetition is the tell.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Vary the count per instance: cut &ldquo;allow, review, or block&rdquo; to two items if that's what the system actually outputs; cut &ldquo;agent, client, or middleware layer&rdquo; to the two layers the paper actually distinguishes elsewhere.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Li &amp; Gao, &ldquo;A First Look at the Security Issues in the MCP Ecosystem&rdquo;<span class="grounding__venue">DSN 2026 &middot; arXiv:2510.16558</span></span>
+          <p>Verifier confirmed: exactly 6 citations across ~853 words, gap delivered as one directional sentence, not an enumerated list. (This is also the paper behind the &ldquo;67,000 MCP servers&rdquo; figure &mdash; verify that number precisely if it's used anywhere; it's 67,057 registry <em>listings</em>, not distinct servers.)</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">11 paragraphs, ~1,110 words</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The house budget for this paper's Introduction is 650&ndash;900 words in 5 paragraphs. Body prose alone runs ~951 words across 11 paragraphs &mdash; roughly double the paragraph count.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">The four gap-elaboration paragraphs (access control &middot; RAdAC history &middot; &ldquo;no existing method&rdquo; &middot; CVSS/AIVSS) all answer the same reader question and can collapse into 1&ndash;2 paragraphs with grouped citations &mdash; that alone removes ~150&ndash;200 words without touching Setting, Tension, Position, or Contributions.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Jafarikhah et al., &ldquo;From Description to Score&rdquo;<span class="grounding__venue">ACM SAC 2026 &middot; arXiv:2512.06781</span></span>
+          <p>Its full Introduction is ~526 words in 4 paragraphs &mdash; already the project's own anchor for what &ldquo;normal&rdquo; length looks like for this claim-shape.</p>
+        </div>
+      </article>
+
+      <article class="card card--critical">
+        <div class="card__head"><span class="loc">lines 247&ndash;249</span><span class="badge badge--critical">Fabricated citation</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The framework-naming paragraph walks through both scanners' mechanisms (the FIPS&nbsp;199/SP&nbsp;800-60 basis, the adjustable-autonomy link) at &sect;4 level of detail instead of naming and moving on &mdash; and because it sits at paragraph 9&ndash;10 of 11, the paper's Position lands at ~80% through the Introduction, not the 40&ndash;60% window the house guide calls for.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Cut to one type-level sentence and move the mechanism detail to &sect;4 &mdash; the underlying rule (defer mechanism, don't explain method in the intro) is a real, independently-documented house rule. It just doesn't need the paper below to justify it.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo; &mdash; citation retracted<span class="grounding__venue">AAMAS 2025 &middot; arXiv:2502.09861</span></span>
+          <p class="verdict-note">Claimed this paper's Position lands at &ldquo;paragraph 3 of 6 (~40%).&rdquo; The verifier fetched the real text: its Introduction has <strong>7</strong> paragraphs, and the actual Position sentence is paragraph <strong>4 of 7 (~57%)</strong>, not 3 of 6. The specific number was invented. Use the underlying rule, not this citation.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">line 105</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">One sentence reports two structurally different evaluations &mdash; the static risk surface (16 deployments, 262 tools, 3,615 pairs) and the dynamic evaluation (3,000 live invocations) &mdash; joined by &ldquo;together with.&rdquo;</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split into two sentences, one per evaluation, so each maps cleanly onto the Static/Dynamic Scanner split introduced one sentence earlier.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, &ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025 &middot; arXiv:2502.09861</span></span>
+          <p>Verifier located an actual 65-word paragraph in &sect;5.3 plus others in the 43&ndash;47-word range, confirming this paper genuinely favors short, single-idea units over dense compound sentences.</p>
+        </div>
+      </article>
+
+      <article class="card card--neutral">
+        <div class="card__head"><span class="loc">lines 99, 189, 237</span><span class="badge badge--neutral">No citation needed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Three mechanical slips: doubled punctuation (&ldquo;For example,:&rdquo;), a stray space orphaning the period after a <code>\cite</code>, and a two-item list missing its conjunction.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Fix directly &mdash; proofreading, not style. Double-blind reviewers read surviving slips like these as evidence the draft wasn't proofread past the paragraph level.</p>
+      </article>
+    </section>
+
+    <section class="paper-section" id="related-work">
+      <div class="section-head">
+        <h2 class="section-title">Related Work</h2>
+        <span class="section-scope">lines 326&ndash;415</span>
+      </div>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 386&ndash;388</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The &ldquo;196 evaluators / 68% re-scored differently&rdquo; claim cites <code>first2023cvss</code> and <code>wunder2024cvss</code> jointly &mdash; but <code>first2023cvss</code> is the CVSS v4.0 <em>specification document</em>, not a user study. The study that actually measured this is <code>wunder2024cvss</code> alone.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Cite <code>wunder2024cvss</code> alone for both empirical findings; keep <code>first2023cvss</code> only where the CVSS mechanism itself is being described.</p>
+        <div class="grounding">
+          <span class="grounding__paper">This project's own INTRODUCTION-GUIDE.md</span>
+          <p>Verified directly: the guide already flags this exact failure mode for the &ldquo;67,000 servers&rdquo; figure &mdash; a claim traced to the wrong adjacent source. Same bug, different sentence.</p>
+        </div>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">lines 368&ndash;376</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Four sentences in a row, each &ldquo;Author et al. does X~\cite{}&rdquo; &mdash; the per-paper list the house style explicitly forbids &mdash; and the paragraph never lands the required closing sentence on why this strand doesn't solve the problem.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Compress to 1&ndash;2 sentences with grouped citations, then add one sentence: none of them tie the score to organization-specific asset sensitivity.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025</span></span>
+          <p class="verdict-note">The cited 65/45-word paragraphs are real, but they're usage asides, not the paper's actual claim-and-gap paragraph &mdash; wrong example. The rule itself (group citations, no per-clause gloss) is independently documented in WRITING-GUIDE.md, so it still applies.</p>
+        </div>
+      </article>
+
+      <article class="card card--neutral">
+        <div class="card__head"><span class="loc">lines 359, 362, 399&ndash;401</span><span class="badge badge--neutral">No citation needed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;System A does X, while/whereas System B does Y&rdquo; opens four different sentences across three paragraphs &mdash; a formulaic slot the section keeps refilling.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Vary the connective and sentence shape in at least two of the four: a contrast adverb, a plain declarative, or fold a pair into one citation group with no comparison clause at all.</p>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">line 359</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">One sentence joins three ideas &mdash; a permission example, a risk contrast, and the paper's own contribution claim &mdash; via &ldquo;but&rdquo; and a semicolon.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split at the semicolon: end the illustrative example as its own sentence, state the contribution separately.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Li &amp; Gao, DSN 2026</span>
+          <p class="verdict-note">Its citation sparsity (6 in ~1,030 words) is real, but the guide never actually ties that to sentence-level splicing discipline for this specific paper &mdash; the rule stands, the citation for it doesn't.</p>
+        </div>
+      </article>
+
+      <article class="card card--neutral">
+        <div class="card__head"><span class="loc">line ~406</span><span class="badge badge--neutral">No citation needed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Together, These methods&hellip;&rdquo; &mdash; mid-sentence capitalization typo, sitting in the paragraph's load-bearing closing sentence.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Lowercase &ldquo;these,&rdquo; or drop &ldquo;Together,&rdquo; entirely.</p>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">lines 353&ndash;357</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">ConLeash gets its own single-citation paragraph, sandwiched awkwardly between two others, followed by four stray blank lines &mdash; likely a leftover editing artifact.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Fold it into the preceding paragraph, which already discusses server-side call assessment, and delete the stray lines.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025</span></span>
+          <p class="verdict-note">Its short paragraphs are real, but neither contains a citation at all &mdash; the &ldquo;isolated citation vs. claim-plus-gap&rdquo; distinction attributed to it isn't actually in the source.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="paper-section" id="threat-conclusion">
+      <div class="section-head">
+        <h2 class="section-title">Threat Model + Conclusion</h2>
+        <span class="section-scope">lines 416&ndash;525, 1348&ndash;1386</span>
+      </div>
+
+      <article class="card card--neutral">
+        <div class="card__head"><span class="loc">line ~427</span><span class="badge badge--neutral">No citation needed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;This evidence&rdquo; has no antecedent &mdash; the sentence that introduced the term appears to have been commented out during editing.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Restore a trimmed introducing clause, or rewrite the sentence to stand alone.</p>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">line 1351</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The Conclusion's opening sentence &mdash; the highest-visibility sentence in the paper &mdash; is a semicolon-joined double claim.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split it. Zero-cost fix in the spot readers weight most.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Li &amp; Gao, DSN 2026</span>
+          <p class="verdict-note">Claimed this paper delivers its gap statement as one short sentence. The verifier fetched the real text &mdash; it's actually a two-sentence compound passage. Split-it advice stands regardless.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 1364&ndash;1371</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Four number clusters in the Conclusion's results paragraph with zero interpretive framing &mdash; forces the reviewer to reconstruct the &ldquo;so what&rdquo; themselves.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Add one interpretive sentence after the number string.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Wunder et al., &ldquo;Shedding Light on CVSS Scoring Inconsistencies&rdquo;<span class="grounding__venue">IEEE S&amp;P 2024</span></span>
+          <p>Confirmed via web search: its headline 68% statistic is always paired with the interpretive claim it supports &mdash; never left to stand alone.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 1379&ndash;1383</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The paper's final paragraph ends on a generic hedge &mdash; &ldquo;important directions for further evaluation&rdquo; &mdash; rather than a remembered claim.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Keep the limitation, but follow it with one concrete sentence restating the demonstrated contribution.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Verifier located the near-exact closing text in &sect;6.1: a specific, technical, named open problem &mdash; not boilerplate.</p>
+        </div>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">line 421</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Sentences 3 and 5 of the misuse-definition paragraph both restate that misuse is a syntactically valid, tool-supported operation.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Merge into one sentence combining the attack-contrast with the validity claim.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Jafarikhah et al., ACM SAC 2026</span>
+          <p class="verdict-note">Claimed ~565 words with zero repeated claims. Verifier's independent estimate: ~650&ndash;700 words, with at least one claim repeated. Doesn't hold as a comparison.</p>
+        </div>
+      </article>
+
+      <article class="card card--critical">
+        <div class="card__head"><span class="loc">line 419</span><span class="badge badge--critical">Fabricated citation</span><span class="tag-flag">bonus catch</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Names &ldquo;organizational assets and services,&rdquo; not the MCP server itself, as the protected party &mdash; one step removed from the project's own non-negotiable rule that the server is what's being defended.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Make the server-as-protected-party framing explicit at line 419. No external paper needed &mdash; this is your own project rule.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;AgentBound&rdquo; &mdash; citation retracted<span class="grounding__venue">ACM FSE 2026 &middot; arXiv:2510.21236</span></span>
+          <p class="verdict-note">Claimed a quote naming &ldquo;the agent&rdquo; as the constrained actor. The verifier found no such quote in the paper &mdash; and worse, AgentBound's actual threat model is the <strong>inverse</strong>: it explicitly targets MCP servers as the enforcement point, treating the server as the untrusted party. Citing it here would have gotten the comparison exactly backwards. Dropped.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="paper-section" id="methodology">
+      <div class="section-head">
+        <h2 class="section-title">Methodology</h2>
+        <span class="section-scope">lines 526&ndash;814</span>
+      </div>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 579&ndash;580, 632&ndash;634, 761&ndash;763</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Three unattributed passive constructions in a row &mdash; &ldquo;pairs&hellip;are represented,&rdquo; &ldquo;the classification is then mapped,&rdquo; &ldquo;information&hellip;is added&rdquo; &mdash; obscure which parts are deterministic engineering versus model-derived judgment, exactly the distinction this section is trying to establish.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Give each sentence an explicit actor: &ldquo;the scanner represents,&rdquo; &ldquo;we interpret&hellip;and map,&rdquo; &ldquo;the Dynamic Scanner adds.&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Verifier fetched the HTML directly: consistent first-person active voice throughout (&ldquo;We therefore include&hellip;,&rdquo; &ldquo;We begin with&hellip;&rdquo;) &mdash; the model already named for this paper.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 725, 730, 734</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">All three runtime-factor definitions open with the identical &ldquo;This factor captures how&hellip;&rdquo; template; the Access Anomaly definition additionally repeats &ldquo;unusual&rdquo; twice in one clause.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Vary each opening; drop the doubled adjective &mdash; &ldquo;Access anomaly measures whether the requested target or scope departs from what has been observed for this asset.&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">CVSS v4.0 Specification<span class="grounding__venue">FIRST.org, 2023 &middot; already cited</span></span>
+          <p>Spot-checked directly: every base metric (Attack Vector, Attack Complexity, etc.) gets a distinct, metric-specific opening, never a repeated template.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 757&ndash;759</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Because the runtime factors are bounded below by 1, familiar behavior does not reduce&hellip;, while unusual&hellip;can increase&hellip;&rdquo; buries the actual claim behind a subordinate clause, then stacks a second claim on with &ldquo;while.&rdquo;</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Front-load and split: &ldquo;Familiar behavior cannot reduce the static risk, because the runtime factors are bounded below by 1. Unusual or new behavior can still increase the assessment.&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Verifier located a near-exact claim-first sentence in the source text: states the claim, then the consequence &mdash; never opens on a subordinate &ldquo;Because.&rdquo;</p>
+        </div>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">lines 793&ndash;795</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The section's closing sentence &mdash; the one meant to be remembered &mdash; semicolon-joins two independent claims: what the framework does, and what the organization does.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split at the semicolon so each half carries its own weight instead of subordinating the organization's role to a clause.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025</span></span>
+          <p class="verdict-note">Paper does use some short single-claim paragraphs, but the specific &ldquo;65 and 45 words&rdquo; figures couldn't be relocated in the actual text. General pattern plausible, precise numbers unconfirmed.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 537&ndash;543</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The Overview's paragraph-2 topic sentence names only one justification for the two-layer design (information timing); the paragraph's last sentence pivots to a second, unrelated one (computational cost) with no signal.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split into two paragraphs, or rewrite the topic sentence to scope both: &ldquo;This separation follows both the information available at each stage and the cost of analyzing it there.&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Consistent with the paper's confirmed style elsewhere: topic sentences that state the paragraph's complete claim.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 737&ndash;744</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Approximately&rdquo; hedges Eq.&nbsp;3's bound twice, scoped neither way &mdash; if D, A, N are genuinely bounded in [1,2], L is bounded in [1,8] <em>exactly</em>, not approximately; if the bound is soft, the paper never says by how much.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">State the bound precisely one way or the other &mdash; a hard interval, or a named source and typical magnitude of overshoot.</p>
+        <div class="grounding">
+          <span class="grounding__paper">CVSS v4.0 Specification<span class="grounding__venue">already cited as first2023cvss</span></span>
+          <p>Spot-checked: every metric range is stated as a closed exact interval (0.0&ndash;10.0), never hedged.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="paper-section" id="implementation">
+      <div class="section-head">
+        <h2 class="section-title">Implementation</h2>
+        <span class="section-scope">lines 815&ndash;1032</span>
+      </div>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">line ~910</span><span class="badge badge--good">Confirmed</span><span class="tag-flag">correctness</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Calls the MCP server itself &ldquo;a possibly untrusted server&rdquo; &mdash; framing it as a potential adversary. This contradicts both the project's non-negotiable threat-model rule (servers are protected, never the threat) <em>and</em> this section's own &ldquo;benign-server assumption,&rdquo; stated only 26 lines earlier.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Replace &ldquo;untrusted&rdquo; with language that stays inside the benign-server assumption: &ldquo;self-reported hints, not verified capability facts.&rdquo; The point &mdash; annotations can be imprecise &mdash; survives without implying the server is adversarial.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Hou et al., &ldquo;MCP: Landscape, Security Threats, and Future Research Directions&rdquo;<span class="grounding__venue">ACM TOSEM 2026 &middot; already cited</span></span>
+          <p>Confirmed: this survey treats &ldquo;agent attacks server&rdquo; and &ldquo;server attacks agent&rdquo; (tool poisoning, rug-pull) as two distinct, separately-tracked categories in the field. Blurring them here isn't a phrasing choice &mdash; it's a recognized category error.</p>
+        </div>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">lines 863&ndash;871</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Three consecutive sentences reuse an identical &ldquo;table holds one row per X &mdash; [field list] &mdash; input to Y layer&rdquo; template. Part of a broader pattern: ~19 em-dashes across these 218 lines.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Break the parallelism &mdash; keep the em-dash aside for the catalog table only, give calls/sessions tables plain declarative sentences. Convert at least half the section's other em-dash pairs to ordinary breaks or commas.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025</span></span>
+          <p class="verdict-note">Claimed this paper avoids em-dash asides. Independent inspection found roughly a dozen em-dash asides in just its first two sections, plus paragraphs well over 100 words &mdash; cuts against the specific comparison. The repetition observation stands on its own.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 934&ndash;940</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Narrates implementation history chronologically &mdash; &ldquo;an earlier version existed&hellip;we measured it&hellip;we removed it&hellip;its contribution was made permanent&rdquo; &mdash; and drops into passive voice exactly at the pivot sentence, right after two sentences of active &ldquo;we.&rdquo;</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Lead with the decision and the number: &ldquo;We do not run a second model-based reviewer on the scan path&hellip;&rdquo; Keep &ldquo;we&rdquo; as the actor throughout instead of switching to passive.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Its introduction opens with a direct position statement ahead of elaboration &mdash; the same &ldquo;commit to the claim, support after&rdquo; discipline applied here to an ablation decision instead of a thesis.</p>
+        </div>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">line 958</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;A tool is not one action; it is one action per container it can address, and the argument chooses&rdquo; &mdash; a semicolon-joined clause <em>and</em> an and-joined clause in the same sentence.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split into two: &ldquo;A tool is not one action. It is one action per container it can address, and the argument chooses which one.&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Jafarikhah et al., ACM SAC 2026</span>
+          <p class="verdict-note">Claimed short single-clause sentences. Its actual abstract uses multi-clause compound sentences (&ldquo;&hellip;substantially outperform&hellip;, while offering more modest gains&hellip;&rdquo;) &mdash; contradicts the characterization.</p>
+        </div>
+      </article>
+
+      <article class="card card--neutral">
+        <div class="card__head"><span class="loc">lines 976&ndash;978</span><span class="badge badge--neutral">No citation needed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Introduces a second concrete illustration (a calendar-event update touching calendar, event, and attendee list) alongside the paper's own established running example (<code>delete_file</code> on <code>private_key.pem</code>).</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Re-express the same point &mdash; one call resolving to multiple register assets &mdash; using the existing running example instead. This is a check against your own documented house-style decision, not an external comparison.</p>
+      </article>
+
+      <article class="card card--warn">
+        <div class="card__head"><span class="loc">lines 1016&ndash;1019</span><span class="badge badge--warn">Unverified</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">One sentence carries three distinct claims &mdash; what the optional reviewer does, what happens when it isn't run, why it's off by default &mdash; joined by a semicolon and an &ldquo;and.&rdquo;</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split by claim into two or three sentences, one idea each.</p>
+        <div class="grounding">
+          <span class="grounding__paper">&ldquo;A Scoresheet for Explainable AI&rdquo;<span class="grounding__venue">AAMAS 2025</span></span>
+          <p class="verdict-note">Third time this paper is cited for &ldquo;short single-claim sentences&rdquo; in this review &mdash; again contradicted by independent inspection showing longer, multi-clause sentences are common in the real text.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines 955&ndash;956</span><span class="badge badge--good">Confirmed</span><span class="tag-flag">correctness</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;A verdict therefore&hellip;cannot be steered by text an attacker writes into an argument&rdquo; is an unscoped absolute. The two mechanisms named one sentence earlier &mdash; pattern matching, weighted token overlap &mdash; are, by construction, driven by that literal text.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Scope the claim to what the architecture actually rules out: no natural-language <em>instruction-following</em> channel, not text-influence in general.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Shi et al., &ldquo;Prompt Injection Attack to Tool Selection in LLM Agents&rdquo;<span class="grounding__venue">NDSS 2026 &middot; arXiv:2504.19793 &middot; already cited</span></span>
+          <p>Confirmed: demonstrates ToolHijacker, which redirects LLM tool-selection specifically through the model's semantic reading of a tool description &mdash; exactly the channel a deterministic matcher lacks, and exactly the scope the claim needs to state instead.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="paper-section" id="evaluation">
+      <div class="section-head">
+        <h2 class="section-title">Evaluation + Preliminary Results</h2>
+        <span class="section-scope">lines 1033&ndash;1347</span>
+      </div>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">line ~1040</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Server-level risk, tool-level risk, and request-level safety&rdquo; is a padded triad, and &ldquo;and therefore&rdquo; fuses what prior work measures with why it's non-comparable into one long sentence.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Trim the list to what's actually distinct, split the sentence: what prior work measures, then a separate sentence on why it's not a comparable reference.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Li &amp; Gao, DSN 2026</span>
+          <p>Its gap-vs-prior-work statement is one directional clause, not an enumerated list &mdash; the model for collapsing this triad.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">line ~1042</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Three predicate clauses stacked with &ldquo;and&rdquo; compress what elsewhere becomes four separate research questions (RQ1&ndash;RQ4) into one decorative sentence.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Give each claim its own sentence, matched to where it's actually tested later in the section.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Jafarikhah et al., ACM SAC 2026</span>
+          <p>Frames its central claim as one direct testable question, not a stacked triad of predicates.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines ~1097&ndash;1098, ~1104&ndash;1105</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Was captured,&rdquo; &ldquo;was derived&rdquo; &mdash; two passive constructions interrupting an otherwise active-voice evaluation-settings paragraph.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">&ldquo;We captured each catalog&hellip;&rdquo; / &ldquo;We derived asset sensitivity&hellip;&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Li et al., &ldquo;We Urgently Need Privilege Management in MCP&rdquo;<span class="grounding__venue">IEEE MASS 2025 &middot; already cited</span></span>
+          <p>States its own empirical methodology in active voice throughout &mdash; a directly comparable measurement paper already load-bearing in this draft.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">line ~1128&ndash;1129</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">&ldquo;Because the Static Scanner uses LLM-based analysis&hellip;, we measure&hellip;&rdquo; &mdash; buries the actual claim (what's measured) behind the justification clause.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">&ldquo;We measure the total computational cost&hellip;, since the Static Scanner relies on LLM-based analysis&hellip;&rdquo;</p>
+        <div class="grounding">
+          <span class="grounding__paper">Hasan et al., &ldquo;MCP at First Glance&rdquo;<span class="grounding__venue">arXiv:2506.13538 &middot; already cited</span></span>
+          <p>Leads its own methodology framing with the claim itself, justification after.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines ~1245&ndash;1247</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">Asserts the 84%-deterministic split is &ldquo;operationally useful&rdquo; with no cost or latency number behind it &mdash; in a section otherwise careful to lead every paragraph with a number before interpreting it.</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Cut the sentence, or replace with a quantified claim once &sect;5.3's promised cost figures actually exist.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Spring et al., &ldquo;Time to Change the CVSS?&rdquo;<span class="grounding__venue">IEEE Security &amp; Privacy 2021 &middot; already cited</span></span>
+          <p>The canonical argument that a scoring system's &ldquo;useful for decision-support&rdquo; claim is exactly what reviewers target when it isn't backed by empirical evidence.</p>
+        </div>
+      </article>
+
+      <article class="card card--good">
+        <div class="card__head"><span class="loc">lines ~1036&ndash;1038</span><span class="badge badge--good">Confirmed</span></div>
+        <span class="field-label">Issue</span>
+        <p class="issue">The section's opening sentence &mdash; the one that sets the reader's map of what follows &mdash; fuses two separate evaluation questions (static-score properties; dynamic-layer usability) via &ldquo;and.&rdquo;</p>
+        <span class="field-label">Fix</span>
+        <p class="suggestion">Split into two sentences; each can then be revisited independently as its own subsection.</p>
+        <div class="grounding">
+          <span class="grounding__paper">Winikoff, Thangarajah &amp; Rodriguez, AAMAS 2025</span>
+          <p>Short, single-claim declarative paragraphs rather than compound &ldquo;and&rdquo;-joined sentences &mdash; the structural model already named for this paper.</p>
+        </div>
+      </article>
+    </section>
+
+    <footer class="colophon" id="already-tracked">
+      <p><strong>Already tracked elsewhere &mdash; not re-litigated here.</strong> Your own <code>PAPER-REVIEW.md</code> already carries the substantive issues: the &sect;4.1/Eq.&nbsp;2 banding-function mismatch, the RQ3 circularity in the misuse testbed, the missing baselines across all four RQs, the AAMAS venue-fit risk (no multiagent/coordination language anywhere in the draft), and the abstract's overclaims relative to what &sect;7 reports. One note from that file is now stale: it lists &ldquo;no Conclusion section (commented out)&rdquo; &mdash; the current draft has one, at lines 1348&ndash;1386, reviewed above.</p>
+      <p>Method: 14 Claude Sonnet 5 subagents, 166 tool calls, ~895k tokens. Two agents oriented on your own guides and bibliography; six reviewed one section each against the tone standards from this conversation; six independently re-fetched and checked every cited paper before its finding was allowed to survive. Read-only throughout &mdash; nothing in <code>paper_v5/</code> was changed.</p>
+    </footer>
+
+  </main>
+</div>

@@ -10,6 +10,10 @@ several agents interleaved in the corpus order.
 Writes are not sent by default: they would change real repositories. ``--writes scratch``
 sends only the writes aimed at the scratch repository the corpus run created.
 
+``--protocol modern`` starts each persona's connection with the stateless 2026-07-28 protocol
+(``server/discover``, no session) instead of the ``initialize`` handshake; the upstream has to
+speak it. The default, ``legacy``, reproduces the runs made before the mcp 2.x port.
+
     uv run python scripts/gateway_replay_corpus.py --limit 50
 """
 
@@ -24,10 +28,15 @@ from collections import Counter
 from contextlib import AsyncExitStack
 from pathlib import Path
 
-from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
-from mcp.shared.exceptions import McpError
+from mcp import ClientSession, MCPError
 
+from mcp_security.agent_session import (
+    LEGACY,
+    MODERN,
+    PROTOCOL_HELP,
+    PROTOCOLS,
+    agent_session,
+)
 from mcp_security.gateway.github_remote import translate_call
 
 DEFAULT_CORPUS = Path("reports/experiments/dynamic_layer/v3/github_helios_org.csv")
@@ -51,8 +60,10 @@ def load_corpus(path: Path, limit: int | None) -> list[dict]:
     return rows[:limit] if limit else rows
 
 
-async def replay(url: str, headers: dict[str, str], rows: list[dict], writes: str) -> Counter:
-    """Send every row through its persona's session; count outcomes."""
+async def replay(
+    url: str, headers: dict[str, str], rows: list[dict], writes: str, protocol: str
+) -> Counter:
+    """Send every row through its persona's session, started per ``protocol``; count outcomes."""
     outcomes: Counter = Counter()
     async with AsyncExitStack() as stack:
         sessions: dict[str, ClientSession] = {}
@@ -62,19 +73,21 @@ async def replay(url: str, headers: dict[str, str], rows: list[dict], writes: st
                 continue
             persona = row["persona"]
             if persona not in sessions:
-                read, write, _ = await stack.enter_async_context(
-                    streamablehttp_client(url, headers=headers)
+                session = await stack.enter_async_context(
+                    agent_session(url, protocol=protocol, headers=headers)
                 )
-                session = await stack.enter_async_context(ClientSession(read, write))
-                await session.initialize()
+                if protocol == MODERN:
+                    # At 2026-07-28 a call mirrors x-mcp-header arguments into Mcp-Param-*
+                    # headers, read from the last tools/list; the server refuses it without them.
+                    await session.list_tools()
                 sessions[persona] = session
             tool, args = translate_call(row["tool"], json.loads(row["args"]))
             try:
                 result = await sessions[persona].call_tool(tool, args)
-            except McpError:  # the server refused the request; the gateway logged it
+            except MCPError:  # the server refused the request; the gateway logged it
                 outcomes["rpc_error"] += 1
                 continue
-            outcomes["tool_error" if result.isError else "ok"] += 1
+            outcomes["tool_error" if result.is_error else "ok"] += 1
             if sum(outcomes.values()) % 100 == 0:
                 print(f"  {sum(outcomes.values())} rows, {dict(outcomes)}", flush=True)
     return outcomes
@@ -88,6 +101,12 @@ def main() -> None:
     parser.add_argument("--route", default=DEFAULT_ROUTE)
     parser.add_argument("--limit", type=int, help="replay only the first N rows")
     parser.add_argument("--writes", choices=["skip", "scratch"], default="skip")
+    parser.add_argument(
+        "--protocol",
+        choices=PROTOCOLS,
+        default=LEGACY,
+        help=PROTOCOL_HELP,
+    )
     args = parser.parse_args()
 
     token = os.environ.get("GATEWAY_AGENT_TOKEN")  # an access token from the identity provider
@@ -95,7 +114,7 @@ def main() -> None:
     url = f"{args.gateway.rstrip('/')}/{args.route}"
     rows = load_corpus(args.corpus, args.limit)
     print(f"replaying {len(rows)} rows from {args.corpus} via {url} (writes: {args.writes})")
-    outcomes = asyncio.run(replay(url, headers, rows, args.writes))
+    outcomes = asyncio.run(replay(url, headers, rows, args.writes, args.protocol))
     print(f"done: {dict(outcomes)}")
 
 

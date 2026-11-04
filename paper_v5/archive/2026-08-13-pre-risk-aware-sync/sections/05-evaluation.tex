@@ -1,0 +1,234 @@
+% ---------------------------------------------------------------------------
+% Section 5 -- Early Results, and Section 6 -- Conclusion.
+%
+% Source of every number: GROUND-TRUTH.md Sec.9, derived from
+%   reports/experiments/v5/five_level_v2_policy_v5r_nacombo/
+% (CORPUS_RESULTS.md, live_run.md, live_scale_run.md, <server>_matrix.csv).
+% Nothing here is rounded or re-derived.
+%
+% Style contract for this section: report what the run produced. State facts
+% about the setup and the output. Do not editorialize about the quality of the
+% work, and do not argue with the numbers -- a reader of an A*-venue paper
+% draws those conclusions from the data and the stated scope.
+%
+% Terminology: "resource" throughout, matching Sec.1, Sec.3 and Sec.4. The
+% artifacts call these "assets"; that is the tooling's word, not the paper's.
+% ---------------------------------------------------------------------------
+\section{Early Results}
+\label{sec:eval}
+
+This section reports the risk surface \framework{} produces on real MCP tool
+catalogs. The corpus carries no independent per-resource severity annotation,
+so the results characterize the output of the framework and the cost of
+producing it; \S\ref{sec:limits} states the scope of the setting.
+
+\textbf{Corpus.} We ran one configuration --- resource sensitivity derived from
+a single organizational policy document, with no floor coupling the primitives
+--- over \textbf{16 server deployments} drawn from \textbf{9 distinct MCP tool
+catalogs}. Every catalog is genuine, captured from a running server through the
+protocol's own listing call~\cite{mcp2026spec} and used exactly as
+returned. The GitHub, Slack, and calendar catalogs are each deployed under two
+organizations, and the filesystem catalog under five tenant organizations, with
+a different resource register each time. The scan covers \textbf{262 tools},
+\textbf{221 register resources}, and \textbf{3{,}615} (tool, resource) cells.
+Bands follow the thresholds of \S\ref{sec:framework}: medium at 17, high at 50,
+critical at 100, on the 1--125 range of Eq.~\ref{eq:score}.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \caption{The scan, per deployment. \emph{Cells} is tools $\times$ resources;
+    \emph{scored} is the subset the relevance gate judged reachable, and the
+    band columns partition it.}
+  \label{tab:corpus}
+  \begin{tabular}{@{}llrrrrrrrrr@{}}
+    \toprule
+    & & & & & & & \multicolumn{4}{c@{}}{Scored cells by band} \\
+    \cmidrule(l){8-11}
+    Kind & Deployment & Tools & Res. & Cells & Scored & N/A
+         & low & med. & high & crit. \\
+    \midrule
+    Filesystem   & \texttt{fs\_fintech\_fs}        & 14 & 18 & 252 & 103 & 149 & 39 & 36 & 24 & 4 \\
+    Filesystem   & \texttt{fs\_medical\_clinic\_fs}& 14 & 16 & 224 &  86 & 138 & 27 & 37 & 22 & 0 \\
+    Filesystem   & \texttt{fs\_corp\_filesystem}   & 14 & 16 & 224 &  87 & 137 & 36 & 26 & 21 & 4 \\
+    Filesystem   & \texttt{fs\_law\_firm\_fs}      & 14 & 15 & 210 &  89 & 121 & 33 & 43 & 13 & 0 \\
+    Filesystem   & \texttt{fs\_media\_studio\_fs}  & 14 & 16 & 224 & 111 & 113 & 63 & 36 & 12 & 0 \\
+    \midrule
+    Source repo. & \texttt{github\_real}           & 26 & 20 & 520 & 139 & 381 & 39 & 48 & 52 & 0 \\
+    Source repo. & \texttt{github\_helios}         & 26 & 19 & 494 & 126 & 368 & 29 & 46 & 47 & 4 \\
+    Chat         & \texttt{slack\_real}            & 16 & 20 & 320 & 101 & 219 & 37 & 48 &  6 & 10 \\
+    Chat         & \texttt{slack\_vireo}           & 16 & 15 & 240 &  62 & 178 & 18 & 38 &  5 & 1 \\
+    Calendar     & \texttt{calendar\_real}         & 13 & 16 & 208 &  68 & 140 & 22 & 27 & 14 & 5 \\
+    Calendar     & \texttt{calendar\_aurora}       & 13 & 17 & 221 &  71 & 150 & 14 & 33 & 18 & 6 \\
+    \midrule
+    SQL          & \texttt{sqlite\_cbg\_sqlite}    &  5 & 11 &  55 &  37 &  18 & 13 & 13 &  7 & 4 \\
+    \midrule
+    Public data  & \texttt{finance\_tools}         & 17 &  6 & 102 &  27 &  75 & 18 &  9 &  0 & 0 \\
+    Public data  & \texttt{openbb}                 & 30 &  5 & 150 &  36 & 114 & 23 & 12 &  1 & 0 \\
+    Public data  & \texttt{sec\_edgar}             & 21 &  6 & 126 &  27 &  99 & 24 &  3 &  0 & 0 \\
+    Public data  & \texttt{yahoo\_finance}         &  9 &  5 &  45 &  12 &  33 &  9 &  3 &  0 & 0 \\
+    \midrule
+    \textbf{Total} & 16 deployments & \textbf{262} & \textbf{221} & \textbf{3{,}615}
+      & \textbf{1{,}182} & \textbf{2{,}433} & 444 & 458 & 242 & \textbf{38} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\textbf{The risk surface is sparse.} Table~\ref{tab:corpus} gives the result per
+deployment. Of the 3{,}615 cells, \textbf{1{,}182 (33\%)} were scored and
+\textbf{2{,}433 (67\%)} were returned as not-applicable, meaning the relevance
+gate found that the tool cannot reach that resource and no severity is
+asserted. The proportion follows the shape of the catalog: the five-tool SQL
+server leaves 18 of 55 cells unreachable, while the 30-tool market-data server
+leaves 114 of 150, since a catalog of many narrow single-purpose reads spans
+few of its resources. Across the scored cells the distribution is 444 low, 458
+medium, 242 high, and \textbf{38 critical}. High and critical together are 24\%
+of the scored cells and 7.7\% of the full matrix.
+
+\textbf{Most of the tool axis is decided without a model.} The deterministic
+ladder decided \textbf{127 of the 151 distinct tools (84\%)}, and the model was
+consulted on the remaining 24; counted per deployment, so that a shared catalog
+is scored once per organization, the split is 212 of 262 tools by the ladder.
+Per catalog, the ladder decided 12 of 14 filesystem tools, 15 of 26 GitHub, 13
+of 16 Slack, 9 of 13 calendar, 4 of 5 SQL, and 74 of 77 across the four
+public-data servers. The split follows catalog vocabulary: the public-data
+catalogs name their operations with generic verbs (get, search, list), whereas
+the GitHub catalog uses domain verbs (fork, merge, push) that the read, write,
+and remove vocabulary of \S\ref{sec:impact} does not cover, and those are the
+tools routed to the model.
+
+\textbf{The top of each matrix.} Table~\ref{tab:top} lists the highest-scoring
+cell of every deployment with its three factors. Eight cells in the corpus reach
+the maximum of 125. On each of the five filesystem tenants the top cell is
+\texttt{write\_file} against the resource that tenant's policy classifies
+highest --- the card vault, the security keys, the patient charts, the matter
+files, the unreleased imagery --- and the tenant is never named in the scoring
+prompt. The three market-data servers that expose only public information
+(\texttt{finance\_tools}, \texttt{sec\_edgar}, \texttt{yahoo\_finance}) produce
+zero high and zero critical cells across their 273 cells. The single high cell
+in that group is \texttt{openbb}'s skill installer writing to the server's own
+capability store, at 64; the ladder abstained on that verb and the model scored
+it an ordinary write.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \caption{The highest-scoring cell of each deployment, with its
+    sensitivity\,$\cdot$\,blast\,$\cdot$\,impact factors. Eight cells across the
+    corpus reach the maximum of 125.}
+  \label{tab:top}
+  \begin{tabular}{@{}llcr@{}}
+    \toprule
+    Deployment & Highest cell (tool $\times$ resource) & $S{\cdot}B{\cdot}I$ & Score \\
+    \midrule
+    \texttt{fs\_fintech\_fs}       & \texttt{write\_file} $\times$ \texttt{card-vault}        & 5\,$\cdot$\,5\,$\cdot$\,4 & 100 \\
+    \texttt{fs\_corp\_filesystem}  & \texttt{write\_file} $\times$ \texttt{security-keys}     & 5\,$\cdot$\,5\,$\cdot$\,4 & 100 \\
+    \texttt{fs\_medical\_clinic\_fs}& \texttt{write\_file} $\times$ \texttt{patient-charts}   & 5\,$\cdot$\,4\,$\cdot$\,4 &  80 \\
+    \texttt{fs\_law\_firm\_fs}     & \texttt{write\_file} $\times$ \texttt{matter-files}      & 5\,$\cdot$\,4\,$\cdot$\,4 &  80 \\
+    \texttt{fs\_media\_studio\_fs} & \texttt{write\_file} $\times$ \texttt{unreleased-imagery}& 4\,$\cdot$\,4\,$\cdot$\,4 &  64 \\
+    \texttt{github\_helios}        & \texttt{push\_files} $\times$ \texttt{helios-scada-gateway} & 5\,$\cdot$\,5\,$\cdot$\,4 & 100 \\
+    \texttt{github\_real}          & \texttt{fork\_repository} $\times$ \texttt{infra-config} & 4\,$\cdot$\,5\,$\cdot$\,4 &  80 \\
+    \texttt{slack\_real}           & \texttt{conversations\_leave} $\times$ \texttt{incident-response} & 5\,$\cdot$\,5\,$\cdot$\,5 & \textbf{125} \\
+    \texttt{slack\_vireo}          & \texttt{usergroups\_users\_update} $\times$ \texttt{usergroup-membership} & 4\,$\cdot$\,5\,$\cdot$\,5 & 100 \\
+    \texttt{calendar\_real}        & \texttt{manage-accounts} $\times$ \texttt{connected-account-config} & 5\,$\cdot$\,5\,$\cdot$\,5 & \textbf{125} \\
+    \texttt{calendar\_aurora}      & \texttt{delete-event} $\times$ \texttt{aurora-exec}      & 5\,$\cdot$\,5\,$\cdot$\,5 & \textbf{125} \\
+    \texttt{sqlite\_cbg\_sqlite}   & \texttt{write\_query} $\times$ \texttt{api\_keys}        & 5\,$\cdot$\,5\,$\cdot$\,5 & \textbf{125} \\
+    \texttt{finance\_tools}        & \texttt{calculate} $\times$ \texttt{expression-evaluator}& 4\,$\cdot$\,3\,$\cdot$\,3 &  36 \\
+    \texttt{openbb}                & \texttt{install\_skill} $\times$ \texttt{server-capability-install} & 4\,$\cdot$\,4\,$\cdot$\,4 &  64 \\
+    \texttt{sec\_edgar}            & \texttt{get\_recommended\_tools} $\times$ \texttt{concept-catalogs} & 3\,$\cdot$\,3\,$\cdot$\,3 &  27 \\
+    \texttt{yahoo\_finance}        & \texttt{get\_historical\_stock\_prices} $\times$ \texttt{research-query-pattern} & 3\,$\cdot$\,3\,$\cdot$\,3 &  27 \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\textbf{Live traffic.} Three of the sixteen deployments --- the GitHub, Slack,
+and calendar servers of Table~\ref{tab:live} --- are backed by provisioned
+accounts on the vendors' own services, so we also drove them over the protocol. A pilot of 98 live calls (93 \texttt{OK}, 5
+\texttt{ERROR}) was followed by the scaled corpus in Table~\ref{tab:live}:
+\textbf{3{,}000 live invocations}, 1{,}000 per organization, of which 2{,}998
+returned \texttt{OK}; the two errors are transient calendar \emph{operation was
+aborted} responses. Every row executed against a real server and a real account
+through the same stdio JSON-RPC client the framework uses, with identifiers
+discovered from the live estate. Irreversible operations were capped per run at
+eight merges, eight repository creations, and five posts to a restricted
+channel. The run created and then removed 92 files on protected branches, 80
+branches, 39 issues, 5 pull requests, and 8 repositories, and a post-run residue
+audit returned zero on every category. Five verbs across the three catalogs
+cannot execute on these deployments --- a self-owned fork the vendor's schema
+rejects, three Slack \texttt{usergroups\_*} writes that require a paid
+workspace, and a calendar RSVP that refuses an organizer --- and are recorded as
+errors. The corpus is the runtime input the dynamic layer of
+\S\ref{sec:dynamic} consumes; its benign, misuse, and attack labels are assigned
+by the generator from each server's policy section.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{The scaled live corpus: 3{,}000 real invocations against the three
+    provisioned deployments, at a 50/25/25 benign/misuse/attack mix.}
+  \label{tab:live}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    Deployment & Calls & B / M / A & Tools live & \texttt{OK} \\
+    \midrule
+    \texttt{github\_helios}   & 1{,}000 & 500 / 250 / 250 & 24 of 26 & 1{,}000 \\
+    \texttt{slack\_vireo}     & 1{,}000 & 500 / 250 / 250 & 12 of 16 & 1{,}000 \\
+    \texttt{calendar\_aurora} & 1{,}000 & 500 / 250 / 250 & 12 of 13 &    998 \\
+    \midrule
+    \textbf{Total} & \textbf{3{,}000} & 1{,}500 / 750 / 750 & 48 & \textbf{2{,}998} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Cost.} The static layer spends one prompt per tool, one per register
+resource, and one per reachable cell, and the assembly and banding that follow
+are deterministic. The dynamic layer's three model-free signals fit in under
+0.5\,s per server and score a call in roughly 0.05\,ms. A seventeenth server,
+with 119 tools, aborted the inference backend on its first call --- a CUDA
+flash-attention kernel abort at that prompt length with a quantized KV cache ---
+and is excluded from every number above.
+
+\subsection{Scope of these results}
+\label{sec:limits}
+
+The setting bounds what the numbers above cover. The corpus has no independent
+per-resource severity table, so Tables~\ref{tab:corpus}--\ref{tab:top} report
+the distribution the framework produces rather than agreement with an external
+reference, and no baseline scorer or factor ablation is run alongside it. The
+2{,}433 not-applicable cells are not independently checked. Run-to-run variance
+of the blast-radius stage is not measured in this configuration. All sixteen
+registers derive from one classification policy, so behaviour under a different
+organization's policy is not covered. The live corpus is reported as captured
+traffic: its category labels come from the generator rather than from an
+independent annotator, and the optional LLM judge of \S\ref{sec:dynamic} was not
+run. Measuring agreement with severities assigned independently by a deploying
+organization is the next step.
+
+% ---------------------------------------------------------------------------
+% Section 6 -- Conclusion
+% ---------------------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+An MCP server authorizes a call before it can know what the call will cost. We
+presented \framework{}, which computes that cost in two layers: a static layer
+that prices every (tool, resource) pairing from the tool's operation, the
+resource's sensitivity, and the blast radius of the two together, and a dynamic
+layer that adjusts the baseline with the arguments, the session, and the calling
+agent's history. Its distinguishing input is the sensitivity term. Rather than
+requiring a labeled inventory that most organizations do not maintain,
+\framework{} classifies each register resource against the organization's own
+data classification policy and maps the policy's adverse-impact language onto
+the 1--5 scale, following the security categorization procedure of FIPS~199 and
+SP~800-60~\cite{nist2004fips199,nist2008sp80060}.
+
+Over 16 deployments of 9 real MCP catalogs, the framework priced 3{,}615 cells
+from two documents per server, marked two thirds of them unreachable, placed
+7.7\% of the full matrix at high or critical, and decided 84\% of the tool axis
+with deterministic rules; on the three deployments backed by provisioned vendor
+accounts we captured 3{,}000 live invocations to exercise the same servers at
+runtime. Every score decomposes into a named policy class, a named operation
+tier, and the scorer that produced it, so an organization can dispute a factor
+instead of a number. Establishing agreement with severities an organization
+assigns independently, and evaluating the dynamic layer against annotated
+traffic, are the immediate next steps.

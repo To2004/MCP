@@ -1,0 +1,1517 @@
+{
+  "server": "mcphunt_git",
+  "tool_version": "3.1.0",
+  "started": "2026-11-01T11:21:23+00:00",
+  "finished": "2026-11-01T11:27:41+00:00",
+  "catalog": {
+    "path": "/home/ovadyat/MCP/reports/experiments/gateway/mcphunt/git/mcphunt_git.json",
+    "sha256": "43fc262b4e37062a3989a1c66325355a0ad64eb355611edd068e4771908edb32"
+  },
+  "policy": {
+    "path": "/home/ovadyat/MCP/reports/experiments/gateway/mcphunt/git/mcphunt_git.md",
+    "sha256": "286c454b5cbb8efc660fcfc5d525637c1d37a8197188caefdddb2f91767e0864",
+    "classification_sha256": "216b7f99cafcd2e8291166e1c2a6fddc3f6c2a41a27a945208fbd03a31e8bd18"
+  },
+  "scanner": "scanner-v1",
+  "prompts_sha256": {
+    "scan_preamble": "542614909bce6b4ef073d53717d9e1b2fca7faa781bf708e6bea17de84e8b282",
+    "scan_domain": "68c1eab81602ad799b2371ebd367b9708a86e5d78efc47c41ad09036362abd69",
+    "scan_impact": "f849daba055b1af4afc83b62645fd18850b59559b11baa8d627f856e1f32f0ba",
+    "scan_sensitivity_task": "33265646007f0c342d40bde59a222127651733f3c68202226647e3e7dafbff72",
+    "scan_sensitivity_item": "ebbf5b328f203b11e5843cc0097624655b0e2c889966067b499a65a58a4fedfe",
+    "scan_blast_task": "b65ebb27d4b6a78caf1a5e64c64befabca4c724b926849e8002de3d41f1391b1",
+    "scan_blast_item": "64b7240868aa66460601015b7bef1dad45d3197c90266b8484bdfbbb93a3c742"
+  },
+  "prompts_validated": true,
+  "model": {
+    "name": "qwen2.5:32b",
+    "digest": "9f13ba1299afea09d9a956fc6a85becc99115a6d596fae201a5487a03bdc4368",
+    "parameter_size": "32.8B",
+    "quantization": "Q4_K_M",
+    "ollama_version": "0.30.6",
+    "num_ctx": 16384
+  },
+  "decoding": {
+    "temperature": 0,
+    "seed": 0,
+    "top_p": 1.0
+  },
+  "slurm_job": "23768694",
+  "levels": "each part is its own 1-5 level; nothing is multiplied or combined",
+  "unverified_tools": [],
+  "domain": {
+    "mcp_kind": "source repository",
+    "content_unit": "file",
+    "contents_definition": "CONTENTS are the actual text or binary data within a file as opposed to METADATA about it.",
+    "confidence": 0.95,
+    "needs_human_review": false
+  },
+  "assets": [
+    {
+      "asset": "commit-history-contents",
+      "description": "The full contents and diffs of past commits, including the older environment file and configuration with keys never purged from history (loss axis: C>I>A)",
+      "register_tools": [
+        "git_show",
+        "git_diff"
+      ],
+      "flags": [
+        "population"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 4,
+      "policy_class": "Restricted",
+      "reasoning": "The asset holds the full contents and diffs of past commits, including older environment files and configurations with keys never purged from history. According to the policy's data classification, this exposure opens production systems to payment fraud, payroll breaches, cloud or sign-in takeovers, which are classified as Restricted.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "working-tree-changes",
+      "description": "Uncommitted and staged changes to the workspace's files, shown as diffs (loss axis: C>I>A)",
+      "register_tools": [
+        "git_diff_unstaged",
+        "git_diff_staged",
+        "git_diff"
+      ],
+      "flags": [],
+      "cia": "C>I>A",
+      "sensitivity": 3,
+      "policy_class": "Confidential",
+      "reasoning": "The asset holds uncommitted and staged changes to the workspace's files, shown as diffs. According to the policy, diffs and contents of source, deploy and infrastructure files are classified as Confidential.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "branch-heads",
+      "description": "Where each branch points and which one is checked out; a commit, reset or checkout changes what the workspace holds (loss axis: I>A>C)",
+      "register_tools": [
+        "git_commit",
+        "git_reset",
+        "git_checkout",
+        "git_create_branch"
+      ],
+      "flags": [
+        "hub"
+      ],
+      "cia": "I>A>C",
+      "sensitivity": 3,
+      "policy_class": "Confidential",
+      "reasoning": "The asset 'branch-heads' holds information about where each branch points and which one is checked out. According to the policy, exposure hands over private code or its pending changes; a move of a branch changes what is built or deployed, classifying it as Confidential.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "staging-index",
+      "description": "What is staged for the next commit (loss axis: I>C>A)",
+      "register_tools": [
+        "git_add",
+        "git_reset",
+        "git_commit"
+      ],
+      "flags": [],
+      "cia": "I>C>A",
+      "sensitivity": 3,
+      "policy_class": "Internal",
+      "reasoning": "The staging index holds what is staged for the next commit, which is classified as 'Internal' according to the policy's asset register.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "commit-list",
+      "description": "Commit hashes, authors, dates and messages, with no diffs (loss axis: C>I>A)",
+      "register_tools": [
+        "git_log"
+      ],
+      "flags": [
+        "metadata-only"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 2,
+      "policy_class": "Routine",
+      "reasoning": "The asset holds commit hashes, authors, dates and messages with no diffs, which is classified as Routine according to the organization's policy.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "branch-directory",
+      "description": "Branch names and refs, no contents (loss axis: C>I>A)",
+      "register_tools": [
+        "git_branch",
+        "git_create_branch"
+      ],
+      "flags": [
+        "metadata-only"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 2,
+      "policy_class": "Routine",
+      "reasoning": "The asset holds branch names and refs with no contents, which is classified as Routine according to the policy's recognition rules.",
+      "confidence": 0.95
+    },
+    {
+      "asset": "working-tree-status",
+      "description": "Which files are modified, staged or untracked, with no contents (loss axis: C>I>A)",
+      "register_tools": [
+        "git_status"
+      ],
+      "flags": [
+        "metadata-only"
+      ],
+      "cia": "C>I>A",
+      "sensitivity": 2,
+      "policy_class": "Routine",
+      "reasoning": "The asset holds metadata-only information about which files are modified, staged or untracked without any contents. According to the policy's classification, such metadata is categorized as Routine.",
+      "confidence": 0.95
+    }
+  ],
+  "tools": [
+    {
+      "tool": "git_status",
+      "impact": 2,
+      "decided_by": "rules",
+      "operation": "metadata",
+      "evidence": [
+        "metadata verbs: \\bstatus\\b"
+      ],
+      "rules_impact": 2,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 2
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "impact": 3,
+      "decided_by": "rules",
+      "operation": "read",
+      "evidence": [
+        "read verbs: \\bdiff\\b"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 3
+    },
+    {
+      "tool": "git_diff_staged",
+      "impact": 3,
+      "decided_by": "rules",
+      "operation": "read",
+      "evidence": [
+        "read verbs: \\bdiff\\b"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 3
+    },
+    {
+      "tool": "git_diff",
+      "impact": 3,
+      "decided_by": "rules",
+      "operation": "read",
+      "evidence": [
+        "read verbs: \\bdiff\\b"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 3
+    },
+    {
+      "tool": "git_commit",
+      "impact": 4,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bcommit\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool 'git_commit' records changes to the repository by writing a commit message and updating the repository state with those changes. This operation involves modifying the content of the repository, which aligns with an ordinary write operation.",
+      "model_confidence": 1.0,
+      "impact_as_answered": 4
+    },
+    {
+      "tool": "git_add",
+      "impact": 3,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\badd\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)",
+        "bulk signal (array param or bulk wording)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": true,
+      "model_reasoning": "The tool 'git_add' adds file contents to the staging area in a Git repository. This operation modifies the state of the files by preparing them for commit but does not finalize the changes until a commit is made. The impact involves changing the metadata and content status, which aligns with an impact level of 3 as it prepares content for further write operations without finalizing or removing anything.",
+      "model_confidence": 0.9,
+      "impact_as_answered": 3
+    },
+    {
+      "tool": "git_reset",
+      "impact": 5,
+      "decided_by": "rules",
+      "operation": "remove",
+      "evidence": [
+        "remove verbs: \\breset\\b"
+      ],
+      "rules_impact": 5,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 5
+    },
+    {
+      "tool": "git_log",
+      "impact": 2,
+      "decided_by": "model",
+      "operation": "read",
+      "evidence": [
+        "no verb evidence -> assumed a content read"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool 'git_log' only shows commit logs which are metadata about the commits such as timestamps and commit messages. It does not modify or remove any content.",
+      "model_confidence": 1.0,
+      "impact_as_answered": 2
+    },
+    {
+      "tool": "git_create_branch",
+      "impact": 4,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bcreate\\b, \\bbranch\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool creates a new branch from an optional base branch in a repository. This operation involves writing to the repository by creating a new branch, which is considered an ordinary write operation.",
+      "model_confidence": 1.0,
+      "impact_as_answered": 4
+    },
+    {
+      "tool": "git_checkout",
+      "impact": 2,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bcheckout\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool 'git_checkout' switches branches in a git repository. This operation does not read or write content directly but changes the state of the working directory to reflect another branch, which is akin to changing metadata such as the current active branch and its associated files. It doesn't remove any data; it merely alters the context within which operations are performed.",
+      "model_confidence": 0.9,
+      "impact_as_answered": 2
+    },
+    {
+      "tool": "git_show",
+      "impact": 3,
+      "decided_by": "rules",
+      "operation": "read",
+      "evidence": [
+        "read verbs: \\bshow\\b, \\bcontents?\\b"
+      ],
+      "rules_impact": 3,
+      "rules_confidence": 0.8,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "impact_as_answered": 3
+    },
+    {
+      "tool": "git_branch",
+      "impact": 2,
+      "decided_by": "model",
+      "operation": "write",
+      "evidence": [
+        "write verbs: \\bbranch\\b",
+        "write does not state a limit -> defaulted to 4 (unsure)"
+      ],
+      "rules_impact": 4,
+      "rules_confidence": 0.35,
+      "capability_flags": [
+        "path: `repo_path` takes a filesystem path (unconstrained: no enum/pattern/format)"
+      ],
+      "is_bulk": false,
+      "model_reasoning": "The tool lists Git branches based on the provided parameters without modifying any content or metadata. It only returns information about the branches which falls under reading metadata.",
+      "model_confidence": 1.0,
+      "impact_as_answered": 2
+    }
+  ],
+  "reach": [
+    {
+      "tool": "git_status",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not reach the asset 'commit-history-contents'. The git status command shows which files are modified, staged or untracked in the working tree but does not provide access to past commit contents or diffs.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_status",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not directly list the asset 'working-tree-changes', but it shows the status of uncommitted and staged changes, which are part of this asset.",
+      "confidence": 0.9
+    },
+    {
+      "tool": "git_status",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not modify or directly interact with the branch heads, which are managed by tools like 'git_checkout', 'git_commit', and 'git_reset'. The status command only shows the current state of the working tree.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_status",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not directly interact with the staging index as per the organization's register and inferred domain profile.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_status",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not match the tools listed in the organization's register (which includes only 'git_log') as reaching this asset. The git status command shows which files are modified, staged or untracked but does not provide commit hashes, authors, dates and messages.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_status",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' does not list the asset 'branch-directory' in its parameters or description, and it is not listed as a relevant tool for this asset by the organization's register.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_status",
+      "asset": "working-tree-status",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_status' is listed in the organization's register as reaching this asset, and its description matches the asset's description.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' is designed to show changes in the working directory that are not yet staged, which does not directly interact with past commit history contents.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "working-tree-changes",
+      "in_register": true,
+      "reaches": true,
+      "blast": 3,
+      "reaches_as_answered": true,
+      "blast_as_answered": 3,
+      "escape": "Q2",
+      "escape_evidence": "Exposure hands over private code or its pending changes; a move of a branch changes what is built or deployed",
+      "reasoning": "The tool 'git_diff_unstaged' is listed in the organization's register as reaching this asset, and its description matches the asset's description of uncommitted changes.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' does not affect the asset 'branch-heads'. The organization's register lists tools that can impact branch heads, and 'git_diff_unstaged' is not among them. This tool shows unstaged changes in the working directory but does not alter or provide information about where branches point.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' shows changes in the working directory that are not yet staged, which does not directly affect the staging index as described by the asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' is not listed in the organization's register as reaching the asset 'commit-list'. The tool shows changes in the working directory that are not yet staged, which does not align with the description of the commit list asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' is not listed in the organization's register as reaching this asset, and its function of showing unstaged changes does not affect branch names or refs.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_diff_unstaged",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_unstaged' is not listed in the organization's register as reaching this asset, and its primary function of showing unstaged changes does not align with the description or purpose of the 'working-tree-status' asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' is intended to show changes that are staged for commit, which pertains to the working tree and not historical commits. The asset 'commit-history-contents', however, refers specifically to past commits and their contents.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "working-tree-changes",
+      "in_register": true,
+      "reaches": true,
+      "blast": 3,
+      "reaches_as_answered": true,
+      "blast_as_answered": 3,
+      "escape": "Q2",
+      "escape_evidence": "Uncommitted and staged changes to the workspace's files, shown as diffs (loss axis: C>I>A)",
+      "reasoning": "The tool 'git_diff_staged' is listed in the organization's register as reaching this asset, and its description matches the asset's description of showing staged changes.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' does not directly affect the asset 'branch-heads'. The organization's register lists tools that can impact branch heads, but 'git_diff_staged' is not among them. This tool shows changes staged for commit and does not alter where branches point or which one is checked out.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": true,
+      "blast": 3,
+      "reaches_as_answered": true,
+      "blast_as_answered": 3,
+      "escape": "Q2",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' is relevant to the asset 'staging-index', as it shows changes that are staged for commit, which directly relates to what is staged in the staging index.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' is not listed in the organization's register as reaching the asset 'commit-list'. The description of 'git_diff_staged' indicates it shows changes that are staged for commit, which does not align with the content of 'commit-list', which consists of commit hashes, authors, dates, and messages.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' is not listed in the organization's register as reaching this asset, and its primary function of showing staged changes does not directly impact branch names or refs.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff_staged",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff_staged' is not listed in the organization's register as reaching this asset, and its primary function of showing staged changes does not align with the description of 'working-tree-status', which concerns the status of files (modified, staged, untracked) without contents.",
+      "confidence": 0.9
+    },
+    {
+      "tool": "git_diff",
+      "asset": "commit-history-contents",
+      "in_register": true,
+      "reaches": true,
+      "blast": 3,
+      "reaches_as_answered": true,
+      "blast_as_answered": 3,
+      "escape": "Q2",
+      "escape_evidence": "the older environment file and configuration with keys never purged from history",
+      "reasoning": "The tool git_diff is listed in the organization's register as reaching this asset, and it can indeed show differences between branches or commits which includes accessing past commit contents.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "working-tree-changes",
+      "in_register": true,
+      "reaches": true,
+      "blast": 3,
+      "reaches_as_answered": true,
+      "blast_as_answered": 3,
+      "escape": "Q2",
+      "escape_evidence": "Uncommitted and staged changes to the workspace's files, shown as diffs (loss axis: C>I>A)",
+      "reasoning": "The tool is listed in the organization's register as reaching this asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff' is not listed in the organization's register as reaching this asset, and its primary function of showing differences between branches or commits does not directly affect where each branch points or which one is checked out.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_diff' as a tool that reaches the 'staging-index'. The description of 'git_diff' shows differences between branches or commits, which is different from what is staged for the next commit.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff' is not listed in the organization's register as reaching this asset, and its primary function of showing differences between branches or commits does not align with the description of the 'commit-list' asset which contains metadata only.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_diff' is not listed in the organization's register as reaching this asset, and its primary function of showing differences between branches or commits does not directly impact branch names and refs without contents.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_diff",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool git_diff is not listed in the organization's register as reaching this asset, and its primary function of showing differences between branches or commits does not align with the purpose of working-tree-status which tracks modified, staged, or untracked files without contents.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_commit",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_commit' does not directly interact with the commit history contents as described in the asset register. The organization's register lists git_diff and git_show as tools that reach this asset, but not git_commit.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_commit",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_commit' as a tool that reaches the 'working-tree-changes' asset. The description of 'git_commit' is to record changes, which implies it operates on committed data rather than uncommitted or staged changes.",
+      "confidence": 0.9
+    },
+    {
+      "tool": "git_commit",
+      "asset": "branch-heads",
+      "in_register": true,
+      "reaches": true,
+      "blast": 4,
+      "reaches_as_answered": true,
+      "blast_as_answered": 4,
+      "escape": "Q2",
+      "escape_evidence": "a commit, reset or checkout changes what the workspace holds (loss axis: I>A>C)",
+      "reasoning": "The organization's register lists this tool as reaching the asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_commit",
+      "asset": "staging-index",
+      "in_register": true,
+      "reaches": true,
+      "blast": 4,
+      "reaches_as_answered": true,
+      "blast_as_answered": 4,
+      "escape": "Q2",
+      "escape_evidence": "Exposure hands over private code or its pending changes; a move of a branch changes what is built or deployed",
+      "reasoning": "The organization's register lists this tool as reaching the asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_commit",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_commit' is not listed in the organization's register as affecting the asset 'commit-list'. The 'git_log' tool is listed, which suggests that 'git_commit' does not directly impact this asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_commit",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_commit' as a tool that reaches the branch-directory asset, and based on the inferred domain profile and the nature of the git_commit operation, it does not directly affect branch names or refs.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_commit",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_commit' is not listed in the organization's register as reaching this asset, and its primary function of recording changes does not directly impact or read from the working tree status.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_add",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' adds file contents to the staging area and does not directly interact with past commit history.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_add",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' adds file contents to the staging area, which is part of the working tree changes asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_add",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' does not affect the asset 'branch-heads'. The register lists tools that can change branch heads (commit, reset, checkout), but git_add only stages changes and does not alter where branches point.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_add",
+      "asset": "staging-index",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' is listed in the organization's register as reaching this asset, and its description matches the function of adding file contents to the staging area.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_add",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' does not affect the asset 'commit-list'. The 'git_add' command stages changes to be committed, while 'commit-list' is related to viewing commit history and metadata.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_add",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' is not listed in the organization's register as reaching this asset, and its function of adding file contents to the staging area does not affect branch names or refs.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_add",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_add' does not directly affect the asset 'working-tree-status'. The register lists 'git_status' as the relevant tool for this asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_reset' unstages all staged changes and does not affect the commit history contents directly.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "Uncommitted and staged changes to the workspace's files, shown as diffs (loss axis: C>I>A)",
+      "reasoning": "The tool git_reset unstages all staged changes, which directly affects the working-tree-changes asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "branch-heads",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "a commit, reset or checkout changes what the workspace holds (loss axis: I>A>C)",
+      "reasoning": "The organization's register lists this tool as reaching the asset.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "staging-index",
+      "in_register": true,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "Uncommitted and staged changes to the workspace's files, shown as diffs",
+      "reasoning": "The organization's register lists this tool as reaching the asset.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_reset",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_reset' is not listed in the organization's register as reaching this asset, and its function of unstaging changes does not directly impact commit lists.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_reset' is not listed in the organization's register as reaching this asset, and its operation of unstaging changes does not affect branch names or refs.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_reset",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_reset' unstages all staged changes, which does not directly affect the working tree status as described by 'git_status'. The asset 'working-tree-status' is about listing modified, staged or untracked files without contents. Resetting staged changes would alter what is listed by 'git_status', but this pair was already decided to have a tool impact of 5 and an asset sensitivity of 2.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_log",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": true,
+      "blast": 5,
+      "reaches_as_answered": true,
+      "blast_as_answered": 5,
+      "escape": "Q2",
+      "escape_evidence": "Old commits' environment files and configuration with their keys and passwords, any diff that carries a secret value",
+      "reasoning": "The tool git_log can access the commit history, which includes the full contents and diffs of past commits as described in the asset description.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_log",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_log' does not reach the asset 'working-tree-changes'. The register lists git_diff, git_diff_staged, and git_diff_unstaged as tools that can access working tree changes.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_log",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_log' does not directly affect the asset 'branch-heads'. The git_log command shows commit logs and does not change where branches point or which branch is checked out.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_log",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_log' is not listed in the organization's register as reaching this asset, and based on its description, it does not directly interact with the staging index.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_log",
+      "asset": "commit-list",
+      "in_register": true,
+      "reaches": true,
+      "blast": 4,
+      "reaches_as_answered": true,
+      "blast_as_answered": 4,
+      "escape": "Q2",
+      "escape_evidence": "Exposure hands over private code or its pending changes; a move of a branch changes what is built or deployed (Commit contents and diffs of source and deploy files, uncommitted changes, where each branch points)",
+      "reasoning": "The tool git_log is listed in the organization's register as reaching this asset, and it directly shows commit logs which include hashes, authors, dates, and messages.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_log",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_log' is not listed in the organization's register as reaching this asset, and its primary function of showing commit logs does not directly interact with branch names or refs.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_log",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_log' is not listed in the organization's register as reaching this asset, and its primary function of showing commit logs does not directly impact or provide information about the working tree status.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' does not directly interact with the commit history contents as per the organization's register and inferred domain profile. The creation of a new branch does not inherently involve reading or modifying past commits.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' does not directly interact with uncommitted and staged changes as described in the asset 'working-tree-changes'. The register lists other tools that do reach this asset, but 'git_create_branch' is not among them.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "branch-heads",
+      "in_register": true,
+      "reaches": true,
+      "blast": 4,
+      "reaches_as_answered": true,
+      "blast_as_answered": 4,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' is listed in the organization's register as reaching this asset, and it directly affects where branches point.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_create_branch' as a tool that reaches the staging index, and based on the description of the tool and asset, creating a new branch does not directly affect what is staged for the next commit.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' does not directly interact with the commit list asset as described by the organization's register. The register lists 'git_log' as the relevant tool for interacting with the commit list.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "branch-directory",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' is listed in the organization's register as reaching this asset, and it directly manipulates branch names which are part of the 'branch-directory'.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_create_branch",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_create_branch' does not directly affect the asset 'working-tree-status'. The working tree status is about which files are modified, staged or untracked and creating a new branch does not inherently change this status unless it involves modifying tracked files.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' is not listed in the organization's register as reaching this asset, and its primary function of switching branches does not directly impact or expose the contents of past commits.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' is not listed in the organization's register as reaching this asset, and its primary function of switching branches does not directly impact uncommitted or staged changes.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "branch-heads",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' is listed in the organization's register as reaching this asset, and its description matches the asset's description of changing what the workspace holds.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_checkout' as a tool that reaches the 'staging-index' asset. The staging index is managed by tools like git_add, git_reset, and git_commit, which are listed in the register.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' is not listed in the organization's register as reaching this asset, and its primary function of switching branches does not directly impact the commit list metadata.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' can affect the branch directory by switching branches, which is a relevant operation according to the organization's register.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_checkout",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_checkout' can affect the working tree status by switching branches, which changes what files are modified, staged or untracked.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "commit-history-contents",
+      "in_register": true,
+      "reaches": true,
+      "blast": 4,
+      "reaches_as_answered": true,
+      "blast_as_answered": 4,
+      "escape": "Q2",
+      "escape_evidence": "an older environment file and configuration whose keys and passwords were replaced in the working tree but never purged from history. Those keys open production systems (a payment processor under PCI DSS, the payroll database with employees' social security numbers, cloud accounts, sign-in).",
+      "reasoning": "The tool 'git_show' is listed in the organization's register as reaching this asset, and its description matches the asset's contents.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_show' is not listed in the organization's register as reaching this asset, and its primary function of showing commit contents does not directly interact with uncommitted changes.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_show' is not listed in the organization's register as reaching this asset, and its primary function of showing commit contents does not directly impact branch heads.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_show' as a tool that reaches the staging index, and based on the inferred domain profile and typical git operations, 'git_show' is used to display commit contents rather than interact with the staging area.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_show' is not listed in the organization's register as reaching this asset, and its parameters suggest it operates on commit contents rather than metadata like commit hashes, authors, dates, and messages.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "branch-directory",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The organization's register does not list 'git_show' as a tool that reaches the branch-directory asset, and based on the inferred domain profile and the nature of the tool, it is unlikely to affect branch names or refs directly.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_show",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_show' is not listed in the organization's register as reaching this asset, and its description does not indicate it would affect the working tree status.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_branch",
+      "asset": "commit-history-contents",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' lists branches but does not provide the full contents or diffs of past commits, which is what the asset 'commit-history-contents' represents.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_branch",
+      "asset": "working-tree-changes",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' lists branches and does not interact with uncommitted or staged changes.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_branch",
+      "asset": "branch-heads",
+      "in_register": false,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' lists branches, which are part of the asset 'branch-heads'. Although it is not listed in the organization's register, it still affects this asset by providing information about branch heads.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_branch",
+      "asset": "staging-index",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' does not affect the staging index as per the organization's register and inferred domain profile.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_branch",
+      "asset": "commit-list",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' is not listed in the organization's register as reaching this asset, and its primary function of listing branches does not directly impact or modify commit lists.",
+      "confidence": 0.95
+    },
+    {
+      "tool": "git_branch",
+      "asset": "branch-directory",
+      "in_register": true,
+      "reaches": true,
+      "blast": 2,
+      "reaches_as_answered": true,
+      "blast_as_answered": 2,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' is listed in the organization's register as reaching this asset, and its parameters allow listing branches which are part of the branch directory.",
+      "confidence": 1.0
+    },
+    {
+      "tool": "git_branch",
+      "asset": "working-tree-status",
+      "in_register": false,
+      "reaches": false,
+      "blast": null,
+      "reaches_as_answered": false,
+      "blast_as_answered": null,
+      "escape": "none",
+      "escape_evidence": "",
+      "reasoning": "The tool 'git_branch' does not operate on the working tree status, which is managed by 'git_status'. The register lists only 'git_status' as relevant to this asset.",
+      "confidence": 1.0
+    }
+  ],
+  "adjustments": [],
+  "review": {
+    "unanswered": [],
+    "register_pairs_not_reached": [],
+    "pairs_outside_register": [
+      {
+        "tool": "git_status",
+        "asset": "working-tree-changes",
+        "blast": 2
+      },
+      {
+        "tool": "git_diff_staged",
+        "asset": "staging-index",
+        "blast": 3
+      },
+      {
+        "tool": "git_add",
+        "asset": "working-tree-changes",
+        "blast": 2
+      },
+      {
+        "tool": "git_reset",
+        "asset": "working-tree-changes",
+        "blast": 5
+      },
+      {
+        "tool": "git_log",
+        "asset": "commit-history-contents",
+        "blast": 5
+      },
+      {
+        "tool": "git_checkout",
+        "asset": "branch-directory",
+        "blast": 2
+      },
+      {
+        "tool": "git_checkout",
+        "asset": "working-tree-status",
+        "blast": 2
+      },
+      {
+        "tool": "git_branch",
+        "asset": "branch-heads",
+        "blast": 2
+      }
+    ],
+    "tools_reaching_nothing": [],
+    "fives_without_a_quote": []
+  },
+  "failed": []
+}

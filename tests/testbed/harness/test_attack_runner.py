@@ -9,6 +9,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+from mcp.types import Tool
+
 from tests.testbed.harness.attack_runner import (
     _build_args,
     _check_damage,
@@ -80,35 +82,35 @@ def test_response_to_text_mcp_non_text_blocks() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _make_tool(properties: dict[str, Any]) -> Any:
-    """Build a minimal fake Tool with the given inputSchema properties."""
-    return SimpleNamespace(inputSchema={"type": "object", "properties": properties})
+def _make_tool(properties: dict[str, Any]) -> Tool:
+    """Build a real SDK Tool (as ``tools/list`` returns it) with these schema properties."""
+    return Tool(name="tool", inputSchema={"type": "object", "properties": properties})
 
 
 def test_build_args_with_schema() -> None:
-    """First property in inputSchema is used as the argument key."""
+    """First property in the input schema is used as the argument key."""
     tool = _make_tool({"path": {"type": "string"}, "encoding": {"type": "string"}})
     result = _build_args(tool, "../../etc/passwd")
     assert result == {"path": "../../etc/passwd"}
 
 
 def test_build_args_no_schema() -> None:
-    """When inputSchema has no properties, fallback key 'input' is used."""
+    """When the input schema has no properties, fallback key 'input' is used."""
     tool = _make_tool({})
     result = _build_args(tool, "some value")
     assert result == {"input": "some value"}
 
 
 def test_build_args_no_input_schema_attr() -> None:
-    """When the tool has no inputSchema attribute, fallback key 'input' is used."""
-    tool = SimpleNamespace()  # no inputSchema attribute
+    """When the tool has no input_schema attribute, fallback key 'input' is used."""
+    tool = SimpleNamespace()  # no input_schema attribute
     result = _build_args(tool, "value")
     assert result == {"input": "value"}
 
 
 def test_build_args_none_input_schema() -> None:
-    """When inputSchema is None, fallback key 'input' is used."""
-    tool = SimpleNamespace(inputSchema=None)
+    """When input_schema is None, fallback key 'input' is used."""
+    tool = SimpleNamespace(input_schema=None)
     result = _build_args(tool, "value")
     assert result == {"input": "value"}
 

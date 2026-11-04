@@ -30,12 +30,12 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import httpx
+import httpx2
 import uvicorn
-from mcp import ClientSession
-from mcp.client.auth import OAuthClientProvider
-from mcp.client.streamable_http import streamablehttp_client
+from mcp import ClientSession, MCPError
+from mcp.client.auth import AuthorizationCodeResult, OAuthClientProvider
+from mcp.client.streamable_http import streamable_http_client
 from mcp.shared.auth import OAuthClientInformationFull, OAuthClientMetadata, OAuthToken
-from mcp.shared.exceptions import McpError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from identity_provider import REDIRECT_URI, SCOPE, IdentityProvider  # noqa: E402
@@ -51,7 +51,9 @@ ROUTE_URL = f"http://127.0.0.1:{GATEWAY_PORT}/github"
 APP, SERVICE = "claude-code", "ci-bot"
 LOG_KEY = "example-key"  # GATEWAY_LOG_KEY for the run: pseudonyms are keyed HMACs
 PROTOCOL = "2025-11-25"
+SESSION_HEADER = "mcp-session-id"
 START_TRIES, START_WAIT_S, STOP_WAIT_S, HTTP_TIMEOUT_S = 100, 0.1, 20, 30
+READ_TIMEOUT_S = 300  # an MCP session's reads: the server may hold a response stream open
 EXPIRED_S = -3600
 REPO = {"owner": "modelcontextprotocol", "repo": "python-sdk"}
 ALICE_PLAN = [
@@ -107,26 +109,41 @@ def sign_in(store: TokenStore) -> OAuthClientProvider:
         query = parse_qs(urlparse(reply.headers["location"]).query)
         caught.update(code=query["code"][0], state=query.get("state", [""])[0])
 
-    async def redirected() -> tuple[str, str | None]:
-        return caught["code"], caught["state"]
+    async def redirected() -> AuthorizationCodeResult:
+        return AuthorizationCodeResult(code=caught["code"], state=caught["state"])
 
     metadata = OAuthClientMetadata(redirect_uris=[REDIRECT_URI], scope=SCOPE)
     return OAuthClientProvider(ROUTE_URL, metadata, store, open_browser, redirected)
 
 
-async def session(label: str, plan: list, auth=None, headers: dict | None = None) -> str:
+async def session(label: str, plan: list, auth=None, headers: dict | None = None) -> str | None:
     """One MCP session: initialize, list tools, run the plan. Returns its session id."""
-    async with streamablehttp_client(ROUTE_URL, headers=headers, auth=auth) as (read, write, sid):
-        async with ClientSession(read, write) as mcp:
-            await mcp.initialize()
-            print(f"{label}: {len((await mcp.list_tools()).tools)} tools")
-            for tool, args in plan:
-                try:
-                    result = await mcp.call_tool(tool, args)
-                    print(f"{label}: {tool:<20} isError={result.isError}")
-                except McpError as exc:
-                    print(f"{label}: {tool:<20} JSON-RPC error {exc.error.code}")
-            return sid()
+    session_ids: list[str] = []
+
+    async def note_session_id(response: httpx2.Response) -> None:
+        if session_id := response.headers.get(SESSION_HEADER):
+            session_ids.append(session_id)
+
+    http_client = httpx2.AsyncClient(  # mcp 2.x: headers, auth and hooks live on the client
+        headers=headers,
+        auth=auth,
+        timeout=httpx2.Timeout(HTTP_TIMEOUT_S, read=READ_TIMEOUT_S),
+        event_hooks={"response": [note_session_id]},
+    )
+    async with (
+        http_client,
+        streamable_http_client(ROUTE_URL, http_client=http_client) as (read, write),
+        ClientSession(read, write) as mcp,
+    ):
+        await mcp.initialize()
+        print(f"{label}: {len((await mcp.list_tools()).tools)} tools")
+        for tool, args in plan:
+            try:
+                result = await mcp.call_tool(tool, args)
+                print(f"{label}: {tool:<20} isError={result.is_error}")
+            except MCPError as exc:
+                print(f"{label}: {tool:<20} JSON-RPC error {exc.error.code}")
+        return session_ids[-1] if session_ids else None
 
 
 async def service_token(idp: IdentityProvider) -> str:

@@ -9,10 +9,13 @@ This connects the existing pieces and adds no risk logic of its own:
 - **input rules** — stage 2: ``input_rules.evaluate_call``, the call's input level 1–5,
   reported beside the risk (how the two combine is not decided);
 - **behaviour** — the dynamic layer's behaviour multiplier ×0.7–5:
-  ``behaviour.BehaviourEngine``, which compares each caller with his own last 90 days (rate,
-  session length, request size, tool, asset, time of day, network, client, policy rules)
-  without reading the arguments. It sees every request message, not only tool calls, so
-  ``observe`` and ``session_initialized`` must be called in arrival order too. Reported as
+  ``behaviour.BehaviourEngine``, which compares each caller with his own last 90 days
+  (Typical Cadence: call rate, write rate, breadth, repetition, session duration, hour of day;
+  Typical Footprint: tool, asset, network, client; Red Flags: the rules) without reading the
+  arguments;
+  design v4 by default, v1-v3 with ``"design"`` in the route's behaviour policy. It sees
+  every request message, not only tool calls, so ``observe`` and ``session_initialized``
+  must be called in arrival order too. Reported as
   ``behaviour`` and ``dynamic_risk`` = static level (1–5) × behaviour (0.7–25).
 
 The gateway calls ``RouteScorer.score`` live, before forwarding; ``score.py`` calls it over
@@ -31,10 +34,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from types import ModuleType
+from typing import Protocol
 
-from mcp_security.behaviour import BehaviourConfig, BehaviourEngine, Message
+from mcp_security.behaviour import BehaviourConfig, BehaviourEngine, Message, Verdict
 from mcp_security.behaviour.policy import load_policy
 from mcp_security.binding.scoring import MatrixScorer
+from mcp_security.gateway.config import Upstream
+from mcp_security.gateway.pseudonym import Pseudonymizer
 from mcp_security.input_rules import CallLevel, evaluate_call
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -104,6 +110,34 @@ HISTORY_SCOPES = ("route", "caller")
 #: The asset lookup is a pure function of (tool, arguments) and 85% of a call's cost
 #: (measured: ~180 us of ~210 us); repeated calls are common, so it is cached, bounded.
 CELL_CACHE_SIZE = 65_536
+#: ARG-1 (v5): scored calls waiting for the server's answer before they are committed, by
+#: logical-call key. A call whose answer never comes is dropped oldest first past this bound.
+MAX_PENDING_CALLS = 65_536
+
+#: One remembered sensitive read (E14): (ts, route, asset, sensitivity, owner or None).
+LedgerRead = tuple[float, str, str, int, str | None]
+
+
+class ReadLedger(Protocol):
+    """E14 (v5): the sensitive reads of every route whose callers share an issuer, so a read
+    on one route and a write on another can make an unsafe sequence. The gateway creates one
+    and gives it to each ``RouteScorer`` (Batch 2); until then no scorer uses it."""
+
+    def note_read(
+        self,
+        caller: str,
+        route: str,
+        asset: str,
+        sensitivity: int,
+        ts: float,
+        owner: str | None = None,
+    ) -> None:
+        """Remember that ``caller`` read ``asset`` (sensitivity 1-5, owned by ``owner`` when
+        known: SEQ-2's foreign-owner clause) on ``route`` at ``ts``."""
+
+    def reads_since(self, caller: str, since: float) -> list[LedgerRead]:
+        """``caller``'s remembered reads at or after ``since``: (ts, route, asset,
+        sensitivity, owner), oldest first."""
 
 
 class RouteScorer:
@@ -112,15 +146,40 @@ class RouteScorer:
     ``history`` says whose past the runtime factor compares a call with: ``route`` keeps
     one history for everyone on the route; ``caller`` keeps one per caller, using the
     dynamic layer's own isolation unit (its ``Connection`` scope), so no logic changes.
+
+    v5's interfaces (Batch 0; their bodies come in Batch 2): ``pseudonymizer`` is the
+    gateway's keyed pseudonym function, for touched assets the register does not name
+    (AI-2); ``ledger`` is the cross-route sensitive-read ledger (E14); ``upstream`` is the
+    route's entry in the routes file, whose v5 fields the scorer reads (B9d ``route_zone``
+    and ``zone_map``, B10 ``shared_egress``, B1 ``baseline_key``: per agent by default, D5).
+    The v5 keyword arguments of :meth:`observe`,
+    :meth:`session_initialized`, :meth:`score` and :meth:`score_read` (era, app, client
+    family, zone, argument bytes, logical-call key, owner) are accepted and ignored for now.
+    :meth:`reply`, :meth:`score_read`, :meth:`commit` and :meth:`apply_notice` do nothing
+    yet, for every design.
     """
 
-    def __init__(self, route: str, artifacts: Artifacts, history: str = "route") -> None:
+    def __init__(
+        self,
+        route: str,
+        artifacts: Artifacts,
+        history: str = "route",
+        pseudonymizer: Pseudonymizer | None = None,
+        ledger: ReadLedger | None = None,
+        upstream: Upstream | None = None,
+    ) -> None:
         if history not in HISTORY_SCOPES:
             raise ValueError(f"history must be one of {HISTORY_SCOPES}, not {history!r}")
         self._runtime = gate_runtime()
         self.artifacts = artifacts
         self.route = route
         self.history = history
+        self.pseudonymizer = pseudonymizer
+        self.ledger = ledger
+        self.upstream = upstream
+        #: ARG-1: logical-call key -> (message, verdict) scored and not yet committed. v5
+        #: fills it from Batch 2 on; v1-v4 learn in :meth:`score` and never use it.
+        self._pending: OrderedDict[str, tuple[Message, Verdict]] = OrderedDict()
         self._matrix = MatrixScorer(artifacts.scan["cells"], artifacts.scan["bands"])
         self._gate = self._runtime.GateScorer(artifacts.specs)
         self._connections: dict[str, object] = {}
@@ -146,17 +205,38 @@ class RouteScorer:
         address: str | None = None,
         client: str | None = None,
         size: int = 0,
+        *,
+        era: str | None = None,
+        app: str | None = None,
+        client_family: str | None = None,
+        zone: str | None = None,
+        arg_bytes: int | None = None,
+        logical_call: str | None = None,
     ) -> None:
         """A request message that is not a tool call (initialize, tools/list, ...): the
-        behaviour layer learns the caller's origin and handshake from it."""
+        behaviour layer learns the caller's origin and handshake from it.
+
+        The keyword-only arguments are v5's engine inputs (spec 2.1), ignored until Batch 2.
+        They are the keys ``behaviour_fields`` will add from the LOG-1 fields, so the
+        gateway and ``score.py`` can pass its output to this method and to :meth:`score`."""
         self.behaviour.observe(
             Message(ts, caller or GATEWAY_ORG, method or "", session, address=address,
                     client=client, size=size)
         )
 
-    def session_initialized(self, caller: str | None, session: str, ts: float) -> None:
+    def session_initialized(
+        self,
+        caller: str | None,
+        session: str,
+        ts: float,
+        *,
+        era: str | None = None,
+        app: str | None = None,
+        zone: str | None = None,
+    ) -> None:
         """The server assigned ``session`` in its reply to ``initialize``: the session started
-        properly (the request itself carried no session id yet)."""
+        properly (the request itself carried no session id yet). The keyword-only arguments
+        are v5's inputs, ignored until Batch 2."""
         self.behaviour.observe(Message(ts, caller or GATEWAY_ORG, "initialize", session))
 
     def score(
@@ -170,9 +250,21 @@ class RouteScorer:
         address: str | None = None,
         client: str | None = None,
         size: int = 0,
+        era: str | None = None,
+        app: str | None = None,
+        client_family: str | None = None,
+        zone: str | None = None,
+        arg_bytes: int | None = None,
+        logical_call: str | None = None,
+        owner: str | None = None,
     ) -> dict:
         """Static cell, runtime factor, risk, input level and behaviour for one call; learns
-        from it."""
+        from it.
+
+        ``era`` to ``owner`` are v5's engine inputs (spec 2.1: E3, B2, E11, B9d, ARG-1,
+        EXP-1), ignored until Batch 2. ``logical_call`` is also the key :meth:`commit` takes
+        for this call; ``owner`` is the touched asset's owner when the caller already knows
+        it (otherwise the binding reads it)."""
         started = time.perf_counter()
         cell = self._cell(tool, args)
         factor, reasons = self._gate.score(self.connection(caller), tool, args)
@@ -212,6 +304,55 @@ class RouteScorer:
                 "blast": scan.get("blast_radius", {}).get(f"{tool}|{cell.driver}"),
             }
         return result
+
+    def reply(
+        self, caller: str | None, method: str | None, tool: str | None, ts: float, size: int
+    ) -> dict | None:
+        """A reply to a scored request, for Read volume (AI-8): the reply's behaviour fields
+        for its log line. Nothing yet (Batch 2), and never for v1-v4: None."""
+        return None
+
+    def score_read(
+        self,
+        method: str,
+        name: str,
+        args: dict,
+        ts: float,
+        caller: str | None = None,
+        *,
+        session: str | None = None,
+        address: str | None = None,
+        client: str | None = None,
+        size: int = 0,
+        era: str | None = None,
+        app: str | None = None,
+        client_family: str | None = None,
+        zone: str | None = None,
+        arg_bytes: int | None = None,
+        logical_call: str | None = None,
+        owner: str | None = None,
+    ) -> dict | None:
+        """A ``resources/read`` or ``prompts/get`` scored as a call (AI-10): its decision.
+        Not yet (Batch 2), and never for v1-v4: None, and the request is only observed.
+        The keyword-only arguments are those of :meth:`score`."""
+        return None
+
+    def commit(self, logical_call: str | None, outcome: str | None = None) -> None:
+        """Learn from the call scored under ``logical_call`` once the server answered it
+        (ARG-1: only an accepted call is learned; a rejected one is dropped).
+
+        :meth:`score` keeps each v5 call it scores under its ``logical_call`` key, at most
+        :data:`MAX_PENDING_CALLS` of them (oldest dropped); this pops the entry. An unknown
+        or None key does nothing. Every design learns in :meth:`score` for now, so nothing
+        is pending yet; v5 moves its learning here in Batch 2."""
+        if logical_call is None:
+            return
+        self._pending.pop(logical_call, None)
+
+    def apply_notice(self, record: dict) -> None:
+        """Replay a logged ``behaviour_fold`` or ``policy_switched`` line (spec 2.9: offline
+        replay folds and switches at the same point the live gateway did). Nothing yet
+        (Batch 2, J3), for every design."""
 
     def snapshot_all(self) -> dict[str, dict]:
         """Every history owner's state, in ``GateScorer.snapshot`` format, in one pass.
@@ -280,7 +421,9 @@ class RouteScorer:
 def behaviour_fields(record: dict) -> dict:
     """Who sent a request, from where, with what, and how big — read from its log line, so
     the live gateway and an offline re-score of the log feed the behaviour layer exactly the
-    same values."""
+    same values. From Batch 2 on it also returns v5's inputs from the LOG-1 fields, under the
+    keyword names :meth:`RouteScorer.score` and :meth:`RouteScorer.observe` take (``era``,
+    ``app``, ``client_family``, ``zone``, ``arg_bytes``, ``logical_call``)."""
     return {
         "caller": record.get("gateway.agent_id") or record.get("gateway.agent"),
         "session": record.get("mcp.session.id"),
@@ -293,12 +436,12 @@ def behaviour_fields(record: dict) -> dict:
 def _behaviour_reason(verdict) -> str | None:  # -> behaviour.Verdict
     """Why the behaviour multiplier is what it is: the dimension that set it, and the others
     past the edge of ordinary (ties at the top of a review list break on those)."""
-    if verdict.learning:
-        return "learning (warm-up)"
     if verdict.strongest is None:
-        return None
+        return "learning (warm-up)" if verdict.learning else None
     hot = [d for d in verdict.above_ordinary if d != verdict.strongest]
     text = f"{verdict.strongest} {verdict.score:.2f}"
+    if verdict.learning:  # v3+: a check that needs none of his past fired in warm-up
+        text += " (warm-up)"
     return f"{text}; also {', '.join(hot)}" if hot else text
 
 

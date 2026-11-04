@@ -83,17 +83,18 @@ def _response_to_text(response: Any) -> str:
 def _build_args(tool: Any, value: Any) -> dict[str, Any]:
     """Build a tool arguments dict from a payload value.
 
-    Uses the first string parameter from inputSchema if available,
+    Uses the first string parameter from the tool's input schema if available,
     otherwise uses ``{"input": value}`` as a fallback.
 
     Args:
-        tool: An MCP Tool object with an ``inputSchema`` attribute.
+        tool: An MCP Tool object with an ``input_schema`` attribute (mcp 2.x names the
+            wire's ``inputSchema`` in snake_case).
         value: The payload value to assign to the first parameter.
 
     Returns:
         A dict mapping the first parameter name to *value*.
     """
-    schema = getattr(tool, "inputSchema", {}) or {}
+    schema = getattr(tool, "input_schema", None) or {}
     props = schema.get("properties", {})
     if props:
         first_param = next(iter(props))

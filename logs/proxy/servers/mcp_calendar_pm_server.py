@@ -1,4 +1,4 @@
-"""Project-manager calendar MCP server — FastMCP over Streamable HTTP.
+"""Project-manager calendar MCP server — MCPServer (mcp SDK 2.x) over Streamable HTTP.
 
 Pre-loaded with a realistic sprint week (2026-05-04 to 2026-05-09).
 Tools beyond the basic calendar:
@@ -14,9 +14,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("calendar-pm", port=8098)
+PORT = 8098
+
+mcp = MCPServer("calendar-pm")
 
 EVENTS: dict[str, dict] = {
     "evt_001": {"title": "Sprint 15 Kickoff",        "date": "2026-05-04", "time": "09:00", "duration_min": 60,  "attendees": ["alice", "bob", "carol", "dave"]},
@@ -111,4 +113,4 @@ def find_free_slot(date: str, duration_min: int) -> dict:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", port=PORT)

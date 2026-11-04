@@ -57,7 +57,7 @@ async def _call(session: ClientSession, tool: str, args: dict) -> str:
         result = await session.call_tool(tool, args)
     except Exception as exc:                      # noqa: BLE001 - status is the datum here
         return f"error:{type(exc).__name__}"
-    return "error:tool" if getattr(result, "isError", False) else "ok"
+    return "error:tool" if result.is_error else "ok"
 
 
 async def probe_slack(session: ClientSession) -> dict:

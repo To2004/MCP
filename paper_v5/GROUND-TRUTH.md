@@ -80,31 +80,57 @@ it. The model is consulted when confidence < `STATIC_IMPACT_MIN_CONFIDENCE`
 
 ## 2. The dynamic layer
 
-Source: `docs/project/dynamic-scoring-design.md`, `src/mcp_security/dynamic/`
+Source: `docs/project/dynamic-layer-formula.md`, `docs/project/dynamic-layer-design.md`,
+`src/mcp_security/dynamic/`
 
-Static answers "how bad if this happens". Dynamic answers "how abnormal is this
-call, from this agent, in this session, given its actual input".
+Static answers "how bad if this happens". Dynamic answers "how usual is this
+action for this deployment, and is this call unusually large here".
 
-Four signals, cheap → expensive:
+```
+rho(c) = min(125, max(cell(t, r) x lik(c) x esc(c), floor(t, r)))
+```
 
-| # | Signal | File | LLM? |
-|---|---|---|---|
-| 0 | Embedding likelihood — hashing vectorizer over tool + arg tokens + structural flags, TruncatedSVD, novelty = mean distance to 5 nearest historical calls, calibrated against the history's own quantiles (q99 → z=2) | `dynamic/embedding.py` | no |
-| 1 | Behavioral baseline — deviation from the persona's own history: unseen tool, first touch of a high-sensitivity asset, burst above normal rate | `dynamic/baseline.py` | no |
-| 2 | Session sequence risk — cumulative sensitivity in a session; flags sensitive-read → external-write within a window | `dynamic/sequence.py` | no |
-| 3 | LLM judge — decodes/normalizes arguments (base64, hex, shell expansion), classifies intent | `dynamic/judge.py` | yes, optional |
+| factor | range | source |
+|---|---|---|
+| `cell(t, r)` = sensitivity x blast x impact | 1 … 125 | the scan, design time |
+| `lik(c)` — share of this deployment's traffic, as surprisal | **0.10 … 1.00** | observed history |
+| `esc(c)` — Tukey bin over this deployment's argument history | **0.9 / 1.0 / 1.3** | observed history |
+| `floor(t, r)` — lower bound of the **pre-change** band | 0 / 17 / 50 / 100 | the scan's bands |
 
-Two compositions coexist:
+**Likelihood**, keyed **(deployment, tool)** — not the resource (already in the
+cell), not the individual agent (no agent in the corpora spans more than a
+single day, median **32 calls**, so per-agent history never accumulates):
 
-- band signals (baseline / sequence / judge) fuse via `escalate()` and can only
-  **raise** risk above the static floor;
-- embedding likelihood fills the likelihood slot: `final_risk = static_score x
-  likelihood`, likelihood in **[0.1, 1.0]**. The 0.1 floor bounds the discount —
-  a scanned-critical cell keeps a tenth of its risk even when the call looks
-  demonstrably normal. A call with no benign history keeps full static risk
-  (likelihood 1.0).
+```
+p   = (k_t + alpha * prior[t]) / (n + alpha)          alpha = 30
+lik = 0.10 + 0.90 * clamp(log2(1/p) / log2(n + V), 0, 1)
+```
 
-Performance: fit **< 0.5 s per server**, scoring **~0.05 ms per call**.
+The catalog prior removes cold start; a few dozen observed calls are enough for
+evidence to dominate. Three cases return **lik = 1.0**: tool never seen,
+deployment too new to judge, resource unresolved.
+
+**Escalation** — Tukey's fences `[Q1 - 1.5*IQR, Q3 + 1.5*IQR]` over values this
+deployment has passed for that argument; **1.5** leaves ~**0.7 %** of
+well-behaved values outside. Quantities only (array lengths, numerics with a
+design-time `critical_trigger`), never identifiers. Below **20** observations
+the factor returns 1.0.
+
+**Floor** — absolute score, taken from the band the cell was in *before*
+anything moved it, so escalation raising a call cannot raise the floor beneath
+it. The runtime reorders inside a band and may promote; it never demotes out of
+a band.
+
+**Paper worked example** (`main.tex` §4.3, from `dynamic-layer-formula.md`):
+n = 183, k_t = 17, V = 16, prior 0.01613, cell 27 (medium) → p = 0.0821,
+lik = 0.525 ≈ **0.53**, 27 x 0.53 = **14.2**, floor 17 binds → reported **17,
+medium**.
+
+Dropped from the earlier design, and no longer claimed in the paper: the
+embedding likelihood, the behavioral-baseline and session-sequence band
+signals, the optional LLM judge, and runtime egress / blast movement (no
+predicate survived; unconditional movement manufactured false alarms). Session
+context `x` is observable and is **not** consumed by this composition.
 
 ## 3. Static evaluation — v5
 
@@ -167,6 +193,11 @@ Totals move in **both** directions — policy context is not a uniform discount:
 Σ score calendar 2280 → 2697, slack 3779 → 4096, github 6340 → 5328.
 
 ## 4. Dynamic evaluation — discrimination
+
+**Superseded composition.** §4 and §5 measure the four-signal layer described in
+the old §2 (embedding likelihood + band signals), not the `lik x esc` layer the
+paper now specifies. Do not quote these numbers for the current dynamic layer;
+current measurements live in `reports/experiments/dynamic_layer/RESULTS.md`.
 
 Source: `reports/dynamic_eval/SUMMARY.md`
 
@@ -245,11 +276,14 @@ Say this precisely. It is an **evaluation setting**, not a benchmark.
   the framework is faster or cheaper than human review.
 - **The LLM judge** (`dynamic/judge.py`) is wired but was **not run** in the
   testbed report — it needs a GPU job.
-- **The rules→LLM hand-off** never fired on this corpus (§3). Unit tests only.
+- **The rules→LLM hand-off** never fired on the §3 corpus. Unit tests only
+  there. It *does* fire on the §9 corpus (50 of 262 tools) — the two statements
+  are about different arms and must not be merged.
 - **External benchmark comparison** for the dynamic task — none exists.
-- **Live third-party servers.** GitHub / Slack / Calendar tokens are expired;
-  the vendor catalogs are real captures but the servers were not driven live.
-- **Cross-organization generalization.** One policy document, three servers.
+- **Cross-organization generalization.** One policy document, all deployments.
+- **§9 has no oracle.** Nothing in §9 measures correctness: no held-out
+  severity table, no baseline, no ablation, no detection result over the live
+  traffic. §9 numbers describe an output only.
 
 ## 8. Citation policy for this paper
 
@@ -272,3 +306,130 @@ Externally grounded design decisions that should be cited where used:
 | Graded beats binary for operator action | `cao2024mad` |
 
 `refs.bib` now holds **40** entries.
+
+## 9. Descriptive corpus — v5r `nacombo` arm (Section 5)
+
+Source of record:
+`reports/experiments/v5/five_level_v2_policy_v5r_nacombo/` — `CORPUS_RESULTS.md`,
+`README.md`, `live_run.md`, `live_scale_run.md`, and the per-server
+`<server>.json` / `<server>_matrix.csv` pairs. Counts below were recomputed
+directly from the matrices and the `tool_impact_source` maps; band counts,
+tool/resource/cell counts and the per-server maxima agree with
+`CORPUS_RESULTS.md` for the ten servers it tabulates.
+
+Arm options: `asset_flags=none`, `blast_prompt=scope`, `floors=none`,
+`relevance=combo`. Sensitivity source `llm_policy_class`, derived from
+`docs/mcp-tools/server-policies.md` alone. Band thresholds: medium 17, high 50,
+critical 100, on the 1–125 range.
+
+### Corpus size
+
+**16 server deployments** over **9 distinct tool catalogs** (the GitHub, Slack
+and calendar catalogs are each deployed under two organizations; the filesystem
+catalog under five tenants). **262 tools**, **221 register resources**,
+**3,615** (tool, resource) cells. **1,182 scored (33%)**, **2,433 N/A (67%)**.
+Bands over the scored cells: **444 low, 458 medium, 242 high, 38 critical**.
+High+critical = 280 = 24% of scored cells, 7.7% of all cells. **8** cells reach
+the maximum of 125.
+
+| Kind | Deployment | Tools | Res. | Cells | Scored | N/A | low | med | high | crit |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Filesystem | `fs_fintech_fs` | 14 | 18 | 252 | 103 | 149 | 39 | 36 | 24 | 4 |
+| Filesystem | `fs_medical_clinic_fs` | 14 | 16 | 224 | 86 | 138 | 27 | 37 | 22 | 0 |
+| Filesystem | `fs_corp_filesystem` | 14 | 16 | 224 | 87 | 137 | 36 | 26 | 21 | 4 |
+| Filesystem | `fs_law_firm_fs` | 14 | 15 | 210 | 89 | 121 | 33 | 43 | 13 | 0 |
+| Filesystem | `fs_media_studio_fs` | 14 | 16 | 224 | 111 | 113 | 63 | 36 | 12 | 0 |
+| Source repo | `github_real` | 26 | 20 | 520 | 139 | 381 | 39 | 48 | 52 | 0 |
+| Source repo | `github_helios` | 26 | 19 | 494 | 126 | 368 | 29 | 46 | 47 | 4 |
+| Chat | `slack_real` | 16 | 20 | 320 | 101 | 219 | 37 | 48 | 6 | 10 |
+| Chat | `slack_vireo` | 16 | 15 | 240 | 62 | 178 | 18 | 38 | 5 | 1 |
+| Calendar | `calendar_real` | 13 | 16 | 208 | 68 | 140 | 22 | 27 | 14 | 5 |
+| Calendar | `calendar_aurora` | 13 | 17 | 221 | 71 | 150 | 14 | 33 | 18 | 6 |
+| SQL | `sqlite_cbg_sqlite` | 5 | 11 | 55 | 37 | 18 | 13 | 13 | 7 | 4 |
+| Public data | `finance_tools` | 17 | 6 | 102 | 27 | 75 | 18 | 9 | 0 | 0 |
+| Public data | `openbb` | 30 | 5 | 150 | 36 | 114 | 23 | 12 | 1 | 0 |
+| Public data | `sec_edgar` | 21 | 6 | 126 | 27 | 99 | 24 | 3 | 0 | 0 |
+| Public data | `yahoo_finance` | 9 | 5 | 45 | 12 | 33 | 9 | 3 | 0 | 0 |
+| **Total** | **16** | **262** | **221** | **3,615** | **1,182** | **2,433** | **444** | **458** | **242** | **38** |
+
+### Impact provenance
+
+Per **distinct catalog** (151 distinct tools): ladder **127 (84%)**, model
+**24 (16%)**. Per **deployment** (262 tools, repeated catalogs counted once per
+organization): ladder **212**, model **50**.
+
+| Catalog | Tools | Ladder | Model |
+|---|---:|---:|---:|
+| `filesystem` | 14 | 12 | 2 |
+| `github` | 26 | 15 | 11 |
+| `slack` | 16 | 13 | 3 |
+| `calendar` | 13 | 9 | 4 |
+| `sqlite` | 5 | 4 | 1 |
+| `finance-tools` | 17 | 17 | 0 |
+| `openbb` | 30 | 27 | 3 |
+| `sec-edgar` | 21 | 21 | 0 |
+| `yahoo-finance` | 9 | 9 | 0 |
+| **Total** | **151** | **127** | **24** |
+
+### Highest-scoring cell per deployment
+
+| Deployment | Tool × resource | sens·blast·impact | Score |
+|---|---|---|---:|
+| `fs_fintech_fs` | `write_file` × `card-vault` | 5·5·4 | 100 |
+| `fs_corp_filesystem` | `write_file` × `security-keys` | 5·5·4 | 100 |
+| `fs_medical_clinic_fs` | `write_file` × `patient-charts` | 5·4·4 | 80 |
+| `fs_law_firm_fs` | `write_file` × `matter-files` | 5·4·4 | 80 |
+| `fs_media_studio_fs` | `write_file` × `unreleased-imagery` | 4·4·4 | 64 |
+| `github_helios` | `push_files` × `helios-scada-gateway` | 5·5·4 | 100 |
+| `github_real` | `fork_repository` × `infra-config` | 4·5·4 | 80 |
+| `slack_real` | `conversations_leave` × `incident-response` | 5·5·5 | 125 |
+| `slack_vireo` | `usergroups_users_update` × `usergroup-membership` | 4·5·5 | 100 |
+| `calendar_real` | `manage-accounts` × `connected-account-config` | 5·5·5 | 125 |
+| `calendar_aurora` | `delete-event` × `aurora-exec` | 5·5·5 | 125 |
+| `sqlite_cbg_sqlite` | `write_query` × `api_keys` | 5·5·5 | 125 |
+| `finance_tools` | `calculate` × `expression-evaluator` | 4·3·3 | 36 |
+| `openbb` | `install_skill` × `server-capability-install` | 4·4·4 | 64 |
+| `sec_edgar` | `get_recommended_tools` × `concept-catalogs` | 3·3·3 | 27 |
+| `yahoo_finance` | `get_historical_stock_prices` × `research-query-pattern` | 3·3·3 | 27 |
+
+Public-data control: `finance_tools`, `sec_edgar` and `yahoo_finance` produce
+**0 high and 0 critical** cells across their **273** cells. The only high cell
+in the public-data group is `openbb`'s `install_skill` × `server-capability-install`
+at 64; the ladder abstained on that verb and the model assigned impact 4.
+
+`conversations_leave` × `incident-response` = 125 comes from `llm_fallback`
+impact 5, sensitivity 5 (`self-sufficient` flag), blast 5. The operation
+removes the agent's own channel access. Reported as produced, not patched.
+
+### Live traffic
+
+Pilot (`live_run.md`): **98 live calls**, **93 OK / 5 ERROR**, 52 benign /
+21 misuse / 25 malicious.
+
+Scaled (`live_scale_run.md`): **3,000 live calls**, **2,998 OK / 2 ERROR**,
+exact 50/25/25 per org. The two errors are transient Google Calendar
+`operation was aborted` responses.
+
+| Deployment | Calls | B/M/A | Tools live | OK |
+|---|---:|---|---:|---:|
+| `github_helios` | 1,000 | 500/250/250 | 24 of 26 | 1,000 |
+| `slack_vireo` | 1,000 | 500/250/250 | 12 of 16 | 1,000 |
+| `calendar_aurora` | 1,000 | 500/250/250 | 12 of 13 | 998 |
+| **Total** | **3,000** | 1,500/750/750 | 48 | **2,998** |
+
+Attack caps per run: ≤8 merges, ≤8 repo creates, ≤5 unblinding posts. Cleanup
+created-then-removed: **92** files on perimeter `main`, **80** branches,
+**39** issues, **5** PRs, **8** repositories; post-run residue audit **0** on
+every category. **5** verbs cannot execute live on these deployments
+(`fork_repository`; `usergroups_create` / `usergroups_update` /
+`usergroups_users_update`; `respond-to-event`) and are recorded as ERROR.
+
+Category labels are assigned by the generator against each server's policy
+section — **not** an independent annotation. No detection result is reported
+over this traffic in this arm.
+
+### The one failure
+
+`maverick` (119 tools) aborted the model server on its first call — CUDA
+flash-attention kernel abort (`launch_fattn` → `ggml_abort`) at that prompt
+length with a quantised KV cache. Excluded from every number above.

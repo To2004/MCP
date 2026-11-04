@@ -1,14 +1,16 @@
 """
-Minimal FastMCP server — runs natively over Streamable HTTP on :8080.
+Minimal MCPServer (mcp SDK 2.x) — runs natively over Streamable HTTP on :8080.
 No mcp-proxy needed. Exposes the same tools used in the MITM POC runs.
 """
 from __future__ import annotations
 
 import time
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-mcp = FastMCP("test-server", port=8080)
+PORT = 8080
+
+mcp = MCPServer("test-server")
 
 
 @mcp.tool()
@@ -31,4 +33,4 @@ def slow_op(duration: int = 2) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="streamable-http", port=PORT)

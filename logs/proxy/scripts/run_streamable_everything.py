@@ -26,7 +26,7 @@ sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 PROXY_PORT = 8090  # different port so it can run alongside the SSE setup
 PROXY_URL = f"http://localhost:{PROXY_PORT}/mcp"
@@ -124,7 +124,7 @@ async def run() -> None:
         with open(OUT_DIR / "calls.csv", "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=CSV_HEADERS)
             writer.writeheader()
-            async with streamablehttp_client(PROXY_URL) as (read, write, _):
+            async with streamable_http_client(PROXY_URL) as (read, write):
                 async with ClientSession(read, write) as session:
                     await session.initialize()
                     for i, (cat, tool, args) in enumerate(SERVER["calls"], 1):

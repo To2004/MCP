@@ -103,7 +103,7 @@ async def run_capture(repo: Path, n: int, seed: int, out: Path) -> None:
                 status = "OK"
                 try:
                     result = await session.call_tool(tool, args)
-                    status = "ERROR" if result.isError else "OK"
+                    status = "ERROR" if result.is_error else "OK"
                 except Exception as exc:  # noqa: BLE001 — record real failures, never crash the run
                     status = f"EXC:{type(exc).__name__}"
                 rows.append({

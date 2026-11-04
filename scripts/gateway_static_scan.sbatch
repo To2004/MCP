@@ -17,14 +17,17 @@
 #
 #   sbatch --export=ALL,NAME=github_remote scripts/gateway_static_scan.sbatch
 #   sbatch --export=ALL,NAME=github_remote,PARTS=inputs scripts/gateway_static_scan.sbatch
+# Another server: DIR (its folder, holding $NAME.json) and POLICY (its policy file), e.g.
+#   sbatch --export=ALL,NAME=mcphunt_git,DIR=$PWD/reports/experiments/gateway/mcphunt/git,\
+#   POLICY=$PWD/reports/experiments/gateway/mcphunt/git/mcphunt_git.md scripts/gateway_static_scan.sbatch
 set -u
 NAME=${NAME:-github_remote}
 PARTS=${PARTS:-scan}
 REPO=/home/ovadyat/MCP
 SCAN_REPO=/home/ovadyat/mcp-static-scan
-DIR=$REPO/reports/experiments/gateway/$NAME
+DIR=${DIR:-$REPO/reports/experiments/gateway/$NAME}
 CATALOG=$DIR/$NAME.json
-POLICY=$DIR/github_helios_remote.md
+POLICY=${POLICY:-$DIR/github_helios_remote.md}
 OUT=$DIR/${PARTS//,/_}  # scan/ or inputs/: two jobs must not share a log
 BIN=/home/ovadyat/local-llm/ollama
 PORT=$((11000 + SLURM_JOB_ID % 2000))  # two jobs on one node must not share a port

@@ -1,0 +1,360 @@
+% ---------------------------------------------------------------------------
+% Section 4 -- The Framework: OUTLINE / SKETCH
+%
+% This file is a talking-points skeleton, not prose. It is NOT \input by
+% main.tex; the written Sec.4 currently lives inline in main.tex (lines
+% 524-767). Edit the bullets here to decide the shape, then write against it.
+%
+% Each subsection carries:
+%   PURPOSE  -- the one question this subsection answers for the reader
+%   POINTS   -- what to say, in order
+%   OMIT     -- what belongs to another section, so it does not creep back in
+%
+% Revised structure:
+%   4.1 Framework Overview -- static vs. dynamic and why the split exists
+%   4.2 Static Layer
+%       4.2.1 Tool Impact
+%       4.2.2 Asset Sensitivity
+%       4.2.3 Blast Radius
+%   4.3 Dynamic Layer
+%
+% Enforcement is intentionally out of scope. The framework assesses risk and
+% exposes an auditable score/band; the organization decides how to act on it.
+%
+% Budget: 1,400-1,700 words total (WRITING-GUIDE.md Sec.5). Suggested split in
+% the comment above each subsection. Every number must appear verbatim in
+% GROUND-TRUTH.md before it goes into prose.
+% ---------------------------------------------------------------------------
+\section{The Framework}
+\label{sec:framework}
+
+% --- Lead-in, no heading. ~50-60 words. ------------------------------------
+% PURPOSE: tell the reader immediately that the framework separates capability
+% from runtime context.
+\begin{itemize}
+  \item \framework{} computes the risk of a permitted invocation in two layers.
+  \item The \emph{static layer} estimates the inherent consequence of a
+        (tool, asset) pairing before any particular call occurs.
+  \item The \emph{dynamic layer} refines that baseline at request time using the
+        concrete arguments, session context, and the calling agent's history.
+  \item The framework produces an auditable risk score/band; it does not define
+        an allow/review/block enforcement policy.
+\end{itemize}
+
+% -------------------------------------------------------------------------
+\subsection{Framework Overview}
+\label{sec:overview}
+% ~350-400 words.
+% PURPOSE: explain the two-layer architecture, what each layer knows, why they
+% are separated, and how they compose into rho(c).
+\begin{itemize}
+  \item \textbf{The central design choice: separate capability from context.}
+        The same tool can have very different consequences depending on the
+        asset it touches, while the same (tool, asset) pair can become more or
+        less concerning depending on the concrete request and recent behavior.
+        These are different questions and should not be collapsed into one
+        opaque model decision.
+
+  \item \textbf{Why the static layer exists.}
+    \begin{itemize}
+      \item It captures facts that are stable across calls: what operation the
+            tool performs, how sensitive the asset is, and how broadly one use
+            of that tool can affect it.
+      \item These values can be computed ahead of time and reused across many
+            invocations, giving every (tool, asset) pair a baseline consequence.
+      \item This makes the baseline auditable: an operator can inspect which
+            factor produced a high score rather than receiving one unexplained
+            number.
+    \end{itemize}
+
+  \item \textbf{Why the dynamic layer is separate.}
+    \begin{itemize}
+      \item Static analysis cannot see the actual arguments, whether the call is
+            unusual for this agent, or whether it is part of a risky sequence.
+      \item Those signals exist only when a request arrives, so they belong to a
+            request-time layer rather than to the precomputed baseline.
+      \item Keeping them separate also prevents transient behavioral evidence
+            from changing the underlying classification of a tool or asset.
+    \end{itemize}
+
+  \item \textbf{The two existing inputs.}
+    \begin{itemize}
+      \item the tool catalog the server advertises over \texttt{tools/list};
+      \item the organization's policy/register for the assets exposed through
+            the server, including named classification classes and recognition
+            rules, but not framework-specific severity numbers.
+      \item Neither input is created only for \framework{}; this is part of the
+            deployability argument.
+    \end{itemize}
+
+  \item \textbf{How the layers compose.}
+        The static layer computes the three-factor baseline in
+        Eq.~\ref{eq:score}. The dynamic layer then adjusts that baseline using
+        request-time evidence to produce $\rho(c)$.
+
+  \item \textbf{Why the static score has three factors.}
+        Tool impact is the \emph{verb} --- what the operation does; asset
+        sensitivity is the \emph{noun} --- what it touches; blast radius is the
+        \emph{scope} --- how far the consequence can propagate. Each captures a
+        different source of consequence that the other two cannot express.
+
+  \item \textbf{Why multiply.}
+        The three 1--5 primitives are multiplied, producing a range of
+        $[1,125]$. Multiplication preserves interaction between the factors: a
+        call reaches the top of the scale only when it is severe across all
+        three dimensions, while a low value on one axis remains influential.
+
+  \item \textbf{Output and scope.}
+        The result is mapped to an ordinal risk band. \framework{} stops at risk
+        assessment: how an organization translates that assessment into an
+        operational action is outside this framework.
+\end{itemize}
+% OMIT: detailed factor rubrics -- 4.2; detailed runtime signals -- 4.3;
+%       enforcement thresholds or allow/review/deny logic -- out of scope.
+
+% -------------------------------------------------------------------------
+\subsection{The Static Layer}
+\label{sec:static}
+% ~80-120 words before the three subsubsections.
+% PURPOSE: define exactly what the static layer produces and how often it runs.
+\begin{itemize}
+  \item The static layer constructs a reusable baseline for each (tool, asset)
+        pairing exposed by the server.
+  \item It scores three primitives on 1--5: Tool Impact $I(t)$, Asset
+        Sensitivity $S(r)$, and Blast Radius $B(t,r)$.
+  \item Keep Eq.~\ref{eq:score}: the static score is the product of these three
+        values, before request-time evidence is considered.
+  \item Conceptually: impact is primarily tool-level, sensitivity is
+        asset-level, and blast radius is pair-level because propagation depends
+        on both the operation and the asset it reaches.
+  \item Static computation is repeated when the tool catalog, asset register, or
+        classification policy changes; it is not recomputed from scratch for
+        every invocation.
+\end{itemize}
+
+% -------------------------------------------------------------------------
+\subsubsection{Tool Impact}
+\label{sec:impact}
+% ~350-400 words + Table 2.
+% PURPOSE: explain how the framework estimates the inherent severity of the
+% operation exposed by a tool.
+\begin{itemize}
+  \item \textbf{The question.} What can one invocation of this tool do to its
+        target, independent of which particular asset is selected?
+
+  \item \textbf{The ladder.} Keep Table~\ref{tab:ladder}: 1 none, 2 metadata,
+        3 content read or limited write, 4 ordinary write, 5 removal or
+        execution.
+
+  \item \textbf{The vocabulary, with the counts.} 281 patterns
+        (16 none / 52 metadata / 46 read / 122 write / 45 remove), plus 119
+        ambiguous single words matched \emph{against the tool name only},
+        10 generic read verbs, and 9 parameter detectors.
+
+  \item \textbf{Why name-only scoping matters.} Matching ambiguous verbs across
+        the whole description can make a harmless listing or descriptive tool
+        appear destructive merely because its documentation mentions another
+        action.
+
+  \item \textbf{The 3/4 boundary is borrowed, not invented.} Use the analogy to
+        HTTP \texttt{PATCH} vs. \texttt{PUT} and CVSS~v4.0
+        \texttt{VI:L} vs. \texttt{VI:H}: a bounded modification belongs below
+        an ordinary full write. Example: writing one sentence into a file is 3;
+        writing/replacing the file is 4.
+
+  \item \textbf{Two deliberate absences.}
+    \begin{itemize}
+      \item breadth indicators such as all/every/bulk/batch, globs, or recursion
+            do not raise Tool Impact because breadth belongs to Blast Radius;
+      \item parameter detectors identify capabilities whose actual use depends
+            on the request arguments, so they do not by themselves move the
+            static impact tier.
+    \end{itemize}
+
+  \item \textbf{MCP annotations are supporting evidence, not a bound.}
+        An annotation such as \texttt{destructiveHint} may corroborate a rule,
+        but it neither sets nor caps the impact score.
+
+  \item \textbf{Rules-to-model hand-off.} Fold the former separate hand-off
+        subsection here:
+    \begin{itemize}
+      \item confidence 0.35 when no tier verb matched, 0.8 when a verb fired,
+            and 0.95 when a verb fired and an MCP annotation corroborated it;
+      \item consult the model only below 0.5 confidence;
+      \item ask the model where the rules lack semantic information, not where
+            two rules disagree -- precedence resolves rule conflicts;
+      \item every rules-decided tier remains attributable to the matched pattern
+            and scorer;
+      \item honest caveat: on the evaluated catalogs the fallback never fired,
+            so \S\ref{sec:eval} must bound what can be claimed about it.
+    \end{itemize}
+\end{itemize}
+
+% -------------------------------------------------------------------------
+\subsubsection{Asset Sensitivity}
+\label{sec:sensitivity}
+% ~300 words.
+% PURPOSE: explain how an asset receives a 1--5 sensitivity value even when the
+% organization does not publish a numeric inventory.
+\begin{itemize}
+  \item \textbf{The problem.} A risk model needs to know how consequential loss
+        or compromise of an asset would be, but organizations often do not
+        maintain a complete, current, numeric sensitivity table for every
+        resource.
+
+  \item \textbf{Why a pre-scored inventory is a poor assumption.} It is costly to
+        build, can itself expose sensitive information, and becomes stale as new
+        resources are created.
+
+  \item \textbf{What organizations do maintain.} A data/information
+        classification policy with named classes, consequence language,
+        recognition rules, and aggregation rules.
+
+  \item \textbf{Classify then map.}
+    \begin{itemize}
+      \item the organization defines the classes and describes the consequence
+            of loss in its own terms, without framework-specific numbers;
+      \item \framework{} owns the 1--5 scale and maps the policy's adverse-impact
+            language onto that scale;
+      \item each asset/register row is then classified using its description and
+            the organization's recognition and aggregation rules.
+    \end{itemize}
+
+  \item \textbf{Division of responsibility.} The organization says what counts
+        as sensitive in its domain; the framework converts those classes into a
+        common risk scale. Neither side is asked to perform the other's task.
+
+  \item \textbf{Precedent.} FIPS~199 / SP~800-60 similarly begin from adverse
+        impact and security categorization rather than requiring the risk model
+        to invent business meaning from scratch.
+
+  \item \textbf{Rule-vs.-row property.} Because classification is rule-based, the
+        same policy can classify assets created after the policy was written.
+        Present this as a property of the construction, not an evaluated result.
+
+  \item \textbf{Evaluation separation.} Any per-asset ground-truth sensitivity
+        table created for the study is an evaluation instrument and is not
+        exposed to the scorer.
+\end{itemize}
+% OMIT: ISO/NIST/CIS comparison -- evaluation arm, not framework definition.
+
+% -------------------------------------------------------------------------
+\subsubsection{Blast Radius}
+\label{sec:blast}
+% ~300 words.
+% PURPOSE: explain the scope/propagation factor for a (tool, asset) pairing.
+\begin{itemize}
+  \item \textbf{Unit and question.} Blast Radius is scored per (tool, asset)
+        pairing: if this operation is exercised against this asset, how far can
+        the consequences propagate?
+
+  \item \textbf{The 1--5 rubric.} (1) almost nobody depends on it; (2) a few
+        subjects; (3) a group attached to what was touched -- the normal case;
+        (4) the whole population inside the asset boundary; (5) consequences
+        can extend beyond that boundary.
+
+  \item \textbf{Tier 5 needs a sanctioned propagation route} named by the asset
+        register itself: for example, an authentication hub, a returned value
+        usable elsewhere, one call reaching the entire population, or
+        destruction with no practical restoration path.
+
+  \item \textbf{Why not count items.} Item count is not consequence scope.
+        Reading one credential file touches one item but may compromise every
+        system the credential opens.
+
+  \item \textbf{The floor and deliberate coupling.} Sensitivity and
+        irreversibility may raise Blast Radius but never lower it. State clearly
+        that this introduces one-directional dependence between primitives on
+        purpose: a pinpoint item in a crown-jewel or irreversible path should
+        not be treated as a harmless local effect.
+
+  \item \textbf{The removed roof.} An earlier version capped blast in some cases;
+        removing that roof avoids systematic under-scoring. Keep only if space
+        allows.
+
+  \item \textbf{The weak point.} Blast Radius is the noisiest of the three static
+        factors. Do not hide this; \S\ref{sec:eval} should quantify its
+        variability.
+\end{itemize}
+
+% -------------------------------------------------------------------------
+\subsection{The Dynamic Layer}
+\label{sec:dynamic}
+% ~350-400 words.
+% PURPOSE: explain what the static table cannot observe and how request-time
+% evidence modifies the baseline risk assessment.
+\begin{itemize}
+  \item \textbf{The handover.} The static layer answers how consequential the
+        capability is for this (tool, asset) pair. It cannot see the actual
+        request, the agent's recent behavior, or the surrounding session. The
+        dynamic layer adds those request-time facts.
+
+  \item \textbf{Why dynamic evidence is needed.} Two invocations can share the
+        same static cell yet differ materially: one may use ordinary arguments
+        seen many times before, while another introduces a new target, a large
+        scope, an unusual parameter value, or a suspicious sequence of actions.
+
+  \item \textbf{Two factors and one bound.} The layer introduces no scale of
+        its own; each factor moves a dimension the static product already has.
+    \begin{itemize}
+      \item \emph{likelihood} -- share of this deployment's traffic on this
+            tool, read as surprisal and blended with a catalog prior
+            ($\alpha = 30$) so there is no cold start; keyed
+            (deployment, tool), clamped to $[0.1, 1.0]$; a tool never seen, a
+            deployment too new to judge, or an unresolved resource all return
+            1.0;
+      \item \emph{escalation} -- three bins ($0.9 / 1.0 / 1.3$) from Tukey's
+            fences over the argument values this deployment has passed;
+            quantities only, never identifiers; below 20 observations it
+            returns 1.0;
+      \item \emph{floor} -- the lower boundary of the band the cell occupied
+            before anything moved it, absolute rather than proportional, so
+            the runtime reorders calls inside a band and may promote one, but
+            never demotes a call out of its scanned band.
+    \end{itemize}
+
+  \item \textbf{Composition with the static baseline.} One equation, given as
+        Eq.~\ref{eq:rho}: the static cell times likelihood times escalation,
+        clamped below by the floor and above by 125. Only the static score can
+        make the result large.
+
+  \item \textbf{What is not in the layer.} The embedding likelihood, the
+        behavioral-baseline and session-sequence band signals, and the optional
+        LLM judge of earlier drafts are not part of this composition, and
+        neither is a runtime egress test -- no predicate survived, and moving
+        blast radius unconditionally manufactured false alarms. Session context
+        is observable and unused. Cost stays negligible: no signal calls a
+        model.
+
+  \item \textbf{What the layer outputs.} The dynamic layer produces the final
+        invocation-level assessment $\rho(c)$ together with the static factors
+        and dynamic evidence that led to it, so the result remains auditable.
+
+  \item \textbf{Scope boundary.} Stop here. The framework reports risk; it does
+        not prescribe or evaluate an enforcement mechanism such as
+        allow/review/deny thresholds.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+% STRUCTURE NOTES
+%
+% * 4.1 should make the architecture obvious before introducing any rubric.
+%   Its job is not just "what goes in / what comes out" but "why static and
+%   dynamic are different kinds of evidence and therefore separate layers."
+%
+% * 4.2 is now the full static story. Keeping Tool Impact, Asset Sensitivity,
+%   and Blast Radius as 4.2.1--4.2.3 mirrors Eq.~\ref{eq:score} and makes the
+%   paper much easier to navigate.
+%
+% * The old Rules-to-Model Hand-off is part of Tool Impact because it only
+%   explains how that factor is derived; it does not deserve a peer-level
+%   subsection next to the three factors.
+%
+% * Enforcement is removed. If later sections discuss possible organizational
+%   responses to a risk band, describe them as downstream uses/examples rather
+%   than as part of the framework itself.
+%
+% * Consider one short worked example near the end of 4.1: one tool, one asset,
+%   the three static factors, then one dynamic adjustment. Do NOT end the
+%   example with allow/review/block because enforcement is outside scope.
+% ---------------------------------------------------------------------------

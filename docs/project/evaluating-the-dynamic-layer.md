@@ -366,6 +366,7 @@ have shown it.
 | E4 coverage / efficiency at a stated base rate | needs E2 |
 | E6 held-out server | discipline, not compute |
 | E0 monotonicity invariant | one test |
+| Human evaluation (v4, simulated organisation) | built, not yet run: [Bot Day Check](../../reports/experiments/dynamic_dimensions/human_study/README.md) asks 10-20 people, blind to the score, whether a day is unusual for that agent and worth checking; 5 Claude runs are a separate group |
 
 ## What not to do
 

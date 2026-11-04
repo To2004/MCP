@@ -416,7 +416,7 @@ Useful for validating our attack templates and comparing detection approaches.
 |------|------|-----|
 | Agent | **Obot** | Realistic LLM agent, web UI, built-in MCP |
 | Gateway | **ContextForge** | Deep logging, admin UI, Python-native |
-| Servers | **FastMCP** (existing) | Already built in our repo |
+| Servers | **MCPServer** (existing; FastMCP before mcp 2.x) | Already built in our repo |
 | Scripted attacks | **attack_runner.py** (existing) | Already built, 25 templates |
 
 **Effort:** 1--2 days to set up Obot + ContextForge and connect to our test servers.

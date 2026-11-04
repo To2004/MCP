@@ -8,8 +8,16 @@ This package turns ``(tool, arguments)`` into a set of policy-register asset ids
 so every mechanism is deterministic Python — dictionary lookup, regex, and
 IDF-weighted token overlap. The scanner's LLM stages run at design time and
 reach this package only as artifacts already on disk (the policy register, the
-operation ladder). A resolution is reproducible, costs no tokens, and cannot be
-moved by anything an attacker writes into an argument.
+operation ladder). A resolution is reproducible and costs no tokens. When the
+scan marks each tool's target inputs (``tool_targets``, AI-3), free text cannot
+change either asset; only the target inputs' own values can. Without them the
+priced asset's match reads every argument string, as it always has (v1-v4).
+
+**Two assets per call (AI-1).** The *priced asset* (:mod:`scoring`) is the worst
+register asset the target inputs do not rule out, and sets R_static. The
+*touched asset* (:mod:`touched_asset`) is the container the target inputs name,
+with its registered sensitivity and exposure, or a keyed pseudonym, or none; it
+is what the behaviour engine's history holds (v5).
 
 **Nothing here is written per server.** The container key, the tool that
 enumerates containers, and the organization's own email domains are all
@@ -22,15 +30,39 @@ See ``README.md`` in this directory for the method and the experiment it backs.
 
 from .discovery import Binding, Discovery, discover, discover_org_domains
 from .resolver import AssetHit, AssetResolver, Level, Resolution, worst_severity
+from .scoring import CallScore, ContainerSpec, MatrixScorer, TargetSpec, parse_tool_targets
+from .touched_asset import (
+    AssetRegister,
+    Container,
+    OperationKey,
+    OperationSpec,
+    Touched,
+    TouchedAssetLookup,
+    operation_key,
+    parse_tool_operations,
+)
 
 __all__ = [
     "AssetHit",
+    "AssetRegister",
     "AssetResolver",
     "Binding",
+    "CallScore",
+    "Container",
+    "ContainerSpec",
     "Discovery",
     "Level",
+    "MatrixScorer",
+    "OperationKey",
+    "OperationSpec",
     "Resolution",
+    "TargetSpec",
+    "Touched",
+    "TouchedAssetLookup",
     "discover",
     "discover_org_domains",
+    "operation_key",
+    "parse_tool_operations",
+    "parse_tool_targets",
     "worst_severity",
 ]

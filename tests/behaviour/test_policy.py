@@ -102,3 +102,54 @@ def test_a_gateway_log_becomes_messages_and_only_the_first_days_are_read() -> No
     messages = messages_from_log(records, days=1)
     assert [(m.method, m.tool) for m in messages] == [("initialize", None), ("tools/call", "read")]
     assert (messages[0].agent, messages[0].client, messages[0].size) == ("alice", "cursor/1.4", 90)
+
+
+def test_request_limits_are_also_learned_per_tool_from_agent_days() -> None:
+    comments = [m for d in range(100) for m in _calls("a", d, 3, 60.0, 900, "comment")]
+    files = [m for d in range(100) for m in _calls("b", d, 3, 60.0, 80_000, "write_file")]
+    rare = _calls("c", 0, 5, 60.0, 400, "rare_tool")  # one agent-day: no limit of its own
+    policy = derive_policy(sorted(comments + files + rare, key=lambda m: m.ts))
+    assert policy.request_limit_by_tool == {"comment": 1_000, "write_file": 80_000}
+    assert policy.request_limit_bytes == 80_000  # one limit is set by the biggest tool
+
+
+def test_the_many_assets_limit_comes_from_each_agent_days_busiest_hour() -> None:
+    def day_of(agent: str, day: int, assets: int) -> list[Message]:
+        return [
+            Message(
+                T0 + day * DAY + i * 60.0,
+                agent,
+                "tools/call",
+                "s",
+                tool="read",
+                asset=f"repo{i % assets}",
+            )
+            for i in range(30)
+        ]
+
+    traffic = [m for d in range(200) for m in day_of("a", d, 4)] + day_of("a", 300, 30)
+    assert derive_policy(traffic).many_assets_per_hour == 4  # not the one 30-asset hour
+    assert derive_policy(_calls("a", 0, 5, 60.0)).many_assets_per_hour is None  # no assets
+
+
+def test_written_required_steps_stay_and_learned_ones_are_added() -> None:
+    written = BehaviourConfig(requires_before={"merge": frozenset({"review"})})
+    traffic = []
+    for s in range(100):
+        traffic += [
+            Message(T0 + s * 600 + i, "a", "tools/call", f"s{s}", tool=t)
+            for i, t in enumerate(["plan", "deploy"])
+        ]
+    policy = derive_policy(traffic, base=written, min_sessions=20)
+    assert policy.requires_before == {
+        "merge": frozenset({"review"}),
+        "deploy": frozenset({"plan"}),
+    }
+
+
+@pytest.mark.parametrize("design", ["v1", "v2", "v3"])
+def test_the_design_and_the_per_tool_limits_survive_json(design) -> None:
+    policy = BehaviourConfig(
+        design=design, request_limit_by_tool={"comment": 15_000}, many_assets_per_hour=12
+    )
+    assert config_from_json(json.loads(json.dumps(config_to_json(policy)))) == policy

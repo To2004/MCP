@@ -6,8 +6,26 @@ This is the dynamic layer's behaviour part. It answers "how strange is this call
 
 | File | What it does |
 |---|---|
-| `engine.py` | `BehaviourEngine.observe(Message) -> Verdict`, one message at a time in arrival order. It holds the 12 dimensions, the warm-up, and 90 days of memory per agent kept per day (bounded). `snapshot`/`restore` let it survive a restart. |
-| `policy.py` | The policy (rule values, limits, required earlier steps) as JSON, and `derive_policy`, which learns it from ordinary traffic until an organisation writes one. Each limit is set so the rule fires on at most 0.5% of ordinary agent-days. A tool requires another when that one came earlier in 99.5% of its sessions (seen in at least 50 sessions). CLI: `python -m mcp_security.behaviour.policy --log <gateway log> --out <policy.json> --days 30`. |
+| `engine.py` | `BehaviourEngine.observe(Message) -> Verdict`, one message at a time in arrival order. It holds v4's 15 dimensions (v5: 16, with Read volume; see `engine.dimension_groups`), the warm-up, and 90 days of memory per agent kept per day (bounded). `snapshot`/`restore` let it survive a restart. `score` gives a verdict without learning and `commit` learns from it (for v1-v4, `observe` is exactly the two). |
+| `memory.py` | The bounded memory: per-day counts and means over 90 days, sliding windows, and the org discount's first uses. |
+| `clock.py` | The caller's local day (04:00 rollover), hour and weekend from a timestamp and an IANA zone, daylight saving included (v5, B9). Pure functions. |
+| `policy.py` | The policy (rule values, limits, required earlier steps) as JSON, and `derive_policy`, which learns it from ordinary traffic until an organisation writes one. Each limit is set so the rule fires on at most 0.5% of ordinary agent-days. A tool requires another when that one came earlier in 99.5% of its sessions (seen in at least 50 sessions). A v1-v4 policy file holds only the fields its design uses, so it is byte-identical to the one written before v5. CLI: `python -m mcp_security.behaviour.policy --log <gateway log> --out <policy.json> --days 30`. |
+
+## Design v5 (being built)
+
+`design = "v5"` is accepted and runs. So far it has its interfaces only (Batch 0 of
+`reports/experiments/dynamic_dimensions/knowledge_base/v5-implementation-plan.md`): every v5
+config switch with its v1-v4 value and its v5 default (`engine.DESIGN_VALUES`), the new
+`Message` and `Verdict` fields, Read volume as the 16th dimension (`engine.dimension_groups`;
+`BehaviourEngine.reply` is a no-op for now), and the legacy fixes E1, E2 and RF9 under
+`legacy_fixes`, which is off for v1-v4. With every v5 switch off (`v5_switches_off()`), v5
+gives exactly v4's verdicts. Golden pins of v1-v4 are in `tests/behaviour/golden/`.
+
+On v5, `alert_line` and `alert_floor_rate` follow `alert_alpha`: change alpha or the
+multiplier bounds with `replace_config` or `with_alert_alpha`, which derive both again
+(`dataclasses.replace` refuses a stale line). `alerting_dimensions` and `budget_share` give
+CAL-3's alerting dimensions and their shares (1/21 Cadence, 1/12 Footprint and Red Flags;
+Missing handshake is watch-only).
 
 ## How a call is scored
 

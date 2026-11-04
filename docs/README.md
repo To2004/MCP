@@ -30,6 +30,7 @@ Guides, standards, and references for working with the project.
 - Want the state of both layers and why neither number is *accuracy* yet? See [What Exists Now, and the Evaluation Problem](project/evaluation-problem.md)
 - Want the human-baseline study that would give the static scanner ground truth — with a live rating tool? See [Human Annotation Experiment](project/human-annotation-experiment.md)
 - Need an *external* benchmark, or wondering how this compares to published work? See [External Benchmarks and Positioning](project/external-benchmarks-and-positioning.md)
+- Need outside MCP data to run the framework on (recorded agent calls, simulated companies, real traffic), and what MCPHunt showed? See [External MCP Traffic and Environments](project/external-mcp-traffic-sources.md) (22 sources, checked 2026-11-01)
 - **Want to understand the runtime layer end to end — every stage, formula and constant, with diagrams and a worked example? Start here: [The Dynamic Layer, Explained](project/dynamic-layer-explained.md)**
 - What the runtime layer can and cannot see, and the two dimensions it missed? See [Dynamic Layer Blind Spots](project/dynamic-layer-blind-spots.md)
 - Which runtime context can a gateway use without reading tool inputs — by category, with evidence and log coverage? See [Dynamic Context Catalog](project/dynamic-context-catalog.md)

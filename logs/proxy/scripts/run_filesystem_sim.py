@@ -29,7 +29,7 @@ sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
 
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 
 PROXY_PORT  = 8094
 MITM_PORT   = 9094
@@ -366,7 +366,7 @@ def write_report(capture_path: Path) -> None:
 
 
 async def _run_calls(url: str) -> None:
-    async with streamablehttp_client(url) as (read, write, _):
+    async with streamable_http_client(url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             for i, (cat, persona, tool, args) in enumerate(CALLS, 1):
